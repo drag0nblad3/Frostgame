@@ -101,6 +101,10 @@ func move_to(node: Vector2i) -> bool:
 	var f := state.active()
 	var path := r.path_to(node)
 	if f.spell_effects.has("plane_walk"):
+		if state.scenario_special == "silent_tower":
+			for i in range(1, path.size()):
+				if ScenarioNull.field_at(state.board, path[i]):
+					return false
 		f.pos = MoveGrid.to_pos(node)
 		f.elevation = state.board.height_at(f.pos)
 		f.actions_left -= 1

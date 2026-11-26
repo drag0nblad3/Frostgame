@@ -6,7 +6,7 @@ static func field_at(board: Board, at: Vector2, margin: float = Figure.BASE_RADI
 	if board.id != "silent_tower":
 		return false
 	for p in board.pieces:
-		if p.kind.id.begins_with("null_") and p.rect.grow(margin).has_point(at):
+		if p.kind.id.begins_with("null_") and p.rect.grow(margin + 0.001).has_point(at):
 			return true
 	return false
 
