@@ -11,6 +11,7 @@ const COLORS := {
 
 func build(board: Board) -> void:
 	for c in get_children():
+		remove_child(c)
 		c.queue_free()
 	var top := MeshInstance3D.new()
 	var slab := BoxMesh.new()
@@ -20,9 +21,19 @@ func build(board: Board) -> void:
 	top.position = TableSpace.to_world(board.size * 0.5, -0.25)
 	add_child(top)
 	add_child(TabletopDetails.ground(board))
+	TerrainDressing.slab_frame(self, board)
 	for piece in board.pieces:
-		add_child(_piece(piece))
-		TabletopDetails.decorate(self, piece)
+		match piece.kind.id:
+			"rubble":
+				TerrainDressing.rubble(self, piece)
+			"museum_statue":
+				TerrainDressing.statue(self, piece)
+			"temple_column":
+				TerrainDressing.column(self, piece)
+			_:
+				add_child(_piece(piece))
+				TabletopDetails.decorate(self, piece)
+				TerrainDressing.masonry(self, piece)
 
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:

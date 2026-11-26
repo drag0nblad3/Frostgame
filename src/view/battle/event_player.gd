@@ -181,6 +181,7 @@ func build_treasures() -> void:
 		marker.mesh = box
 		marker.material_override = BoardView._mat(Color(0.42, 0.83, 1.0) if token.frozen else Color(1.0, 0.73, 0.15), 0.3)
 		add_child(marker)
+		TerrainDressing.chest(marker)
 		marker.position = TableSpace.to_world(token.pos, 0.25 + state.board.height_at(token.pos))
 		treasure_views[token.id] = marker
 		if not token.unresolved() or (state.scenario_special == "complex_temple" and token.frozen):

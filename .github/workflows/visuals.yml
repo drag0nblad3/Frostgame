@@ -1,0 +1,41 @@
+name: Visual previews
+on:
+  pull_request:
+    paths: ['src/view/**', 'data/boards/**', 'tools/capture.gd', 'tools/miniature_gallery.gd', '.github/workflows/visuals.yml']
+  workflow_dispatch:
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot and software GL
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          mv Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri
+      - name: Import
+        run: |
+          set -o pipefail
+          godot --headless --import 2>&1 | tee import.log
+          ! grep -E 'SCRIPT ERROR|Parse Error' import.log
+      - name: Render miniatures and battlefields
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          set -o pipefail
+          mkdir -p previews
+          timeout 120s xvfb-run -a godot --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/miniatures.png 2>&1 | tee gallery.log
+          timeout 120s xvfb-run -a godot --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/frozen-ruins.png 0 treasure_skirmish 2>&1 | tee ruins.log
+          timeout 120s xvfb-run -a godot --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/complex-temple.png 0 complex_temple 2>&1 | tee temple.log
+          ! grep -E 'SCRIPT ERROR|Parse Error' gallery.log ruins.log temple.log
+          test -s previews/miniatures.png && test -s previews/frozen-ruins.png && test -s previews/complex-temple.png
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Frostgame-Visual-Previews
+          path: previews/

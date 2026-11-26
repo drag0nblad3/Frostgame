@@ -18,6 +18,9 @@ func _initialize() -> void:
 	_scene = load("res://scenes/main.tscn").instantiate()
 	root.add_child(_scene)
 	_scene.watch_mode = true
+	if args.size() > 2:
+		_scene._scenario_id = args[2]
+		_scene.new_game(17)
 
 
 func _process(_delta: float) -> bool:
