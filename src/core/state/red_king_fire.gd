@@ -56,7 +56,7 @@ static func portal_contact(c: GameController,f: Figure,from: Vector2,to: Vector2
 		if from.distance_to(center)<=reach+0.001 and to.distance_to(center)>from.distance_to(center):
 			continue
 		seen[center]=true
-		var damage := maxi(0,5-CreatureEffects.elemental_resistance(f))
+		var damage := RedKingElemental.reduce(c,f,maxi(0,5-CreatureEffects.elemental_resistance(f)))
 		c.emit("portal_contact",{"id":f.id,"amount":damage})
 		c._hurt(f,damage,f,true)
 		if not f.in_play():

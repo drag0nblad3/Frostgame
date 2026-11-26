@@ -176,6 +176,8 @@ static func environmental_attack(c: GameController,f: Figure,power: int,elementa
 	var attack := c.dice.d20()+power
 	var defence := c.dice.d20()+f.effective_fight()+f.roll_penalty()
 	var damage := maxi(0,attack-f.effective_armour()-(CreatureEffects.elemental_resistance(f) if elemental else 0)) if attack>defence else 0
+	if elemental:
+		damage=RedKingElemental.reduce(c,f,damage)
 	c.emit("reality_attack",{"id":f.id,"power":power,"amount":damage})
 	c._hurt(f,damage,f,true)
 

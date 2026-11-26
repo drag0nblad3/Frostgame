@@ -108,6 +108,8 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if ActiveGear.ready(f,RedKingElemental.AMULET):
+		available.append("gear_absorb_arm")
 	if GearActions.cape_ready(c) and c.state.board.floor_layout.is_empty():
 		available.append(GearActions.CAPE)
 	if not GearActions.bottle_points(c).is_empty():
@@ -411,6 +413,8 @@ func preview() -> void:
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
+	if f!=null and f.used_gear.get(RedKingElemental.ARMED,false):
+		hint="Full elemental absorption armed. "+hint
 		if f.next_cast_gear != "":
 			hint = "Armed: %s. " % f.next_cast_gear.trim_prefix("gear_").replace("_", " ").capitalize() + hint
 		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", hint]
@@ -462,6 +466,10 @@ func action(key: String) -> bool:
 		mode = "gear_transfer_target"
 		available.assign(["potion_cancel"])
 		preview()
+		return false
+	if key=="gear_absorb_arm":
+		RedKingElemental.arm(c)
+		refresh()
 		return false
 	if key==GearActions.CAPE:
 		mode="gear_cape_move"

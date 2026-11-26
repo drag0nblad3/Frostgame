@@ -353,7 +353,7 @@
       "buy": 400,
       "sell": 150,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_mantle_of_the_bear_or_leopard": {

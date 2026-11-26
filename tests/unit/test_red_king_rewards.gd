@@ -266,3 +266,14 @@ func test_potion_staff_and_golden_bottle_consumption() -> void:
 	check(f.poisoned)
 	check_eq(int(f.items[1]["bottle_doses"]),0)
 	check_eq(f.items.size(),2)
+
+
+func test_elemental_amulet_passive_and_overload() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],LoadedDice.new([17]))
+	f.items.append({"gear":RedKingElemental.AMULET,"gear_info":RedKingRewards.catalog()[RedKingElemental.AMULET]})
+	c.state.reaction_side=f.side
+	check_eq(RedKingElemental.reduce(c,f,5),4)
+	f.used_gear[RedKingElemental.ARMED]=true
+	check_eq(RedKingElemental.reduce(c,f,5),8)
+	check(not ActiveGear.has(f,RedKingElemental.AMULET))

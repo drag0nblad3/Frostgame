@@ -31,7 +31,7 @@ static func activation(c: GameController,f: Figure) -> void:
 		if not f.in_play():
 			return
 		if source.def.traits.has("automatic_damage") and not f.def.traits.has("automatic_damage") and source.side!=f.side and Contact.figures_touch(f,source) and not f.spell_effects.has("plane_walk"):
-			var damage := maxi(0,2-elemental_resistance(f))
+			var damage := RedKingElemental.reduce(c,f,maxi(0,2-elemental_resistance(f)))
 			if not f.def.traits.has("antithetical_magic"):
 				c._hurt(f,damage,source)
 		if not f.in_play():

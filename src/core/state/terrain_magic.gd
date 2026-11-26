@@ -404,7 +404,7 @@ func entering_walls(f: Figure,from: Vector2,at: Vector2) -> Array[TerrainPiece]:
 func wall_damage(f: Figure,wall: TerrainPiece) -> void:
 	if not f.in_play() or f.def.traits.has("antithetical_magic") or ScenarioNull.muted(f) or f.spell_effects.has("plane_walk"):
 		return
-	var damage := PotionActions.absorb(f,maxi(0,2-CreatureEffects.elemental_resistance(f)))
+	var damage := RedKingElemental.reduce(c,f,maxi(0,2-CreatureEffects.elemental_resistance(f)))
 	var owner := c.state.figure(wall.caster_id)
 	c._hurt(f,damage,owner if owner!=null else f)
 

@@ -168,3 +168,7 @@ The staff adds one weapon damage and accepts a sacrificed vault potion before ba
 ## Core Run For It / Talisman of Speed
 
 Adds the missing core first-action run: three inches regardless of movement penalties, avoiding enemy proximity and consuming the activation. Talisman optionally doubles the distance once per battle. Movement uses legal paths and ordinary terrain triggers, or the existing experimental floor graph. Deep-water swimming is not yet represented by terrain metadata; group activations, phasing, and unresolved layered scenario interactions are excluded. AI does not yet choose Run For It.
+
+## Elemental absorption
+
+Elemental damage is routed through a shared reducer for elemental shots, wall contact, scenario portals, reality attacks, creature contact and elemental weapon damage. The amulet removes one point, or may be armed/disarmed during activation to risk absorbing the next elemental hit (1–16 succeeds; 17+ destroys it and adds three damage). Pre-arming avoids interrupting synchronous multi-target damage; exact after-roll reaction timing remains pending. AI risks it against large lethal hits.

@@ -545,7 +545,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
 	if elemental:
-		dmg = PotionActions.absorb(t, dmg)
+		dmg = RedKingElemental.reduce(c,t,dmg)
 	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from if s.board.floor_layout.is_empty() else null})
 	var old_health := t.health
 	c._hurt(t, dmg, f)
