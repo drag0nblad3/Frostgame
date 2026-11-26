@@ -11,6 +11,8 @@ const SKIN := Color(0.78, 0.61, 0.46)
 static func create(f: Figure, faction: Color) -> Node3D:
 	var model := Node3D.new()
 	var color := faction
+	if CreatureSculpt.create(model, f, faction):
+		return model
 	if f.def.traits.has("construct"):
 		construct(model, faction, 1.25 if f.def.traits.has("large") else 1.0)
 	elif f.def.id == "giant_worm":
@@ -52,6 +54,7 @@ static func create(f: Figure, faction: Color) -> Node3D:
 		if demon:
 			for x: float in [-0.14, 0.14]:
 				cylinder(model, Vector3(x, 1.53, 0), 0.015, 0.08, 0.28, BONE.darkened(0.35))
+		WarbandSculpt.decorate(model, f, faction)
 		weapon(model, f)
 		if large:
 			model.scale = Vector3(1.23, 1.35, 1.23)
@@ -72,9 +75,10 @@ static func weapon(model: Node3D, f: Figure) -> void:
 			box(model, Vector3(0.39, 0.82, -0.07), Vector3(0.23, 0.065, 0.09), LEATHER)
 	if f.ranged != null:
 		if f.ranged.id == "bow":
-			var bow := cylinder(model, Vector3(-0.43, 0.91, -0.16), 0.04, 0.04, 1.1, LEATHER.lightened(0.25))
-			bow.rotation.z = -0.15
-			box(model, Vector3(-0.51, 0.92, -0.12), Vector3(0.025, 0.96, 0.025), BONE)
+			var points := [Vector3(-0.39, 0.37, -0.18), Vector3(-0.53, 0.58, -0.18), Vector3(-0.58, 0.91, -0.18), Vector3(-0.53, 1.24, -0.18), Vector3(-0.39, 1.45, -0.18)]
+			for i in range(1, points.size()):
+				CreatureSculpt.limb(model, points[i - 1], points[i], 0.035, LEATHER.lightened(0.25), 1.0)
+			CreatureSculpt.limb(model, points[0], points[-1], 0.010, BONE, 1.0)
 		else:
 			box(model, Vector3(-0.38, 0.85, -0.19), Vector3(0.11, 0.10, 0.60), LEATHER)
 			box(model, Vector3(-0.38, 0.88, -0.37), Vector3(0.65, 0.06, 0.10), IRON)
