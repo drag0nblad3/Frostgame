@@ -599,10 +599,11 @@
       "buy": 0,
       "sell": 300,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 22,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "wizard_only": true
     },
     "gear_rk_sword_of_woe": {
       "name": "Sword of Woe",

@@ -323,3 +323,18 @@ func test_teetotum_reroll_is_binding_and_single_use() -> void:
 	check(not ActiveGear.ready(f,RedKingDirection.ITEM))
 	check(not f.used_gear.has(RedKingDirection.ARMED))
 	check_eq(c.history.back().type,"direction_reroll")
+
+
+func test_circlet_immunity_and_cast_restriction() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var t := fig("wizard",1,Vector2(14,10))
+	var c := make_game(make_board(),[f,t],LoadedDice.new([20,1]))
+	f.items.append({"gear":CircletDefence.ITEM,"casting_spell":"elemental_bolt","gear_info":RedKingRewards.catalog()[CircletDefence.ITEM]})
+	var hp := f.health
+	CircletDefence.prepare(c)
+	check_eq(f.health,hp-2)
+	c.state.spellbooks[0]={"elemental_bolt":10}
+	check(not c._magic.available_spell(f,"elemental_bolt"))
+	c._magic._shot(t,f,8,t.pos,true,true,"elemental_bolt")
+	check_eq(f.health,hp-2)
+	check(not CircletDefence.immune(f,"curse"))

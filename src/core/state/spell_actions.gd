@@ -400,8 +400,12 @@ func _finish_one(health: int) -> bool:
 		return true
 	if not t.in_play():
 		return true
+	if id not in ["elemental_ball","elemental_bolt","scatter_shot","destructive_sphere"] and CircletDefence.blocks(c,t,id):
+		return true
 	if id in ["heal","mind_lock","elemental_shield","blinding_light","petrify","bones_of_the_earth","slow","curse","furious_quill","plague_of_insects","strike_dead","steal_health","suggestion","blink"]:
 		t=CreatureEffects.reflection_target(c,f,t,id)
+	if id not in ["elemental_ball","elemental_bolt","scatter_shot","destructive_sphere"] and CircletDefence.blocks(c,t,id):
+		return true
 	if SummonActions.CONTROL.has(id):
 		summons.apply_control(f, t, id, int(result["roll"]))
 		return true
@@ -471,7 +475,7 @@ func _finish_one(health: int) -> bool:
 		"destructive_sphere":
 			for other in s.figures:
 				if other != f and other.in_play() and other.ring_side==f.ring_side and Shooting.distance(f, other) <= 3:
-					_direct_attack(f, CreatureEffects.reflection_target(c,f,other,id), 5)
+					_direct_attack(f,CreatureEffects.reflection_target(c,f,other,id),5,id)
 		"plane_walk":
 			c._loot.drop_on_death(f)
 			f.spell_effects[id] = true
@@ -522,6 +526,8 @@ func _heal(t: Figure, amount: int) -> void:
 
 
 func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:
+	if CircletDefence.blocks(c,t,spell):
+		return
 	if f.ring_side!=t.ring_side or (RedKingTethers.pylon(t) and not magical) or not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
 		return
 	var s := c.state
@@ -601,7 +607,9 @@ func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
 		c._hurt(t, t.health if t.effective_will() <= threshold else maxi(0, roll - raw - will) * 3, f, false)
 
 
-func _direct_attack(f: Figure, t: Figure, power: int) -> void:
+func _direct_attack(f: Figure,t: Figure,power: int,spell: String="") -> void:
+	if CircletDefence.blocks(c,t,spell):
+		return
 	if ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
 		return
 	var a := c.dice.d20() + power
@@ -644,7 +652,7 @@ func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
 
 
 func available_spell(f: Figure, id: String) -> bool:
-	if ScenarioNull.muted(f):
+	if ScenarioNull.muted(f) or CircletDefence.immune(f,id):
 		return false
 	if id in ["summon_demon", "control_demon"]:
 		for t in c.state.figures:
@@ -658,10 +666,11 @@ func available_spells(f: Figure) -> Array[String]:
 	if ScenarioNull.muted(f):
 		return out
 	for id: String in c.state.spellbooks.get(f.side, {}):
-		out.append(id)
+		if not CircletDefence.immune(f,id):
+			out.append(id)
 	for item in f.items:
 		var id := str(item.get("scroll", ""))
-		if id != "" and not out.has(id):
+		if id != "" and not out.has(id) and not CircletDefence.immune(f,id):
 			out.append(id)
 	return out
 

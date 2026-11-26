@@ -207,7 +207,7 @@ func explode(p: TerrainPiece) -> void:
 	for t in s.figures:
 		if not t.in_play() or Vector2(t.pos.distance_to(center), t.elevation - s.board.height_at(center)).length() > 2.0 + Figure.BASE_RADIUS:
 			continue
-		c._magic._direct_attack(owner, t, 5)
+		c._magic._direct_attack(owner,t,5,"explosive_rune")
 
 
 ## Animate movement in chunks, resolving triggers at the actual path location.

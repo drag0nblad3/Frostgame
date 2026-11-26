@@ -40,6 +40,7 @@ func emit(type: String, data: Dictionary = {}) -> void:
 
 
 func start_game() -> void:
+	CircletDefence.prepare(self)
 	RedKingGear.foulhorn_brawl(self)
 	RedKingInvestigations.prepare(self)
 	RedKingVeil.prepare(self)

@@ -117,6 +117,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var info: Dictionary = catalog()[item_id(item)]
 	if info.get("expansion","")=="red_king" and (not info["live"] or not item.get("unlocked",true)):
 		return false
+	if item_id(item)==CircletDefence.ITEM and not CircletDefence.SPELLS.has(item.get("casting_spell","")):
+		return false
 	if info.get("apprentice_only",false) and (unit["type"]!="apprentice" or str(item.get("casting_spell","")).is_empty()):
 		return false
 	if info.get("vault_only",false):
@@ -228,7 +230,7 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 			items.append({"scroll": item["scroll"], "campaign_item": true,"enchanted":bool(item.get("enchanted",false))})
 		elif item["kind"] == "gear":
 			var gear := {"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true}
-			if item["gear"] in ["gear_staff_casting","gear_rk_golden_incunabula"]:
+			if item["gear"] in ["gear_staff_casting","gear_rk_golden_incunabula",CircletDefence.ITEM]:
 				gear["casting_spell"] = item.get("casting_spell", "")
 			if item["gear"] == PowerPool.ORB:
 				gear["power_left"] = PowerPool.remaining(item)
@@ -300,9 +302,11 @@ static func bind_incunabula(d: Dictionary,index: int,spell: String) -> bool:
 	if index<0 or index>=d.get("loot",[]).size():
 		return false
 	var item: Dictionary=d["loot"][index]
-	if item.get("gear","")!="gear_rk_golden_incunabula" or not str(item.get("casting_spell","")).is_empty() or item.get("ragged_sealed",false):
+	if item.get("gear","") not in ["gear_rk_golden_incunabula",CircletDefence.ITEM] or not str(item.get("casting_spell","")).is_empty() or item.get("ragged_sealed",false):
 		return false
 	if not JsonFile.read("res://data/spells.json").has(spell) or not ContentProfile.from_campaign(d).allows("spells",spell):
+		return false
+	if item.get("gear","")==CircletDefence.ITEM and not CircletDefence.SPELLS.has(spell):
 		return false
 	item["casting_spell"]=spell
 	return true

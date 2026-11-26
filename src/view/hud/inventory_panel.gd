@@ -58,7 +58,7 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	add_child(use_button)
 	book_spell=OptionButton.new()
 	add_child(book_spell)
-	bind_book=_button("Permanently bind selected book to spell",func() -> void:
+	bind_book=_button("Permanently bind selected item to spell",func() -> void:
 		if loot.item_count>0 and book_spell.item_count>0 and CampaignInventory.bind_incunabula(campaign.data,int(loot.get_selected_metadata()),str(book_spell.get_selected_metadata())):
 			changed.call())
 	split_fang=_button("Split off one golden fang",func() -> void:
@@ -132,7 +132,7 @@ func refresh() -> void:
 			suffix+=" · "+("Unlocked" if item.get("unlocked",false) else "Locked TN%d"%info["unlock_tn"])
 		if item["kind"] == "grimoire":
 			suffix = "Known spell; may sell" if d["spells"].has(item["spell"]) else "Unlearned; may learn in campaign"
-		if CampaignInventory.item_id(item) == "gear_rk_golden_incunabula":
+		if CampaignInventory.item_id(item) in ["gear_rk_golden_incunabula",CircletDefence.ITEM]:
 			suffix+=" · "+str(item.get("casting_spell","Choose spell")).replace("_"," ").capitalize()
 		if CampaignInventory.item_id(item) == "gear_staff_casting":
 			suffix += " · " + str(item.get("casting_spell", "unknown")).replace("_", " ").capitalize()
@@ -226,10 +226,10 @@ func _refresh_item_buttons() -> void:
 		ivory_graft.show()
 	if item.get("gear","")==RedKingMaterials.FANGS and RedKingMaterials.amount(item)>1 and not RaggedWarbands.active(campaign.data) and not item.get("ragged_sealed",false):
 		split_fang.show()
-	if item.get("gear","")=="gear_rk_golden_incunabula" and str(item.get("casting_spell","")).is_empty() and not item.get("ragged_sealed",false):
+	if item.get("gear","") in ["gear_rk_golden_incunabula",CircletDefence.ITEM] and str(item.get("casting_spell","")).is_empty() and not item.get("ragged_sealed",false):
 		var spells: Dictionary = JsonFile.read("res://data/spells.json")
 		for id: String in spells:
-			if db.content_profile.allows("spells",id):
+			if db.content_profile.allows("spells",id) and (item.get("gear","")!=CircletDefence.ITEM or CircletDefence.SPELLS.has(id)):
 				book_spell.add_item(str(spells[id]["name"]))
 				book_spell.set_item_metadata(book_spell.item_count-1,id)
 		book_spell.show()

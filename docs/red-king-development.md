@@ -188,3 +188,7 @@ Adds eight to Health target tests via StatRoll.health_test and reduces the optio
 ## Enchanted Teetotum
 
 Optional pre-armed reroll of the next random heading, with binding replacement and once-per-battle spend. The shared direction resolver is used by Blink, pain blink, and Red King random-heading effects. This is a timing approximation: a post-roll reaction UI and discrete direction/corner rolls remain to be migrated.
+
+## Circlet of Defence
+
+Permanent selection from the specified spell list through the inventory binding control; the wizard cannot cast that spell and starts at -2 Health. Targeted effects, reflected effects, area shots, direct destructive sphere and explosive rune attacks honor the immunity. The selection is required before equipping, including when discovered locked. Suppression disables the immunity and casting restriction during the affected period.
