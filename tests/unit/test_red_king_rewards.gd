@@ -210,3 +210,22 @@ func test_enchanted_supply_awards_and_rituals() -> void:
 	check(CampaignInventory.sell(d,0))
 	check_eq(int(d["gold"]),before+10)
 	check_eq(RedKingMaterials.available(d,RedKingMaterials.WAX),4)
+
+
+func test_golden_fangs_trade_split_and_summon() -> void:
+	var d := {"loot":[],"last_report":[]}
+	check(RedKingRewards.award(d,RedKingMaterials.FANGS,Dice.new(1)))
+	check_eq(RedKingMaterials.available(d,RedKingMaterials.FANGS),6)
+	check(RedKingMaterials.split_fang(d,0))
+	check_eq(RedKingMaterials.amount(d["loot"][0]),5)
+	check_eq(RedKingMaterials.amount(d["loot"][1]),1)
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],Dice.new(1))
+	c.state.creature_db=db()
+	f.items.append({"gear":RedKingMaterials.FANGS,"uses":2,"gear_info":RedKingRewards.catalog()[RedKingMaterials.FANGS]})
+	c._magic.summons.spawn(f,"animate_skull",Vector2(12,10),15,8,true)
+	var skull: Figure=c.state.figures.back()
+	check_eq(skull.effective_fight(),skull.def.fight+1)
+	check_eq(RedKingMaterials.fang_count(f),1)
+	c._magic.summons.spawn(f,"animate_skull",Vector2(14,10),15,8,false)
+	check_eq(RedKingMaterials.fang_count(f),1)

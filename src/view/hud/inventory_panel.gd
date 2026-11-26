@@ -18,6 +18,7 @@ var caster_equipment: OptionButton
 var caster_equipment_button: Button
 var book_spell: OptionButton
 var bind_book: Button
+var split_fang: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -56,6 +57,10 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	bind_book=_button("Permanently bind selected book to spell",func() -> void:
 		if loot.item_count>0 and book_spell.item_count>0 and CampaignInventory.bind_incunabula(campaign.data,int(loot.get_selected_metadata()),str(book_spell.get_selected_metadata())):
 			changed.call())
+	split_fang=_button("Split off one golden fang",func() -> void:
+		if loot.item_count>0 and RedKingMaterials.split_fang(campaign.data,int(loot.get_selected_metadata())):
+			changed.call())
+	split_fang.hide()
 	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
 	caster_equipment = OptionButton.new()
 	add_child(caster_equipment)
@@ -164,6 +169,7 @@ func refresh() -> void:
 
 
 func _refresh_item_buttons() -> void:
+	split_fang.hide()
 	book_spell.hide()
 	bind_book.hide()
 	book_spell.clear()
@@ -173,6 +179,8 @@ func _refresh_item_buttons() -> void:
 	if loot.item_count == 0:
 		return
 	var item: Dictionary = campaign.data["loot"][int(loot.get_selected_metadata())]
+	if item.get("gear","")==RedKingMaterials.FANGS and RedKingMaterials.amount(item)>1 and not RaggedWarbands.active(campaign.data) and not item.get("ragged_sealed",false):
+		split_fang.show()
 	if item.get("gear","")=="gear_rk_golden_incunabula" and str(item.get("casting_spell","")).is_empty() and not item.get("ragged_sealed",false):
 		var spells: Dictionary = JsonFile.read("res://data/spells.json")
 		for id: String in spells:

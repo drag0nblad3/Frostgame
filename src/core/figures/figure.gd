@@ -102,7 +102,7 @@ func effective_fight() -> int:
 		value = maxi(0, value - 4)
 	if spell_effects.has("petrify"):
 		value = maxi(0, value - 3)
-	return value - int(used_gear.get("rk_soulchill_fight",0))
+	return value - int(used_gear.get("rk_soulchill_fight",0)) + (1 if used_gear.get("rk_golden_fang",false) else 0)
 
 
 func effective_armour() -> int:

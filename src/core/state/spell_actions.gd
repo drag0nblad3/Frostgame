@@ -391,7 +391,7 @@ func _finish_one(health: int) -> bool:
 		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))
 		return true
 	if SummonActions.PLACEMENT.has(id):
-		summons.spawn(f, id, p["at"], int(p["total"]) + health, int(p["tn"]))
+		summons.spawn(f,id,p["at"],int(result["roll"]),int(p["tn"]),bool(p.get("golden_fang",false)))
 		illusions.sweep()
 		return true
 	if not t.in_play():
@@ -742,4 +742,12 @@ func single_shatter() -> bool:
 		return false
 	f.spell_effects.erase("potion_shatterstar")
 	_dispatch_shatter(entry)
+	return true
+
+
+func toggle_golden_fang() -> bool:
+	var p := c.state.pending_cast
+	if p.get("id","")!="animate_skull" or RedKingMaterials.fang_count(c.state.figure(p["caster"]))<=0:
+		return false
+	p["golden_fang"]=not p.get("golden_fang",false)
 	return true

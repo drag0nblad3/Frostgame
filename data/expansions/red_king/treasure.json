@@ -325,13 +325,15 @@
       "expansion": "red_king"
     },
     "gear_rk_golden_fangs_6": {
-      "name": "Golden Fangs (6)",
+      "name": "Golden Fangs",
       "type": "item",
-      "buy": 120,
-      "sell": 90,
+      "buy": 20,
+      "sell": 15,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "caster_only": true,
+      "material": true
     },
     "gear_rk_bracelet_of_vigour": {
       "name": "Bracelet of Vigour",

@@ -136,7 +136,7 @@ func vanish(t: Figure) -> void:
 	c.emit("exit", {"id": t.id})
 
 
-func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int) -> void:
+func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int,golden_fang: bool=false) -> void:
 	var type := id
 	var side := -1
 	match id:
@@ -157,6 +157,9 @@ func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int) -> void:
 		"animate_skull":
 			type = "animated_skull"
 	var t := c._encounters._spawn_at(type, at, side,f.ring_side)
+	if id=="animate_skull" and golden_fang and RedKingMaterials.spend_fang(f):
+		t.used_gear["rk_golden_fang"]=true
+		c.emit("gear_used",{"id":f.id,"target":t.id,"gear":RedKingMaterials.FANGS})
 	if id in ["animate_skull","raise_zombie"] and skull_staff(f):
 		t.used_gear["rk_skull_strong"]=true
 	t.summoned_by = f.id

@@ -319,6 +319,8 @@ func preview() -> void:
 			var p := c.state.pending_cast
 			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"])))
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
+			if p.get("golden_fang",false):
+				hint+=" • Golden Fang selected: +1 Fight on success."
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
 		"fate_combat":
@@ -597,6 +599,11 @@ func action(key: String) -> bool:
 			return false
 		"cast_scroll":
 			return c._magic.insure()
+		"cast_fang":
+			c._magic.toggle_golden_fang()
+			_empower_buttons()
+			preview()
+			return false
 		"cast_confirm":
 			return c.finish_cast(empower)
 		"stay":
@@ -745,6 +752,8 @@ func _group_buttons() -> void:
 func _empower_buttons() -> void:
 	available.assign(["cast_confirm"])
 	var p := c.state.pending_cast
+	if p.get("id","")=="animate_skull" and RedKingMaterials.fang_count(c.state.figure(p["caster"]))>0:
+		available.append("cast_fang")
 	if not p.get("scroll", false) and ActiveGear.ready(c.state.figure(p["caster"]), "gear_fate_stone"):
 		available.append("cast_fate")
 	if c._magic.can_insure():

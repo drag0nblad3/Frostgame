@@ -136,3 +136,7 @@ One optional move out of combat per battle, with original melee opponents exclud
 ## Slippery Boots
 
 Self-withdrawal offers legal half-inch increments up to three inches on normal and layered boards, including tied melee. Tied combat never grants enemy displacement. If both figures qualify, the human reaction side has priority; declining passes the opportunity to the other figure. The existing straight retreat direction and layered lattice are retained. AI defenders use tied withdrawals when carrying treasure; other AI tactics retain normal displacement logic. Tie state is saved in checkpoints.
+
+## Golden Fangs
+
+Found in six-unit lots and traded one at a time; a stack of up to six occupies one caster equipment slot. The inventory supports splitting one fang off and merging stacks within the cap. Select the optional fang toggle during Animate Skull resolution; a successful cast spends one and gives the new skull +1 Fight, recorded in checkpoints. No fang is spent on a failed cast. The UI currently limits each caster to one stack and the AI does not explicitly toggle fangs.

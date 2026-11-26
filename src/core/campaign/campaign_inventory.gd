@@ -143,6 +143,13 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 			var other_info: Dictionary = catalog()[item_id(other)]
 			if (item.get("gear","")=="gear_rk_lightning_brooch" and (other_info.get("bonus",{}).has("elemental_resistance") or other_info.get("type","")=="heavy_armour")) or (other.get("gear","")=="gear_rk_lightning_brooch" and (info.get("bonus",{}).has("elemental_resistance") or info.get("type","")=="heavy_armour")):
 				return false
+			if item_id(item)==RedKingMaterials.FANGS and item_id(other)==RedKingMaterials.FANGS:
+				var total := RedKingMaterials.amount(item)+RedKingMaterials.amount(other)
+				if total>6:
+					return false
+				other["uses"]=total
+				d["loot"].remove_at(index)
+				return true
 			if item["kind"] == "gear" and other["kind"] == "gear":
 				if item_id(item)==item_id(other) or (info["type"]!="item" and other_info["type"]==info["type"]):
 					return false
@@ -225,6 +232,8 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 				gear["casting_spell"] = item.get("casting_spell", "")
 			if item["gear"] == PowerPool.ORB:
 				gear["power_left"] = PowerPool.remaining(item)
+			if item["gear"]==RedKingMaterials.FANGS:
+				gear["uses"]=RedKingMaterials.amount(item)
 			items.append(gear)
 	return items
 
@@ -236,11 +245,14 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 		var remaining := {}
 		var enchanted := {}
 		var orb_left := -1
+		var fangs_left := 0
 		for item: Dictionary in f.items:
 			if item.get("campaign_item", false):
 				var id := item_id(item)
 				if id == PowerPool.ORB:
 					orb_left = PowerPool.remaining(item)
+				if id==RedKingMaterials.FANGS:
+					fangs_left=RedKingMaterials.amount(item)
 				remaining[id] = int(remaining.get(id, 0)) + 1
 				if item.get("enchanted",false):
 					enchanted[id]=int(enchanted.get(id,0))+1
@@ -260,6 +272,8 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 						enchanted[id]=int(enchanted[id])-1
 				if id == PowerPool.ORB:
 					item["power_left"] = orb_left
+				if id==RedKingMaterials.FANGS:
+					item["uses"]=fangs_left
 
 
 static func lose_owned(d: Dictionary, owner: int) -> void:
