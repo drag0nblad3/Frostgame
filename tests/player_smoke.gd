@@ -16,6 +16,8 @@ func _initialize() -> void:
 func _process(_delta: float) -> bool:
 	_frames += 1
 	if _frames == 1:
+		if not _scene.has_method("new_game"):
+			return _fail("Battle scene script did not load")
 		_scene.new_game(1)
 		_scene.player.speed = 30.0
 		return false

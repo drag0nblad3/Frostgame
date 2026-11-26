@@ -54,7 +54,7 @@ func new_game(seed_value: int) -> void:
 	auto_play = false
 	hud.set_auto(false)
 	_wait = 0.0
-	var data := JsonFile.read(ScenarioLoader.DIR + SCENARIO + ".json")
+	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + SCENARIO + ".json")
 	if not _roster.is_empty():
 		data["warbands"][0] = _roster.duplicate(true)
 	var state := ScenarioLoader.from_dict(data, _figures, _terrain)

@@ -18,7 +18,10 @@ jobs:
           unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
           mv Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
       - name: Import
-        run: godot --headless --import
+        run: |
+          set -o pipefail
+          godot --headless --import 2>&1 | tee import.log
+          ! grep -E "SCRIPT ERROR|Parse Error" import.log
       - name: Unit tests
         run: godot --headless -s tests/run_tests.gd
       - name: Player interaction smoke test
@@ -29,7 +32,7 @@ jobs:
       - name: Roster editor smoke test
         run: |
           set -o pipefail
-          godot --headless -s tests/roster_smoke.gd 2>&1 | tee roster-smoke.log
+          timeout 30s godot --headless -s tests/roster_smoke.gd 2>&1 | tee roster-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" roster-smoke.log
       - name: Smoke run main scene
         run: |

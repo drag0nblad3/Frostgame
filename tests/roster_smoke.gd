@@ -14,6 +14,10 @@ func _process(_delta: float) -> bool:
 	if _started:
 		return false
 	_started = true
+	if not _scene.has_method("_open_roster"):
+		printerr("Battle scene script did not load")
+		quit(1)
+		return true
 	_scene._open_roster()
 	var setup: WarbandSetup = _scene._setup
 	if setup == null or not setup.draft.errors().is_empty():
