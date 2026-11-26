@@ -11,6 +11,7 @@ var history: Array[GameEvent] = []
 var _flow: TurnFlow
 var _loot: TreasureActions
 var _displacement: CombatDisplacement
+var _encounters: EncounterActions
 
 
 func _init(s: GameState, d: Dice) -> void:
@@ -19,6 +20,7 @@ func _init(s: GameState, d: Dice) -> void:
 	_flow = TurnFlow.new(self)
 	_loot = TreasureActions.new(self)
 	_displacement = CombatDisplacement.new(self)
+	_encounters = EncounterActions.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:

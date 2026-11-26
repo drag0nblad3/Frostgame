@@ -13,6 +13,9 @@ static func load_id(scenario_id: String, figures: FigureDb, terrain: TerrainDb) 
 static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> GameState:
 	var s := GameState.new()
 	s.board = BoardLoader.load_id(d["board"], terrain)
+	s.random_encounters = d.get("random_encounters", false)
+	s.forced_combat = d.get("forced_combat", false)
+	s.creature_db = figures
 	var next_id := 1
 	var warbands: Array = d.get("warbands", [])
 	for side in warbands.size():
@@ -23,6 +26,10 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			var def := figures.get_def(entry["type"])
 			s.figures.append(Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed()))
 			next_id += 1
+	for entry: Dictionary in d.get("creatures", []):
+		var at: Array = entry["at"]
+		s.figures.append(Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed()))
+		next_id += 1
 	for at: Array in d.get("treasures", []):
 		s.treasures.append(TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1])))
 	return s

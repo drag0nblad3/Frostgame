@@ -7,7 +7,7 @@ static func name_of(s: GameState, id: int) -> String:
 	var f := s.figure(id)
 	if f == null:
 		return "?"
-	return "%s %s" % [s.side_names[f.side], f.label()]
+	return f.label() if f.side < 0 else "%s %s" % [s.side_names[f.side], f.label()]
 
 
 static func text(s: GameState, e: GameEvent) -> String:
@@ -49,6 +49,8 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Treasure %d is lost." % (d["treasure"] + 1)
 		"exit":
 			return "%s leaves the table safely." % name_of(s, d["id"])
+		"creature_spawn":
+			return "%s enters the ruins." % name_of(s, d["id"])
 		"push_back":
 			return "%s moves back from combat." % name_of(s, d["id"])
 		"force_combat":

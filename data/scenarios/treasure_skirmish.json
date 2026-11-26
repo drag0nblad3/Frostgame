@@ -133,5 +133,7 @@
       24,
       23
     ]
-  ]
+  ],
+  "random_encounters": true,
+  "forced_combat": true
 }

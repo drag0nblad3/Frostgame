@@ -22,6 +22,9 @@ func pick_up(id: int) -> bool:
 	f.treasure_id = id
 	token.carrier_id = f.id
 	_c.emit("treasure_pickup", {"id": f.id, "treasure": id})
+	if not token.ever_collected:
+		token.ever_collected = true
+		_c._encounters.on_pickup()
 	return true
 
 

@@ -37,6 +37,12 @@ func _play(e: GameEvent) -> void:
 			_view(d["id"]).set_active(true)
 		"end_activation":
 			_view(d["id"]).set_active(false)
+		"creature_spawn":
+			var f := state.figure(d["id"])
+			var v := FigureView.new()
+			add_child(v)
+			v.setup(f, "Creature")
+			views[f.id] = v
 		"move", "push_back", "force_combat":
 			_animate_move(_view(d["id"]), d["path"])
 		"shoot":

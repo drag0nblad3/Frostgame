@@ -45,6 +45,9 @@ func after_activation() -> void:
 func _settle() -> void:
 	var s := _c.state
 	while not s.over and s.waiting(s.current_side()).is_empty():
+		if s.phase == Phase.CREATURE:
+			start_turn()
+			return
 		s.order_index += 1
 		if s.order_index < s.order.size():
 			continue
@@ -55,7 +58,8 @@ func _settle() -> void:
 			return
 		s.phase = Phase.ORDER[i]
 		s.early.capture(s)
-		_c.emit("phase", {"phase": s.phase})
+		if s.phase != Phase.CREATURE or not s.waiting(-1).is_empty():
+			_c.emit("phase", {"phase": s.phase})
 
 
 func _check_victory() -> bool:

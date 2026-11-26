@@ -14,6 +14,8 @@ var group := GroupActivation.new()
 var push_winner := -1
 var push_loser := -1
 var forced_combat := false
+var random_encounters := false
+var creature_db: FigureDb
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var order: Array[int] = []
 var order_index := 0
@@ -45,6 +47,8 @@ func side_count() -> int:
 
 
 func current_side() -> int:
+	if phase == Phase.CREATURE:
+		return -1
 	if order.is_empty():
 		return -1
 	return order[order_index]
@@ -71,6 +75,15 @@ func side_figures(side: int) -> Array[Figure]:
 
 ## Figures of `side` still waiting to activate in the current phase.
 func waiting(side: int) -> Array[Figure]:
+	if phase == Phase.CREATURE:
+		var creatures: Array[Figure] = []
+		for f in side_figures(-1):
+			if not f.activated:
+				creatures.append(f)
+		creatures.sort_custom(func(a: Figure, b: Figure) -> bool: return a.health > b.health or (a.health == b.health and a.id < b.id))
+		if creatures.size() > 1:
+			creatures.resize(1)
+		return creatures
 	if group.in_progress() and group.side == side:
 		return group.waiting(self)
 	if phase in [Phase.WIZARD, Phase.APPRENTICE]:

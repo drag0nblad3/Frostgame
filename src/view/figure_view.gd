@@ -12,7 +12,7 @@ var _ring: MeshInstance3D
 
 func setup(f: Figure, side_name: String) -> void:
 	figure_id = f.id
-	var col: Color = SIDE_COLORS[f.side % SIDE_COLORS.size()]
+	var col: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	var base := MeshInstance3D.new()
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = Figure.BASE_RADIUS

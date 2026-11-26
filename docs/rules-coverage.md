@@ -67,3 +67,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Combat displacement
 
 - pp. 47, 53: unique melee winner can stay or move either combatant one inch away (blocked by terrain/figures; self-withdrawal prohibited if engaged with another enemy). Acting human winner chooses; defending winners currently default to stay. Automatic interception is an engine option, not yet enabled in the shipped scenario; reactive choice and elevation are pending.
+
+## Creature phase
+
+- pp. 69–70, 176–177: neutral creature phase after soldiers, descending current Health, separate allegiance, basic visible-target or random movement AI. First pickup can spawn from a curated encounter pool at a random edge. Stats for initial bestiary entries based on pp. 180–191; trait effects and full encounter tables remain incomplete. Treasure scenario opts into automatic interceptions and encounters.

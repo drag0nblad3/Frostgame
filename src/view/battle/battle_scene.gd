@@ -62,7 +62,7 @@ func new_game(seed_value: int) -> void:
 	for f in state.figures:
 		var v := FigureView.new()
 		player.add_child(v)
-		v.setup(f, state.side_names[f.side])
+		v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 		player.views[f.id] = v
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
@@ -154,7 +154,7 @@ func _update_status() -> void:
 		var result := "Draw" if s.winner < 0 else "%s win" % s.side_names[s.winner]
 		hud.set_status("Turn %d — %s%s" % [s.turn, result, score])
 		return
-	hud.set_status("Turn %d · %s · %s%s" % [s.turn, Phase.name_of(s.phase), s.side_names[s.current_side()], score])
+	hud.set_status("Turn %d · %s · %s%s" % [s.turn, Phase.name_of(s.phase), ("Creatures" if s.current_side() < 0 else s.side_names[s.current_side()]), score])
 
 
 func _add_lighting() -> void:

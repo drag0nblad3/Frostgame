@@ -1,0 +1,45 @@
+{
+  "note": "Provisional curated pool, not the complete p.177 table; creature traits are partially implemented.",
+  "entries": [
+    {
+      "type": "skeleton",
+      "count": 1
+    },
+    {
+      "type": "skeleton",
+      "count": 2
+    },
+    {
+      "type": "armoured_skeleton",
+      "count": 1
+    },
+    {
+      "type": "ghoul",
+      "count": 1
+    },
+    {
+      "type": "giant_rat",
+      "count": 2
+    },
+    {
+      "type": "giant_rat",
+      "count": 4
+    },
+    {
+      "type": "wild_dog",
+      "count": 2
+    },
+    {
+      "type": "wolf",
+      "count": 1
+    },
+    {
+      "type": "imp",
+      "count": 1
+    },
+    {
+      "type": "small_construct",
+      "count": 1
+    }
+  ]
+}

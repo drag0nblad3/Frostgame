@@ -7,6 +7,7 @@ var pos: Vector2
 var carrier_id := -1
 var secured_by := -1
 var lost := false
+var ever_collected := false
 
 
 func _init(token_id: int, at: Vector2) -> void:
