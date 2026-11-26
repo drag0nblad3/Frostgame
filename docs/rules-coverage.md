@@ -247,3 +247,7 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ## Burrowing, Null and Ethereal Vacuum
 
 - pp.89–90, 192, 195: Burrowing permits direct movement through terrain for the remaining activation, legal endpoints only; no phased immunity, wards remain impassable. Wraith added with Ethereal movement, normal weapon immunity, magic attacks and Energy Drain. Ethereal Vacuum tests all ethereal figures in 8 inches at TN20; failed figures are removed via out-of-action event for normal XP. Bottle of Null clears spell effects, magical potion statuses, conjured terrain, storm/word magic, darkness, and control, then queues TN14 caster Will tests; failed tests deal 1 damage. Summoned figures remain. Poison coating and mundane equipment survive cancellation. Burrowing/Ethereal direct paths use endpoint interception/rune checks and exposed-height distance; captured creatures use normal removal bookkeeping; spell damage classification is still partial.
+
+## Shrinking Potion
+
+- p.93: shrinks the carried token, removes Move/Fight encumbrance for that token, permits a second normal token. Both tokens track the carrier, secure on exit, and drop on death. Normal or shrunk token may be dropped independently; a dropped shrunk token returns to normal. Counter-magic and Null cancel shrinking and automatically drop the normal token when two are carried (player choice on cancellation remains pending). Fool's Gold tracks the selected token, though overlapping markers currently favor the first token. 

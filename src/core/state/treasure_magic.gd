@@ -62,12 +62,12 @@ func points(f: Figure, id: String, token: TreasureToken, first_only: bool = fals
 func apply(f: Figure, id: String, token: TreasureToken, at: Vector2, roll: int) -> void:
 	if id == "fools_gold":
 		var t := c.state.figure(token.carrier_id)
-		c._magic.resistance.attempt(t, roll, _drop_result.bind(t, at))
+		c._magic.resistance.attempt(t, roll, _drop_result.bind(t, at, token.id))
 	else:
 		token.pos = at
 		c.emit("treasure_moved", {"treasure": token.id, "at": at})
 
 
-func _drop_result(success: bool, t: Figure, at: Vector2) -> void:
-	if not success and t.in_play() and t.treasure_id >= 0:
-		c._loot._drop(t, at)
+func _drop_result(success: bool, t: Figure, at: Vector2, token_id: int) -> void:
+	if not success and t.in_play() and t.carried_treasures().has(token_id):
+		c._loot._drop(t, at, token_id)

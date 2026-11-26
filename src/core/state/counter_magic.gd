@@ -51,6 +51,8 @@ func apply(option: Dictionary) -> void:
 		"effect":
 			if t == null:
 				return
+			if id == "potion_shrinking":
+				c._loot.cancel_shrinking(t)
 			t.spell_effects.erase(id)
 			if id == "petrify":
 				t.petrified_skip = false

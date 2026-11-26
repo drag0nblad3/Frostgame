@@ -28,6 +28,8 @@ var health := 0
 var out_of_action := false
 var exited := false
 var treasure_id := -1
+var second_treasure_id := -1
+var shrunk_treasure_id := -1
 var disengaged := {}
 var spell_effects := {}
 var items: Array[Dictionary] = []
@@ -85,7 +87,7 @@ func in_play() -> bool:
 func effective_fight() -> int:
 	if spell_effects.has("blinding_light"):
 		return 0
-	var value := def.fight - (1 if treasure_id >= 0 and treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
+	var value := def.fight - (1 if carries_normal_treasure() and treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
 	value += 1 if spell_effects.has("potion_strength") else 0
 	value += 2 if spell_effects.has("possess") else 0
 	if affected_by_insects():
@@ -168,3 +170,16 @@ func affected_by_insects() -> bool:
 		if other.in_play() and other.spell_effects.has("plague_of_insects") and Shooting.distance(self, other) <= 1.0 + BASE_RADIUS:
 			return true
 	return false
+
+
+func carries_normal_treasure() -> bool:
+	return (treasure_id >= 0 and treasure_id != shrunk_treasure_id) or (second_treasure_id >= 0 and second_treasure_id != shrunk_treasure_id)
+
+
+func carried_treasures() -> Array[int]:
+	var result: Array[int] = []
+	if treasure_id >= 0:
+		result.append(treasure_id)
+	if second_treasure_id >= 0:
+		result.append(second_treasure_id)
+	return result

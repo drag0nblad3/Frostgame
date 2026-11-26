@@ -38,6 +38,8 @@ func can_drink(id: String, target: Figure = null) -> bool:
 		return false
 	if id in COATINGS and not can_coat(f, id, f.melee) and not can_coat(f, id, f.ranged):
 		return false
+	if id == "shrinking" and (target.treasure_id < 0 or target.shrunk_treasure_id >= 0):
+		return false
 	if id == "darkness" and c.state.board.darkness:
 		return false
 	if id == "healing" and target.health >= target.def.health:
@@ -57,6 +59,9 @@ func drink(id: String, target: Figure = null) -> bool:
 	_consume(f, id)
 	_spend_drink(f)
 	match id:
+		"shrinking":
+			target.shrunk_treasure_id = target.treasure_id
+			target.spell_effects["potion_shrinking"] = true
 		"null":
 			GlobalConsumables.nullify(c)
 		"ethereal_vacuum":

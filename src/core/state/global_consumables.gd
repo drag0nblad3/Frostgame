@@ -11,6 +11,8 @@ static func nullify(c: GameController) -> void:
 	for t in s.figures:
 		if not t.in_play():
 			continue
+		if t.shrunk_treasure_id >= 0:
+			c._loot.cancel_shrinking(t)
 		t.spell_effects.clear()
 		t.elemental_shield = 0
 		t.petrified_skip = false

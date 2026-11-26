@@ -22,6 +22,8 @@ func pick_up(id: int) -> bool:
 	if _c.state.museum and not _c._encounters.museum_pickup(f):
 		return true
 	_c._magic.illusions.reveal(f)
+	if f.treasure_id >= 0:
+		f.second_treasure_id = f.treasure_id
 	f.treasure_id = id
 	token.carrier_id = f.id
 	_c.emit("treasure_pickup", {"id": f.id, "treasure": id})
@@ -49,30 +51,44 @@ func can_drop(at: Vector2) -> bool:
 	return f.moves_taken == 0 or _c.can_act()
 
 
-func drop(at: Vector2) -> bool:
+func drop(at: Vector2, token_id: int = -1) -> bool:
 	if not can_drop(at):
 		return false
 	var f := _c.state.active()
+	if token_id >= 0 and not f.carried_treasures().has(token_id):
+		return false
 	if f.moves_taken > 0:
 		_c._spend(f)
 	else:
 		f.actions_left -= 1
-	_drop(f, at)
+	_drop(f, at, token_id)
 	return true
 
 
 func drop_on_death(f: Figure) -> void:
-	if f.treasure_id >= 0:
-		_drop(f, f.pos)
+	for id in f.carried_treasures():
+		_drop(f, f.pos, id)
 
 
-func _drop(f: Figure, at: Vector2) -> void:
+func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
+	if id < 0:
+		id = f.treasure_id
+	var token := _c.state.treasure(id)
+	if token == null or token.carrier_id != f.id:
+		return
 	_c._magic.illusions.reveal(f)
-	var token := _c.state.treasure(f.treasure_id)
-	token.carrier_id = -1
+	_clear_carrier(token)
 	token.pos = at
-	f.treasure_id = -1
 	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at})
+
+
+func cancel_shrinking(f: Figure) -> void:
+	if f.second_treasure_id >= 0:
+		# Keep the formerly shrunk treasure; drop the other token.
+		var id := f.treasure_id if f.treasure_id != f.shrunk_treasure_id else f.second_treasure_id
+		_drop(f, f.pos, id)
+	f.shrunk_treasure_id = -1
+	f.spell_effects.erase("potion_shrinking")
 
 
 func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
@@ -103,8 +119,8 @@ func exit_table(node: Vector2i) -> bool:
 		return false
 	if f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
 		return true
-	if f.treasure_id >= 0:
-		secure(_c.state.treasure(f.treasure_id), f.side)
+	for id in f.carried_treasures():
+		secure(_c.state.treasure(id), f.side)
 	f.exited = true
 	f.actions_left = 0
 	_c.emit("exit", {"id": f.id})
@@ -126,5 +142,12 @@ func lose(token: TreasureToken) -> void:
 func _clear_carrier(token: TreasureToken) -> void:
 	if token.carrier_id >= 0:
 		var carrier := _c.state.figure(token.carrier_id)
-		carrier.treasure_id = -1
+		if carrier.treasure_id == token.id:
+			carrier.treasure_id = carrier.second_treasure_id
+			carrier.second_treasure_id = -1
+		elif carrier.second_treasure_id == token.id:
+			carrier.second_treasure_id = -1
+		if carrier.shrunk_treasure_id == token.id:
+			carrier.shrunk_treasure_id = -1
+			carrier.spell_effects.erase("potion_shrinking")
 		token.carrier_id = -1

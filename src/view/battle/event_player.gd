@@ -63,7 +63,7 @@ func _play(e: GameEvent) -> void:
 		"treasure_pickup":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(_view(d["id"]), false)
-			token.position = Vector3(0.48, 0.65, 0)
+			token.position = Vector3(-0.48 if state.figure(d["id"]).second_treasure_id >= 0 else 0.48, 0.65, 0)
 		"treasure_drop":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(self, false)

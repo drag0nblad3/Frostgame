@@ -139,7 +139,7 @@
     "name": "Shrinking Potion",
     "buy": 500,
     "sell": 200,
-    "live": false,
+    "live": true,
     "greater": true,
     "ingredients": 200
   },

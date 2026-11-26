@@ -17,6 +17,7 @@ var group_selection: Array[int] = []
 var cast_options: Array[String] = []
 var selected_spell := ""
 var selected_potion := ""
+var selected_drop := -1
 var spell_rotated := false
 var spell_first := -1
 var counter_index := 0
@@ -141,6 +142,8 @@ func refresh() -> void:
 				drops.append(at)
 	if not drops.is_empty():
 		available.append("drop")
+		if f.second_treasure_id >= 0:
+			available.append("drop_shrunk")
 	available.append("end")
 	if not available.has(mode) or mode in ["reload", "end"]:
 		mode = available[0] if available[0] not in ["reload", "end"] else ""
@@ -285,9 +288,9 @@ func preview() -> void:
 			radius = 0.5
 			color = Color(1.0, 0.78, 0.15)
 			hint = "Tap a marked treasure."
-		"drop":
+		"drop", "drop_shrunk":
 			points.assign(drops)
-			hint = "Tap a marked place to drop treasure."
+			hint = "Tap a marked place to drop " + ("shrunk treasure." if mode == "drop_shrunk" else "treasure.")
 		_:
 			hint = "Choose Reload or End."
 	var selected: Array[Vector2] = []
@@ -300,7 +303,7 @@ func preview() -> void:
 	if not selected.is_empty():
 		markers.show_points(selected, Color(1.0, 0.78, 0.15), 0.85, true)
 	if f != null:
-		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying treasure" if f.treasure_id >= 0 else "", hint]
+		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", hint]
 	if c.state.group.in_progress():
 		hint = ("GROUP: Movement · " if c.state.group.movement_pass() else "GROUP: Second action · ") + hint
 	hud.set_actions(available, mode, hint)
@@ -502,10 +505,10 @@ func tap(screen: Vector2) -> bool:
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:
 				return c.pick_up(token.id)
-	if mode == "drop":
+	if mode in ["drop", "drop_shrunk"]:
 		for p in drops:
 			if at.distance_to(p) <= 0.3:
-				return c.drop_treasure(p)
+				return c._loot.drop(p, c.state.active().shrunk_treasure_id if mode == "drop_shrunk" else -1)
 	if mode in ["move", "exit"]:
 		var n := MovePlanner.node_at(at)
 		if nodes.has(n):

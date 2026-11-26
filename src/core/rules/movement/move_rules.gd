@@ -8,7 +8,7 @@ extends RefCounted
 ## TODO(rules): confirm the half-Move second action and rounding in 2e.
 static func allowance(f: Figure) -> float:
 	var speed := float(f.effective_move())
-	if f.treasure_id >= 0:
+	if f.carries_normal_treasure():
 		speed *= 0.5
 	return speed if f.moves_taken == 0 else speed * 0.5
 
