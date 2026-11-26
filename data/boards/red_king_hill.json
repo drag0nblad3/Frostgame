@@ -1,0 +1,100 @@
+{
+  "id": "red_king_hill",
+  "name": "King of the Hill",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        7,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        7,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        25,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        25,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        9,
+        11,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        23,
+        11,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        9,
+        22,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        23,
+        22,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        14,
+        3,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        19,
+        30,
+        4,
+        3
+      ]
+    }
+  ]
+}
