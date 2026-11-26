@@ -175,13 +175,13 @@
     "name": "Illusionary Soldier",
     "school": "illusionist",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "invisibility": {
     "name": "Invisibility",
     "school": "illusionist",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "touch"
   },
   "teleport": {
     "name": "Teleport",
@@ -333,7 +333,7 @@
     "name": "True Sight",
     "school": "soothsayer",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "wizard_eye": {
     "name": "Wizard Eye",

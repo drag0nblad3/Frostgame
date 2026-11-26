@@ -21,7 +21,7 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "no missile weapon"
 	if shooter.ranged.needs_reload and not shooter.loaded:
 		return "needs to reload"
-	if not target.in_play() or target == shooter:
+	if not target.in_play() or target == shooter or not IllusionRules.visible_to(figures, shooter, target):
 		return "not a target"
 	if target.side == shooter.side and not Contact.in_combat(figures, target):
 		return "not an enemy"
@@ -36,7 +36,7 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 
 ## Could `shooter` shoot `target` if it stood at `at`? (range, sight, target free)
 static func possible_from(board: Board, figures: Array[Figure], shooter: Figure, at: Vector2, target: Figure) -> bool:
-	if shooter.ranged == null or Contact.in_combat(figures, target):
+	if shooter.ranged == null or not IllusionRules.visible_to(figures, shooter, target) or Contact.in_combat(figures, target):
 		return false
 	if maxf(at.distance_to(target.pos) - 2.0 * Figure.BASE_RADIUS, 0.0) > shooter.ranged.range_in:
 		return false

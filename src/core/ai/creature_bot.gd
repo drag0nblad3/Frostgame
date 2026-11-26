@@ -13,7 +13,7 @@ static func play(c: GameController, f: Figure) -> void:
 			return
 		var target: Figure = null
 		for t in c.state.figures:
-			if t.side < 0 or not t.in_play() or not LineOfSight.check(c.state.board, f.pos, t.pos).clear:
+			if t.side < 0 or not t.in_play() or not IllusionRules.visible_to(c.state.figures, f, t) or not LineOfSight.check(c.state.board, f.pos, t.pos).clear:
 				continue
 			if target == null or f.pos.distance_to(t.pos) < f.pos.distance_to(target.pos):
 				target = t

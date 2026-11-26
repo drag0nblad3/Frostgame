@@ -57,8 +57,14 @@ func setup(f: Figure, side_name: String) -> void:
 func refresh(f: Figure) -> void:
 	var col: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	_base.material_override = BoardView._mat(col.darkened(0.3), 0.6)
-	_body.material_override = BoardView._mat(col, 0.7)
-	_plate.text = "%s\n%d/%d" % [f.label(), f.health, f.def.health]
+	var mat := BoardView._mat(col, 0.7)
+	var suffix := ""
+	if f.spell_effects.has("invisibility") or IllusionRules.phantom(f):
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.albedo_color.a = 0.35
+		suffix = " · Illusion" if IllusionRules.phantom(f) else " · Invisible"
+	_body.material_override = mat
+	_plate.text = "%s%s\n%d/%d" % [f.label(), suffix, f.health, f.def.health]
 	_plate.modulate = Color(1, 1, 1) if f.health * 2 > f.def.health else Color(1, 0.6, 0.4)
 
 

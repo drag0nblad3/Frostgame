@@ -19,6 +19,7 @@ func pick_up(id: int) -> bool:
 	var f := _c.state.active()
 	var token := _c.state.treasure(id)
 	_c._spend(f)
+	_c._magic.illusions.reveal(f)
 	f.treasure_id = id
 	token.carrier_id = f.id
 	_c.emit("treasure_pickup", {"id": f.id, "treasure": id})
@@ -64,6 +65,7 @@ func drop_on_death(f: Figure) -> void:
 
 
 func _drop(f: Figure, at: Vector2) -> void:
+	_c._magic.illusions.reveal(f)
 	var token := _c.state.treasure(f.treasure_id)
 	token.carrier_id = -1
 	token.pos = at

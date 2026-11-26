@@ -133,3 +133,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Rune hazards and planar attacks
 
 - pp. 121, 127: Explosive Rune is a visible persistent marker within 4 inches, max three per caster. Ordinary movement checks every path node for a trigger; the blast resolves at that node and movement continues if the mover survives. Original allegiance determines triggering; the blast affects all nearby figures. Dispel/Spell Eater can remove runes, and orphaned runes roll to expire. Voluntary end-turn cancellation is pending; magically moved figures and pushbacks check their landing only. Planar Tear uses a selected point, area resistance and increased damage to demons. Both use exposed-surface point targeting; vertical walls are not yet valid rune locations.
+
+## Illusion effects
+
+- pp. 124–125, 134: Invisibility prevents targeted shots/spells and enemy entry into contact; casting, entering melee and collecting/dropping treasure reveal the figure. True Sight dispels nearby invisibility/phantoms and grants nearby allies detection. Illusionary Soldier currently summons a revealed illusory Thug (one per warband), able to engage/support but not inflict combat damage or collect treasure; any damage removes it. Models are translucent and labeled. Selection of other soldier types and pre-game casting are pending. True Sight creature-trait radius and some indirect area/forced-contact edge cases remain approximate.

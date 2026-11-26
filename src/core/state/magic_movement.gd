@@ -70,6 +70,7 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false) 
 		t.actions_left = 0
 	c.emit("move", {"id": t.id, "path": PackedVector2Array([old, at]), "cost": 0.0})
 	c._magic.terrain.trigger_landing(t)
+	c._magic.illusions.after_move(t)
 	if falling:
 		var dmg := ElevationRules.fall_damage(height - t.elevation)
 		if dmg > 0:

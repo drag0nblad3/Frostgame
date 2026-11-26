@@ -7,6 +7,7 @@ var summons: SummonActions
 var terrain: TerrainMagic
 var movement: MagicMovement
 var counter: CounterMagic
+var illusions: IllusionActions
 
 
 func _init(controller: GameController) -> void:
@@ -15,6 +16,7 @@ func _init(controller: GameController) -> void:
 	terrain = TerrainMagic.new(c)
 	movement = MagicMovement.new(c)
 	counter = CounterMagic.new(c)
+	illusions = IllusionActions.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -35,9 +37,13 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t == f and f.elemental_shield == 0
 	if kind == "self_area":
 		return t == f
+	if id == "true_sight":
+		return t == f and not f.spell_effects.has(id)
+	if not IllusionRules.visible_to(s.figures, f, t):
+		return false
 	if f.spell_effects.has("blinding_light") and kind != "touch":
 		return false
-	if kind == "touch" and t != f and not Contact.figures_touch(f, t):
+	if kind == "touch" and t != f and Shooting.distance(f, t) > 1.0:
 		return false
 	if not LineOfSight.check(s.board, f.pos, t.pos).clear and t != f:
 		return false
@@ -116,7 +122,7 @@ func placement_points(id: String, first_only: bool = false, rotated: bool = fals
 		return empty
 	if not c.state.spellbooks.get(f.side, {}).has(id) or not is_placement(id):
 		return empty
-	if f.spell_effects.has("blinding_light") and id not in ["raise_zombie", "summon_demon"]:
+	if f.spell_effects.has("blinding_light") and id not in ["raise_zombie", "summon_demon", "illusionary_soldier"]:
 		return empty
 	if id == "teleport":
 		return movement.points(f, f, id, first_only)
@@ -146,6 +152,7 @@ func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
 	var f := c.state.active()
+	illusions.reveal(f)
 	var raw := c.dice.d20()
 	var total := CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks[f.side][id])
@@ -199,6 +206,7 @@ func finish(health: int) -> bool:
 		return true
 	if SummonActions.PLACEMENT.has(id):
 		summons.spawn(f, id, p["at"], int(p["total"]) + health, int(p["tn"]))
+		illusions.sweep()
 		return true
 	if not t.in_play():
 		return true
@@ -206,6 +214,9 @@ func finish(health: int) -> bool:
 		summons.apply_control(f, t, id, int(result["roll"]))
 		return true
 	match id:
+		"invisibility", "true_sight":
+			t.spell_effects[id] = true
+			illusions.sweep()
 		"teleport", "leap":
 			movement.move(t, p["at"], true)
 		"push":

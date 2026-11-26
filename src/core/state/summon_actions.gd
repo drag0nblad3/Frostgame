@@ -1,7 +1,7 @@
 class_name SummonActions
 extends RefCounted
 ## Shared placement and temporary allegiance rules. All choices go through SpellActions.
-const PLACEMENT := ["animate_skull", "imp", "raise_zombie", "summon_demon"]
+const PLACEMENT := ["animate_skull", "imp", "raise_zombie", "summon_demon", "illusionary_soldier"]
 const CONTROL := {"control_animal": "animal", "control_construct": "construct", "control_demon": "demon", "control_undead": "undead", "mind_control": ""}
 
 var c: GameController
@@ -42,7 +42,7 @@ func can_place(f: Figure, id: String, at: Vector2) -> bool:
 		return false
 	if id == "animate_skull" and summoned(f, id) != null:
 		return false
-	if id == "raise_zombie" and summoned(f, id, true) != null:
+	if id in ["raise_zombie", "illusionary_soldier"] and summoned(f, id, true) != null:
 		return false
 	if id == "summon_demon" and controlled(f, "control_demon") != null:
 		return false
@@ -50,7 +50,7 @@ func can_place(f: Figure, id: String, at: Vector2) -> bool:
 	var height_delta := s.board.height_at(at) - f.elevation
 	if id == "animate_skull" and Vector2(dist, height_delta).length() > 6.001:
 		return false
-	if id in ["raise_zombie", "summon_demon"] and (dist > (1.25 if id == "raise_zombie" else 2.0) or absf(height_delta) >= 0.5):
+	if id in ["raise_zombie", "summon_demon", "illusionary_soldier"] and (dist > (1.25 if id == "raise_zombie" else 2.0) or absf(height_delta) >= 0.5):
 		return false
 	if not LineOfSight.check(s.board, f.pos, at).clear:
 		return false
@@ -60,7 +60,7 @@ func can_place(f: Figure, id: String, at: Vector2) -> bool:
 		var d := Vector2(t.pos.distance_to(at), t.elevation - s.board.height_at(at)).length()
 		if d < Contact.OVERLAP or (id == "imp" and d < 4.0):
 			return false
-		if id in ["raise_zombie", "summon_demon"] and t.side != f.side and d <= Contact.CONTACT:
+		if id in ["raise_zombie", "summon_demon", "illusionary_soldier"] and t.side != f.side and d <= Contact.CONTACT:
 			return false
 	return true
 
@@ -124,6 +124,9 @@ func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int) -> void:
 			var old := summoned(f, id)
 			if old != null:
 				vanish(old)
+		"illusionary_soldier":
+			type = "thug"
+			side = f.side
 		"raise_zombie":
 			type = "zombie"
 			side = f.side
@@ -136,6 +139,8 @@ func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int) -> void:
 	var t := c._encounters._spawn_at(type, at, side)
 	t.summoned_by = f.id
 	t.summon_spell = id
+	if id == "illusionary_soldier":
+		c.emit("spell_effect", {"id": t.id, "spell": id})
 	if id == "summon_demon":
 		t.original_side = -1
 		t.controller_id = f.id

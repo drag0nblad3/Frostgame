@@ -8,7 +8,7 @@ const TOKEN_RADIUS := 0.3
 static func can_pick_up(s: GameState, f: Figure, token: TreasureToken) -> bool:
 	if f == null or token == null or not f.in_play() or not token.on_ground():
 		return false
-	if f.treasure_id >= 0 or f.def.traits.has("animal"):
+	if f.treasure_id >= 0 or f.def.traits.has("animal") or IllusionRules.phantom(f):
 		return false
 	if absf(f.elevation - s.board.height_at(token.pos)) >= 0.5 or f.pos.distance_to(token.pos) > Figure.BASE_RADIUS + TOKEN_RADIUS + 0.01:
 		return false

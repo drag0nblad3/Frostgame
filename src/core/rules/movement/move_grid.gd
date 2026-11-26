@@ -43,8 +43,12 @@ func open(n: Vector2i) -> bool:
 	if not board.can_stand(p, Figure.BASE_RADIUS):
 		return false
 	for o in others:
-		if absf(o.elevation - board.height_at(p)) < 0.5 and o.pos.distance_to(p) < Contact.OVERLAP:
-			return false
+		if absf(o.elevation - board.height_at(p)) < 0.5:
+			var distance := o.pos.distance_to(p)
+			if distance < Contact.OVERLAP:
+				return false
+			if mover != null and o.side != mover.side and distance <= Contact.CONTACT and not IllusionRules.visible_to(others, mover, o):
+				return false
 	return true
 
 

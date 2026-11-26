@@ -48,7 +48,7 @@ func _play(e: GameEvent) -> void:
 		"terrain_fall":
 			var f := state.figure(d["id"])
 			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
-		"allegiance", "heal":
+		"allegiance", "heal", "spell_effect", "spell_expired":
 			_view(d["id"]).refresh(state.figure(d["id"]))
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]))

@@ -67,7 +67,7 @@ func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []
 	for i in range(1, path.size()):
 		var p := path[i]
 		for guard in c.state.figures:
-			if ignored.has(guard.id) or not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard):
+			if ignored.has(guard.id) or not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard) or not IllusionRules.visible_to(c.state.figures, guard, mover):
 				continue
 			if absf(c.state.board.height_at(p) - guard.elevation) >= 0.5:
 				continue
@@ -89,3 +89,4 @@ func force_contact(info: Dictionary) -> void:
 	guard.elevation = c.state.board.height_at(guard.pos)
 	c.emit("force_combat", {"id": guard.id, "path": PackedVector2Array([from, guard.pos])})
 	c._magic.terrain.trigger_landing(guard)
+	c._magic.illusions.after_move(guard)

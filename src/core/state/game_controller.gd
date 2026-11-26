@@ -103,6 +103,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 		return true
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
+	_magic.illusions.after_move(f)
 	return true
 
 
@@ -127,6 +128,8 @@ func fight(target_id: int) -> bool:
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("fight", res)
+	_magic.illusions.reveal(f)
+	_magic.illusions.reveal(t)
 	_hurt(t, res["b_dmg"], f)
 	_hurt(f, res["a_dmg"], t)
 	if int(res["b_dmg"]) > 0:
@@ -219,7 +222,10 @@ func _spend(f: Figure) -> void:
 
 
 func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
-	if dmg <= 0 or not f.in_play():
+	if dmg <= 0 or not f.in_play() or (combat and by != f and IllusionRules.phantom(by)):
+		return
+	if IllusionRules.phantom(f):
+		_magic.summons.vanish(f)
 		return
 	if combat and f.elemental_shield > 0:
 		var absorbed := mini(dmg, f.elemental_shield)

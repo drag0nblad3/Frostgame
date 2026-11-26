@@ -60,7 +60,7 @@ static func charge_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 	for n: Vector2i in r.nodes():
 		var at := MoveGrid.to_pos(n)
 		for t in s.figures:
-			if t.side == f.side or not t.in_play() or not Contact.touching(at, t.pos):
+			if t.side == f.side or not t.in_play() or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos):
 				continue
 			var score: float = t.health * 10.0 + r.cost[n]
 			if score < best_score:
@@ -79,7 +79,7 @@ static func _touches_enemy(s: GameState, f: Figure, at: Vector2) -> bool:
 static func nearest_enemy(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	for t in s.figures:
-		if t.side != f.side and t.in_play():
+		if t.side != f.side and t.in_play() and IllusionRules.visible_to(s.figures, f, t):
 			if best == null or f.pos.distance_to(t.pos) < f.pos.distance_to(best.pos):
 				best = t
 	return best
