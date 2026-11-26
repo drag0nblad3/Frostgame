@@ -7,13 +7,15 @@ const SIDE_COLORS := [Color(0.25, 0.5, 0.95), Color(0.9, 0.3, 0.25), Color(0.3, 
 var figure_id := 0
 var _plate: Label3D
 var _body: MeshInstance3D
+var _base: MeshInstance3D
 var _ring: MeshInstance3D
 
 
 func setup(f: Figure, side_name: String) -> void:
 	figure_id = f.id
-	var col: Color = SIDE_COLORS[f.side % SIDE_COLORS.size()]
+	var col: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	var base := MeshInstance3D.new()
+	_base = base
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = Figure.BASE_RADIUS
 	cyl.bottom_radius = Figure.BASE_RADIUS
@@ -48,12 +50,21 @@ func setup(f: Figure, side_name: String) -> void:
 	_plate.outline_size = 10
 	_plate.position.y = tall + 0.7
 	add_child(_plate)
-	position = TableSpace.to_world(f.pos)
+	position = TableSpace.to_world(f.pos, f.elevation)
 	refresh(f)
 
 
 func refresh(f: Figure) -> void:
-	_plate.text = "%s\n%d/%d" % [f.label(), f.health, f.def.health]
+	var col: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
+	_base.material_override = BoardView._mat(col.darkened(0.3), 0.6)
+	var mat := BoardView._mat(col, 0.7)
+	var suffix := ""
+	if f.spell_effects.has("invisibility") or IllusionRules.phantom(f):
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.albedo_color.a = 0.35
+		suffix = " · Illusion" if IllusionRules.phantom(f) else " · Invisible"
+	_body.material_override = mat
+	_plate.text = "%s%s\n%d/%d" % [f.label(), suffix, f.health, f.def.health]
 	_plate.modulate = Color(1, 1, 1) if f.health * 2 > f.def.health else Color(1, 0.6, 0.4)
 
 

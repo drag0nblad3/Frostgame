@@ -6,12 +6,12 @@ extends RefCounted
 
 
 ## Returns {order: Array[int] of sides, rolls: Array[int] last roll per side}.
-static func roll(dice: Dice, sides: int) -> Dictionary:
+static func roll(dice: Dice, sides: int, bonuses: Dictionary = {}) -> Dictionary:
 	var rolls: Array[int] = []
 	while true:
 		rolls.clear()
 		for s in sides:
-			rolls.append(dice.d20())
+			rolls.append(dice.d20() + int(bonuses.get(s, 0)))
 		var best: int = rolls.max()
 		if rolls.count(best) == 1:
 			break

@@ -1,13 +1,13 @@
 class_name Phase
 extends RefCounted
 ## Turn phases in order. Each figure activates in the phase matching its role.
-## TODO(rules): the wizard's group activation (soldiers within 3") and the
-## creature phase are not modelled yet.
+## EarlyPhase handles normal wizard/apprentice soldier eligibility.
+## TODO(rules): simultaneous group activation and creature phase are pending.
 
-enum { WIZARD, APPRENTICE, SOLDIER }
+enum { WIZARD, APPRENTICE, SOLDIER, CREATURE }
 
-const ORDER := [WIZARD, APPRENTICE, SOLDIER]
-const NAMES := ["Wizard", "Apprentice", "Soldier"]
+const ORDER := [WIZARD, APPRENTICE, SOLDIER, CREATURE]
+const NAMES := ["Wizard", "Apprentice", "Soldier", "Creature"]
 const ROLES := ["wizard", "apprentice", "soldier"]
 
 

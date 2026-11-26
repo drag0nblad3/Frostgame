@@ -10,10 +10,28 @@ static func play_activation(c: GameController) -> bool:
 	var f := _pick(c)
 	if f == null or not c.activate(f.id):
 		return false
-	if f.ranged != null:
-		_play_shooter(c, f)
-	else:
-		_play_fighter(c, f)
+	return resume_activation(c)
+
+
+static func resume_activation(c: GameController) -> bool:
+	var f := c.state.active()
+	if f == null or c.awaiting_reaction():
+		return false
+	if f.side >= 0 and f.def.health - f.health >= 4 and c._potions.can_drink("healing"):
+		c._potions.drink("healing")
+	if FuryRules.target(c.state, f) != null:
+		FuryRules.play(c, f)
+	elif f.side < 0:
+		CreatureBot.play(c, f)
+	elif not MagicBot.play(c, f) and not TreasureBot.play(c, f):
+		if f.ranged != null:
+			_play_shooter(c, f)
+		else:
+			_play_fighter(c, f)
+	if c.awaiting_reaction():
+		return true
+	if c.state.push_winner == f.id and f.treasure_id >= 0 and c.can_push(true):
+		c.resolve_push(true)
 	c.end_activation()
 	return true
 

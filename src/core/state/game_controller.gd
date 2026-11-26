@@ -9,12 +9,24 @@ var state: GameState
 var dice: Dice
 var history: Array[GameEvent] = []
 var _flow: TurnFlow
+var _loot: TreasureActions
+var _displacement: CombatDisplacement
+var _encounters: EncounterActions
+var _magic: SpellActions
+var _potions: PotionActions
 
 
 func _init(s: GameState, d: Dice) -> void:
 	state = s
+	for f in s.figures:
+		f.battle_ref = weakref(s)
 	dice = d
 	_flow = TurnFlow.new(self)
+	_loot = TreasureActions.new(self)
+	_displacement = CombatDisplacement.new(self)
+	_encounters = EncounterActions.new(self)
+	_magic = SpellActions.new(self)
+	_potions = PotionActions.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:
@@ -40,23 +52,42 @@ func activate(id: int) -> bool:
 	if state.active_id != -1 or f == null or not activatable().has(f):
 		return false
 	state.active_id = id
-	f.actions_left = 2
-	f.moves_taken = 0
-	f.acted = false
+	var time_walk := f.spell_effects.has("time_walk") and f.walk_phases.has(state.phase)
+	var fast := state.is_fast(f)
+	if not state.group.in_progress() or state.group.movement_pass():
+		_magic.on_activate(f)
+	if state.group.in_progress():
+		state.group.start_member(state, f)
+	else:
+		if not fast and not time_walk:
+			state.early.record_activation(state, f)
+		f.actions_left = mini(f.action_limit(), 1) if time_walk else f.action_limit()
+		if time_walk:
+			f.walk_phases.erase(state.phase)
+		else:
+			f.moves_taken = 0
+		f.acted = false
+		f.non_moves = 0
+		f.used_stored_action = false
 	emit("activate", {"id": id})
 	return true
 
 
 func can_move() -> bool:
 	var f := state.active()
-	return f != null and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
 
 
 ## Where the active figure could go with its next movement action.
 func reach() -> MoveReach:
 	var f := state.active()
+	if f.spell_effects.has("plane_walk"):
+		return PlaneWalk.reach(state, f)
+	if f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
+		return PlaneWalk.reach(state, f, false)
 	var grid := MoveGrid.new(state.board, f, state.figures)
-	return MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
+	var r := MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
+	return FuryRules.restrict(state, f, r)
 
 
 func move_to(node: Vector2i) -> bool:
@@ -67,37 +98,93 @@ func move_to(node: Vector2i) -> bool:
 		return false
 	var f := state.active()
 	var path := r.path_to(node)
-	f.pos = path[path.size() - 1]
+	if f.spell_effects.has("plane_walk"):
+		f.pos = MoveGrid.to_pos(node)
+		f.elevation = state.board.height_at(f.pos)
+		f.actions_left -= 1
+		f.moves_taken += 1
+		emit("move", {"id": f.id, "path": path, "cost": float(r.cost[node])})
+		return true
+	return _commit_move(f, path, float(r.cost[node]), [])
+
+
+func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int]) -> bool:
+	var targets: Array[Figure] = []
+	var at := path[path.size() - 1]
+	for t in state.figures:
+		if t.in_play() and t.side != f.side and absf(t.elevation - state.board.height_at(at)) < 0.5 and Contact.touching(t.pos, at):
+			targets.append(t)
+	_magic.beauty.authorize(f, targets, _move_authorized.bind(f, path, cost, ignored))
+	return true
+
+
+func _move_authorized(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int]) -> void:
+	if not f.in_play():
+		return
+	var intercept := _displacement.intercept(f, path, ignored) if state.forced_combat else {}
+	if not intercept.is_empty() and int(intercept["guard"].side) == state.reaction_side:
+		state.pending_intercept = {"mover": f.id, "path": path, "cost": cost, "ignored": ignored, "choice": intercept}
+		emit("intercept_offer", {"id": intercept["guard"].id, "target": f.id})
+		return
+	_apply_move(f, path, cost, intercept)
+
+
+func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Dictionary) -> bool:
+	if not intercept.is_empty():
+		path.resize(int(intercept["index"]) + 1)
+	f.spell_effects.erase("petrify")
 	f.actions_left -= 1
 	f.moves_taken += 1
-	emit("move", {"id": f.id, "path": path, "cost": r.cost[node]})
+	if not _magic.terrain.travel(f, path, cost):
+		return true
+	if not intercept.is_empty():
+		_displacement.force_contact(intercept)
+	_magic.illusions.after_move(f)
 	return true
 
 
 ## One non-move action (fight, shoot, reload) per activation.
-func can_act() -> bool:
+func can_act(for_fight: bool = false) -> bool:
 	var f := state.active()
-	return f != null and f.actions_left > 0 and not f.acted
+	if not for_fight and FuryRules.target(state, f) != null:
+		return false
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
+
+
+func can_fight(target_id: int) -> bool:
+	var t := state.figure(target_id)
+	return can_act(true) and not state.active().spell_effects.has("blinding_light") and t != null and Contact.enemies_of(state.figures, state.active()).has(t)
 
 
 func fight(target_id: int) -> bool:
+	if not can_fight(target_id):
+		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	if not can_act() or t == null or not Contact.enemies_of(state.figures, f).has(t):
-		return false
-	var res := Melee.resolve(dice, state.figures, f, t)
+	var res := Melee.resolve(dice, state.figures, f, t, state.critical_hits)
 	_spend(f)
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("fight", res)
-	_hurt(t, res["b_dmg"], f)
-	_hurt(f, res["a_dmg"], t)
+	_magic.illusions.reveal(f)
+	_magic.illusions.reveal(t)
+	_weapon_damage(t, res["b_dmg"], f, f.melee)
+	_weapon_damage(f, res["a_dmg"], t, t.melee)
+	if int(res["b_dmg"]) > 0:
+		f.spell_effects.erase("elemental_hammer")
+	if int(res["a_dmg"]) > 0:
+		t.spell_effects.erase("elemental_hammer")
+	if f.in_play() and t.in_play() and int(res["winner"]) >= 0:
+		var winner := state.figure(res["winner"])
+		if winner.side >= 0:
+			state.push_winner = winner.id
+			state.push_loser = t.id if winner == f else f.id
 	return true
 
 
 func can_shoot(target_id: int) -> bool:
 	var t := state.figure(target_id)
-	return can_act() and t != null and Shooting.blocked_reason(state.board, state.figures, state.active(), t) == ""
+	return can_act() and t != null and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board, state.figures, state.active(), t) == ""
 
 
 func shoot(target_id: int) -> bool:
@@ -105,47 +192,284 @@ func shoot(target_id: int) -> bool:
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	var res := Shooting.resolve(dice, state.board, f, t)
+	_magic.beauty.authorize(f, ShotTarget.participants(state.figures, t), _shoot_authorized.bind(f, t))
+	return true
+
+
+func _shoot_authorized(f: Figure, t: Figure) -> void:
+	if not f.in_play() or not t.in_play():
+		return
+	var declared := t.id
+	t = ShotTarget.randomize(dice, state.figures, t)
+	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits, state.storm_penalty)
+	res["declared"] = declared
 	_spend(f)
 	if f.ranged.needs_reload:
 		f.loaded = false
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("shoot", res)
-	_hurt(t, res["dmg"], f)
-	return true
+	_weapon_damage(t, res["dmg"], f, f.ranged)
+	if f.spell_effects.get("potion_fairy_dust", "") == f.ranged.id:
+		f.spell_effects.erase("potion_fairy_dust")
+	if f.ranged != null:
+		f.spell_effects.erase("elemental_hammer")
 
 
-## TODO(rules): check that reloading a crossbow uses the activation's one non-move action.
-func reload() -> bool:
+## Reload may replace the movement action (p. 34); never while engaged.
+func can_reload() -> bool:
 	var f := state.active()
-	if not can_act() or f.ranged == null or not f.ranged.needs_reload or f.loaded:
+	return not awaiting_reaction() and state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and FuryRules.target(state, f) == null and (f.moves_taken == 0 or can_act())
+
+
+func reload() -> bool:
+	if not can_reload():
 		return false
-	_spend(f)
+	var f := state.active()
+	if f.moves_taken > 0:
+		_spend(f)
+	else:
+		f.actions_left -= 1
 	f.loaded = true
 	emit("reload", {"id": f.id})
 	return true
 
 
+func can_end_activation() -> bool:
+	var f := state.active()
+	if f == null or awaiting_reaction() or not state.pending_cast.is_empty():
+		return false
+	if FuryRules.target(state, f) == null or f.actions_left <= 0:
+		return true
+	for t in Contact.enemies_of(state.figures, f):
+		if can_fight(t.id):
+			return false
+	if can_move() and not reach().nodes().is_empty():
+		return false
+	return true
+
+
 func end_activation() -> void:
+	if not can_end_activation():
+		return
+	_displacement.clear()
 	var f := state.active()
 	if f == null:
 		return
-	f.activated = true
 	state.active_id = -1
+	f.actions_left = 0
 	emit("end_activation", {"id": f.id})
+	if state.group.in_progress():
+		var before := state.group.stage
+		if before == GroupActivation.SECOND:
+			_magic.on_end_activation(f)
+		var complete := state.group.finish_member(state, f)
+		if complete:
+			emit("group_complete", {"side": f.side})
+			_flow.after_activation()
+		elif before != state.group.stage:
+			emit("group_second", {"side": f.side})
+		return
+	f.activated = true
+	_magic.on_end_activation(f)
 	_flow.after_activation()
 
 
 func _spend(f: Figure) -> void:
+	_displacement.clear()
 	f.actions_left -= 1
 	f.acted = true
+	f.non_moves += 1
 
 
-func _hurt(f: Figure, dmg: int, by: Figure) -> void:
-	if dmg <= 0 or not f.in_play():
+func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
+	if dmg <= 0 or not f.in_play() or (f.spell_effects.has("plane_walk") and by != f) or (combat and by != f and IllusionRules.phantom(by)):
 		return
+	if IllusionRules.phantom(f):
+		_magic.summons.vanish(f)
+		return
+	if combat and f.elemental_shield > 0:
+		var absorbed := mini(dmg, f.elemental_shield)
+		f.elemental_shield -= absorbed
+		dmg -= absorbed
+		emit("shield_absorb", {"id": f.id, "amount": absorbed})
+		if dmg == 0:
+			return
 	var out := Damage.apply(f, dmg)
+	if f.familiar and f.health <= 1:
+		f.familiar = false
+		f.def = f.def.with_bonuses({"health": -2})
+		emit("familiar_lost", {"id": f.id})
+	if combat and not out and by != f and by.def.traits.has("poison"):
+		poison(f)
 	emit("damage", {"id": f.id, "by": by.id, "amount": dmg, "health": f.health})
 	if out:
+		_loot.drop_on_death(f)
 		emit("out_of_action", {"id": f.id, "by": by.id})
+
+
+func can_pick_up(id: int) -> bool:
+	return _loot.can_pick_up(id)
+
+
+func pick_up(id: int) -> bool:
+	return _loot.pick_up(id)
+
+
+func drop_treasure(at: Vector2) -> bool:
+	return _loot.drop(at)
+
+
+func exit_table(node: Vector2i) -> bool:
+	return _loot.exit_table(node)
+
+
+func can_drop_treasure(at: Vector2) -> bool:
+	return _loot.can_drop(at)
+
+
+func can_exit_table(node: Vector2i, r: MoveReach = null) -> bool:
+	return _loot.can_exit(node, r)
+
+
+func can_finish_early_phase() -> bool:
+	return not state.over and state.active_id == -1 and not state.group.in_progress() and state.early.can_finish(state, state.current_side())
+
+
+func finish_early_phase() -> bool:
+	if not can_finish_early_phase():
+		return false
+	var side := state.current_side()
+	state.early.closed[side] = true
+	emit("early_phase_finished", {"side": side})
+	_flow.after_activation()
+	return true
+
+
+func can_begin_group() -> bool:
+	return not state.over and state.active_id == -1 and state.group.can_begin(state, state.current_side())
+
+
+func begin_group(ids: Array[int]) -> bool:
+	if not can_begin_group() or not state.group.begin(state, state.current_side(), ids):
+		return false
+	emit("group_begin", {"side": state.current_side(), "ids": ids.duplicate()})
+	return true
+
+
+func can_push(own_figure: bool) -> bool:
+	return _displacement.destination(own_figure) != null
+
+
+func resolve_push(own_figure: bool) -> bool:
+	return _displacement.push(own_figure)
+
+
+func stay_in_combat() -> bool:
+	if state.push_winner < 0:
+		return false
+	_displacement.clear()
+	emit("stay_in_combat")
+	return true
+
+
+func can_cast(spell: String, target: int) -> bool:
+	return _magic.can_cast(spell, target)
+
+
+func start_cast(spell: String, target: int) -> bool:
+	return _magic.start(spell, target)
+
+
+func finish_cast(health: int) -> bool:
+	return _magic.finish(health)
+
+
+func cast_max_empowerment() -> int:
+	return _magic.max_empowerment()
+
+
+func awaiting_reaction() -> bool:
+	if not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
+		return true
+	if state.push_winner < 0:
+		return false
+	var winner := state.figure(state.push_winner)
+	return winner != null and winner.side == state.reaction_side and state.current_side() != state.reaction_side
+
+
+func answer_intercept(accept: bool) -> bool:
+	var p := state.pending_intercept
+	if p.is_empty():
+		return false
+	state.pending_intercept = {}
+	var mover := state.figure(p["mover"])
+	var choice: Dictionary = p["choice"]
+	var path: PackedVector2Array = p["path"]
+	if accept:
+		return _apply_move(mover, path, float(p["cost"]), choice)
+	var ignored: Array[int] = []
+	ignored.assign(p["ignored"])
+	ignored.append(choice["guard"].id)
+	return _commit_move(mover, path, float(p["cost"]), ignored)
+
+
+func poison(f: Figure) -> void:
+	if not f.in_play() or f.immune_to_poison() or f.poisoned:
+		return
+	f.poisoned = true
+	if state.active() == f:
+		f.actions_left = mini(f.actions_left, 0 if f.acted or f.moves_taken > 0 else 1)
+	emit("poison", {"id": f.id})
+
+
+func can_use_stored_action() -> bool:
+	var f := state.active()
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and not state.group.in_progress() and f.spell_effects.has("time_store") and f.stored_action_turn < state.turn and not f.used_stored_action and f.action_limit() == 2 and f.actions_left == 2 and not f.acted and f.moves_taken == 0
+
+
+func use_stored_action() -> bool:
+	if not can_use_stored_action():
+		return false
+	var f := state.active()
+	f.spell_effects.erase("time_store")
+	f.used_stored_action = true
+	f.actions_left += 1
+	emit("stored_action", {"id": f.id})
+	return true
+
+
+func can_fight_hand(id: int) -> bool:
+	var f := state.active()
+	var t := state.figure(id)
+	return can_act(true) and not f.spell_effects.has("blinding_light") and t != null and t.in_play() and t.spell_effects.has("bones_of_the_earth") and (f == t or Contact.figures_touch(f, t))
+
+
+func fight_hand(id: int) -> bool:
+	if not can_fight_hand(id):
+		return false
+	var f := state.active()
+	var t := state.figure(id)
+	var support := 0
+	for ally in state.figures:
+		if ally != f and ally.in_play() and ally.side == f.side and (ally == t or Contact.figures_touch(ally, t)):
+			support += 2
+	var attack := dice.d20() + mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + mini(6, support), 10) + f.roll_penalty()
+	var defend := dice.d20()
+	_spend(f)
+	var freed := attack >= defend and attack + f.melee.damage_mod + MagicEquipment.bonus(f, "damage", f.melee.id) > 10
+	if freed:
+		t.spell_effects.erase("bones_of_the_earth")
+		emit("spell_expired", {"id": t.id, "spell": "bones_of_the_earth"})
+	if defend >= attack:
+		_hurt(f, maxi(0, defend - f.effective_armour() + f.melee.enemy_damage_mod), t)
+	emit("fight_hand", {"id": f.id, "target": id, "attack": attack, "defence": defend, "freed": freed})
+	return true
+
+
+func _weapon_damage(t: Figure, dmg: int, f: Figure, w: WeaponDef) -> void:
+	var old := t.health
+	_hurt(t, dmg, f)
+	if t.health < old and f.poison_weapon == w.id:
+		f.poison_weapon = ""
+		poison(t)

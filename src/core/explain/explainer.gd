@@ -7,7 +7,7 @@ static func name_of(s: GameState, id: int) -> String:
 	var f := s.figure(id)
 	if f == null:
 		return "?"
-	return "%s %s" % [s.side_names[f.side], f.label()]
+	return f.label() if f.side < 0 else "%s %s" % [s.side_names[f.side], f.label()]
 
 
 static func text(s: GameState, e: GameEvent) -> String:
@@ -21,6 +21,14 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Turn %d. Initiative: %s. %s go first." % [d["turn"], ", ".join(parts), s.side_names[d["order"][0]]]
 		"phase":
 			return "%s phase." % Phase.name_of(d["phase"])
+		"group_begin":
+			return "%s begin a group activation (%d figures)." % [s.side_names[d["side"]], d["ids"].size()]
+		"group_second":
+			return "Group movement complete. Choose second actions."
+		"group_complete":
+			return "Group activation complete."
+		"early_phase_finished":
+			return "%s pass their remaining early soldier activations." % s.side_names[d["side"]]
 		"move":
 			return "%s moves %.1f\"." % [name_of(s, d["id"]), d["cost"]]
 		"fight":
@@ -31,6 +39,34 @@ static func text(s: GameState, e: GameEvent) -> String:
 			var cover := "" if d["mod"] == 0 else " (+%d cover)" % d["mod"]
 			return "%s shoots %s: %d vs %d%s." % [
 				name_of(s, d["id"]), name_of(s, d["target"]), d["s_total"], d["t_total"], cover]
+		"treasure_pickup":
+			return "%s collects treasure %d." % [name_of(s, d["id"]), d["treasure"] + 1]
+		"treasure_drop":
+			return "%s drops treasure %d." % [name_of(s, d["id"]), d["treasure"] + 1]
+		"treasure_secured":
+			return "%s secure treasure %d." % [s.side_names[d["side"]], d["treasure"] + 1]
+		"treasure_lost":
+			return "Treasure %d is lost." % (d["treasure"] + 1)
+		"exit":
+			return "%s leaves the table safely." % name_of(s, d["id"])
+		"poison":
+			return "%s is poisoned." % name_of(s, d["id"])
+		"spell_expired":
+			return "%s breaks free of %s." % [name_of(s, d["id"]), d["spell"]]
+		"cast_roll":
+			return "Casting %s: %d against %d." % [d["id"], d["total"], d["tn"]]
+		"cast_result":
+			return "%s %s %s (roll %d, %d HP spent)." % [name_of(s, d["id"]), "casts" if d["success"] else "fails", d["spell"], d["roll"], d["spent"]]
+		"heal":
+			return "%s regains %d Health." % [name_of(s, d["id"]), d["amount"]]
+		"shield_absorb":
+			return "%s's shield absorbs %d." % [name_of(s, d["id"]), d["amount"]]
+		"creature_spawn":
+			return "%s enters the ruins." % name_of(s, d["id"])
+		"push_back":
+			return "%s moves back from combat." % name_of(s, d["id"])
+		"force_combat":
+			return "%s intercepts a passing figure." % name_of(s, d["id"])
 		"reload":
 			return "%s reloads." % name_of(s, d["id"])
 		"damage":

@@ -13,6 +13,8 @@ var cover: int = Cover.NONE
 var move_mult := 1.0
 ## Model height in inches (view only until elevation rules exist).
 var height := 1.0
+var walkable_top := false
+var stairs := false
 
 
 static func from_dict(kind_id: String, d: Dictionary) -> TerrainKind:
@@ -24,4 +26,6 @@ static func from_dict(kind_id: String, d: Dictionary) -> TerrainKind:
 	k.cover = int(d.get("cover", 0))
 	k.move_mult = float(d.get("move_mult", 1))
 	k.height = float(d.get("height", 1))
+	k.walkable_top = d.get("walkable_top", false)
+	k.stairs = d.get("stairs", false)
 	return k

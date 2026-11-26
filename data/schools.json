@@ -1,0 +1,82 @@
+{
+  "chronomancer": {
+    "aligned": [
+      "elementalist",
+      "necromancer",
+      "soothsayer"
+    ],
+    "opposed": "enchanter"
+  },
+  "elementalist": {
+    "aligned": [
+      "chronomancer",
+      "enchanter",
+      "summoner"
+    ],
+    "opposed": "illusionist"
+  },
+  "enchanter": {
+    "aligned": [
+      "elementalist",
+      "sigilist",
+      "witch"
+    ],
+    "opposed": "chronomancer"
+  },
+  "illusionist": {
+    "aligned": [
+      "sigilist",
+      "soothsayer",
+      "thaumaturge"
+    ],
+    "opposed": "elementalist"
+  },
+  "necromancer": {
+    "aligned": [
+      "chronomancer",
+      "summoner",
+      "witch"
+    ],
+    "opposed": "thaumaturge"
+  },
+  "sigilist": {
+    "aligned": [
+      "enchanter",
+      "illusionist",
+      "thaumaturge"
+    ],
+    "opposed": "summoner"
+  },
+  "soothsayer": {
+    "aligned": [
+      "chronomancer",
+      "illusionist",
+      "thaumaturge"
+    ],
+    "opposed": "witch"
+  },
+  "summoner": {
+    "aligned": [
+      "elementalist",
+      "necromancer",
+      "witch"
+    ],
+    "opposed": "sigilist"
+  },
+  "thaumaturge": {
+    "aligned": [
+      "illusionist",
+      "sigilist",
+      "soothsayer"
+    ],
+    "opposed": "necromancer"
+  },
+  "witch": {
+    "aligned": [
+      "enchanter",
+      "necromancer",
+      "summoner"
+    ],
+    "opposed": "soothsayer"
+  }
+}

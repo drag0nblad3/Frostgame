@@ -15,11 +15,17 @@ static func touching(a: Vector2, b: Vector2) -> bool:
 ## Enemies in base contact with `f`.
 static func enemies_of(figures: Array[Figure], f: Figure) -> Array[Figure]:
 	var out: Array[Figure] = []
+	if f.spell_effects.has("plane_walk"):
+		return out
 	for o in figures:
-		if o.in_play() and o.side != f.side and touching(o.pos, f.pos):
+		if o.in_play() and not o.spell_effects.has("plane_walk") and o.side != f.side and figures_touch(o, f):
 			out.append(o)
 	return out
 
 
 static func in_combat(figures: Array[Figure], f: Figure) -> bool:
 	return not enemies_of(figures, f).is_empty()
+
+
+static func figures_touch(a: Figure, b: Figure) -> bool:
+	return absf(a.elevation - b.elevation) < 0.5 and touching(a.pos, b.pos)

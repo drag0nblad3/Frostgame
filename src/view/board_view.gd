@@ -25,12 +25,51 @@ func build(board: Board) -> void:
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
-	var box := BoxMesh.new()
 	var h := piece.kind.height
-	box.size = Vector3(piece.rect.size.x, h, piece.rect.size.y)
-	mi.mesh = box
+	if piece.kind.id == "spell_wizard_eye":
+		var orb := SphereMesh.new()
+		orb.radius = 0.22
+		orb.height = 0.44
+		mi.mesh = orb
+		var material := _mat(Color(0.4, 0.9, 1.0), 0.35)
+		material.emission_enabled = true
+		material.emission = Color(0.2, 0.6, 0.9)
+		mi.material_override = material
+		mi.position = TableSpace.to_world(piece.rect.get_center(), 1.5)
+		return mi
+	if piece.ramp:
+		var box := BoxMesh.new()
+		var slope := atan2(piece.ramp_end - piece.ramp_start, 6.0)
+		var length := Vector2(6.0, piece.ramp_end - piece.ramp_start).length()
+		box.size = Vector3(2.0, 0.08, length) if piece.ramp_rotated else Vector3(length, 0.08, 2.0)
+		mi.mesh = box
+		mi.rotation.x = -slope if piece.ramp_rotated else 0.0
+		mi.rotation.z = 0.0 if piece.ramp_rotated else slope
+		mi.position = TableSpace.to_world(piece.rect.get_center(), (piece.ramp_start + piece.ramp_end) * 0.5 - 0.04)
+		mi.material_override = _mat(Color(0.87, 0.72, 0.38), 0.8)
+		return mi
+	if piece.circular:
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = piece.rect.size.x * 0.5
+		cylinder.bottom_radius = cylinder.top_radius
+		cylinder.height = h
+		mi.mesh = cylinder
+	else:
+		var box := BoxMesh.new()
+		box.size = Vector3(piece.rect.size.x, h, piece.rect.size.y)
+		mi.mesh = box
 	var col: Color = COLORS.get(piece.kind.id, Color(0.6, 0.6, 0.6))
-	mi.material_override = _mat(col, 0.95)
+	match piece.kind.id:
+		"spell_wall": col = Color(0.25, 0.7, 0.9)
+		"spell_fog": col = Color(0.7, 0.85, 1.0, 0.4)
+		"spell_mud": col = Color(0.3, 0.24, 0.15, 0.8)
+		"spell_explosive_rune": col = Color(1.0, 0.35, 0.1)
+		"spell_circle_of_protection": col = Color(0.9, 0.75, 0.25, 0.45)
+		"museum_statue": col = Color(0.65, 0.71, 0.72)
+	var mat := _mat(col, 0.95)
+	if col.a < 1.0:
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mi.material_override = mat
 	mi.position = TableSpace.to_world(piece.rect.get_center(), h * 0.5)
 	return mi
 

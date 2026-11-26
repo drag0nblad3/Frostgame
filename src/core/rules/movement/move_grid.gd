@@ -40,11 +40,15 @@ func open(n: Vector2i) -> bool:
 	if not in_bounds(n):
 		return false
 	var p := to_pos(n)
-	if not board.can_stand(p, Figure.BASE_RADIUS):
+	if not board.can_stand(p, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, p):
 		return false
 	for o in others:
-		if o.pos.distance_to(p) < Contact.OVERLAP:
-			return false
+		if absf(o.elevation - board.height_at(p)) < 0.5:
+			var distance := o.pos.distance_to(p)
+			if distance < Contact.OVERLAP:
+				return false
+			if mover != null and o.side != mover.side and distance <= Contact.CONTACT and (not IllusionRules.visible_to(others, mover, o) or (mover.battle_ref != null and mover.battle_ref.get_ref() != null and BeautyActions.blocked(mover.battle_ref.get_ref(), mover, o))):
+				return false
 	return true
 
 
@@ -54,7 +58,7 @@ func stops(n: Vector2i) -> bool:
 		return false
 	var p := to_pos(n)
 	for o in others:
-		if o.side != mover.side and Contact.touching(o.pos, p):
+		if o.side != mover.side and absf(o.elevation - board.height_at(p)) < 0.5 and Contact.touching(o.pos, p):
 			return true
 	return false
 
@@ -63,7 +67,15 @@ func stops(n: Vector2i) -> bool:
 func step_cost(a: Vector2i, b: Vector2i) -> float:
 	var pa := to_pos(a)
 	var pb := to_pos(b)
+	return segment_cost(pa, pb)
+
+
+func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	var mid := (pa + pb) * 0.5
-	if not board.can_stand(mid, Figure.BASE_RADIUS):
+	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
-	return pa.distance_to(pb) * board.move_mult_at(mid)
+	for p in board.pieces_at(mid):
+		if p.ramp and p.contains(pa) and p.contains(pb):
+			var delta := board.height_at(pa) - board.height_at(pb)
+			return Vector2(pa.distance_to(pb), delta).length()
+	return pa.distance_to(pb) * board.move_mult_at(mid) + board.climb_cost(pa, pb, mover)

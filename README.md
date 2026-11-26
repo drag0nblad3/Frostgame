@@ -6,15 +6,17 @@ belongs to Osprey Games and Joseph A. McCullough, and no rulebook text is includ
 
 ![Bot vs bot game](docs/screenshot.png)
 
-**Status:** milestone 1 — core rules engine (movement, melee, shooting, cover, turns and
-phases) with unit tests, and a simple 3D board where the computer plays both warbands.
+**Status:** milestone 2 — playable human-vs-bot treasure skirmish, with movement and combat, optional bot-vs-bot observation, and automated rules tests. Magic and campaign play are still in development.
 
 ## Run it
 1. Install [Godot 4.5+](https://godotengine.org/download) (standard build, not .NET).
 2. Open `project.godot` and press Play.
-3. **Step** plays one activation, **Auto** plays on its own, **New game** restarts.
-   - Mouse: left-drag orbit, right-drag pan, wheel zoom.
-   - Touch: one-finger orbit, two-finger pan, pinch zoom.
+3. You control the blue Elementalist warband. Tap a marked figure to activate it, choose an enabled action, and tap a marked destination or target. Reload and End execute directly. The rival plays automatically.
+   - Move marks reachable ground. Fight and Shoot mark legal enemies. Collect, Drop and Exit mark their legal positions.
+   - In wizard/apprentice phases you may activate eligible soldiers individually or declare Group before acting. Select up to three soldiers and Start group; complete the movement pass for every member, then their second actions. Pass soldiers leaves optional early activations for later.
+   - Watch switches to bot-vs-bot play between activations; Step and Auto are available there. New game restarts.
+   - Mouse: click to select, left-drag orbit, right-drag pan, wheel zoom.
+   - Touch: tap to select, one-finger drag orbit, two-finger pan, pinch zoom.
 
 ## Tests
 ```sh
@@ -24,3 +26,6 @@ godot --headless -s tests/run_tests.gd
 
 See `CLAUDE.md` for the file map, `docs/rules-coverage.md` for what's implemented and what
 still needs checking against the book, and `docs/PLANNING.md` for the roadmap.
+
+## Wizard and magic prototype
+Open **Warband** to name a wizard, select a school and eight spells, hire soldiers and start a new skirmish. The budget and specialist cap are validated. Unimplemented spell effects are explicitly marked in the editor. During a caster activation, **Cast** lists usable known spells; choose a target, then choose Health empowerment and resolve the roll. The creature phase and optional treasure encounters are enabled in the default scenario.
