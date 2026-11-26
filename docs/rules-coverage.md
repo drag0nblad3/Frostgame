@@ -29,3 +29,19 @@ against the book**. "Verify" items are the specific interpretations to confirm.
 - Elevation, climbing, falling, jumping; figures blocking line of sight
 - Will rolls, morale / warband retreat
 - Campaign: injuries and survival, experience and levels, treasure, base and hiring
+
+## Second Edition audit — milestone 2 foundation
+
+Source: Joseph A. McCullough, Frostgrave Second Edition (2020), printed page numbers. Original PDF stays outside this public repository.
+
+| Area | Status | Reference |
+|---|---|---|
+| Starting stats and prices | Verified and corrected; all 15 soldier types in data, specialist metadata; inventory and apothecary rules pending | 25–31 |
+| Weapon modifiers/ranges | Verified; inventory restrictions pending | 33–37 |
+| Crossbow reload | Can replace movement; cannot reload in combat | 34, 52 |
+| Combat support | Net bonus cancels opposing support, maximum +6; total roll bonus capped at +10 for current warband figures | 44, 53 |
+| Criticals | Optional, default off; auto-win and +5 extra damage when enabled; creature immunity pending | 55 |
+| Shooting | Hasty-shot and large-target modifiers added; cover, intervening figures and combat targeting still approximate or missing | 57–59 |
+| Stat and casting rolls | Pure arithmetic and tests added; no live spell actions or spell effects yet | 29, 44, 62–65 |
+
+Next: treasure objective and extraction; selection of eligible early-phase soldiers and true group activation; push-back choices; player input; live spell effects and creature phase. Earlier table is the pre-audit baseline, superseded where this section differs.

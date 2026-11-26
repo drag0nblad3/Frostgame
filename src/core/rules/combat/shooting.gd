@@ -53,14 +53,16 @@ static func target_mod(los: LineOfSight.Result) -> int:
 
 
 ## Rolls the shot. Returns {s_roll, t_roll, s_total, t_total, mod, dmg}.
-static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure) -> Dictionary:
+static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, critical_hits: bool = false) -> Dictionary:
 	var los := LineOfSight.check(board, shooter.pos, target.pos)
-	var mod := target_mod(los)
+	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
+	if target.def.traits.has("large"):
+		mod -= 2
 	var sr := dice.d20()
 	var tr := dice.d20()
-	var st := sr + shooter.def.shoot
-	var tt := tr + target.def.fight + mod
+	var st := sr + mini(shooter.def.shoot, 10)
+	var tt := tr + mini(target.def.fight + mod, 10)
 	var dmg := 0
-	if st > tt:
-		dmg = Damage.amount(st, shooter.ranged.damage_mod, target.def.armour, sr)
+	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
+		dmg = Damage.amount(st, shooter.ranged.damage_mod, target.def.armour, sr, critical_hits)
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}

@@ -85,7 +85,7 @@ func fight(target_id: int) -> bool:
 	var t := state.figure(target_id)
 	if not can_act() or t == null or not Contact.enemies_of(state.figures, f).has(t):
 		return false
-	var res := Melee.resolve(dice, state.figures, f, t)
+	var res := Melee.resolve(dice, state.figures, f, t, state.critical_hits)
 	_spend(f)
 	res["id"] = f.id
 	res["target"] = t.id
@@ -105,7 +105,7 @@ func shoot(target_id: int) -> bool:
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	var res := Shooting.resolve(dice, state.board, f, t)
+	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits)
 	_spend(f)
 	if f.ranged.needs_reload:
 		f.loaded = false
@@ -116,12 +116,19 @@ func shoot(target_id: int) -> bool:
 	return true
 
 
-## TODO(rules): check that reloading a crossbow uses the activation's one non-move action.
+## Reload may replace the movement action (p. 34); never while engaged.
 func reload() -> bool:
 	var f := state.active()
-	if not can_act() or f.ranged == null or not f.ranged.needs_reload or f.loaded:
+	if f == null or f.actions_left <= 0 or f.ranged == null or not f.ranged.needs_reload or f.loaded:
 		return false
-	_spend(f)
+	if Contact.in_combat(state.figures, f):
+		return false
+	if f.moves_taken > 0:
+		if not can_act():
+			return false
+		_spend(f)
+	else:
+		f.actions_left -= 1
 	f.loaded = true
 	emit("reload", {"id": f.id})
 	return true

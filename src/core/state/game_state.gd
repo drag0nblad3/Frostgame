@@ -15,6 +15,8 @@ var order_index := 0
 var active_id := -1
 var winner := -1
 var over := false
+## Optional rule, disabled by default (Second Edition p. 55).
+var critical_hits := false
 
 
 func side_count() -> int:

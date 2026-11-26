@@ -61,3 +61,26 @@ func test_cannot_shoot_into_combat() -> void:
 	c.state.active_id = 1
 	c.state.active().actions_left = 2
 	check(not c.can_shoot(2), "target is fighting")
+
+func test_hasty_shot() -> void:
+	var c := _shot(make_board(), "archer", Vector2(20, 10), [10, 9])
+	c.state.active().moves_taken = 1
+	check(c.shoot(2))
+	check_eq(c.state.figure(2).health, 10, "hasty modifier makes it a tie")
+
+
+func test_reload_and_shoot_same_activation() -> void:
+	var c := _shot(make_board(), "crossbowman", Vector2(20, 10), [14, 5])
+	c.state.active().loaded = false
+	check(c.reload())
+	check(c.can_shoot(2))
+	check(c.shoot(2))
+	check_eq(c.state.active().actions_left, 0)
+
+
+func test_reload_after_shooting() -> void:
+	var c := _shot(make_board(), "crossbowman", Vector2(20, 10), [1, 20])
+	check(c.shoot(2))
+	check(c.reload())
+	check(c.state.active().loaded)
+	check_eq(c.state.active().actions_left, 0)

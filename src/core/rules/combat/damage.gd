@@ -1,15 +1,11 @@
 class_name Damage
 extends RefCounted
-## Damage from a won fight or shot.
+## Combat damage; optional criticals (Second Edition p. 55).
 
-
-## Winner's total plus weapon damage, minus the loser's Armour; a natural 20
-## doubles it (critical hit).
-## TODO(rules): check the 2e critical-hit rule (double damage on a natural 20).
-static func amount(total: int, weapon_damage: int, armour: int, natural: int) -> int:
+static func amount(total: int, weapon_damage: int, armour: int, natural: int, critical_hits: bool = false) -> int:
 	var dmg := maxi(total + weapon_damage - armour, 0)
-	if natural == 20:
-		dmg *= 2
+	if critical_hits and natural == 20:
+		dmg += 5
 	return dmg
 
 

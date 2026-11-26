@@ -28,10 +28,28 @@ func test_tie_hurts_both() -> void:
 	check_eq(r["b_dmg"], 4, "14 - 10")
 
 
-func test_natural_20_doubles() -> void:
+func test_critical_is_optional() -> void:
 	var figs := _pair("thug", "thug")
-	var r := Melee.resolve(LoadedDice.new([20, 1]), figs, figs[0], figs[1])
-	check_eq(r["b_dmg"], (22 - 10) * 2, "critical hit")
+	var normal := Melee.resolve(LoadedDice.new([20, 1]), figs, figs[0], figs[1])
+	check_eq(normal["b_dmg"], 12, "normal damage")
+	var critical := Melee.resolve(LoadedDice.new([20, 1]), figs, figs[0], figs[1], true)
+	check_eq(critical["b_dmg"], 17, "optional +5 damage")
+
+
+func test_critical_overrides_higher_total() -> void:
+	var figs := _pair("thug", "knight")
+	var r := Melee.resolve(LoadedDice.new([20, 19]), figs, figs[0], figs[1], true)
+	check_eq(r["b_dmg"], 14)
+	check_eq(r["a_dmg"], 0)
+
+
+func test_support_cancels() -> void:
+	var figs: Array[Figure] = [
+		fig("thug", 0, Vector2(10, 10), 1), fig("thug", 1, Vector2(11, 10), 2),
+		fig("thug", 0, Vector2(11, 11), 3), fig("thug", 1, Vector2(10, 9), 4),
+	]
+	check_eq(Melee.fight_mod(figs, figs[0], figs[1]), 2)
+	check_eq(Melee.fight_mod(figs, figs[1], figs[0]), 2)
 
 
 func test_support_bonus() -> void:
