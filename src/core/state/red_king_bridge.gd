@@ -102,7 +102,7 @@ static func forced_void(c: GameController,f: Figure,dest: Vector2,last_safe: Vec
 	if not active(s) or not f.in_play() or not s.board.over_void(dest,Figure.BASE_RADIUS):
 		return false
 	var raw := c.dice.d20()
-	var success := StatRoll.succeeds(raw,f.effective_move()+f.roll_penalty(),16)
+	var success := StatRoll.succeeds(raw,f.effective_move()+MagicEquipment.bonus(f,"move_test")+f.roll_penalty(),16)
 	c.emit("bridge_void",{"id":f.id,"roll":raw,"success":success})
 	if not success:
 		c._hurt(f,f.health,f,false)

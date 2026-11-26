@@ -75,7 +75,7 @@ static func pull(c: GameController,f: Figure,resist: String="") -> void:
 		return
 	if resist in ["fight","will"]:
 		var raw := c.dice.d20()
-		var mod := f.effective_fight() if resist=="fight" else f.effective_will()
+		var mod := (f.effective_fight()+MagicEquipment.bonus(f,"fight_test")) if resist=="fight" else f.effective_will()
 		var passed := StatRoll.succeeds(raw,mod+f.roll_penalty(),20)
 		c.emit("sinkhole_resist",{"id":f.id,"stat":resist,"roll":raw,"success":passed})
 		if passed:

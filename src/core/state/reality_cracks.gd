@@ -162,7 +162,7 @@ static func _repeat(c: GameController,effect: int) -> void:
 			continue
 		var origin: Vector2=f.pos
 		for token in f.carried_treasures():
-			if not StatRoll.succeeds(c.dice.d20(),f.effective_move()+f.roll_penalty(),18):
+			if not StatRoll.succeeds(c.dice.d20(),f.effective_move()+MagicEquipment.bonus(f,"move_test")+f.roll_penalty(),18):
 				var margin := Vector2.ONE*TreasureRules.TOKEN_RADIUS
 				var target := (origin+direction(c)*6.0).clamp(margin,s.board.size-margin)
 				c._loot._drop(f,target if s.board.can_stand(target,TreasureRules.TOKEN_RADIUS) else origin,token)

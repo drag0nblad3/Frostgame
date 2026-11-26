@@ -99,7 +99,7 @@ static func balance(c: GameController,f: Figure) -> bool:
 	if not cracked(c.state) or not f.in_play() or airborne(f):
 		return true
 	var raw := c.dice.d20()
-	var passed := StatRoll.succeeds(raw,f.effective_move()+f.roll_penalty(),16)
+	var passed := StatRoll.succeeds(raw,f.effective_move()+MagicEquipment.bonus(f,"move_test")+f.roll_penalty(),16)
 	c.emit("hill_balance",{"id":f.id,"roll":raw,"success":passed})
 	if not passed:
 		fall(c,f)

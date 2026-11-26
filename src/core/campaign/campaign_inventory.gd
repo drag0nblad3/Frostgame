@@ -93,7 +93,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var info: Dictionary = catalog()[item_id(item)]
 	if info.get("expansion","")=="red_king" and (not info["live"] or not item.get("unlocked",true)):
 		return false
-	if info.get("bonus",{}).has("cast_failure_cap") and unit["type"] not in ["wizard","apprentice"]:
+	if (info.get("caster_only",false) or info.get("bonus",{}).has("cast_failure_cap")) and unit["type"] not in ["wizard","apprentice"]:
 		return false
 	if item.get("gear", "") == "gear_ring_transference" and unit["type"] not in ["wizard", "apprentice"]:
 		return false

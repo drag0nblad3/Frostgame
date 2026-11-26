@@ -454,7 +454,7 @@ func _finish_one(health: int) -> bool:
 		"banish":
 			for other in s.figures:
 				if other.in_play() and other.ring_side==f.ring_side and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
-					_banish(f, other, int(result["roll"]), 4)
+					_banish(f, other, int(result["roll"])+MagicEquipment.bonus(f,"banish_resistance_tn"), 4)
 		"scatter_shot":
 			for other in s.figures:
 				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:

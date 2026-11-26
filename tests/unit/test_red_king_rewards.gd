@@ -29,3 +29,34 @@ func test_artefact_uniqueness() -> void:
 	check_eq(d["red_king_found_artefacts"].size(),20)
 	check(not RedKingRewards.award(d,"artefact",dice))
 	check_eq(d["loot"].size(),20)
+
+
+func test_gear_stat_bonuses_are_not_combat_stats() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var catalog := RedKingRewards.catalog()
+	var before_fight := f.effective_fight()
+	var before_move := f.effective_move()
+	for id in ["gear_rk_armring_of_strength","gear_rk_surefoot_boots"]:
+		check(catalog[id]["live"])
+		f.items.append({"gear":id,"gear_info":catalog[id]})
+	check_eq(MagicEquipment.bonus(f,"fight_test"),5)
+	check_eq(MagicEquipment.bonus(f,"move_test"),5)
+	check_eq(f.effective_fight(),before_fight)
+	check_eq(f.effective_move(),before_move)
+
+
+func test_feather_blade_slot_discount() -> void:
+	var unit := {"id":0,"type":"wizard","weapons":["two_handed","bow","dagger"]}
+	var d := {"loot":[{"kind":"gear","gear":"gear_rk_the_feather_blade","owner":0}]}
+	check_eq(CasterLoadout.carried(d,unit)["slots"],3)
+	check_eq(CasterLoadout.carried(d,unit,0)["slots"],4)
+
+
+func test_fixed_scenario_deployments() -> void:
+	var packs := ContentProfile.registered().duplicate(true)
+	packs["red_king"]["status"]="ready"
+	var defs := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.new(["red_king"],packs))
+	for id in ["red_king_sinkhole","red_king_hill"]:
+		var s := ScenarioLoader.load_id(id,defs,terrain())
+		for f in s.figures:
+			check(s.board.can_stand(f.pos,Figure.BASE_RADIUS),"%s: illegal deployment at %s"%[id,f.pos])

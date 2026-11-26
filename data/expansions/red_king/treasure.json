@@ -99,8 +99,9 @@
       "buy": 400,
       "sell": 150,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "slot_discount": 1
     },
     "gear_rk_talisman_of_speed": {
       "name": "Talisman of Speed",
@@ -116,8 +117,10 @@
       "type": "item",
       "buy": 200,
       "sell": 50,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "fight_test": 5
+      },
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_mask_of_many_faces": {
@@ -205,8 +208,11 @@
       "type": "item",
       "buy": 200,
       "sell": 75,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "undead_damage": 1,
+        "energy_drain_immunity": 1
+      },
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_enchanted_scroll_wax_6": {
@@ -304,8 +310,10 @@
       "type": "item",
       "buy": 200,
       "sell": 50,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "move_test": 5
+      },
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_golden_fangs_6": {
@@ -358,9 +366,12 @@
       "type": "item",
       "buy": 250,
       "sell": 125,
-      "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "bonus": {
+        "banish_resistance_tn": 2
+      },
+      "live": true,
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_extended_scroll": {
       "name": "Extended Scroll",
