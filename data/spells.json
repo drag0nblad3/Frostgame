@@ -144,7 +144,7 @@
     "name": "Telekinesis",
     "school": "enchanter",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "treasure"
   },
   "beauty": {
     "name": "Beauty",
@@ -163,7 +163,7 @@
     "name": "Fool's Gold",
     "school": "illusionist",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "treasure"
   },
   "glow": {
     "name": "Glow",
@@ -328,7 +328,7 @@
     "name": "Suggestion",
     "school": "soothsayer",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "true_sight": {
     "name": "True Sight",

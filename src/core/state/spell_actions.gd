@@ -10,6 +10,7 @@ var counter: CounterMagic
 var illusions: IllusionActions
 var resistance: ResistanceActions
 var weapons: WeaponActions
+var treasure_magic: TreasureMagic
 
 
 func _init(controller: GameController) -> void:
@@ -21,6 +22,7 @@ func _init(controller: GameController) -> void:
 	illusions = IllusionActions.new(c)
 	resistance = ResistanceActions.new(c)
 	weapons = WeaponActions.new(c)
+	treasure_magic = TreasureMagic.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -35,7 +37,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
-	if kind in ["unimplemented", "placement", "counter"]:
+	if kind in ["unimplemented", "placement", "counter", "treasure"]:
 		return false
 	if kind == "self":
 		return t == f and f.elemental_shield == 0
@@ -63,6 +65,8 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t.side != f.side
 	if id == "fast_act":
 		return t != f and not t.activated and not s.is_fast(t) and (t.side == f.side or t.side < 0) and not s.group.members.has(t.id)
+	if id == "suggestion":
+		return t != f and not t.spell_effects.has("mind_lock")
 	if id == "leap":
 		return t.side == f.side and not t.spell_effects.has("petrify") and not movement.points(f, t, id, true).is_empty()
 	if id == "transpose":
@@ -92,7 +96,7 @@ func can_cast(id: String, target_id: int) -> bool:
 
 
 func start(id: String, target_id: int) -> bool:
-	if not can_cast(id, target_id) or id in ["leap", "transpose"]:
+	if not can_cast(id, target_id) or id in ["leap", "transpose", "suggestion"]:
 		return false
 	return _roll(id, target_id)
 
@@ -117,10 +121,50 @@ func start_counter(id: String, index: int) -> bool:
 	return _roll(id, option["target"], null, false, -1, option)
 
 
+func treasure_options(id: String) -> Array[TreasureToken]:
+	var out: Array[TreasureToken] = []
+	var f := c.state.active()
+	if id not in ["telekinesis", "fools_gold"] or f == null or not c.can_act() or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light") or not available_spell(f, id):
+		return out
+	for token in c.state.treasures:
+		if treasure_magic.can_target(f, id, token) and not treasure_magic.points(f, id, token, true).is_empty():
+			out.append(token)
+	return out
+
+
+func start_treasure(id: String, token_id: int, at: Vector2) -> bool:
+	var token := c.state.treasure(token_id)
+	if token == null or not treasure_options(id).has(token) or not treasure_magic.can_place(c.state.active(), id, token, at):
+		return false
+	return _roll(id, c.state.active_id, at, false, -1, {"token": token_id})
+
+
 func start_move(id: String, target_id: int, at: Vector2) -> bool:
-	if id != "leap" or not can_cast(id, target_id) or not movement.can_land(c.state.active(), c.state.figure(target_id), id, at):
+	if not can_cast(id, target_id):
+		return false
+	var f := c.state.active()
+	var t := c.state.figure(target_id)
+	if id == "leap":
+		if not movement.can_land(f, t, id, at):
+			return false
+	elif id == "suggestion":
+		if not suggestion_points(t).has(at):
+			return false
+	else:
 		return false
 	return _roll(id, target_id, at)
+
+
+func suggestion_points(t: Figure) -> Array[Vector2]:
+	var out: Array[Vector2] = [t.pos]
+	var center := MovePlanner.node_at(t.pos)
+	for dx in range(-6, 7):
+		for dy in range(-6, 7):
+			var at := MoveGrid.to_pos(center + Vector2i(dx, dy))
+			if Vector2(t.pos.distance_to(at), t.elevation - c.state.board.height_at(at)).length() <= 3.0 and ElevationRules.fall_damage(t.elevation - c.state.board.height_at(at)) == 0 and movement.landing(t, at):
+				if not out.has(at):
+					out.append(at)
+	return out
 
 
 func start_swap(first: int, second: int) -> bool:
@@ -230,6 +274,9 @@ func finish(health: int) -> bool:
 	if id == "decay":
 		weapons.destroy(t, p["effect"]["weapon"])
 		return true
+	if id in ["telekinesis", "fools_gold"]:
+		treasure_magic.apply(f, id, s.treasure(p["effect"]["token"]), p["at"], int(result["roll"]))
+		return true
 	if TerrainMagic.SPELLS.has(id):
 		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))
 		return true
@@ -261,6 +308,9 @@ func finish(health: int) -> bool:
 			illusions.sweep()
 		"teleport", "leap":
 			movement.move(t, p["at"], true)
+		"suggestion":
+			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]))
+			return true
 		"push":
 			movement.push(f, t)
 		"blink":
@@ -466,3 +516,11 @@ func insure() -> bool:
 func _resisted_death(success: bool, f: Figure, t: Figure) -> void:
 	if not success and t.in_play():
 		c._hurt(t, t.health, f, false)
+
+
+func _suggestion_result(success: bool, t: Figure, at: Vector2) -> void:
+	if success or not t.in_play():
+		return
+	c._loot.drop_on_death(t)
+	if at != t.pos:
+		movement.move(t, at)

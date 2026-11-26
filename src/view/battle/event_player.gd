@@ -68,6 +68,9 @@ func _play(e: GameEvent) -> void:
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(self, false)
 			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))
+		"treasure_moved":
+			var token: MeshInstance3D = treasure_views[d["treasure"]]
+			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))
 		"treasure_secured", "treasure_lost":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.visible = false

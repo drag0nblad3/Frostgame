@@ -102,6 +102,9 @@ func refresh() -> void:
 			break
 	cast_options.clear()
 	for id: String in c._magic.available_spells(f):
+		if not c._magic.treasure_options(id).is_empty():
+			cast_options.append(id)
+			continue
 		if not c._magic.counter_options(id).is_empty():
 			cast_options.append(id)
 			continue
@@ -160,9 +163,22 @@ func preview() -> void:
 			elif option["kind"] != "storm":
 				points.append(c.state.figure(option["target"]).pos)
 			radius = 0.7
+		"treasure_spell":
+			tokens.assign(c._magic.treasure_options(selected_spell))
+			for token in tokens:
+				points.append(c._magic.treasure_magic.origin(token))
+			radius = 0.65
+			hint = "Choose a treasure to move."
+		"treasure_destination":
+			points.assign(c._magic.treasure_magic.points(f, selected_spell, c.state.treasure(spell_first)))
+			hint = "Choose the treasure's destination."
 		"leap_destination":
-			points.assign(c._magic.movement.points(f, c.state.figure(spell_first), "leap"))
-			hint = "Choose a landing spot for the selected ally."
+			if selected_spell == "suggestion":
+				points.assign(c._magic.suggestion_points(c.state.figure(spell_first)))
+				hint = "Choose a destination (or the figure's current position)."
+			else:
+				points.assign(c._magic.movement.points(f, c.state.figure(spell_first), "leap"))
+				hint = "Choose a landing spot for the selected ally."
 		"swap_second":
 			for t in c.state.figures:
 				if c.can_cast("transpose", t.id) and c._magic.movement.can_swap(f, c.state.figure(spell_first), t):
@@ -293,6 +309,8 @@ func action(key: String) -> bool:
 			preview()
 			return false
 		mode = "spell_point" if c._magic.is_placement(selected_spell) else "spell_target"
+		if selected_spell in ["telekinesis", "fools_gold"]:
+			mode = "treasure_spell"
 		available.assign(["spell_cancel"])
 		if selected_spell in ["fog", "wall"]:
 			available.append("rotate_spell")
@@ -386,9 +404,9 @@ func tap(screen: Vector2) -> bool:
 			"swap_second":
 				return c._magic.start_swap(spell_first, id)
 			"spell_target":
-				if selected_spell in ["leap", "transpose"]:
+				if selected_spell in ["leap", "transpose", "suggestion"]:
 					spell_first = id
-					mode = "leap_destination" if selected_spell == "leap" else "swap_second"
+					mode = "swap_second" if selected_spell == "transpose" else "leap_destination"
 					preview()
 					return false
 				return c.start_cast(selected_spell, id)
@@ -411,8 +429,19 @@ func tap(screen: Vector2) -> bool:
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode == "treasure_spell":
+		for token in tokens:
+			if at.distance_to(c._magic.treasure_magic.origin(token)) <= 0.9:
+				spell_first = token.id
+				mode = "treasure_destination"
+				preview()
+				return false
+	if mode == "treasure_destination":
+		return c._magic.start_treasure(selected_spell, spell_first, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "leap_destination":
-		return c._magic.start_move("leap", spell_first, MoveGrid.to_pos(MovePlanner.node_at(at)))
+		var t := c.state.figure(spell_first)
+		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
+		return c._magic.start_move(selected_spell, spell_first, destination)
 	if mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return c._magic.start_at(selected_spell, destination, spell_rotated)
