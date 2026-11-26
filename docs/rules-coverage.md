@@ -185,3 +185,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## The Living Museum
 
 - p.145: five dormant statues in an X inside four broken walls, five adjacent treasures, TN8 Will test on each collection attempt (failure spends action); successful pickup animates a random remaining statue as a medium construct. Constructs award 10 XP instead of normal creature XP. The statues are temporary terrain blockers, replaced by creature figures on activation. Optional random pickup encounters disabled to focus on scenario behavior. Fixed placement and placeholder statue geometry; voluntary resistance empowerment for collection tests not implemented.
+
+## Preparation additions
+
+- pp. 113, 121, 124: Awareness is a pre-battle ritual and provides +2 initiative per active caster (maximum +4), removable by counter-magic. Illusionary Soldier may also be prepared between battles and can use any soldier profile except apothecary; one per warband. Mid-battle creation still uses the Thug. Familiar is destroyed at Health 1 or below, removing its maximum Health bonus. Campaign deployment wraps after ten figures so prepared temporary members remain on the table. Initiative remains the existing ordered two-player implementation. 

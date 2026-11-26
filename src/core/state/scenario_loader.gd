@@ -36,12 +36,15 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				def.role = "soldier"
 				def.specialist = def.id == "large_construct"
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
-			if entry.get("prepared_zombie", false):
-				unit.summon_spell = "raise_zombie"
+			if entry.get("prepared_zombie", false) or entry.get("prepared_illusion", false):
+				unit.summon_spell = "raise_zombie" if entry.get("prepared_zombie", false) else "illusionary_soldier"
 				for caster in s.figures:
 					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
 						unit.summoned_by = caster.id
 						break
+			unit.familiar = entry.get("familiar", false)
+			if entry.get("awareness", false):
+				unit.spell_effects["awareness"] = true
 			unit.injury_types = entry.get("injury_types", {}).duplicate(true)
 			unit.health = maxi(1, unit.health - int(entry.get("starting_loss", 0)))
 			for item: Dictionary in entry.get("items", []):

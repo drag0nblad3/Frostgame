@@ -8,6 +8,7 @@ const BASE_RADIUS := 0.5
 var id := 0
 var campaign_id := -1
 var injury_types := {}
+var familiar := false
 var original_side := 0
 var controller_id := -1
 var control_spell := ""

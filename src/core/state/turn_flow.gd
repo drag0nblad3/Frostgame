@@ -30,7 +30,11 @@ func start_turn() -> void:
 		f.spell_effects.erase("time_walk")
 		f.actions_left = 0
 	s.fast_acts.clear()
-	var ini := Initiative.roll(_c.dice, s.side_count())
+	var bonuses := {}
+	for f in s.figures:
+		if f.in_play() and f.side >= 0 and f.spell_effects.has("awareness"):
+			bonuses[f.side] = mini(4, int(bonuses.get(f.side, 0)) + 2)
+	var ini := Initiative.roll(_c.dice, s.side_count(), bonuses)
 	s.order = ini["order"]
 	s.order_index = 0
 	s.phase = Phase.WIZARD

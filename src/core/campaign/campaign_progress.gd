@@ -24,6 +24,8 @@ func deployment() -> Dictionary:
 		var bonuses := InjuryRules.bonuses(unit, entry.get("stat_bonus", {}))
 		entry["injury_types"] = unit.get("injury_types", {}).duplicate(true)
 		entry["starting_loss"] = InjuryRules.starting_loss(unit)
+		entry["familiar"] = unit.get("familiar", false)
+		entry["awareness"] = unit.get("awareness", false)
 		if unit.get("familiar", false):
 			bonuses["health"] = int(bonuses.get("health", 0)) + 2
 		if unit.has("companion_of"):
@@ -34,6 +36,11 @@ func deployment() -> Dictionary:
 		units.append(entry)
 	if data.get("prepared_zombie", false):
 		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true})
+	if str(data.get("prepared_illusion", "")) != "":
+		units.append({"type": data["prepared_illusion"], "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_illusion": true})
+	# Two deployment ranks prevent extra prepared figures from exceeding the table.
+	for i in units.size():
+		units[i]["at"] = [4.5 + 3.0 * (i % 10), 3.0 + 1.5 * floori(i / 10.0)]
 	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units}
 
 
@@ -81,8 +88,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data["ritual_attempts"] = {}
 	data["preparation_started"] = false
 	data["prepared_zombie"] = false
+	data["prepared_illusion"] = ""
 	for unit: Dictionary in data["units"]:
 		unit["familiar"] = false
+		unit["awareness"] = false
 		unit["niggle_paid"] = false
 		unit["last_knocked_out"] = false
 	for f in c.state.figures:

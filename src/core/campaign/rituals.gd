@@ -1,7 +1,7 @@
 class_name Rituals
 extends RefCounted
 ## Campaign-only spell attempts keyed by battle number, caster and spell.
-const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie"]
+const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier"]
 const AFTER := ["absorb_knowledge", "write_scroll", "miraculous_cure"]
 const ANIMALS := ["bear", "ice_toad", "snow_leopard", "wolf"]
 const CONSTRUCTS := ["small_construct", "medium_construct", "large_construct"]
@@ -25,8 +25,15 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 		"absorb_knowledge":
 			if wizard and not u.get("last_knocked_out", false):
 				out.append("")
-		"familiar":
+		"familiar", "awareness":
 			out.append("")
+		"illusionary_soldier":
+			if not d.has("prepared_illusion") or d["prepared_illusion"] == "":
+				var db := FigureDb.load_files()
+				for type: String in db.figures:
+					var def := db.get_def(type)
+					if def.role == "soldier" and type != "apothecary":
+						out.append(type)
 		"brew_potion":
 			for p: String in CampaignInventory.LESSER:
 				out.append(p)
@@ -105,6 +112,10 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 	match id:
 		"familiar":
 			u["familiar"] = true
+		"awareness":
+			u["awareness"] = true
+		"illusionary_soldier":
+			d["prepared_illusion"] = option
 		"brew_potion":
 			d["loot"].append({"kind": "potion", "potion": option, "owner": -1})
 		"write_scroll":

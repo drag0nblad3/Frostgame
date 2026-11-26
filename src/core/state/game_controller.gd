@@ -246,6 +246,10 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		if dmg == 0:
 			return
 	var out := Damage.apply(f, dmg)
+	if f.familiar and f.health <= 1:
+		f.familiar = false
+		f.def = f.def.with_bonuses({"health": -2})
+		emit("familiar_lost", {"id": f.id})
 	if combat and not out and by != f and by.def.traits.has("poison"):
 		poison(f)
 	emit("damage", {"id": f.id, "by": by.id, "amount": dmg, "health": f.health})
