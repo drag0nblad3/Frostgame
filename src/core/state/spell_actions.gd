@@ -91,7 +91,7 @@ func can_cast(id: String, target_id: int) -> bool:
 	if id == "plague_of_insects":
 		return not t.insects_immune() and not t.spell_effects.has(id)
 	if id == "suggestion":
-		return t != f and not t.spell_effects.has("mind_lock")
+		return t != f and not t.def.traits.has("mind_lock") and not t.spell_effects.has("mind_lock")
 	if id == "bones_of_the_earth":
 		return not t.def.traits.has("large") and t.elevation < 0.01 and not t.spell_effects.has(id)
 	if id == "leap":
@@ -497,7 +497,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var won := a > d
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)
-	var dmg := Damage.amount(a, 0, t.effective_armour(), ar, s.critical_hits) if won else 0
+	var dmg := Damage.amount(a, 0, t.effective_armour() + (2 if elemental and t.def.traits.has("elemental_resistance_2") else 0), ar, s.critical_hits and not t.def.traits.has("immune_critical")) if won else 0
 	if not magical and t.def.traits.has("immune_normal"):
 		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:

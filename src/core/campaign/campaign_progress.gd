@@ -101,6 +101,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			var victim := c.state.figure(e["id"])
 			var attacker := c.state.figure(e["by"])
 			if victim != null and attacker != null and victim.side < 0 and attacker.side == side:
+				var bounty := 20 if victim.def.traits.has("bounty_20") else (10 if victim.def.traits.has("bounty_10") else 0)
+				if bounty > 0:
+					data["gold"] = int(data["gold"]) + bounty
+					report.append("%s bounty: %d gc." % [victim.label(), bounty])
 				if c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
 					scenario_xp += 50
 				elif c.state.scenario_special == "genie_in_the_bottle" and victim.def.id == "genie":

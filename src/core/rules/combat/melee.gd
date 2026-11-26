@@ -20,9 +20,9 @@ static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 	return bonus
 
 
-static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
+static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure, charging: bool = false) -> int:
 	var net := clampi(support(figures, f, enemy) - support(figures, enemy, f), 0, 6)
-	return mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + net + (1 if f.spell_effects.has("enchant_weapon") and f.ranged == null else 0), 10)
+	return mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + net + (2 if charging and f.def.traits.has("horns") else 0) + (1 if f.spell_effects.has("enchant_weapon") and f.ranged == null else 0), 10)
 
 
 ## Rolls the fight. Returns {a_roll, b_roll, a_total, b_total, a_dmg, b_dmg}:
@@ -33,7 +33,7 @@ static func resolve(dice: Dice, figures: Array[Figure], a: Figure, b: Figure, cr
 
 
 static func resolve_rolls(figures: Array[Figure], a: Figure, b: Figure, ar: int, br: int, critical_hits: bool = false) -> Dictionary:
-	var at := ar + fight_mod(figures, a, b) + a.roll_penalty()
+	var at := ar + fight_mod(figures, a, b, a.moves_taken > 0) + a.roll_penalty()
 	var bt := br + fight_mod(figures, b, a) + b.roll_penalty()
 	var out := {"a_roll": ar, "b_roll": br, "a_total": at, "b_total": bt, "a_dmg": 0, "b_dmg": 0}
 	var ac := critical_hits and ar == 20
@@ -53,7 +53,7 @@ static func _damage(total: int, winner: Figure, loser: Figure, natural: int, cri
 	var dmg := Damage.amount(total, winner.melee.damage_mod + MagicEquipment.bonus(winner, "damage", winner.melee.id) + MagicEquipment.bonus(winner, "melee_damage") + loser.melee.enemy_damage_mod + extra, loser.effective_armour(), natural, false)
 	if winner.def.traits.has("powerful") or (winner.def.traits.has("energy_drain") and not loser.def.traits.has("undead") and not loser.def.traits.has("construct")):
 		dmg *= 2
-	if critical_hits and natural == 20:
+	if critical_hits and natural == 20 and not loser.def.traits.has("immune_critical"):
 		dmg += 5
 	if dmg > 0 and winner.ranged == null and winner.spell_effects.has("elemental_hammer"):
 		dmg += 5

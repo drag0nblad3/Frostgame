@@ -9,7 +9,7 @@ func _init(controller: GameController) -> void:
 
 
 static func protected_from(s: GameState, actor: Figure, target: Figure) -> bool:
-	if actor.spell_effects.has("potion_clearsight") or actor == target or actor.side == target.side or actor.side < 0 or actor.def.role == "creature" or actor.def.traits.has("animal") or not target.spell_effects.has("beauty"):
+	if actor.def.traits.has("true_sight") or actor.spell_effects.has("potion_clearsight") or actor == target or actor.side == target.side or actor.side < 0 or actor.def.role == "creature" or actor.def.traits.has("animal") or not target.spell_effects.has("beauty"):
 		return false
 	for f in s.figures:
 		if f.in_play() and f.side == actor.side and f.spell_effects.has("true_sight") and Shooting.distance(f, actor) <= 6.0:

@@ -70,7 +70,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	var tt := tr + mini(target.effective_fight() + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
-		dmg = Damage.amount(st, shooter.ranged.damage_mod + magic_damage, target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits)
+		dmg = Damage.amount(st, shooter.ranged.damage_mod + magic_damage, target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits and not target.def.traits.has("immune_critical"))
 		if dmg > 0 and not null_target and shooter.spell_effects.has("elemental_hammer"):
 			dmg += 5
 	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and (null_target or not WeaponActions.magic_attack(shooter, shooter.ranged)):

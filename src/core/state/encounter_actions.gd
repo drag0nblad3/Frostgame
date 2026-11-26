@@ -1,6 +1,6 @@
 class_name EncounterActions
 extends RefCounted
-## Optional first-pickup encounters (p. 176). Prototype encounter pool in JSON.
+## Optional first-pickup encounters (p. 176). Three-tier encounter table in JSON.
 
 var c: GameController
 var pool: Array = []
@@ -9,16 +9,21 @@ var pool: Array = []
 func _init(controller: GameController) -> void:
 	c = controller
 	if c.state.random_encounters:
-		pool = JsonFile.read("res://data/encounters.json").get("entries", [])
+		pool = JsonFile.read("res://data/encounters.json").get("tiers", [])
 
 
 func on_pickup() -> void:
 	if not c.state.random_encounters or c.state.creature_db == null or pool.is_empty() or c.dice.d20() < 10:
 		return
-	var entry: Dictionary = pool[c.dice.pick(pool.size())]
+	var entry := encounter(c.dice.d20(), c.dice.d20())
 	var edge := c.dice.pick(4)
 	for i in int(entry.get("count", 1)):
 		_spawn(entry["type"], edge)
+
+
+func encounter(tier_roll: int, creature_roll: int) -> Dictionary:
+	var tier := 0 if tier_roll <= 12 else (1 if tier_roll <= 18 else 2)
+	return pool[tier][clampi(creature_roll, 1, 20) - 1]
 
 
 func _spawn(type: String, edge: int) -> void:
