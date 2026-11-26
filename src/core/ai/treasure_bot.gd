@@ -124,6 +124,23 @@ static func _nearest(c: GameController, f: Figure) -> TreasureToken:
 
 
 static func _escape(c: GameController, f: Figure) -> bool:
+	if RealityCracks.id(c.state)==12:
+		if RealityCracks.exit_center(c):
+			return true
+		if not c.can_move():
+			return false
+		var center := c.state.board.size*0.5
+		var r := c.reach()
+		var best: Variant=null
+		var score := f.pos.distance_squared_to(center)
+		for n: Vector2i in r.nodes():
+			var d := MoveGrid.to_pos(n).distance_squared_to(center)
+			if d<score-0.01:
+				best=n
+				score=d
+		return best!=null and c.move_to(best)
+	if RealityCracks.blocks_exit(c.state):
+		return false
 	if not c.can_move():
 		return false
 	var r := c.reach()

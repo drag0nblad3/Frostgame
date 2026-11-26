@@ -21,6 +21,14 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Hrut hunting parties arrive."
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
+		"reality_crack":
+			return "Reality Crack %d — %s."%[d["number"],d["name"]]
+		"reality_stable":
+			return "Reality stabilizes."
+		"reality_school":
+			return "%s magic: %+d casting this turn."%[str(d["school"]).capitalize(),d["bonus"]]
+		"reality_null":
+			return "Null wave: active spells cancelled and magic items suppressed this turn."
 		"ring_switch":
 			return "%s shifts to the %s of the ring."%[name_of(s,d["id"]),"inside" if d["plane"]==1 else "outside"]
 		"ring_reinforcements":

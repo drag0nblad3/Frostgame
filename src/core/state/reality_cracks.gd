@@ -210,7 +210,8 @@ static func low_gravity(f: Figure) -> bool:
 
 
 static func activation(c: GameController,f: Figure) -> void:
-	if int(f.spell_effects.get("reality_skip_turn",-1))==c.state.turn or f.spell_effects.erase("reality_skip_next"):
+	if int(f.spell_effects.get("reality_skip_turn",-1))==c.state.turn or bool(f.spell_effects.get("reality_skip_next",false)):
+		f.spell_effects.erase("reality_skip_next")
 		f.actions_left=0
 
 

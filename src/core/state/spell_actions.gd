@@ -513,7 +513,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
-	var los := LineOfSight.check(s.board, from, t.pos) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	var los := LineOfSight.check(s.board, from, t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
 	if not los.clear and (not s.board.floor_layout.is_empty() or RedKingHill.cracked(s)):
 		return
 	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)
@@ -521,7 +521,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 		mod -= 2
 	var ar := c.dice.d20()
 	var dr := c.dice.d20()
-	var a := ar + mini(power + (3 if t.spell_effects.has("glow") else 0), 10) + f.roll_penalty()
+	var a := ar - (2 if RealityCracks.low_gravity(f) else 0) + mini(power + (3 if t.spell_effects.has("glow") else 0), 10) + f.roll_penalty()
 	var d := dr + mini(t.effective_fight() + mod, 10) + t.roll_penalty() + t.shooting_defence_penalty()
 	var won := a > d
 	if s.critical_hits:

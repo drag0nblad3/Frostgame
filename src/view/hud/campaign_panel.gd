@@ -18,6 +18,7 @@ var start: Button
 var story_start: Button
 var story_veil: CheckBox
 var recruit_status: CheckBox
+var reality_option: CheckBox
 var reconcile_button: Button
 var continue_skirmishes: Button
 var begin: Button
@@ -166,6 +167,12 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	story_veil.button_pressed=true
 	col.add_child(story_veil)
 	story_start=_command(col,"Start The Red King storyline",func() -> void: story_requested.emit(story_veil.button_pressed))
+	reality_option=CheckBox.new()
+	reality_option.text="Optional Reality Cracks (compatible maps)"
+	reality_option.toggled.connect(func(on: bool) -> void:
+		campaign.data["reality_cracks"]=on
+		campaign.save())
+	col.add_child(reality_option)
 	recruit_status=CheckBox.new()
 	recruit_status.text="Roll optional status for random recruits"
 	recruit_status.toggled.connect(func(on: bool) -> void:
@@ -203,6 +210,8 @@ func refresh(in_battle: bool) -> void:
 	begin.visible = not d.is_empty()
 	_scenario.visible=not d.is_empty() and not in_battle and not RedKingCampaign.active(d)
 	var stage := RedKingCampaign.next_stage(d)
+	reality_option.visible=not d.is_empty() and not in_battle and db.content_profile.rule("red_king_reality_cracks")
+	reality_option.set_pressed_no_signal(bool(d.get("reality_cracks",false)))
 	recruit_status.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty()
 	recruit_status.set_pressed_no_signal(bool(d.get("red_king_recruit_status",false)))
 	reconcile_button.visible=RedKingCampaign.active(d) and stage.is_empty() and RaggedWarbands.active(d) and not in_battle

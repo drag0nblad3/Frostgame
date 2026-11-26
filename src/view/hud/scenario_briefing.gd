@@ -49,6 +49,8 @@ static func progress(s: GameState) -> String:
 			text+=" | Ryce fleeing"
 		elif rescue!=null:
 			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
+	if RealityCracks.id(s)>0:
+		text+=" | Reality: "+str(RealityCracks.TITLES[RealityCracks.id(s)-1])
 	if RedKingRingworld.active(s):
 		text+=" | Key-Masters %d/4"%RedKingRingworld.remaining(s)
 		var active_figure := s.active()

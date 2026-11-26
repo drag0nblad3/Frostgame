@@ -240,6 +240,7 @@ func new_game(seed_value: int) -> void:
 	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
 	if _campaign_battle:
 		data["warbands"][0] = _campaign.deployment()
+		data["reality_cracks"]=_campaign.data.get("reality_cracks",false)
 	elif not _roster.is_empty():
 		data["warbands"][0] = _roster.duplicate(true)
 	var state := ScenarioLoader.from_dict(data, _figures, _terrain)

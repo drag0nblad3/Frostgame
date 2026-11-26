@@ -89,6 +89,8 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	if RealityCracks.can_exit_center(c):
+		available.append("reality_exit")
 	if RedKingRingworld.can_switch(c,f):
 		available.append("ring_switch")
 	if RedKingRingworld.can_escape(c,f):
@@ -397,6 +399,8 @@ func action(key: String) -> bool:
 		mode = ""
 		refresh()
 		return false
+	if key=="reality_exit":
+		return RealityCracks.exit_center(c)
 	if key=="ring_switch":
 		return RedKingRingworld.switch(c,c.state.active())
 	if key=="ring_escape":

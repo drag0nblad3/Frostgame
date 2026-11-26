@@ -136,7 +136,7 @@ func roll_penalty() -> int:
 
 
 func effective_shoot() -> int:
-	var value := def.shoot - (2 if RealityCracks.low_gravity(self) else 0) - (4 if spell_effects.has("furious_quill") else 0)
+	var value := def.shoot - (4 if spell_effects.has("furious_quill") else 0)
 	return maxi(0, value - 4) if affected_by_insects() else value
 
 
