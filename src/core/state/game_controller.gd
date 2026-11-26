@@ -190,12 +190,14 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 	f.moves_taken += 1
 	if not _magic.terrain.travel(f, path, cost):
 		if f.in_play():
+			CreatureSenses.reveal_contacts(self,f)
 			_magic.illusions.after_move(f)
 		return true
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
 	ScenarioSites.end_move(self, f)
 	RedKingSquatter.record_contact(self)
+	CreatureSenses.reveal_contacts(self,f)
 	_magic.illusions.after_move(f)
 	return true
 

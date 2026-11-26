@@ -414,7 +414,7 @@ func _finish_one(health: int) -> bool:
 			else:
 				movement.move(t, p["at"], true)
 		"suggestion":
-			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]))
+			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]),5 if t.def.traits.has("blood_marked") else 0)
 			return true
 		"push":
 			movement.push(f, t)
@@ -576,7 +576,7 @@ func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
 
 
 func _direct_attack(f: Figure, t: Figure, power: int) -> void:
-	if ScenarioNull.muted(t):
+	if ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
 		return
 	var a := c.dice.d20() + power
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()

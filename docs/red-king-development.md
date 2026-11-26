@@ -36,3 +36,5 @@ Added lifecycle hooks for Pain-Blink, aura of pain, automatic damage, combustion
 ## Act I / The Squatter
 
 Added a hidden development scenario and a three-room house with two outside entrances and offset inner doors. Implements the troll's dormant state and scent pursuit, central-room Will gate with persistent success and per-turn failure, six corner reinforcements and treasure-seeking berserkers, and supplemental XP events. Uses a fixed authored two-player layout and core treasure/reward system. Magic relocation into the room, exact door placement, full group/reaction interaction, and visual verification remain to be checked. Pack is still locked.
+
+Added blood-marked resistance and unarmed damage handling, Sense Magic movement contact/reveal, a first Herald elemental blast AI path, and suppression of passive and activated magic-equipment bonuses during combat with Nullmen. Broader item-use paths and full reflection, including area spells, still require dedicated tests and implementation.

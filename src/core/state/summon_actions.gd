@@ -29,6 +29,8 @@ func summoned(f: Figure, id: String, whole_side: bool = false) -> Figure:
 
 
 func can_control(f: Figure, t: Figure, id: String) -> bool:
+	if t.def.traits.has("antithetical_magic") or (id=="mind_control" and t.def.traits.has("immune_mind_control")) or (id=="control_demon" and t.def.traits.has("immune_control_demon")):
+		return false
 	var existing := controlled(f, id)
 	if (t.side == f.side and t.controller_id < 0 and t.summon_spell == "") or (existing != null and existing != t):
 		return false
@@ -83,7 +85,8 @@ func points(f: Figure, id: String, first_only: bool = false) -> Array[Vector2]:
 
 
 func apply_control(f: Figure, t: Figure, id: String, roll: int) -> void:
-	c._magic.resistance.attempt(t, roll, _control_result.bind(f, t, id, roll))
+	var bonus := 5 if id=="mind_control" and t.def.traits.has("blood_marked") else 0
+	c._magic.resistance.attempt(t, roll, _control_result.bind(f, t, id, roll),bonus)
 
 
 func _control_result(success: bool, f: Figure, t: Figure, id: String, roll: int) -> void:

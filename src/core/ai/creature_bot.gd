@@ -44,6 +44,12 @@ static func play(c: GameController, f: Figure) -> void:
 		if target == null:
 			target = closest(c, f)
 		PackRules.remember(c.state, f, target)
+		if f.def.traits.has("elemental_blast") and c.can_act() and not f.spell_effects.has("blinding_light"):
+			var shot := _blast_target(c,f)
+			if shot!=null:
+				c._spend(f)
+				c._magic._shot(f,shot,3,f.pos,true,true,"elemental_blast")
+				continue
 		if f.ranged != null:
 			var shot := closest(c, f, true)
 			if shot != null:
@@ -75,3 +81,13 @@ static func play(c: GameController, f: Figure) -> void:
 		if node == null or MoveGrid.to_pos(node).distance_to(f.pos) < 0.01:
 			return
 		c.move_to(node)
+
+
+static func _blast_target(c: GameController,f: Figure) -> Figure:
+	var best: Figure=null
+	for t in c.state.figures:
+		if t.side<0 or not t.in_play() or not IllusionRules.visible_to(c.state.figures,f,t) or Shooting.distance(f,t)>24.0 or not LineOfSight.check_figures(c.state.board,f,t).clear:
+			continue
+		if best==null or Shooting.distance(f,t)<Shooting.distance(f,best):
+			best=t
+	return best
