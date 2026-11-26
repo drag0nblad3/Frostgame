@@ -29,6 +29,14 @@ func _process(_delta: float) -> bool:
 		printerr("Headquarters art unavailable")
 		quit(1)
 		return true
+	scene._campaign.data["resources"] = ["crystal_ball","scriptorium"]
+	banner.refresh(scene._campaign.data)
+	if banner._resources.get_child_count() != 2:
+		printerr("Headquarters resource badges missing")
+		quit(1)
+		return true
+	scene._campaign.data["resources"] = []
+	banner.refresh(scene._campaign.data)
 	var panel: InventoryPanel = scene._campaign_dialog.inventory
 	if panel.loot.item_count != 2 or panel.recipient_choice.item_count < 4:
 		printerr("Inventory controls failed")
