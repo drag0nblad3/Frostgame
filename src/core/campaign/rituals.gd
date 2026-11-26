@@ -7,11 +7,13 @@ const ANIMALS := ["bear", "ice_toad", "snow_leopard", "wolf"]
 const CONSTRUCTS := ["small_construct", "medium_construct", "large_construct"]
 
 
-static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
+static func choices(d: Dictionary,caster: int,id: String,shield: bool=false) -> Array[String]:
 	var out: Array[String] = []
-	if d.is_empty() or caster < 0 or caster >= d["units"].size() or not d["spells"].has(id) or not ContentProfile.from_campaign(d).allows("spells",id):
+	if d.is_empty() or caster < 0 or caster >= d["units"].size() or (not shield and not d["spells"].has(id)) or not ContentProfile.from_campaign(d).allows("spells",id):
 		return out
 	var u: Dictionary = d["units"][caster]
+	if shield and (u["type"]!="wizard" or id=="summon_demon" or ScrollShield.ritual_index(d,id)<0):
+		return out
 	if u["dead"] or u.get("dismissed", false) or int(u["miss"]) > 0 or u["type"] not in ["wizard", "apprentice"]:
 		return out
 	if RaggedWarbands.active(d) and id=="summon_demon":
@@ -20,7 +22,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 		return out
 	if AFTER.has(id) and (int(d["games"]) == 0 or d.get("preparation_started", false)):
 		return out
-	if d.get("ritual_attempts", {}).has("%d:%s" % [caster, id]):
+	if not shield and d.get("ritual_attempts", {}).has("%d:%s" % [caster, id]):
 		return out
 	var wizard: bool = u["type"] == "wizard"
 	match id:
@@ -85,8 +87,8 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 	return out
 
 
-static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false,shears_target: int=-1,bottle: bool=false) -> bool:
-	if not choices(d, caster, id).has(option):
+static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false,shears_target: int=-1,bottle: bool=false,shield: bool=false) -> bool:
+	if not choices(d,caster,id,shield).has(option):
 		return false
 	if bottle and (id!="brew_potion" or enchant or RedKingCampaignGear.empty_bottle(d,caster,option)<0):
 		return false
@@ -111,17 +113,20 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 		mod = -4
 	if not RedKingCampaign.economy_locked(d):
 		mod += BaseRules.casting_bonus(str(d.get("base", "")), id) + BaseResources.casting_bonus(d, id)
-	var attempts: Dictionary = d.get("ritual_attempts", {})
-	attempts["%d:%s" % [caster, id]] = true
-	d["ritual_attempts"] = attempts
-	var raw := dice.d20()
+	if shield:
+		d["loot"][ScrollShield.ritual_index(d,id)]["shield_used"]=true
+	else:
+		var attempts: Dictionary=d.get("ritual_attempts",{})
+		attempts["%d:%s"%[caster,id]]=true
+		d["ritual_attempts"]=attempts
+	var raw := 14 if shield else dice.d20()
 	if id=="raise_zombie" and u["type"]=="wizard" and BaseResources.wizard_item(d,"gear_rk_skull_staff"):
 		mod+=1
-	var total := CastingRoll.modified(raw,mod+CampaignInventory.incunabula_bonus(d,caster,id)+(2 if shears_target>=0 else 0),u["type"]=="apprentice")
+	var total := 14 if shield else CastingRoll.modified(raw,mod+CampaignInventory.incunabula_bonus(d,caster,id)+(2 if shears_target>=0 else 0),u["type"]=="apprentice")
 	if shears_target>=0:
 		RedKingCampaignGear.shears_injury(d,shears_target,dice)
-	var tn := int(d["spells"][id])
-	var success := total >= tn
+	var tn := int(d["spells"].get(id,JsonFile.read("res://data/spells.json")[id]["number"]))
+	var success := shield or total>=tn
 	d["last_report"].append("%s #%d: %s (%s) %d vs %d — %s." % [str(u["type"]).capitalize(), caster + 1, id.replace("_", " ").capitalize(), option, total, tn, "success" if success else "failed"])
 	if not success:
 		return true

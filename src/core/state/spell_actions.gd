@@ -283,7 +283,7 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var t := c.state.figure(target_id)
 	var spec: Dictionary=c.state.spell_catalog[id]
 	var limit := float(spec.get("range",24.0))
-	var tiger_used := t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
+	var tiger_used: bool= t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll_roll := 0 if known else ScrollActions.consume_roll(f,id)
 	var scroll := scroll_roll>0
@@ -682,6 +682,9 @@ func available_spells(f: Figure) -> Array[String]:
 	for item in f.items:
 		var id := str(item.get("scroll", ""))
 		if id != "" and not out.has(id) and not CircletDefence.immune(f,id):
+			out.append(id)
+	for id in ScrollShield.spells(f):
+		if not out.has(id) and not CircletDefence.immune(f,id):
 			out.append(id)
 	return out
 

@@ -216,3 +216,7 @@ Free opening action creates persistent Glow and a moving ward; nearby undead/dem
 ## Tiger Eye Ring
 
 Wizard-only targeting extension: a blocked figure target can be reached if a genuinely visible sampled point lies within two inches and normal spell range and scenario boundaries allow it. Casting via this extension and moving an active Wizard Eye each cost a Will TN20 test or three damage. Eye movement follows the perimeter of its existing rectangular host, up to four inches once per turn. Direct spell shots use an intervening-terrain modifier for the extended sight. The current extension applies to figure targets, not every terrain/treasure placement check, and does not support layered or wrapped geometry. Eye movement between different connected hosts remains pending.
+
+## Scroll Shield
+
+Roll the carried shield spell in campaign preparation; the roll is retained for that battle, and deployment requires it. The wizard can choose available before/after rituals from the shield without needing to know the spell. In battle, any friendly spellcaster within two inches of an unengaged bearer can consume the writing as a scroll, including failed-cast insurance. The bearer starts at -1 Health. Settlement preserves unused after-game writing only until the next roll. Summoning Circle-specific ritual and layered campaign edge cases remain pending; the ordinary Summon Demon battle spell is still supported.

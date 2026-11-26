@@ -236,6 +236,9 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 				gear["power_left"] = PowerPool.remaining(item)
 			if item["gear"]==RedKingMaterials.FANGS:
 				gear["uses"]=RedKingMaterials.amount(item)
+			if item["gear"]==ScrollShield.ITEM and int(item.get("shield_game",-1))==int(d["games"]):
+				gear["shield_spell"]=str(item.get("shield_spell",""))
+				gear["shield_used"]=bool(item.get("shield_used",false))
 			if item["gear"]==DeathMask.ITEM:
 				gear["mask_start_worn"]=bool(item.get("mask_start_worn",false))
 			if item.get("ivory_graft",false):
@@ -258,9 +261,12 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 		var orb_left := -1
 		var fangs_left := 0
 		var bottle_left := 0
+		var shield: Dictionary={}
 		for item: Dictionary in f.items:
 			if item.get("campaign_item", false):
 				var id := item_id(item)
+				if id==ScrollShield.ITEM:
+					shield=item
 				if id == PowerPool.ORB:
 					orb_left = PowerPool.remaining(item)
 				if id==RedKingMaterials.FANGS:
@@ -288,6 +294,11 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 					item["power_left"] = orb_left
 				if id==RedKingMaterials.FANGS:
 					item["uses"]=fangs_left
+				if id==ScrollShield.ITEM and not shield.is_empty():
+					item["shield_spell"]=str(shield.get("shield_spell",""))
+					item["shield_used"]=bool(shield.get("shield_used",false))
+					item["shield_game"]=int(d["games"])
+					item["shield_after"]=true
 				if id==RedKingCampaignGear.GOLDEN_BOTTLE:
 					item["bottle_doses"]=bottle_left
 					if bottle_left<=0:

@@ -39,3 +39,16 @@ func test_waxed_scroll_uses_fifteen() -> void:
 	check_eq(int(c.state.pending_cast["total"]),15)
 	check(c.finish_cast(0))
 	check(c.state.active().items.is_empty())
+
+
+func test_scroll_shield_lends_single_spell() -> void:
+	var c := _game([1])
+	var f := c.state.active()
+	f.items.clear()
+	f.items.append({"gear":ScrollShield.ITEM,"shield_spell":"fleet_feet","gear_info":RedKingRewards.catalog()[ScrollShield.ITEM]})
+	check(c._magic.available_spell(f,"fleet_feet"))
+	check(c.start_cast("fleet_feet",f.id))
+	check_eq(int(c.state.pending_cast["total"]),14)
+	check(c.finish_cast(0))
+	check(not c._magic.available_spell(f,"fleet_feet"))
+	check(f.items[0]["shield_used"])

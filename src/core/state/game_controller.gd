@@ -43,6 +43,7 @@ func emit(type: String, data: Dictionary = {}) -> void:
 func start_game() -> void:
 	DeathMask.prepare(self)
 	CircletDefence.prepare(self)
+	ScrollShield.prepare(self)
 	RedKingGear.foulhorn_brawl(self)
 	RedKingInvestigations.prepare(self)
 	RedKingVeil.prepare(self)

@@ -68,6 +68,8 @@ func deployment() -> Dictionary:
 
 
 func can_deploy() -> bool:
+	if ScrollShield.campaign_index(data,"roll")>=0:
+		return false
 	if RedKingCampaign.active(data) and RedKingCampaign.next_id(data).is_empty():
 		return false
 	if not data.get("pending_treasure", []).is_empty():

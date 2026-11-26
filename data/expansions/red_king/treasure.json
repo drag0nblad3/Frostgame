@@ -471,7 +471,7 @@
       "buy": 0,
       "sell": 350,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 14,
       "expansion": "red_king"
