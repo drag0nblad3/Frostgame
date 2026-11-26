@@ -29,6 +29,8 @@ func can_land(f: Figure, t: Figure, id: String, at: Vector2) -> bool:
 		return f == t and f.pos.distance_to(at) <= 24.0 and LineOfSight.check(b, f.pos, at).clear
 	if id != "leap" or t.side != f.side:
 		return false
+	if RedKingSinkhole.active(c.state) and Geometry2D.get_closest_point_to_segment(RedKingSinkhole.center(c.state),t.pos,at).distance_to(RedKingSinkhole.center(c.state))<RedKingSinkhole.RADIUS+Figure.BASE_RADIUS-0.001:
+		return false
 	var delta := Vector2(t.pos.distance_to(at), b.height_at(at) - t.elevation)
 	var limit := 5.0 if t.treasure_id >= 0 else 10.0
 	if delta.length() > limit:
@@ -100,7 +102,7 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 		if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
 			return
 		if RedKingSinkhole.touches(c.state,at) and not RedKingSinkhole.touches(c.state,last):
-			if b.can_stand(at,Figure.BASE_RADIUS):
+			if landing(t,at,true):
 				move(t,at,false,true)
 			else:
 				RedKingSinkhole.contact(c,t,true)

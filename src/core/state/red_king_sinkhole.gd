@@ -140,7 +140,7 @@ static func end_turn(c: GameController) -> void:
 static func _respawn(c: GameController) -> void:
 	var s := c.state
 	for dead in s.figures.duplicate():
-		if dead.def.id!="nullman" or not dead.out_of_action or dead.spell_effects.has("sinkhole_replaced") or c.dice.d20()<17:
+		if dead.original_side>=0 or dead.def.id!="nullman" or not dead.out_of_action or dead.spell_effects.has("sinkhole_replaced") or c.dice.d20()<17:
 			continue
 		var best: Variant=null
 		var score := INF

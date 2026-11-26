@@ -49,6 +49,8 @@ static func progress(s: GameState) -> String:
 			text+=" | Ryce fleeing"
 		elif rescue!=null:
 			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
+	if RedKingSinkhole.active(s):
+		text+=" | Gravity: 1″/turn · Casting −1/−2/−4"
 	if RedKingHerded.active(s):
 		text+=" | Veil %.0f/36″ · Exit south"%float(s.scenario_data.get("herd_veil",0.0))
 	if RedKingMind.active(s):

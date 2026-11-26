@@ -21,6 +21,10 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Hrut hunting parties arrive."
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
+		"sinkhole_contact":
+			return "%s touches the anti-magic orb: %d damage."%[name_of(s,d["id"]),d["amount"]]
+		"sinkhole_resist":
+			return "%s attempts to resist the pull: %s."%[name_of(s,d["id"]),"success" if d["success"] else "failed"]
 		"herd_veil":
 			return "The veil advances %d inches. Escape before it reaches you!"%d["distance"]
 		"herd_contact":
