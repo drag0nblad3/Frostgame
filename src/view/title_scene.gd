@@ -68,6 +68,8 @@ func _ready() -> void:
 	_menu.add_child(HSeparator.new())
 	_label("ACTIVE WARBAND",14,Color("c6b17d"))
 	_slots=OptionButton.new()
+	_slots.fit_to_longest_item=false
+	_slots.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	_menu.add_child(_slots)
 	_slots.item_selected.connect(_select_slot)
 	_button("resume","Resume saved battle",true)
@@ -157,7 +159,10 @@ func _refresh_slots() -> void:
 	_buttons["resume"].visible=compatible
 	_buttons["resume_layered"].visible=not LayeredCheckpoint.read().is_empty()
 	_buttons["warband"].text="Create warband" if WarbandSlots.roster().is_empty() else "Edit saved warband"
-	_notice.text="Your selected slot keeps its own roster, campaign and saved battles."
+	var roster := WarbandSlots.roster()
+	_notice.text="Starting roster: %s. Each slot has separate saves."%roster.get("name","default expedition")
+	if roster.is_empty():
+		_notice.text+=" Create a warband to customize your troops."
 
 
 func _select_slot(index: int) -> void:
@@ -181,7 +186,7 @@ func _choose_scenario(experimental: bool) -> void:
 				get_tree().root.set_meta("frostgame_scenario",id)
 				get_tree().root.set_meta(LAUNCH_KEY,"selected_skirmish")
 				get_tree().change_scene_to_file(BATTLE))
-	_picker.open(experimental)
+	_picker.open(experimental,true)
 
 
 func _edit_warband() -> void:

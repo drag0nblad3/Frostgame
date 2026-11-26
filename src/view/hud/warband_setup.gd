@@ -77,6 +77,8 @@ func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	recruits_body.add_child(row)
 	_recruits = OptionButton.new()
 	_recruits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_recruits.fit_to_longest_item=false
+	_recruits.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	for id: String in db.figures:
 		var d := db.get_def(id)
 		if d.role != "soldier":
@@ -138,6 +140,8 @@ func _rebuild_spells() -> void:
 		child.queue_free()
 	for slot in 8:
 		var choice := OptionButton.new()
+		choice.fit_to_longest_item=false
+		choice.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		choice.add_theme_constant_override("icon_max_width",28)
 		var label := Label.new()
 		label.text = "Home school %d" % (slot + 1) if slot < 3 else ("Aligned: " + str(draft.schools[draft.school]["aligned"][slot - 3]).capitalize() if slot < 6 else "Neutral school")
@@ -162,10 +166,14 @@ func _rebuild_spells() -> void:
 			var chosen := draft.spells[slot]
 			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
 		_spell_rows.add_child(detail)
+		for i in choice.item_count:
+			var id := str(choice.get_item_metadata(i))
+			choice.set_item_disabled(i,_spell_conflict(slot,id))
 		choice.item_selected.connect(func(index: int) -> void:
 			draft.spells[slot] = str(choice.get_item_metadata(index))
 			var chosen := draft.spells[slot]
 			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
+			_refresh_spell_availability()
 			_update())
 
 
@@ -189,6 +197,8 @@ func _update() -> void:
 		var id := str(_recruits.get_item_metadata(i))
 		_recruits.set_item_disabled(i,not draft.can_hire(id) and id!=recruit_id)
 	_hire.disabled = not draft.can_hire(recruit_id)
+	_apprentice.disabled=not draft.apprentice and draft.cost()+draft.db.get_def("apprentice").cost>WarbandDraft.BUDGET
+	_summary.modulate=Color("a4d3b0") if problems.is_empty() else Color("e3ae8d")
 	var definition := draft.db.get_def(recruit_id)
 	if definition != null:
 		_recruit_portrait.set_figure(Figure.new(0, definition, 0, Vector2.ZERO, draft.db.unarmed()), FigureView.SIDE_COLORS[0])
@@ -242,3 +252,25 @@ func _select_loadout(choice: OptionButton,for_apprentice: bool) -> void:
 		if CasterLoadout.PRESETS[choice.get_item_metadata(i)]==current:
 			choice.select(i)
 			return
+
+
+func _spell_conflict(slot: int,id: String) -> bool:
+	for i in draft.spells.size():
+		if i==slot:
+			continue
+		var other := draft.spells[i]
+		if other==id:
+			return true
+		if slot>=6 and i>=6 and draft.catalog[id]["school"]==draft.catalog[other]["school"]:
+			return true
+	return false
+
+
+func _refresh_spell_availability() -> void:
+	var slot := 0
+	for child in _spell_rows.get_children():
+		if child is OptionButton:
+			var choice: OptionButton=child
+			for i in choice.item_count:
+				choice.set_item_disabled(i,_spell_conflict(slot,str(choice.get_item_metadata(i))))
+			slot+=1

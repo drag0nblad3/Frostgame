@@ -115,7 +115,7 @@ func _open_launch_intent() -> void:
 		"training": _start_training(0)
 		"guide": _open_guide()
 		"skirmish": _open_map_picker()
-		"selected_skirmish": _open_briefing(true)
+		"selected_skirmish": _open_briefing(false)
 
 
 func _confirm_title() -> void:
@@ -124,11 +124,16 @@ func _confirm_title() -> void:
 		return
 	if _title_prompt == null:
 		_title_prompt = AcceptDialog.new()
-		_title_prompt.title = "Return to title?"
-		_title_prompt.dialog_text = "Unsaved battle progress will be lost. Your campaign and saved battle remain on disk."
+		_title_prompt.title = "Return home?"
+		_title_prompt.dialog_text = "Save this battle in the active warband slot before leaving, or leave without saving."
 		_title_prompt.exclusive = true
-		_title_prompt.get_ok_button().text = "Return to title"
+		_title_prompt.get_ok_button().text = "Leave without saving"
 		_title_prompt.add_cancel_button("Stay here")
+		_title_prompt.add_button("Save & Home",true,"save_home")
+		_title_prompt.custom_action.connect(func(action: StringName) -> void:
+			if action=="save_home" and _save_battle():
+				_title_prompt.hide()
+				get_tree().change_scene_to_file("res://scenes/title.tscn"))
 		_title_prompt.confirmed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/title.tscn"))
 		add_child(_title_prompt)
 	_title_prompt.popup_centered(Vector2i(500,220))
@@ -475,18 +480,19 @@ func _campaign_fingerprint() -> String:
 	return FileAccess.get_sha256(path) if FileAccess.file_exists(path) else ""
 
 
-func _save_battle() -> void:
+func _save_battle() -> bool:
 	if _training >= 0:
 		hud.notify("Training does not replace your saved battle.")
-		return
+		return false
 	if controller == null or not player.idle() or not BattleSnapshot.can_save(controller):
 		hud.notify("Finish the current roll or animation before saving.")
-		return
+		return false
 	var meta := {"scenario": _active_scenario_id, "campaign": _campaign_battle, "campaign_hash": _campaign_fingerprint() if _campaign_battle else "", "watch": watch_mode}
 	if BattleSnapshot.save(controller, meta):
 		hud.notify("Battle saved.")
-	else:
-		hud.notify("Could not save this battle.")
+		return true
+	hud.notify("Could not save this battle.")
+	return false
 
 
 func _resume_battle() -> void:

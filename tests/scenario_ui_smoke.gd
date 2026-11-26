@@ -9,6 +9,11 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 	var original: GameController = scene.controller
+	scene._open_map_picker()
+	if scene._picker==null or scene._picker._list.get_child_count()!=12:
+		_fail("Battle map catalog missing")
+		return
+	scene._picker.hide()
 	scene.hud.scenario_selected.emit("complex_temple")
 	scene._open_briefing(false)
 	if scene._briefing.title != "Frozen Ruins" or not scene._briefing.visible or scene.controller != original:

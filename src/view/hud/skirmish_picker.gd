@@ -5,6 +5,8 @@ signal selected(id: String,layered: bool)
 var _list: VBoxContainer
 var _scroll: ScrollContainer
 var _mode: OptionButton
+var _from_home := false
+var _context: Label
 const LAYERED := {"stacked_gatehouse":["Stacked Gatehouse","Two overlapping levels with stairs and bridges. Fixed experimental warbands."],"layered_silent_tower":["Silent Tower · multi-floor","Three tower elevations and null-magic zones. Fixed experimental warbands."]}
 
 
@@ -20,6 +22,9 @@ func _ready() -> void:
 	_mode.add_item("Experimental multi-floor")
 	_mode.item_selected.connect(func(_i: int) -> void:_populate())
 	col.add_child(_mode)
+	_context=Label.new()
+	_context.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(_context)
 	_scroll=ScrollContainer.new()
 	_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 	col.add_child(_scroll)
@@ -29,7 +34,8 @@ func _ready() -> void:
 	_scroll.add_child(_list)
 
 
-func open(experimental: bool=false) -> void:
+func open(experimental: bool=false,from_home: bool=false) -> void:
+	_from_home=from_home
 	var viewport := get_parent().get_viewport().get_visible_rect().size
 	_scroll.custom_minimum_size=Vector2(minf(760,viewport.x*0.85),minf(490,viewport.y*0.70))
 	_mode.select(1 if experimental else 0)
@@ -42,6 +48,9 @@ func _populate() -> void:
 		_list.remove_child(child)
 		child.queue_free()
 	var layered := _mode.selected==1
+	_context.text="Prototype battles use fixed test warbands, not your saved recruits." if layered else ("Using %s."%WarbandSlots.roster().get("name","the default expedition"))
+	if not _from_home:
+		_context.text+=" Starting a new battle replaces unsaved progress."
 	if layered:
 		for id: String in LAYERED:
 			_card(id,LAYERED[id][0],LAYERED[id][1],id,true)
@@ -78,7 +87,7 @@ func _card(id: String,label: String,description: String,board: String,layered: b
 	detail.add_theme_font_size_override("font_size",15)
 	col.add_child(detail)
 	var button := Button.new()
-	button.text="Choose"
+	button.text="Start skirmish" if _from_home else "Choose"
 	button.custom_minimum_size.y=42
 	button.pressed.connect(func() -> void:
 		hide()

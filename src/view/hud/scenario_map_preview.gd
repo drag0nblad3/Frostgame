@@ -29,5 +29,13 @@ func _draw() -> void:
 		draw_rect(Rect2(origin+piece.rect.position*scale_factor,piece.rect.size*scale_factor),tint)
 	var layout := _board.floor_layout
 	if not layout.is_empty():
-		draw_rect(Rect2(origin+Vector2.ONE*3,_board.size*scale_factor-Vector2.ONE*6),Color("a48956"),false,2)
+		for surface: Dictionary in layout.get("surfaces",[]):
+			var height := maxf(float(surface.get("level",0)),float(surface.get("end_level",0)))
+			if height<=0:
+				continue
+			var rect: Array=surface["rect"]
+			var area := Rect2(origin+Vector2(rect[0],rect[1])*scale_factor,Vector2(rect[2],rect[3])*scale_factor)
+			var tint := Color("a48956").lightened(clampf(height/30.0,0.0,0.4))
+			draw_rect(area,tint)
+			draw_rect(area,Color("655537"),false,1.0)
 	draw_rect(Rect2(origin,_board.size*scale_factor),Color("52646b"),false,2)

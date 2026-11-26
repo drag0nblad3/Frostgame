@@ -43,7 +43,7 @@ static func summary(slot: int) -> String:
 		return "%s · %s · Level %d · %d battles"%[progress.data["name"],str(progress.data["school"]).capitalize(),progress.data["level"],progress.data["games"]]
 	if not draft.is_empty():
 		return "%s · %s · %d members"%[draft.get("name","Warband"),str(draft.get("school","")).capitalize(),draft.get("figures",[]).size()]
-	if FileAccess.file_exists(path_for(BattleSnapshot.PATH,slot)):
+	if FileAccess.file_exists(path_for(BattleSnapshot.PATH,slot)) or FileAccess.file_exists(path_for(LayeredCheckpoint.PATH,slot)):
 		return "Saved battle · no roster"
 	return "Empty slot"
 
