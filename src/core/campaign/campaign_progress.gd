@@ -173,6 +173,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	if RedKingRingworld.active(c.state):
 		xp=RedKingRingworld.xp(c,side)
 		data["red_king_completed"]=bool(c.state.scenario_data.get("ring_success",false))
+	for f in c.state.figures:
+		if f.original_side==side and f.def.role=="wizard" and ActiveGear.has(f,"gear_rk_ring_of_destiny"):
+			xp+=20
+			break
 	data.erase("dreams_xp")
 	data["xp"] = int(data["xp"]) + xp
 	data["games"] = int(data["games"]) + 1
@@ -218,6 +222,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				report.append("%s #%d: %s."%[f.label(),f.campaign_id+1,"separated from the warband" if unit.get("ragged_absent",false) else "recovered"])
 				break
 			var roll := raw + (1 if f.def.role == "wizard" else 0)
+			if f.def.role=="wizard" and ActiveGear.has(f,"gear_rk_ring_of_destiny"):
+				roll=RedKingGear.destiny_survival(roll)
 			var outcome := "recovered"
 			if roll <= (2 if caster else 4):
 				unit["dead"] = true

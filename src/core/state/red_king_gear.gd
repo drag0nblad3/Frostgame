@@ -65,3 +65,22 @@ static func after_fight(c: GameController,f: Figure,target: Figure,gear: Diction
 			var ally: Figure=allies[c.dice.pick(allies.size())]
 			if ally.in_play():
 				c._hurt(ally,10,f,false)
+
+
+static func destiny_survival(roll: int) -> int:
+	return roll-1 if roll>2 else roll
+
+
+static func sticky(s: GameState,side: int) -> bool:
+	for f in s.figures:
+		if f.original_side==side and not f.out_of_action and ActiveGear.has(f,"gear_rk_sticky_finger_gloves"):
+			return true
+	return false
+
+
+static func puppet(f: Figure) -> bool:
+	return ActiveGear.has(f,"gear_rk_hypnotic_puppet") and not MagicEquipment.suppressed(f)
+
+
+static func puppet_penalty(f: Figure,t: Figure) -> int:
+	return -2 if puppet(f) and Shooting.distance(f,t)<=8.0 else 0

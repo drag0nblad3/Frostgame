@@ -188,8 +188,10 @@
       "type": "item",
       "buy": 225,
       "sell": 100,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "elemental_resistance": 2
+      },
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_mindguard_shield": {
@@ -266,7 +268,7 @@
       "buy": 300,
       "sell": 50,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_enchanted_vials_6": {
@@ -293,8 +295,9 @@
       "buy": 200,
       "sell": 65,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_lifelong_plant": {
       "name": "Lifelong Plant",
@@ -457,10 +460,11 @@
       "buy": 0,
       "sell": 300,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 20,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "wizard_only": true
     },
     "gear_rk_soulchill_blade": {
       "name": "Soulchill Blade",

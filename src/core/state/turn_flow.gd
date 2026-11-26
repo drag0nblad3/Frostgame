@@ -215,12 +215,21 @@ func _check_victory() -> bool:
 			for token in s.treasures:
 				if not token.unresolved():
 					continue
+				var eligible := not token.frozen and not RedKingHill.guarded(s,token)
 				var secured := false
 				if survivor >= 0:
-					secured = not token.frozen and not RedKingHill.guarded(s,token) and (token.carrier_id >= 0 or _c.dice.d20() >= 15)
+					secured = eligible and (token.carrier_id >= 0 or _c.dice.d20()+int(RedKingGear.sticky(s,survivor)) >= 15)
 				if secured:
 					_c._loot.secure(token, survivor)
-				else:
+					continue
+				var claimed := false
+				if eligible and token.on_ground():
+					for side in s.side_count():
+						if side!=survivor and RedKingGear.sticky(s,side) and _c.dice.d20()==20:
+							_c._loot.secure(token,side)
+							claimed=true
+							break
+				if not claimed:
 					_c._loot.lose(token)
 			_finish(TreasureRules.winner(s))
 			return true

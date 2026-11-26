@@ -284,6 +284,7 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var scroll := not known and ScrollActions.consume(f, id)
 	var raw := 14 if scroll else c.dice.d20()
 	var gear_bonus := ActiveGear.casting_bonus(f, id)
+	var puppet_miscast := not scroll and raw==1 and id in ["mind_control","suggestion"] and RedKingGear.puppet(f)
 	if not scroll and f.next_cast_gear == "gear_gloves_casting" and ActiveGear.spend(f, f.next_cast_gear):
 		gear_bonus += 5
 	elif not scroll and f.next_cast_gear == "gear_wand_light" and ActiveGear.spend(f, f.next_cast_gear):
@@ -311,6 +312,8 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
 	if id in ["spell_eater", "strike_dead"]:
 		c._hurt(f, 1, f, false)
+	if puppet_miscast:
+		c._hurt(f,1,f,false)
 	if RealityCracks.id(c.state)==7 and RealityCracks.casting_modifier(c.state,id)==5:
 		c._hurt(f,2,f,false)
 
@@ -423,7 +426,7 @@ func _finish_one(health: int) -> bool:
 			else:
 				movement.move(t, p["at"], true)
 		"suggestion":
-			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]),5 if t.def.traits.has("blood_marked") else 0)
+			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]),(5 if t.def.traits.has("blood_marked") else 0)+RedKingGear.puppet_penalty(f,t))
 			return true
 		"push":
 			movement.push(f, t)
@@ -490,8 +493,8 @@ func _finish_one(health: int) -> bool:
 				_shot(f, recipient, 5, f.pos if recipient==f or other==t else t.pos, true, true, id)
 		"destroy_undead":
 			var raw := c.dice.d20()
-			var total := raw + t.effective_will() + t.roll_penalty()
-			if not StatRoll.succeeds(raw, t.effective_will() + t.roll_penalty(), result["roll"]):
+			var total := raw + t.effective_will() + t.roll_penalty() + MagicEquipment.bonus(t,"resistance")
+			if not StatRoll.succeeds(raw, t.effective_will() + t.roll_penalty() + MagicEquipment.bonus(t,"resistance"), result["roll"]):
 				c._hurt(t, t.health if t.effective_will() <= 2 else maxi(0, int(result["roll"]) - total) * 3, f, false)
 		"strike_dead":
 			resistance.attempt(t, int(result["roll"]), _resisted_death.bind(f, t), 0, true)
@@ -527,7 +530,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var ar := c.dice.d20()
 	var dr := c.dice.d20()
 	var a := ar - (2 if RealityCracks.low_gravity(f) else 0) + mini(power + (3 if t.spell_effects.has("glow") else 0), 10) + f.roll_penalty()
-	var d := dr + mini(t.effective_fight() + mod, 10) + t.roll_penalty() + t.shooting_defence_penalty()
+	var d := dr + mini(t.effective_fight() + Melee.secret_hrut_bonus(t,f) + mod, 10) + t.roll_penalty() + t.shooting_defence_penalty()
 	var won := a > d
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)
@@ -546,7 +549,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 
 
 func _resist_effect(f: Figure, id: String) -> void:
-	if f.in_play() and f.spell_effects.has(id) and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty(), int(f.spell_effects[id])):
+	if f.in_play() and f.spell_effects.has(id) and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty() + MagicEquipment.bonus(f,"resistance"), int(f.spell_effects[id])):
 		f.spell_effects.erase(id)
 		c.emit("spell_expired", {"id": f.id, "spell": id})
 
@@ -567,7 +570,7 @@ func on_end_activation(f: Figure) -> void:
 	f.petrified_skip = false
 	_resist_effect(f, "slow")
 	_resist_effect(f, "plague_of_insects")
-	if f.in_play() and f.control_spell == "mind_control" and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty(), f.control_roll):
+	if f.in_play() and f.control_spell == "mind_control" and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty() + MagicEquipment.bonus(f,"resistance"), f.control_roll):
 		summons.release(f)
 
 
@@ -585,7 +588,7 @@ func on_end_turn() -> void:
 func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
 	t=CreatureEffects.reflection_target(c,f,t,"banish")
 	var raw := c.dice.d20()
-	var will := t.effective_will() + t.roll_penalty()
+	var will := t.effective_will() + t.roll_penalty() + MagicEquipment.bonus(t,"resistance")
 	if not StatRoll.succeeds(raw, will, roll):
 		c._hurt(t, t.health if t.effective_will() <= threshold else maxi(0, roll - raw - will) * 3, f, false)
 

@@ -24,6 +24,9 @@ static func settle(data: Dictionary,c: GameController,side: int) -> bool:
 				pending.append("treasure" if card=="6" else "artefact")
 				data["red_king_pending_rewards"]=pending
 				report.append("Expansion reward roll reserved.")
+	var wizard := RedKingMind.wizard(c.state)
+	if wizard!=null and ActiveGear.has(wizard,"gear_rk_ring_of_destiny"):
+		xp+=20
 	data["xp"]=int(data.get("xp",0))+xp
 	data["red_king_secured_kalamon"]=false
 	data["red_king_mind_completed"]=true

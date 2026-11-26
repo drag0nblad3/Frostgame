@@ -86,6 +86,8 @@ func points(f: Figure, id: String, first_only: bool = false) -> Array[Vector2]:
 
 func apply_control(f: Figure, t: Figure, id: String, roll: int) -> void:
 	var bonus := 5 if id=="mind_control" and t.def.traits.has("blood_marked") else 0
+	if id=="mind_control":
+		bonus+=RedKingGear.puppet_penalty(f,t)
 	c._magic.resistance.attempt(t, roll, _control_result.bind(f, t, id, roll),bonus)
 
 

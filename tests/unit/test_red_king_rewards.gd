@@ -80,3 +80,22 @@ func test_red_king_artefact_weapon_counters() -> void:
 	check_eq(f.effective_will(),f.def.will-1)
 	check_eq(f.effective_fight(),f.def.fight-1)
 	check_eq(RedKingGear.armour(f,t),t.effective_armour())
+
+
+func test_campaign_and_spell_item_helpers() -> void:
+	var f := fig("wizard",0,Vector2(5,5))
+	var t := fig("thug",1,Vector2(12,5))
+	var c := make_game(make_board(),[f,t],Dice.new(3))
+	var catalog := RedKingRewards.catalog()
+	for id in ["gear_rk_hypnotic_puppet","gear_rk_sticky_finger_gloves"]:
+		f.items.append({"gear":id,"gear_info":catalog[id]})
+	check_eq(RedKingGear.puppet_penalty(f,t),-2)
+	t.pos=Vector2(20,5)
+	check_eq(RedKingGear.puppet_penalty(f,t),0)
+	check(RedKingGear.sticky(c.state,0))
+	f.exited=true
+	check(RedKingGear.sticky(c.state,0))
+	f.out_of_action=true
+	check(not RedKingGear.sticky(c.state,0))
+	check_eq(RedKingGear.destiny_survival(2),2)
+	check_eq(RedKingGear.destiny_survival(9),8)

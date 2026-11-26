@@ -93,6 +93,15 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var info: Dictionary = catalog()[item_id(item)]
 	if info.get("expansion","")=="red_king" and (not info["live"] or not item.get("unlocked",true)):
 		return false
+	if info.get("wizard_only",false) and unit["type"]!="wizard":
+		return false
+	if item.get("gear","")=="gear_rk_lightning_brooch":
+		var definition := db.get_def(unit["type"])
+		if unit["type"] in ["knight","templar","marksman"]:
+			return false
+		for trait_id: String in definition.traits:
+			if trait_id.begins_with("elemental_resistance_"):
+				return false
 	if (info.get("caster_only",false) or info.get("bonus",{}).has("cast_failure_cap")) and unit["type"] not in ["wizard","apprentice"]:
 		return false
 	if item.get("gear", "") == "gear_ring_transference" and unit["type"] not in ["wizard", "apprentice"]:
@@ -103,6 +112,9 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	for i in d["loot"].size():
 		if i != index and int(d["loot"][i].get("owner", -1)) == owner:
 			var other: Dictionary = d["loot"][i]
+			var other_info: Dictionary = catalog()[item_id(other)]
+			if (item.get("gear","")=="gear_rk_lightning_brooch" and (other_info.get("bonus",{}).has("elemental_resistance") or other_info.get("type","")=="heavy_armour")) or (other.get("gear","")=="gear_rk_lightning_brooch" and (info.get("bonus",{}).has("elemental_resistance") or info.get("type","")=="heavy_armour")):
+				return false
 			if item["kind"] == "gear" and other["kind"] == "gear" and catalog()[item_id(other)]["type"] == info["type"]:
 				return false
 			used += 1
