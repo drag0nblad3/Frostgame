@@ -229,3 +229,21 @@ func test_golden_fangs_trade_split_and_summon() -> void:
 	check_eq(RedKingMaterials.fang_count(f),1)
 	c._magic.summons.spawn(f,"animate_skull",Vector2(14,10),15,8,false)
 	check_eq(RedKingMaterials.fang_count(f),1)
+
+
+func test_lifelong_plant_consumed_on_twenty() -> void:
+	var d := {"loot":[{"kind":"gear","gear":RedKingCampaignGear.PLANT,"owner":-1}]}
+	var report: Array[String]=[]
+	check_eq(RedKingCampaignGear.plant_roll(d,3,report),4)
+	check_eq(d["loot"].size(),1)
+	check_eq(RedKingCampaignGear.plant_roll(d,20,report),21)
+	check(d["loot"].is_empty())
+
+
+func test_shears_injury_persistent_and_temporary() -> void:
+	var d := {"units":[{"type":"knight","id":0}],"last_report":[]}
+	RedKingCampaignGear.shears_injury(d,0,LoadedDice.new([19]))
+	check(d["rk_shears_used"])
+	check_eq(InjuryRules.starting_loss(d["units"][0]),1)
+	RedKingCampaignGear.shears_injury(d,0,LoadedDice.new([20]))
+	check_eq(InjuryRules.bonuses(d["units"][0],{})["health"],-1)

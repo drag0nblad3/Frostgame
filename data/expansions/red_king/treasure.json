@@ -310,8 +310,9 @@
       "buy": 500,
       "sell": 200,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "vault_only": true
     },
     "gear_rk_surefoot_boots": {
       "name": "Surefoot Boots",
@@ -521,10 +522,11 @@
       "buy": 0,
       "sell": 300,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 18,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "vault_only": true
     },
     "gear_rk_creature_mask": {
       "name": "Creature Mask",

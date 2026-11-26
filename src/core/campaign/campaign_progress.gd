@@ -82,7 +82,7 @@ func can_deploy() -> bool:
 	return false
 
 
-func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
+func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -> bool:
 	if data.is_empty() or not c.state.over or not data.get("pending_treasure", []).is_empty():
 		return false
 	if not RedKingCampaign.permits(data,c.state.scenario_special):
@@ -95,6 +95,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	if c.state.scenario_data.get("secret_hrut_%d"%side,false):
 		data.erase("red_king_secret_hrut")
 		data.erase("red_king_use_secret_hrut")
+	if plant_target>=0 and not RedKingCampaignGear.plant_choices(data,c,side).has(plant_target):
+		return false
 	CampaignInventory.settle(data, c, side)
 	var report: Array[String] = []
 	var xp := 0
@@ -194,11 +196,13 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data["prepared_illusion"] = ""
 	data.erase("prepared_illusions")
 	data.erase("prepared_demon")
+	data.erase("rk_shears_used")
 	for unit: Dictionary in data["units"]:
 		unit["familiar"] = false
 		unit["awareness"] = false
 		unit["niggle_paid"] = false
 		unit["last_knocked_out"] = false
+		unit.erase("rk_shears_loss")
 	for f in c.state.figures:
 		if f.original_side == side and f.campaign_id >= 0:
 			data["units"][f.campaign_id]["last_knocked_out"] = f.out_of_action
@@ -219,6 +223,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				report.append("%s was lost in the Ringworld."%f.label())
 				break
 			var raw := dice.d20()
+			if f.campaign_id==plant_target:
+				raw=RedKingCampaignGear.plant_roll(data,raw,report)
 			if f.def.role=="wizard" and data.get("red_king_survival_reroll",false):
 				var previous := raw
 				raw=RedKingMindRewards.survival_roll(data,raw,dice)

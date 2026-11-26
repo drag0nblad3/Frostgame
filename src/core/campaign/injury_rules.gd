@@ -31,13 +31,14 @@ static func bonuses(unit: Dictionary, base: Dictionary) -> Dictionary:
 	var penalties := {"move": 2 * int(injuries.get("smashed_leg", 0)), "fight": int(injuries.get("crushed_arm", 0)), "shoot": int(injuries.get("lost_fingers", 0)), "will": int(injuries.get("psychological_scars", 0))}
 	for stat: String in penalties:
 		result[stat] = int(result.get(stat, 0)) - int(penalties[stat])
+	result["health"]=int(result.get("health",0))-int(unit.get("rk_shears_health",0))
 	return result
 
 
 static func starting_loss(unit: Dictionary) -> int:
 	var injuries: Dictionary = unit.get("injury_types", {})
 	var niggle := int(injuries.get("niggling_injury", 0))
-	return int(injuries.get("never_quite_as_strong", 0)) + (niggle + 2 if niggle > 0 and not unit.get("niggle_paid", false) else 0)
+	return int(unit.get("rk_shears_loss",0))+int(injuries.get("never_quite_as_strong", 0)) + (niggle + 2 if niggle > 0 and not unit.get("niggle_paid", false) else 0)
 
 
 static func blind(unit: Dictionary) -> bool:

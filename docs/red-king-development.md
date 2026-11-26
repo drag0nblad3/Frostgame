@@ -156,3 +156,7 @@ Allows two temporary illusions across a warband, including prepared rituals from
 ## Elemental wall and Brilliant Wand
 
 The Ring of Elemental Fire marks conjured walls as elemental hazards. Entry into contact and activation in contact cause damage, with elemental resistance, absorption and null-field checks. Wall state survives checkpoints; ordinary-board movement paths are supported (layered Wall is not yet implemented). The Brilliant Wand has three rechargeable power points, adds two to both Word spells, and restricts their empowerment to the wand alone, without Health or other power sources. Tests cover the damage and resource limits.
+
+## Campaign survival and ritual equipment
+
+Lifelong Plant presents a pre-survival casualty picker after ordinary campaign battles, with an explicit skip choice; the selected non-wizard gains one to survival and the plant is removed on a natural twenty. The plant is unavailable in sealed Ragged vaults or mindscape resolution. Mystic Shears can be used once per preparation, by a wizard on a living eligible specialist, adding two to one pre-battle cast (including the initial Summoning Circle cast). A second roll records temporary starting Health loss or permanent Health loss on twenty. The ritual interface exposes the optional donor; the temporary penalty expires after the next battle.

@@ -31,6 +31,7 @@ var _setup: WarbandSetup
 var _campaign := CampaignProgress.new()
 var _campaign_battle := false
 var _campaign_dialog: CampaignPanel
+var _plant_dialog: ConfirmationDialog
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
@@ -331,13 +332,12 @@ func _process(delta: float) -> void:
 		return
 	var s := controller.state
 	if s.over and _campaign_battle:
-		_campaign_battle = false
-		_campaign.settle(controller, controller.dice)
-		if _campaign.save():
-			var checkpoint := BattleSnapshot.read()
-			if checkpoint.get("meta", {}).get("campaign", false):
-				DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
-		_open_campaign()
+		var candidates := RedKingCampaignGear.plant_choices(_campaign.data,controller,0)
+		if candidates.is_empty():
+			_finish_campaign_battle(-1)
+		else:
+			_choose_plant(candidates)
+		return
 	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side and (s.active() == null or s.active().side >= 0)):
 		_wait = 0.0
 		return
@@ -595,3 +595,40 @@ func _open_graphics() -> void:
 			GraphicsQuality.apply(get_viewport())
 			_atmosphere.configure(controller.state.board,_active_scenario_id))
 	_graphics.open()
+
+
+func _choose_plant(candidates: Array[int]) -> void:
+	if is_instance_valid(_plant_dialog):
+		return
+	_plant_dialog=ConfirmationDialog.new()
+	_plant_dialog.title="Lifelong Plant"
+	_plant_dialog.dialog_text="Choose one casualty to receive +1 survival before any rolls. A natural 20 consumes the plant."
+	_plant_dialog.ok_button_text="Use leaf"
+	_plant_dialog.cancel_button_text="Skip"
+	var choices := OptionButton.new()
+	choices.custom_minimum_size.y=48
+	for index in candidates:
+		var unit: Dictionary=_campaign.data["units"][index]
+		choices.add_item("%s #%d"%[str(unit["type"]).capitalize(),index+1])
+		choices.set_item_metadata(choices.item_count-1,index)
+	_plant_dialog.add_child(choices)
+	add_child(_plant_dialog)
+	_plant_dialog.confirmed.connect(func() -> void: _finish_campaign_battle(int(choices.get_selected_metadata())))
+	_plant_dialog.canceled.connect(func() -> void: _finish_campaign_battle(-1))
+	PhoneSafeArea.popup_dialog(_plant_dialog,Vector2(360,220))
+
+
+func _finish_campaign_battle(plant_target: int) -> void:
+	if not _campaign_battle:
+		return
+	_campaign_battle=false
+	if is_instance_valid(_plant_dialog):
+		_plant_dialog.hide()
+		_plant_dialog.queue_free()
+		_plant_dialog=null
+	_campaign.settle(controller,controller.dice,0,plant_target)
+	if _campaign.save():
+		var checkpoint := BattleSnapshot.read()
+		if checkpoint.get("meta",{}).get("campaign",false):
+			DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
+	_open_campaign()

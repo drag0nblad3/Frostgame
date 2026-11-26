@@ -85,14 +85,16 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 	return out
 
 
-static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false) -> bool:
+static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false,shears_target: int=-1) -> bool:
 	if not choices(d, caster, id).has(option):
 		return false
 	var supply := RedKingMaterials.for_ritual(id)
 	if enchant and RedKingMaterials.available(d,supply)<=0:
 		return false
+	if shears_target>=0 and not RedKingCampaignGear.shears_choices(d,caster,id,FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(d))).has(shears_target):
+		return false
 	if id == "summon_demon":
-		return BaseDemonRitual.attempt(d, caster, dice)
+		return BaseDemonRitual.attempt(d,caster,dice,shears_target)
 	var u: Dictionary = d["units"][caster]
 	var mod := 0
 	if BEFORE.has(id):
@@ -113,7 +115,9 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 	var raw := dice.d20()
 	if id=="raise_zombie" and u["type"]=="wizard" and BaseResources.wizard_item(d,"gear_rk_skull_staff"):
 		mod+=1
-	var total := CastingRoll.modified(raw, mod + CampaignInventory.incunabula_bonus(d,caster,id), u["type"] == "apprentice")
+	var total := CastingRoll.modified(raw,mod+CampaignInventory.incunabula_bonus(d,caster,id)+(2 if shears_target>=0 else 0),u["type"]=="apprentice")
+	if shears_target>=0:
+		RedKingCampaignGear.shears_injury(d,shears_target,dice)
 	var tn := int(d["spells"][id])
 	var success := total >= tn
 	d["last_report"].append("%s #%d: %s (%s) %d vs %d — %s." % [str(u["type"]).capitalize(), caster + 1, id.replace("_", " ").capitalize(), option, total, tn, "success" if success else "failed"])
