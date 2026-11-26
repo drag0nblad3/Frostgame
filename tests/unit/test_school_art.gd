@@ -52,3 +52,30 @@ func test_every_school_preserves_articulated_wizard_and_apprentice() -> void:
 			check(not model.get_node("RightArm").get_children().is_empty())
 			MiniaturePose.arms(model,0.2,-0.4)
 			model.free()
+
+
+func test_wizard_livery_survives_mesh_batching() -> void:
+	var defs := db()
+	var f := Figure.new(3,defs.get_def("wizard"),0,Vector2.ZERO,defs.unarmed())
+	var blue := MiniatureFactory.create(f,Color.BLUE,"witch")
+	var red := MiniatureFactory.create(f,Color.RED,"witch")
+	check(_has_pigment(blue,WizardLivery.color(Color.BLUE)))
+	check(_has_pigment(red,WizardLivery.color(Color.RED)))
+	check(not _has_pigment(red,WizardLivery.color(Color.BLUE)))
+	check(_has_pigment(blue,WizardSculpt.cloth(f)))
+	check(_has_pigment(red,WizardSculpt.cloth(f)))
+	blue.free()
+	red.free()
+
+
+func _has_pigment(root: Node3D,color: Color) -> bool:
+	for node in root.find_children("*","MeshInstance3D",true,false):
+		var mesh: Mesh = node.mesh
+		for i in mesh.get_surface_count():
+			var colors: Variant=mesh.surface_get_arrays(i)[Mesh.ARRAY_COLOR]
+			if colors==null:
+				continue
+			for tint: Color in colors:
+				if absf(tint.r-color.r)+absf(tint.g-color.g)+absf(tint.b-color.b)<0.025:
+					return true
+	return false

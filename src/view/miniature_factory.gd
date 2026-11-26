@@ -16,7 +16,7 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 		return model
 	if f.def.role in ["wizard", "apprentice"]:
 		var school := school_override if not school_override.is_empty() else SchoolArt.of_figure(f)
-		WizardSculpt.create(model,f,school)
+		WizardSculpt.create(model,f,school,faction)
 		weapon(model,f,school)
 		MiniatureBatch.bake(model)
 		return model

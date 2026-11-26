@@ -22,7 +22,7 @@ static func staff(root: Node3D,school: String) -> void:
 		"elementalist":
 			for side: float in [-1.0,1.0]:
 				CreatureSculpt.limb(root,p-Vector3.UP*0.09,p+Vector3(side*0.12,0.14,0),0.045,trim,0.1)
-			_gem(root,p+Vector3.UP*0.10,gem,0.14)
+			_crystal(root,p+Vector3.UP*0.10,gem)
 		"enchanter":
 			WeaponSculpt.metal(MiniatureFactory.box(root,p,Vector3(0.30,0.17,0.16),trim))
 			_gem(root,p-Vector3.FORWARD*0.09,gem,0.08)
@@ -84,3 +84,18 @@ static func _gem(root: Node3D,at: Vector3,color: Color,size: float) -> void:
 	var mat := node.material_override as StandardMaterial3D
 	mat.emission_enabled=true
 	mat.emission=color*0.24
+
+
+static func _crystal(root: Node3D,p: Vector3,color: Color) -> void:
+	for side: float in [-1.0,1.0]:
+		var shape := CylinderMesh.new()
+		shape.radial_segments=5
+		shape.top_radius=0.0
+		shape.bottom_radius=0.085
+		shape.height=0.14
+		var node := MiniatureFactory.mesh(root,shape,p+Vector3.UP*side*0.07,color)
+		if side<0:
+			node.rotation.x=PI
+		var mat: StandardMaterial3D=node.material_override
+		mat.emission_enabled=true
+		mat.emission=color*0.24

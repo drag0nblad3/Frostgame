@@ -27,7 +27,8 @@ func _setup() -> void:
 		var def := db.get_def(ids[i])
 		var columns := 5 if school_gallery else 6
 		var at := Vector2(2.0 + i % columns * (2.5 if school_gallery else 2.2), 2.0 + floori(float(i) / columns) * (3.5 if school_gallery else 3.1))
-		var f := Figure.new(i + 1, def, 0 if def.role != "creature" else -1, at, db.unarmed())
+		var side := (i%2 if args[1]=="schools" else (i+1)%2) if school_gallery else (0 if def.role!="creature" else -1)
+		var f := Figure.new(i + 1, def, side, at, db.unarmed())
 		if school_gallery and args[1]=="apprentices":
 			f.campaign_id=i+101
 		var v := FigureView.new()
@@ -35,7 +36,7 @@ func _setup() -> void:
 		var state: GameState
 		if school_gallery:
 			state = GameState.new()
-			state.side_schools[0] = schools[i]
+			state.side_schools[f.original_side] = schools[i]
 			f.battle_ref = weakref(state)
 		v.setup(f, "Gallery")
 		if school_gallery:
