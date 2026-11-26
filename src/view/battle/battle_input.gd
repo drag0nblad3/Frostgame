@@ -413,8 +413,8 @@ func preview() -> void:
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
-	if f!=null and f.used_gear.get(RedKingElemental.ARMED,false):
-		hint="Full elemental absorption armed. "+hint
+		if f.used_gear.get(RedKingElemental.ARMED,false):
+			hint="Full elemental absorption armed. "+hint
 		if f.next_cast_gear != "":
 			hint = "Armed: %s. " % f.next_cast_gear.trim_prefix("gear_").replace("_", " ").capitalize() + hint
 		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", hint]
