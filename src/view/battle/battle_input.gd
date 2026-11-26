@@ -83,7 +83,7 @@ func preview() -> void:
 		"move", "exit":
 			if reach != null:
 				for n: Vector2i in reach.nodes():
-					if mode == "move" or c.can_exit_table(n, reach):
+					if (mode == "move" and float(reach.cost[n]) > 0.001) or (mode == "exit" and c.can_exit_table(n, reach)):
 						nodes.append(n)
 						points.append(MoveGrid.to_pos(n))
 			hint = "Tap a marked destination." if mode == "move" else "Tap a marked table edge to retreat."

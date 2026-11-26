@@ -11,7 +11,7 @@ var hud: BattleHud
 var auto_play := false
 var watch_mode := false
 var player_side := 0
-var _input: BattleInput
+var player_input: BattleInput
 var _markers: BattleMarkers
 var _dirty := true
 var _figures: FigureDb
@@ -68,7 +68,7 @@ func new_game(seed_value: int) -> void:
 	player.line_logged.connect(hud.add_line)
 	controller.event_emitted.connect(player.push)
 	controller.event_emitted.connect(_on_event)
-	_input = BattleInput.new(controller, hud, _rig.camera, _markers)
+	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
 	controller.start_game()
 	_update_status()
 	_dirty = true
@@ -121,13 +121,13 @@ func _refresh() -> void:
 	_update_status()
 	hud.set_watch(watch_mode, controller.state.active() == null, true)
 	if _human_turn():
-		_input.refresh()
+		player_input.refresh()
 	else:
-		_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
+		player_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
 
 
 func _lock_after_action() -> void:
-	_input.lock("Resolving action…")
+	player_input.lock("Resolving action…")
 	hud.set_watch(watch_mode, false, false)
 	_update_status()
 	_dirty = true
@@ -135,13 +135,13 @@ func _lock_after_action() -> void:
 
 func _on_action(key: String) -> void:
 	if _human_turn() and player.idle() and not _dirty:
-		if _input.action(key):
+		if player_input.action(key):
 			_lock_after_action()
 
 
 func _on_tap(at: Vector2) -> void:
 	if _human_turn() and player.idle() and not _dirty and not hud.blocks_tap(at):
-		if _input.tap(at):
+		if player_input.tap(at):
 			_lock_after_action()
 
 
