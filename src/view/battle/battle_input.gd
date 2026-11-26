@@ -113,6 +113,8 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if not TigerEye.eye_options(c).is_empty():
+		available.append("gear_tiger_eye_move")
 	if HolyLantern.can_toggle(c):
 		available.append("gear_lantern_toggle")
 	if WormRider.ready(c):
@@ -261,6 +263,10 @@ func preview() -> void:
 					nodes.append(n)
 					points.append(MoveGrid.to_pos(n))
 			hint="Choose a legal escape move. The cape is spent only when the move is authorized."
+		"gear_tiger_point":
+			for option in TigerEye.eye_options(c):
+				points.append(option["at"])
+			hint="Move the Wizard Eye along its supporting surface (up to 4″)."
 		"gear_worm_point":
 			points.assign(WormRider.points(c))
 			hint="Choose a worm summoning token location. On a 1 the rival relocates it."
@@ -502,6 +508,11 @@ func action(key: String) -> bool:
 		return false
 	if key == "gear_ring_transference":
 		mode = "gear_transfer_target"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key=="gear_tiger_eye_move":
+		mode="gear_tiger_point"
 		available.assign(["potion_cancel"])
 		preview()
 		return false
@@ -805,6 +816,8 @@ func tap(screen: Vector2) -> bool:
 		var t := c.state.figure(spell_first)
 		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return _declared(c._magic.start_move(selected_spell, spell_first, destination))
+	if mode=="gear_tiger_point":
+		return TigerEye.move_eye(c,at)
 	if mode=="gear_worm_point":
 		return WormRider.summon(c,MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode=="gear_bottle_imp":

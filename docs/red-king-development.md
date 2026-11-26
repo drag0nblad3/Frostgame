@@ -212,3 +212,7 @@ Uncontrolled giant worms exclude protected bearers from pursuit and deliberate c
 ## Lantern of Holy Light
 
 Free opening action creates persistent Glow and a moving ward; nearby undead/demons receive a forced next-action retreat, including figures in melee. The straight retreat respects terrain and movement cost. The bearer may schedule shuttering at the end of their turn rather than interrupt the end-turn phase, otherwise the lantern extinguishes on 1–3. Flat movement only, no layered lantern controls or exact end-turn reaction UI yet.
+
+## Tiger Eye Ring
+
+Wizard-only targeting extension: a blocked figure target can be reached if a genuinely visible sampled point lies within two inches and normal spell range and scenario boundaries allow it. Casting via this extension and moving an active Wizard Eye each cost a Will TN20 test or three damage. Eye movement follows the perimeter of its existing rectangular host, up to four inches once per turn. Direct spell shots use an intervening-terrain modifier for the extended sight. The current extension applies to figure targets, not every terrain/treasure placement check, and does not support layered or wrapped geometry. Eye movement between different connected hosts remains pending.

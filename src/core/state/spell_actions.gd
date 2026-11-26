@@ -78,9 +78,9 @@ func can_cast(id: String, target_id: int) -> bool:
 			if not LayeredFigureSpells.visible(s.board,f,t,limit):
 				return false
 		elif kind == "area_shot":
-			if Shooting.distance(f, t) > limit or not LineOfSight.check(s.board, f.pos, t.pos).clear:
+			if Shooting.distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
 				return false
-		elif not WizardEye.visible(s.board, f, t.pos, limit):
+		elif not WizardEye.visible(s.board,f,t.pos,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
 			return false
 	if kind == "shot":
 		return t != f
@@ -280,6 +280,10 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	if f == null or not f.in_play():
 		return
 	illusions.reveal(f)
+	var t := c.state.figure(target_id)
+	var spec: Dictionary=c.state.spell_catalog[id]
+	var limit := float(spec.get("range",24.0))
+	var tiger_used := t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll_roll := 0 if known else ScrollActions.consume_roll(f,id)
 	var scroll := scroll_roll>0
@@ -311,6 +315,8 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	if not effect.is_empty():
 		c.state.pending_cast["effect"] = effect
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
+	if tiger_used:
+		TigerEye.test_use(c,f)
 	if id in ["spell_eater", "strike_dead"]:
 		c._hurt(f, 1, f, false)
 	if puppet_miscast:
@@ -535,6 +541,9 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
 	var los := LineOfSight.check(s.board, from, t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and from==f.pos and TigerEye.witness(s.board,f,t.pos,float(s.spell_catalog[spell].get("range",24.0)))!=null:
+		los.clear=true
+		los.intervening+=1
 	if not los.clear and (not s.board.floor_layout.is_empty() or RedKingHill.cracked(s)):
 		return
 	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)

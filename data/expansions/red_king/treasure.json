@@ -590,10 +590,11 @@
       "buy": 0,
       "sell": 350,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 20,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "wizard_only": true
     },
     "gear_rk_circlet_of_defence": {
       "name": "Circlet of Defence",
