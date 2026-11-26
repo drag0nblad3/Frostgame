@@ -36,7 +36,7 @@ func _run() -> void:
 		printerr("Home navigation leaked behind guide")
 		quit(1)
 		return
-	title_scene._notification(NOTIFICATION_WM_GO_BACK_REQUEST)
+	title_scene._notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
 	if title_scene._guide.visible or ModalInput.blocked():
 		printerr("Android Back failed to close guide")
 		quit(1)

@@ -63,7 +63,7 @@ func _run() -> void:
 	if not ModalInput.blocked() or not is_equal_approx(scene._rig.distance,old_distance) or not is_equal_approx(scene._rig.pitch,old_pitch):
 		_fail("Camera received input behind guide")
 		return
-	scene._notification(NOTIFICATION_WM_GO_BACK_REQUEST)
+	scene._notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
 	if scene._guide.visible or ModalInput.blocked() or scene.controller!=before_guide:
 		_fail("Back did not dismiss guide safely")
 		return
