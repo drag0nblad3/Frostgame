@@ -254,7 +254,7 @@ func bridge_legal(f: Figure, rect: Rect2, rotated: bool) -> bool:
 		var at := rect.get_center() + axis * lerpf(-2.99, 2.99, ratio)
 		var height := lerpf(ends.x, ends.y, ratio)
 		for j in [-0.9, 0.0, 0.9]:
-			var sample := at + across * j
+			var sample: Vector2 = at + across * float(j)
 			if b.height_at(sample) > height + 0.1 or not LineOfSight.check(b, f.pos, sample).clear:
 				return false
 			for p in b.pieces_at(sample):
