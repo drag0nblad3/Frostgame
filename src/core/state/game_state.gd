@@ -9,6 +9,7 @@ var figures: Array[Figure] = []
 var side_names: Array[String] = []
 var turn := 0
 var phase := Phase.WIZARD
+var early := EarlyPhase.new()
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var order: Array[int] = []
 var order_index := 0
@@ -66,6 +67,8 @@ func side_figures(side: int) -> Array[Figure]:
 
 ## Figures of `side` still waiting to activate in the current phase.
 func waiting(side: int) -> Array[Figure]:
+	if phase in [Phase.WIZARD, Phase.APPRENTICE]:
+		return early.waiting(self, side)
 	var out: Array[Figure] = []
 	for f in side_figures(side):
 		if not f.activated and Phase.of_figure(f) == phase:

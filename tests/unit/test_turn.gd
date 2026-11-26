@@ -3,8 +3,8 @@ extends TestCase
 
 func _game(rolls: Array) -> GameController:
 	var figs: Array[Figure] = [
-		fig("wizard", 0, Vector2(5, 5)), fig("thug", 0, Vector2(8, 5)),
-		fig("wizard", 1, Vector2(5, 30)), fig("thug", 1, Vector2(8, 30)),
+		fig("wizard", 0, Vector2(5, 5)), fig("thug", 0, Vector2(12, 5)),
+		fig("wizard", 1, Vector2(5, 30)), fig("thug", 1, Vector2(12, 30)),
 	]
 	return make_game(make_board(), figs, LoadedDice.new(rolls))
 
@@ -48,3 +48,60 @@ func test_last_warband_standing_wins() -> void:
 	c.end_activation()
 	check(c.state.over, "game over")
 	check_eq(c.state.winner, 0, "blue wins")
+
+
+func test_early_phase_snapshot_and_optional_pass() -> void:
+	var figs: Array[Figure] = [
+		fig("wizard", 0, Vector2(5, 5)), fig("thug", 0, Vector2(8, 5)),
+		fig("thug", 0, Vector2(11, 5)), fig("wizard", 1, Vector2(30, 30)),
+		fig("thug", 1, Vector2(28, 30)),
+	]
+	var c := make_game(make_board(), figs, LoadedDice.new([12, 4]))
+	c.start_game()
+	check(c.activatable().has(figs[1]), "nearby soldier is eligible")
+	check(not c.activatable().has(figs[2]), "distant soldier is not eligible")
+	check(not c.finish_early_phase(), "wizard must activate")
+	check(c.activate(1))
+	check(c.move_to(MovePlanner.node_at(Vector2(9, 7))))
+	c.end_activation()
+	check(c.activatable().has(figs[1]), "initially eligible soldier remains eligible")
+	check(not c.activatable().has(figs[2]), "newly nearby soldier cannot join")
+	check(c.finish_early_phase())
+	check_eq(c.state.current_side(), 1)
+	check(c.activate(4))
+	c.end_activation()
+	check(c.finish_early_phase())
+	check_eq(c.state.phase, Phase.SOLDIER)
+	check(c.activate(2), "passed soldier remains available in soldier phase")
+
+
+func test_only_three_early_soldiers_and_no_double_activation() -> void:
+	var figs: Array[Figure] = [
+		fig("wizard", 0, Vector2(10, 10)), fig("thug", 0, Vector2(12, 10)),
+		fig("thug", 0, Vector2(8, 10)), fig("thug", 0, Vector2(10, 12)),
+		fig("thug", 0, Vector2(10, 8)), fig("wizard", 1, Vector2(30, 30)),
+		fig("apprentice", 0, Vector2(12, 12)), fig("thug", 1, Vector2(25, 25)),
+	]
+	var c := make_game(make_board(), figs, LoadedDice.new([12, 4]))
+	c.start_game()
+	for id in [2, 3, 4]:
+		check(c.activate(id), "soldiers may act before the wizard")
+		c.end_activation()
+	check(not c.activate(5), "fourth soldier prohibited")
+	check(c.activate(1))
+	c.end_activation()
+	check(c.activate(6))
+	c.end_activation()
+	check_eq(c.state.phase, Phase.APPRENTICE)
+	check(not c.activate(2), "already activated during wizard phase")
+	check(c.activate(7))
+
+
+func test_early_eligibility_requires_sight() -> void:
+	var figs: Array[Figure] = [
+		fig("wizard", 0, Vector2(10, 10)), fig("thug", 0, Vector2(13, 10)),
+		fig("wizard", 1, Vector2(30, 30)),
+	]
+	var c := make_game(make_board([["ruin", 11, 9, 1, 2]]), figs, LoadedDice.new([12, 4]))
+	c.start_game()
+	check(not c.activate(2), "ruin blocks early activation LOS")

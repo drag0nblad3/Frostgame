@@ -42,6 +42,7 @@ func activate(id: int) -> bool:
 	if state.active_id != -1 or f == null or not activatable().has(f):
 		return false
 	state.active_id = id
+	state.early.record_activation(state, f)
 	f.actions_left = 2
 	f.moves_taken = 0
 	f.acted = false
@@ -189,3 +190,17 @@ func can_drop_treasure(at: Vector2) -> bool:
 
 func can_exit_table(node: Vector2i, r: MoveReach = null) -> bool:
 	return _loot.can_exit(node, r)
+
+
+func can_finish_early_phase() -> bool:
+	return not state.over and state.active_id == -1 and state.early.can_finish(state, state.current_side())
+
+
+func finish_early_phase() -> bool:
+	if not can_finish_early_phase():
+		return false
+	var side := state.current_side()
+	state.early.closed[side] = true
+	emit("early_phase_finished", {"side": side})
+	_flow.after_activation()
+	return true

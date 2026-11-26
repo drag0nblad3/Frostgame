@@ -21,6 +21,8 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Turn %d. Initiative: %s. %s go first." % [d["turn"], ", ".join(parts), s.side_names[d["order"][0]]]
 		"phase":
 			return "%s phase." % Phase.name_of(d["phase"])
+		"early_phase_finished":
+			return "%s pass their remaining early soldier activations." % s.side_names[d["side"]]
 		"move":
 			return "%s moves %.1f\"." % [name_of(s, d["id"]), d["cost"]]
 		"fight":

@@ -9,7 +9,7 @@ signal new_game_pressed
 signal action_pressed(action: String)
 
 const LOG_LINES := 4
-const ACTIONS := {"move": "Move", "fight": "Fight", "shoot": "Shoot", "reload": "Reload", "collect": "Collect", "drop": "Drop", "exit": "Exit", "end": "End"}
+const ACTIONS := {"move": "Move", "fight": "Fight", "shoot": "Shoot", "reload": "Reload", "collect": "Collect", "drop": "Drop", "exit": "Exit", "end": "End", "pass_phase": "Pass soldiers"}
 
 var _status: Label
 var _hint: Label
@@ -73,7 +73,7 @@ func _ready() -> void:
 	_blocks.append(_action_row)
 	for key: String in ACTIONS:
 		var button := _button(ACTIONS[key], func() -> void: action_pressed.emit(key))
-		button.toggle_mode = key not in ["reload", "end"]
+		button.toggle_mode = key not in ["reload", "end", "pass_phase"]
 		_action_row.add_child(button)
 		_buttons[key] = button
 

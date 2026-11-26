@@ -55,3 +55,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 
 - Human side 0 and automatic rival; legal activation/target previews and contextual Move, Fight, Shoot, Reload, Collect, Drop, Exit and End commands. The same controller validates both bot and human actions; view only emits intents.
 - Explicit movement and retreat previews use the current lattice; tap hit testing uses projected figure locations and a flat table ray. Phone gesture/layout checks still required on a physical device. Watch mode retained for debugging.
+
+## Early phase activation
+
+- Pages 40–43: wizard and apprentice may each activate up to three unactivated soldiers within three inches and line of sight at phase start; the caster may act before or after those soldiers. Human can pass optional soldiers after caster activates, leaving them eligible for later phases. Bot automatically takes eligible early activations. Edge-to-edge range and existing flat center-ray LOS used. No group movement-first mode yet; creature phase and additional activation effects pending.

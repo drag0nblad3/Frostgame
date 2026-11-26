@@ -32,6 +32,8 @@ func refresh() -> void:
 	reach = null
 	var f := c.state.active()
 	if f == null:
+		if c.can_finish_early_phase():
+			available.append("pass_phase")
 		mode = "select"
 		preview()
 		return
@@ -80,6 +82,8 @@ func preview() -> void:
 		"select":
 			targets.assign(c.activatable())
 			radius = 0.65
+			if c.can_finish_early_phase():
+				hint = "Activate a nearby soldier or pass the remaining early activations."
 		"move", "exit":
 			if reach != null:
 				for n: Vector2i in reach.nodes():
@@ -119,6 +123,8 @@ func action(key: String) -> bool:
 	if not available.has(key):
 		return false
 	match key:
+		"pass_phase":
+			return c.finish_early_phase()
 		"reload":
 			return c.reload()
 		"end":

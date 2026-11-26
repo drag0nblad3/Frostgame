@@ -30,6 +30,7 @@ func start_turn() -> void:
 	s.order = ini["order"]
 	s.order_index = 0
 	s.phase = Phase.WIZARD
+	s.early.capture(s)
 	_c.emit("turn_start", {"turn": s.turn, "order": s.order, "rolls": ini["rolls"]})
 	_c.emit("phase", {"phase": s.phase})
 	_settle()
@@ -53,6 +54,7 @@ func _settle() -> void:
 			start_turn()
 			return
 		s.phase = Phase.ORDER[i]
+		s.early.capture(s)
 		_c.emit("phase", {"phase": s.phase})
 
 
