@@ -16,7 +16,7 @@ func contains(p: Vector2, margin: float = 0.0) -> bool:
 func pieces_at(p: Vector2) -> Array[TerrainPiece]:
 	var out: Array[TerrainPiece] = []
 	for piece in pieces:
-		if piece.rect.has_point(p):
+		if piece.contains(p):
 			out.append(piece)
 	return out
 
@@ -89,3 +89,9 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 		if p.kind.stairs:
 			multiplier = 1.0
 	return ceilf(delta) * multiplier
+
+
+func invalidate_terrain() -> void:
+	_stand_cache.clear()
+	_mult_cache.clear()
+	field_cache.clear()

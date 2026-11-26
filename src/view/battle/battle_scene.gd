@@ -140,7 +140,9 @@ func _human_turn() -> bool:
 	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and (controller.state.current_side() == player_side or controller.awaiting_reaction())
 
 
-func _on_event(_event: GameEvent) -> void:
+func _on_event(event: GameEvent) -> void:
+	if event.type == "terrain_changed":
+		_board_view.build(controller.state.board)
 	_dirty = true
 
 

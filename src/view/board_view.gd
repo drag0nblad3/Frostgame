@@ -25,12 +25,26 @@ func build(board: Board) -> void:
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
-	var box := BoxMesh.new()
 	var h := piece.kind.height
-	box.size = Vector3(piece.rect.size.x, h, piece.rect.size.y)
-	mi.mesh = box
+	if piece.circular:
+		var cylinder := CylinderMesh.new()
+		cylinder.top_radius = piece.rect.size.x * 0.5
+		cylinder.bottom_radius = cylinder.top_radius
+		cylinder.height = h
+		mi.mesh = cylinder
+	else:
+		var box := BoxMesh.new()
+		box.size = Vector3(piece.rect.size.x, h, piece.rect.size.y)
+		mi.mesh = box
 	var col: Color = COLORS.get(piece.kind.id, Color(0.6, 0.6, 0.6))
-	mi.material_override = _mat(col, 0.95)
+	match piece.kind.id:
+		"spell_wall": col = Color(0.25, 0.7, 0.9)
+		"spell_fog": col = Color(0.7, 0.85, 1.0, 0.4)
+		"spell_mud": col = Color(0.3, 0.24, 0.15, 0.8)
+	var mat := _mat(col, 0.95)
+	if col.a < 1.0:
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mi.material_override = mat
 	mi.position = TableSpace.to_world(piece.rect.get_center(), h * 0.5)
 	return mi
 

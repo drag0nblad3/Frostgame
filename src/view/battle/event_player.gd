@@ -45,6 +45,9 @@ func _play(e: GameEvent) -> void:
 			views[f.id] = v
 		"move", "push_back", "force_combat":
 			_animate_move(_view(d["id"]), d["path"])
+		"terrain_fall":
+			var f := state.figure(d["id"])
+			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
 		"allegiance", "heal":
 			_view(d["id"]).refresh(state.figure(d["id"]))
 		"shoot", "spell_shot":
