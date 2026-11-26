@@ -384,3 +384,23 @@ func test_worm_rider_spawn_at_turn_end() -> void:
 	check_eq(worm.def.id,"giant_worm")
 	check(WormRider.ignored(worm,f))
 	check(not ActiveGear.ready(f,WormRider.ITEM))
+
+
+func test_lantern_glow_flee_and_end_turn() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var t := fig("skeleton",-1,Vector2(12,10))
+	var c := make_game(make_board(),[f,t],LoadedDice.new([1]))
+	f.items.append({"gear":HolyLantern.ITEM,"gear_info":RedKingRewards.catalog()[HolyLantern.ITEM]})
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(HolyLantern.toggle(c))
+	check(HolyLantern.glow(f))
+	check_eq(f.actions_left,2)
+	check(t.used_gear.has(HolyLantern.FLEE))
+	c.state.active_id=t.id
+	t.actions_left=2
+	HolyLantern.flee(c,t)
+	check(t.pos.x>12)
+	check_eq(t.actions_left,1)
+	HolyLantern.end_turn(c)
+	check(not HolyLantern.lit(f))

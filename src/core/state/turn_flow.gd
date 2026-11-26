@@ -118,6 +118,7 @@ func _settle() -> void:
 			RealityCracks.on_end_turn(_c)
 			if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
 				return
+			HolyLantern.end_turn(_c)
 			WormRider.end_turn(_c)
 			_c._encounters.on_end_turn()
 			start_turn()

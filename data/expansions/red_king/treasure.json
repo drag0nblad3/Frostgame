@@ -70,7 +70,7 @@
       "buy": 350,
       "sell": 150,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_cloak_of_tattered_shadows": {

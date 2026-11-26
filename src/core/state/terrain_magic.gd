@@ -331,6 +331,8 @@ func trigger_landing(f: Figure) -> void:
 static func ward_blocks(b: Board, f: Figure, at: Vector2) -> bool:
 	if f == null or (not f.is_demon() and not f.is_undead()):
 		return false
+	if HolyLantern.ward(f,at,b.height_at(at)):
+		return true
 	for p in b.pieces:
 		if p.kind.id == "spell_circle_of_protection" and p.rect.get_center().distance_to(at) < 1.5 + Figure.BASE_RADIUS and absf(b.height_at(at) - b.height_at(p.rect.get_center())) < 0.5:
 			return true

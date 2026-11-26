@@ -34,6 +34,7 @@ func _init(s: GameState, d: Dice) -> void:
 func emit(type: String, data: Dictionary = {}) -> void:
 	var e := GameEvent.new(type, data)
 	history.append(e)
+	HolyLantern.observe(self,type,data)
 	event_emitted.emit(e)
 	if RedKingInvestigations.active(state):
 		RedKingInvestigations.observe_event(self,type,data)
@@ -92,6 +93,7 @@ func activate(id: int) -> bool:
 	if not state.group.in_progress() or state.group.movement_pass():
 		CreatureEffects.activation(self,f)
 		RedKingSinkhole.activation(self,f)
+	HolyLantern.flee(self,f)
 	if not f.in_play():
 		f.actions_left=0
 	return true

@@ -208,3 +208,7 @@ Explicit donor and empowerment amount on ordinary cast and resistance resolution
 ## Gloves of the Worm Rider
 
 Uncontrolled giant worms exclude protected bearers from pursuit and deliberate combat; once-per-battle token placement rolls for a delayed worm arrival, with visible marker and save-safe pending state. A natural one lets the rival AI relocate the marker toward an unprotected member of the summoner’s warband. End-turn occupied placement uses a nearby legal fallback. A natural-one survival roll permanently prevents resurrection. Flat placement only; no AI voluntary summoning yet.
+
+## Lantern of Holy Light
+
+Free opening action creates persistent Glow and a moving ward; nearby undead/demons receive a forced next-action retreat, including figures in melee. The straight retreat respects terrain and movement cost. The bearer may schedule shuttering at the end of their turn rather than interrupt the end-turn phase, otherwise the lantern extinguishes on 1–3. Flat movement only, no layered lantern controls or exact end-turn reaction UI yet.

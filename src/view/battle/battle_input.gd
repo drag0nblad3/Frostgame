@@ -113,6 +113,8 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if HolyLantern.can_toggle(c):
+		available.append("gear_lantern_toggle")
 	if WormRider.ready(c):
 		available.append("gear_worm_summon")
 	if DeathMask.can_toggle(c):
@@ -445,6 +447,8 @@ func preview() -> void:
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
+		if HolyLantern.lit(f):
+			hint="Lantern lit"+(" · shutter at turn end. " if f.used_gear.get(HolyLantern.CLOSE,false) else ". ")+hint
 		if f.used_gear.get(RedKingDirection.ARMED,false):
 			hint="Direction reroll armed. "+hint
 		if f.used_gear.get(RedKingElemental.ARMED,false):
@@ -501,6 +505,8 @@ func action(key: String) -> bool:
 		available.assign(["potion_cancel"])
 		preview()
 		return false
+	if key=="gear_lantern_toggle":
+		return HolyLantern.toggle(c)
 	if key=="gear_worm_summon":
 		mode="gear_worm_point"
 		available.assign(["potion_cancel"])
