@@ -9,7 +9,7 @@ signal new_game_pressed
 signal action_pressed(action: String)
 
 const LOG_LINES := 4
-const ACTIONS := {"move": "Move", "fight": "Fight", "shoot": "Shoot", "reload": "Reload", "collect": "Collect", "drop": "Drop", "exit": "Exit", "end": "End", "pass_phase": "Pass soldiers", "group": "Group", "group_begin": "Start group", "group_cancel": "Cancel group"}
+const ACTIONS := {"move": "Move", "fight": "Fight", "shoot": "Shoot", "reload": "Reload", "collect": "Collect", "drop": "Drop", "exit": "Exit", "end": "End", "pass_phase": "Pass soldiers", "group": "Group", "group_begin": "Start group", "group_cancel": "Cancel group", "stay": "Stay", "push_self": "Move back", "push_enemy": "Push enemy"}
 
 var _status: Label
 var _hint: Label
@@ -101,7 +101,7 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 	for key: String in _buttons:
 		var b: Button = _buttons[key]
 		b.disabled = not available.has(key)
-		if key in ["pass_phase", "group", "group_begin", "group_cancel"]:
+		if key in ["pass_phase", "group", "group_begin", "group_cancel", "stay", "push_self", "push_enemy"]:
 			b.visible = available.has(key)
 		b.set_pressed_no_signal(key == mode and b.toggle_mode)
 

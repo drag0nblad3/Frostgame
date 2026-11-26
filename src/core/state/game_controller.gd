@@ -10,6 +10,7 @@ var dice: Dice
 var history: Array[GameEvent] = []
 var _flow: TurnFlow
 var _loot: TreasureActions
+var _displacement: CombatDisplacement
 
 
 func _init(s: GameState, d: Dice) -> void:
@@ -17,6 +18,7 @@ func _init(s: GameState, d: Dice) -> void:
 	dice = d
 	_flow = TurnFlow.new(self)
 	_loot = TreasureActions.new(self)
+	_displacement = CombatDisplacement.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:
@@ -73,10 +75,15 @@ func move_to(node: Vector2i) -> bool:
 		return false
 	var f := state.active()
 	var path := r.path_to(node)
+	var intercept := _displacement.intercept(f, path) if state.forced_combat else {}
+	if not intercept.is_empty():
+		path.resize(int(intercept["index"]) + 1)
 	f.pos = path[path.size() - 1]
 	f.actions_left -= 1
 	f.moves_taken += 1
 	emit("move", {"id": f.id, "path": path, "cost": r.cost[node]})
+	if not intercept.is_empty():
+		_displacement.force_contact(intercept)
 	return true
 
 
@@ -103,6 +110,11 @@ func fight(target_id: int) -> bool:
 	emit("fight", res)
 	_hurt(t, res["b_dmg"], f)
 	_hurt(f, res["a_dmg"], t)
+	if f.in_play() and t.in_play() and int(res["winner"]) >= 0:
+		var winner := state.figure(res["winner"])
+		if winner.side >= 0:
+			state.push_winner = winner.id
+			state.push_loser = t.id if winner == f else f.id
 	return true
 
 
@@ -147,6 +159,7 @@ func reload() -> bool:
 
 
 func end_activation() -> void:
+	_displacement.clear()
 	var f := state.active()
 	if f == null:
 		return
@@ -167,6 +180,7 @@ func end_activation() -> void:
 
 
 func _spend(f: Figure) -> void:
+	_displacement.clear()
 	f.actions_left -= 1
 	f.acted = true
 
@@ -227,4 +241,20 @@ func begin_group(ids: Array[int]) -> bool:
 	if not can_begin_group() or not state.group.begin(state, state.current_side(), ids):
 		return false
 	emit("group_begin", {"side": state.current_side(), "ids": ids.duplicate()})
+	return true
+
+
+func can_push(own_figure: bool) -> bool:
+	return _displacement.destination(own_figure) != null
+
+
+func resolve_push(own_figure: bool) -> bool:
+	return _displacement.push(own_figure)
+
+
+func stay_in_combat() -> bool:
+	if state.push_winner < 0:
+		return false
+	_displacement.clear()
+	emit("stay_in_combat")
 	return true

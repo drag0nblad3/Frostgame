@@ -49,6 +49,10 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Treasure %d is lost." % (d["treasure"] + 1)
 		"exit":
 			return "%s leaves the table safely." % name_of(s, d["id"])
+		"push_back":
+			return "%s moves back from combat." % name_of(s, d["id"])
+		"force_combat":
+			return "%s intercepts a passing figure." % name_of(s, d["id"])
 		"reload":
 			return "%s reloads." % name_of(s, d["id"])
 		"damage":

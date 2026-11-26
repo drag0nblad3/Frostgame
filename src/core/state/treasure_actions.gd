@@ -92,6 +92,8 @@ func exit_table(node: Vector2i) -> bool:
 	var f := _c.state.active()
 	if not _c.move_to(node):
 		return false
+	if f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
+		return true
 	if f.treasure_id >= 0:
 		secure(_c.state.treasure(f.treasure_id), f.side)
 	f.exited = true

@@ -13,6 +13,7 @@ var health := 0
 var out_of_action := false
 var exited := false
 var treasure_id := -1
+var disengaged := {}
 ## Turn bookkeeping, reset by the controller each turn.
 var activated := false
 var actions_left := 0

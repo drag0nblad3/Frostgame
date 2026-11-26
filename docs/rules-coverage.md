@@ -63,3 +63,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Group activation
 
 - Page 43: before any individual activates in an early phase, choose caster and one to three eligible soldiers. Move each member (or skip), then perform one second action per surviving member in any order. Movement substitutes (reload, drop) are unavailable during the movement pass. Only selected members act early; unused soldiers remain eligible in later phases. Human group declaration UI and regression tests added; AI still uses ordinary individual early activations. Flat movement and contact approximations remain.
+
+## Combat displacement
+
+- pp. 47, 53: unique melee winner can stay or move either combatant one inch away (blocked by terrain/figures; self-withdrawal prohibited if engaged with another enemy). Acting human winner chooses; defending winners currently default to stay. Automatic interception is an engine option, not yet enabled in the shipped scenario; reactive choice and elevation are pending.

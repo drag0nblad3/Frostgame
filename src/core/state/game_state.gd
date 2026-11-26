@@ -11,6 +11,9 @@ var turn := 0
 var phase := Phase.WIZARD
 var early := EarlyPhase.new()
 var group := GroupActivation.new()
+var push_winner := -1
+var push_loser := -1
+var forced_combat := false
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var order: Array[int] = []
 var order_index := 0

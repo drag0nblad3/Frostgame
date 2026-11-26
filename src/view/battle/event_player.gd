@@ -37,7 +37,7 @@ func _play(e: GameEvent) -> void:
 			_view(d["id"]).set_active(true)
 		"end_activation":
 			_view(d["id"]).set_active(false)
-		"move":
+		"move", "push_back", "force_combat":
 			_animate_move(_view(d["id"]), d["path"])
 		"shoot":
 			_animate_shot(_view(d["id"]), _view(d["target"]))

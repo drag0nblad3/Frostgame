@@ -40,6 +40,15 @@ func refresh() -> void:
 		mode = "select"
 		preview()
 		return
+	if c.state.push_winner >= 0 and c.state.figure(c.state.push_winner).side == f.side:
+		available.append("stay")
+		if c.can_push(true):
+			available.append("push_self")
+		if c.can_push(false):
+			available.append("push_enemy")
+		mode = "push"
+		preview()
+		return
 	if c.can_move():
 		reach = c.reach()
 		available.append("move")
@@ -82,6 +91,8 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"push":
+			hint = "Won the fight. Stay engaged, move back, or push the opponent."
 		"group_select":
 			targets.assign(c.activatable())
 			radius = 0.65
@@ -140,6 +151,12 @@ func action(key: String) -> bool:
 	if not available.has(key):
 		return false
 	match key:
+		"stay":
+			return c.stay_in_combat()
+		"push_self":
+			return c.resolve_push(true)
+		"push_enemy":
+			return c.resolve_push(false)
 		"group":
 			group_selection.assign([int(c.state.early.leaders[c.state.current_side()])])
 			mode = "group_select"

@@ -1,0 +1,81 @@
+class_name CombatDisplacement
+extends RefCounted
+## Post-fight withdrawal and deterministic optional interception (pp. 47, 53).
+
+var c: GameController
+
+
+func _init(controller: GameController) -> void:
+	c = controller
+
+
+func clear() -> void:
+	c.state.push_winner = -1
+	c.state.push_loser = -1
+
+
+func destination(own: bool) -> Variant:
+	var s := c.state
+	var winner := s.figure(s.push_winner)
+	var loser := s.figure(s.push_loser)
+	if winner == null or loser == null or not winner.in_play() or not loser.in_play():
+		return null
+	if own and Contact.enemies_of(s.figures, winner).size() > 1:
+		return null
+	var moving := winner if own else loser
+	var other := loser if own else winner
+	var dest := moving.pos + (moving.pos - other.pos).normalized()
+	if not _clear_path(moving, dest):
+		return null
+	return dest
+
+
+func push(own: bool) -> bool:
+	var dest: Variant = destination(own)
+	if dest == null:
+		return false
+	var moving := c.state.figure(c.state.push_winner if own else c.state.push_loser)
+	var other := c.state.figure(c.state.push_loser if own else c.state.push_winner)
+	var from := moving.pos
+	moving.pos = dest
+	moving.disengaged[other.id] = moving.pos.distance_to(other.pos)
+	other.disengaged[moving.id] = moving.disengaged[other.id]
+	clear()
+	c.emit("push_back", {"id": moving.id, "path": PackedVector2Array([from, moving.pos])})
+	return true
+
+
+func _clear_path(moving: Figure, dest: Vector2) -> bool:
+	for i in range(1, 5):
+		var p := moving.pos.lerp(dest, i / 4.0)
+		if not c.state.board.can_stand(p, Figure.BASE_RADIUS):
+			return false
+		for f in c.state.figures:
+			if f != moving and f.in_play() and f.pos.distance_to(p) < Contact.OVERLAP:
+				return false
+	return true
+
+
+## Current policy: eligible guards automatically intercept when enabled.
+func intercept(mover: Figure, path: PackedVector2Array) -> Dictionary:
+	for i in range(1, path.size()):
+		var p := path[i]
+		for guard in c.state.figures:
+			if not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard):
+				continue
+			var distance := p.distance_to(guard.pos)
+			if distance > 2.0 or distance <= Contact.CONTACT:
+				continue
+			if mover.disengaged.has(guard.id) and distance >= float(mover.disengaged[guard.id]) - 0.001:
+				continue
+			var dest := p + (guard.pos - p).normalized()
+			if _clear_path(guard, dest):
+				return {"index": i, "guard": guard, "dest": dest}
+	return {}
+
+
+func force_contact(info: Dictionary) -> void:
+	var guard: Figure = info["guard"]
+	var from := guard.pos
+	guard.pos = info["dest"]
+	c.emit("force_combat", {"id": guard.id, "path": PackedVector2Array([from, guard.pos])})
