@@ -10,7 +10,8 @@
 ## Milestone 2 — playable skirmish
 - [x] Player control: tap a figure, see its move range, tap to move, tap an enemy to fight/shoot; rival AI and watch mode
 - [x] Normal wizard/apprentice phases: up to three eligible soldiers, optionally pass
-- True group activation (all movement first); push-back; leaving combat
+- [x] True group activation (movement pass then second-action pass)
+- Push-back and leaving combat
 - [x] Treasure tokens, carrying, exiting with treasure; scenario victory (provisional)
 - Check every `TODO(rules)` and `"verify"` stat line against the book
 

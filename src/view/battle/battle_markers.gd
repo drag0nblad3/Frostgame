@@ -2,20 +2,22 @@ class_name BattleMarkers
 extends Node3D
 ## Instanced tabletop markers: legal movement positions or selectable targets.
 
-var _markers: MultiMeshInstance3D
+var _layers: Array[MultiMeshInstance3D] = []
 
 
 func clear() -> void:
-	if _markers != null:
-		_markers.queue_free()
-		_markers = null
+	for layer in _layers:
+		layer.visible = false
+		layer.queue_free()
+	_layers.clear()
 
 
-func show_points(points: Array[Vector2], color: Color, radius: float) -> void:
-	clear()
+func show_points(points: Array[Vector2], color: Color, radius: float, append: bool = false) -> void:
+	if not append:
+		clear()
 	if points.is_empty():
 		return
-	_markers = MultiMeshInstance3D.new()
+	var marker := MultiMeshInstance3D.new()
 	var disk := CylinderMesh.new()
 	disk.top_radius = radius
 	disk.bottom_radius = radius
@@ -30,5 +32,6 @@ func show_points(points: Array[Vector2], color: Color, radius: float) -> void:
 	mm.instance_count = points.size()
 	for i in points.size():
 		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, TableSpace.to_world(points[i], 0.035)))
-	_markers.multimesh = mm
-	add_child(_markers)
+	marker.multimesh = mm
+	add_child(marker)
+	_layers.append(marker)

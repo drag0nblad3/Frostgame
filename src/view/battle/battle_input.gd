@@ -13,6 +13,7 @@ var targets: Array[Figure] = []
 var tokens: Array[TreasureToken] = []
 var nodes: Array[Vector2i] = []
 var drops: Array[Vector2] = []
+var group_selection: Array[int] = []
 
 
 func _init(controller: GameController, command_bar: BattleHud, cam: Camera3D, overlay: BattleMarkers) -> void:
@@ -32,6 +33,8 @@ func refresh() -> void:
 	reach = null
 	var f := c.state.active()
 	if f == null:
+		if c.can_begin_group():
+			available.append("group")
 		if c.can_finish_early_phase():
 			available.append("pass_phase")
 		mode = "select"
@@ -79,10 +82,16 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"group_select":
+			targets.assign(c.activatable())
+			radius = 0.65
+			hint = "Choose up to 3 soldiers with the caster. Selected: %d/4." % group_selection.size()
 		"select":
 			targets.assign(c.activatable())
 			radius = 0.65
-			if c.can_finish_early_phase():
+			if c.state.group.in_progress():
+				hint = "Choose a group member for movement." if c.state.group.movement_pass() else "Choose a group member for its second action."
+			elif c.can_finish_early_phase():
 				hint = "Activate a nearby soldier or pass the remaining early activations."
 		"move", "exit":
 			if reach != null:
@@ -111,11 +120,19 @@ func preview() -> void:
 			hint = "Tap a marked place to drop treasure."
 		_:
 			hint = "Choose Reload or End."
+	var selected: Array[Vector2] = []
 	for t in targets:
-		points.append(t.pos)
+		if mode == "group_select" and group_selection.has(t.id):
+			selected.append(t.pos)
+		else:
+			points.append(t.pos)
 	markers.show_points(points, color, radius)
+	if not selected.is_empty():
+		markers.show_points(selected, Color(1.0, 0.78, 0.15), 0.85, true)
 	if f != null:
 		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying treasure" if f.treasure_id >= 0 else "", hint]
+	if c.state.group.in_progress():
+		hint = ("GROUP: Movement · " if c.state.group.movement_pass() else "GROUP: Second action · ") + hint
 	hud.set_actions(available, mode, hint)
 
 
@@ -123,6 +140,22 @@ func action(key: String) -> bool:
 	if not available.has(key):
 		return false
 	match key:
+		"group":
+			group_selection.assign([int(c.state.early.leaders[c.state.current_side()])])
+			mode = "group_select"
+			_group_buttons()
+			preview()
+			return false
+		"group_cancel":
+			group_selection.clear()
+			refresh()
+			return false
+		"group_begin":
+			if not c.begin_group(group_selection):
+				return false
+			group_selection.clear()
+			mode = ""
+			return true
 		"pass_phase":
 			return c.finish_early_phase()
 		"reload":
@@ -137,11 +170,21 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot"]:
+	if mode in ["select", "fight", "shoot", "group_select"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
+			"group_select":
+				if id == int(c.state.early.leaders[c.state.current_side()]):
+					return false
+				if group_selection.has(id):
+					group_selection.erase(id)
+				elif group_selection.size() < 4:
+					group_selection.append(id)
+				_group_buttons()
+				preview()
+				return false
 			"select": return c.activate(id)
 			"fight": return c.fight(id)
 			"shoot": return c.shoot(id)
@@ -176,3 +219,9 @@ func _figure_at(screen: Vector2) -> int:
 			distance = d
 			id = f.id
 	return id
+
+
+func _group_buttons() -> void:
+	available.assign(["group_cancel"])
+	if group_selection.size() >= 2:
+		available.append("group_begin")

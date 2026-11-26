@@ -42,10 +42,13 @@ func activate(id: int) -> bool:
 	if state.active_id != -1 or f == null or not activatable().has(f):
 		return false
 	state.active_id = id
-	state.early.record_activation(state, f)
-	f.actions_left = 2
-	f.moves_taken = 0
-	f.acted = false
+	if state.group.in_progress():
+		state.group.start_member(state, f)
+	else:
+		state.early.record_activation(state, f)
+		f.actions_left = 2
+		f.moves_taken = 0
+		f.acted = false
 	emit("activate", {"id": id})
 	return true
 
@@ -80,7 +83,7 @@ func move_to(node: Vector2i) -> bool:
 ## One non-move action (fight, shoot, reload) per activation.
 func can_act() -> bool:
 	var f := state.active()
-	return f != null and f.in_play() and f.actions_left > 0 and not f.acted
+	return f != null and f.in_play() and f.actions_left > 0 and not f.acted and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:
@@ -127,7 +130,7 @@ func shoot(target_id: int) -> bool:
 ## Reload may replace the movement action (p. 34); never while engaged.
 func can_reload() -> bool:
 	var f := state.active()
-	return f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
+	return not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
 
 
 func reload() -> bool:
@@ -147,9 +150,19 @@ func end_activation() -> void:
 	var f := state.active()
 	if f == null:
 		return
-	f.activated = true
 	state.active_id = -1
+	f.actions_left = 0
 	emit("end_activation", {"id": f.id})
+	if state.group.in_progress():
+		var before := state.group.stage
+		var complete := state.group.finish_member(state, f)
+		if complete:
+			emit("group_complete", {"side": f.side})
+			_flow.after_activation()
+		elif before != state.group.stage:
+			emit("group_second", {"side": f.side})
+		return
+	f.activated = true
 	_flow.after_activation()
 
 
@@ -193,7 +206,7 @@ func can_exit_table(node: Vector2i, r: MoveReach = null) -> bool:
 
 
 func can_finish_early_phase() -> bool:
-	return not state.over and state.active_id == -1 and state.early.can_finish(state, state.current_side())
+	return not state.over and state.active_id == -1 and not state.group.in_progress() and state.early.can_finish(state, state.current_side())
 
 
 func finish_early_phase() -> bool:
@@ -203,4 +216,15 @@ func finish_early_phase() -> bool:
 	state.early.closed[side] = true
 	emit("early_phase_finished", {"side": side})
 	_flow.after_activation()
+	return true
+
+
+func can_begin_group() -> bool:
+	return not state.over and state.active_id == -1 and state.group.can_begin(state, state.current_side())
+
+
+func begin_group(ids: Array[int]) -> bool:
+	if not can_begin_group() or not state.group.begin(state, state.current_side(), ids):
+		return false
+	emit("group_begin", {"side": state.current_side(), "ids": ids.duplicate()})
 	return true

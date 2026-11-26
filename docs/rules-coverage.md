@@ -59,3 +59,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Early phase activation
 
 - Pages 40–43: wizard and apprentice may each activate up to three unactivated soldiers within three inches and line of sight at phase start; the caster may act before or after those soldiers. Human can pass optional soldiers after caster activates, leaving them eligible for later phases. Bot automatically takes eligible early activations. Edge-to-edge range and existing flat center-ray LOS used. No group movement-first mode yet; creature phase and additional activation effects pending.
+
+## Group activation
+
+- Page 43: before any individual activates in an early phase, choose caster and one to three eligible soldiers. Move each member (or skip), then perform one second action per surviving member in any order. Movement substitutes (reload, drop) are unavailable during the movement pass. Only selected members act early; unused soldiers remain eligible in later phases. Human group declaration UI and regression tests added; AI still uses ordinary individual early activations. Flat movement and contact approximations remain.

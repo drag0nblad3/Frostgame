@@ -26,6 +26,8 @@ func pick_up(id: int) -> bool:
 
 
 func can_drop(at: Vector2) -> bool:
+	if _c.state.group.movement_pass():
+		return false
 	var f := _c.state.active()
 	if f == null or not f.in_play() or f.treasure_id < 0 or f.actions_left <= 0:
 		return false

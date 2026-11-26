@@ -13,6 +13,7 @@ belongs to Osprey Games and Joseph A. McCullough, and no rulebook text is includ
 2. Open `project.godot` and press Play.
 3. You control the blue Elementalist warband. Tap a marked figure to activate it, choose an enabled action, and tap a marked destination or target. Reload and End execute directly. The rival plays automatically.
    - Move marks reachable ground. Fight and Shoot mark legal enemies. Collect, Drop and Exit mark their legal positions.
+   - In wizard/apprentice phases you may activate eligible soldiers individually or declare Group before acting. Select up to three soldiers and Start group; complete the movement pass for every member, then their second actions. Pass soldiers leaves optional early activations for later.
    - Watch switches to bot-vs-bot play between activations; Step and Auto are available there. New game restarts.
    - Mouse: click to select, left-drag orbit, right-drag pan, wheel zoom.
    - Touch: tap to select, one-finger drag orbit, two-finger pan, pinch zoom.

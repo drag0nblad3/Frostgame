@@ -99,7 +99,7 @@ func _process(delta: float) -> void:
 
 
 func set_watch_mode(on: bool) -> void:
-	if controller.state.active() != null or not player.idle():
+	if controller.state.active() != null or controller.state.group.in_progress() or not player.idle():
 		hud.set_watch(watch_mode, false, false)
 		return
 	watch_mode = on
@@ -119,7 +119,7 @@ func _on_event(_event: GameEvent) -> void:
 func _refresh() -> void:
 	_dirty = false
 	_update_status()
-	hud.set_watch(watch_mode, controller.state.active() == null, true)
+	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress(), true)
 	if _human_turn():
 		player_input.refresh()
 	else:
