@@ -25,6 +25,8 @@ func destination(own: bool) -> Variant:
 	var moving := winner if own else loser
 	var other := loser if own else winner
 	var dest := moving.pos + (moving.pos - other.pos).normalized()
+	if ScenarioObjectives.inside_well(s, dest):
+		return dest
 	if c.state.board.height_at(dest) > moving.elevation + 0.001 or not _clear_path(moving, dest):
 		return null
 	return dest
@@ -44,6 +46,9 @@ func push(own: bool) -> bool:
 	other.disengaged[moving.id] = moving.disengaged[other.id]
 	clear()
 	c.emit("push_back", {"id": moving.id, "path": PackedVector2Array([from, moving.pos])})
+	if ScenarioObjectives.inside_well(c.state, moving.pos):
+		c._hurt(moving, moving.health, other, false)
+		return true
 	c._magic.terrain.trigger_landing(moving)
 	var fall := ElevationRules.fall_damage(old_height - moving.elevation)
 	if fall > 0 and MagicEquipment.bonus(moving, "slow_fall") == 0:

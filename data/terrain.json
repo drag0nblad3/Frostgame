@@ -48,5 +48,12 @@
     "cover": 1,
     "move_mult": 1,
     "height": 1.7
+  },
+  "dreams_well": {
+    "name": "Enchanted well",
+    "blocks_move": true,
+    "blocks_los": false,
+    "cover": 1,
+    "height": 0.8
   }
 }

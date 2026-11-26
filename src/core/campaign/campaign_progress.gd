@@ -76,6 +76,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	var xp := 0
 	var kills := 0
 	var scenario_xp := 0
+	var worm_hurt := false
 	for f in c.state.figures:
 		if f.side == side and f.def.role == "wizard":
 			xp += 40
@@ -88,11 +89,21 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
+		elif event.type == "well_drink" and int(e["side"]) == side:
+			scenario_xp += int(e["xp"])
+		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
+			var victim := c.state.figure(e["id"])
+			var attacker := c.state.figure(e["by"])
+			if victim != null and attacker != null and victim.def.id == "giant_worm" and attacker.original_side == side and not worm_hurt:
+				worm_hurt = true
+				scenario_xp += 20
 		elif event.type == "out_of_action":
 			var victim := c.state.figure(e["id"])
 			var attacker := c.state.figure(e["by"])
 			if victim != null and attacker != null and victim.side < 0 and attacker.side == side:
-				if c.state.museum and victim.def.id == "medium_construct":
+				if c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
+					scenario_xp += 50
+				elif c.state.museum and victim.def.id == "medium_construct":
 					scenario_xp += 10
 				else:
 					kills += 1

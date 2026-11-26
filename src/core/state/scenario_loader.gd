@@ -15,6 +15,11 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	s.board = BoardLoader.load_id(d["board"], terrain)
 	s.random_encounters = d.get("random_encounters", false)
 	s.museum = d.get("museum", false)
+	s.scenario_special = str(d.get("special", ""))
+	if s.scenario_special == "dreams_well":
+		for piece in s.board.pieces:
+			if piece.kind.id == "dreams_well":
+				piece.circular = true
 	for at: Array in d.get("reinforcements", []):
 		s.reinforcement_points.append(Vector2(at[0], at[1]))
 	s.forced_combat = d.get("forced_combat", false)

@@ -512,3 +512,12 @@ func select_melee(id: String) -> bool:
 			emit("weapon_selected", {"id": f.id, "weapon": id})
 			return true
 	return false
+
+
+
+func can_drink_well() -> bool:
+	return ScenarioObjectives.can_drink(self)
+
+
+func drink_well() -> bool:
+	return ScenarioObjectives.drink(self)

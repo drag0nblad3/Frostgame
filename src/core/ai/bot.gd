@@ -23,6 +23,8 @@ static func resume_activation(c: GameController) -> bool:
 		FuryRules.play(c, f)
 	elif f.side < 0:
 		CreatureBot.play(c, f)
+	elif c.can_drink_well():
+		c.drink_well()
 	elif not MagicBot.play(c, f) and not TreasureBot.play(c, f):
 		if f.ranged != null:
 			_play_shooter(c, f)

@@ -87,6 +87,8 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	if c.can_drink_well():
+		available.append("drink_well")
 	for weapon in c.selectable_melee():
 		available.append("weapon_" + weapon.id)
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
@@ -367,6 +369,8 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key == "drink_well":
+		return c.drink_well()
 	if key.begins_with("weapon_"):
 		return c.select_melee(key.trim_prefix("weapon_"))
 	if key in ["fate_combat_yes", "fate_combat_no"]:

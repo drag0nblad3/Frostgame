@@ -19,6 +19,9 @@ var reaction_side := -2
 var pending_intercept := {}
 var random_encounters := false
 var museum := false
+var scenario_special := ""
+var worm_spawned := false
+var well_drinkers := {}
 var reinforcement_points: Array[Vector2] = []
 var creature_db: FigureDb
 var spellbooks := {}
