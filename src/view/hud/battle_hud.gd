@@ -8,6 +8,7 @@ signal watch_toggled(on: bool)
 signal new_game_pressed
 signal roster_pressed
 signal campaign_pressed
+signal scenario_selected(id: String)
 signal action_pressed(action: String)
 
 const LOG_LINES := 4
@@ -52,6 +53,13 @@ func _ready() -> void:
 	top.add_child(_auto)
 	top.add_child(_button("Campaign", func() -> void: campaign_pressed.emit()))
 	top.add_child(_button("Warband", func() -> void: roster_pressed.emit()))
+	var scenarios := OptionButton.new()
+	scenarios.add_item("Frozen Ruins")
+	scenarios.set_item_metadata(0, "treasure_skirmish")
+	scenarios.add_item("Mausoleum")
+	scenarios.set_item_metadata(1, "mausoleum")
+	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
+	top.add_child(scenarios)
 	top.add_child(_button("New game", func() -> void: new_game_pressed.emit()))
 	_blocks.append(top)
 	var spacer := Control.new()

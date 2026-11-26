@@ -109,3 +109,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Campaign management
 
 - pp. 75, 83–85, 96, 103, 106: recruits and dismissals with soldier/specialist caps and level-priced apprentice; wounded caster treatment including debt and apothecary discount; one stat increase per game, wizard/apprentice bonuses applied to copies of definitions; grimoire identification and learning using the random spell table; three initial functional bases (brewery, laboratory, treasury). Other bases, detailed permanent injuries, spell learning/improvement ordering, item identities and loadouts remain pending. Existing version-1 campaign saves use defaults for added fields.
+
+## First named scenario
+
+- The Mausoleum (p. 142): selectable in the battle toolbar for the next skirmish or campaign battle, six initial skeletons and six treasure tokens without a central treasure, one additional skeleton at a randomly selected door after every Creature phase. Fixed token/deployment locations and solid central building approximate the tabletop setup. If the doorway is occupied, spawn on the nearest free node within 1.5 inches; optional pickup encounters disabled. 

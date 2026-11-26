@@ -2,6 +2,7 @@ extends Node3D
 ## Composition root for human-vs-bot play or optional bot-vs-bot observation.
 
 const SCENARIO := "treasure_skirmish"
+var _scenario_id := SCENARIO
 ## Pause between bot activations in Auto mode (seconds).
 const AUTO_DELAY := 0.35
 
@@ -47,6 +48,7 @@ func _ready() -> void:
 		new_game(0))
 	hud.roster_pressed.connect(_open_roster)
 	hud.campaign_pressed.connect(_open_campaign)
+	hud.scenario_selected.connect(func(id: String) -> void: _scenario_id = id)
 	_campaign.load_save()
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
@@ -61,7 +63,7 @@ func new_game(seed_value: int) -> void:
 	auto_play = false
 	hud.set_auto(false)
 	_wait = 0.0
-	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + SCENARIO + ".json")
+	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
 	if _campaign_battle:
 		data["warbands"][0] = _campaign.deployment()
 	elif not _roster.is_empty():

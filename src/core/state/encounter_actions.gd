@@ -46,6 +46,28 @@ func _spawn(type: String, edge: int) -> void:
 			break
 	if not found:
 		return
+	_spawn_at(type, at)
+
+
+func on_end_turn() -> void:
+	var s := c.state
+	if s.reinforcement_points.is_empty() or s.creature_db == null:
+		return
+	var at := s.reinforcement_points[c.dice.pick(s.reinforcement_points.size())]
+	var grid := MoveGrid.new(s.board, null, s.figures)
+	var candidates: Array[Vector2] = [at]
+	for dx in range(-3, 4):
+		for dy in range(-3, 4):
+			candidates.append(at + Vector2(dx, dy) * 0.5)
+	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_squared_to(at) < b.distance_squared_to(at))
+	for p in candidates:
+		if grid.open(MovePlanner.node_at(p)) and s.board.can_stand(p, Figure.BASE_RADIUS):
+			_spawn_at("skeleton", MoveGrid.to_pos(MovePlanner.node_at(p)))
+			return
+
+
+func _spawn_at(type: String, at: Vector2) -> void:
+	var s := c.state
 	var id := 1
 	for f in s.figures:
 		id = maxi(id, f.id + 1)

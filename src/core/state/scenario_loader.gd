@@ -14,6 +14,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	var s := GameState.new()
 	s.board = BoardLoader.load_id(d["board"], terrain)
 	s.random_encounters = d.get("random_encounters", false)
+	for at: Array in d.get("reinforcements", []):
+		s.reinforcement_points.append(Vector2(at[0], at[1]))
 	s.forced_combat = d.get("forced_combat", false)
 	s.creature_db = figures
 	s.spell_catalog = JsonFile.read("res://data/spells.json")

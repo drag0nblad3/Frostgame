@@ -18,6 +18,7 @@ var forced_combat := false
 var reaction_side := -2
 var pending_intercept := {}
 var random_encounters := false
+var reinforcement_points: Array[Vector2] = []
 var creature_db: FigureDb
 var spellbooks := {}
 var spell_catalog := {}
