@@ -35,6 +35,10 @@ static func casting_bonus(d: Dictionary, spell: String) -> int:
 			upgrade = "crystal_ball"
 		"write_scroll":
 			upgrade = "scriptorium"
+		"summon_demon":
+			upgrade = "summoning_candle"
+		"control_demon":
+			upgrade = "arcane_candle"
 	return 1 if upgrade != "" and owns(d, upgrade) else 0
 
 

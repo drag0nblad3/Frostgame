@@ -591,6 +591,10 @@ func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
 
 
 func available_spell(f: Figure, id: String) -> bool:
+	if id in ["summon_demon", "control_demon"]:
+		for t in c.state.figures:
+			if t.in_play() and t.prepared_demon_caster == f.id:
+				return false
 	return c.state.spellbooks.get(f.side, {}).has(id) or ScrollActions.has_scroll(f, id)
 
 

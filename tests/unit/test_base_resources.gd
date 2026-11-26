@@ -18,7 +18,7 @@ func test_resources_purchase_and_switch() -> void:
 	check(BaseResources.buy(p.data, "crystal_ball"))
 	check(BaseResources.buy(p.data, "carrier_pigeons"))
 	check(not BaseResources.buy(p.data, "crystal_ball"))
-	check(not BaseResources.buy(p.data, "summoning_circle"))
+	check(not BaseResources.buy(p.data, "nonexistent_upgrade"))
 	check_eq(p.data["gold"], 4700)
 	check_eq(p.recruitment_cost("archer", db()), 65)
 	check_eq(p.recruitment_cost("thug", db()), 0)
@@ -35,7 +35,7 @@ func test_resources_purchase_and_switch() -> void:
 func test_inn_and_kennel_capacity() -> void:
 	var p := _campaign()
 	check(p.choose_base("inn"))
-	while BaseResources.counts(p.data, db()).x < 9:
+	for i in 7:
 		check(p.hire("thug", db()))
 	check(not p.can_hire("thug", db()))
 	check(BaseResources.buy(p.data, "kennel"))

@@ -13,6 +13,8 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"telescope_used":
+			return "%s use their telescope: +5 initiative." % s.side_names[d["side"]]
 		"turn_start":
 			var rolls: Array = d["rolls"]
 			var parts: Array[String] = []

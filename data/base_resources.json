@@ -33,13 +33,13 @@
     "name": "Celestial Telescope",
     "cost": 250,
     "benefit": "One +5 initiative bonus per battle",
-    "live": false
+    "live": true
   },
   "summoning_circle": {
     "name": "Summoning Circle",
     "cost": 300,
     "benefit": "Prepare a temporary controlled demon",
-    "live": false
+    "live": true
   },
   "carrier_pigeons": {
     "name": "Carrier Pigeons",
@@ -51,13 +51,13 @@
     "name": "Arcane Candle",
     "cost": 100,
     "benefit": "+1 prebattle Control Demon",
-    "live": false
+    "live": true
   },
   "summoning_candle": {
     "name": "Summoning Candle",
     "cost": 100,
     "benefit": "+1 prebattle Summon Demon",
-    "live": false
+    "live": true
   },
   "sarcophagus_of_healing": {
     "name": "Sarcophagus of Healing",

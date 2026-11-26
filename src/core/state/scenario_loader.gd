@@ -26,6 +26,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		var wb: Dictionary = warbands[side]
 		s.side_names.append(wb.get("name", "Warband %d" % (side + 1)))
 		s.spellbooks[side] = wb.get("spells", {})
+		if wb.get("telescope", false):
+			s.telescope_ready[side] = true
 		for entry: Dictionary in wb.get("figures", []):
 			var at: Array = entry["at"]
 			var def := figures.get_def(entry["type"])
@@ -41,6 +43,18 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				for caster in s.figures:
 					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
 						unit.summoned_by = caster.id
+						break
+			if entry.has("prepared_demon"):
+				var demon: Dictionary = entry["prepared_demon"]
+				for caster in s.figures:
+					if caster.side == side and caster.campaign_id == int(demon["caster"]):
+						unit.prepared_demon_caster = caster.id
+						unit.original_side = -1
+						unit.controller_id = caster.id
+						unit.summoned_by = caster.id
+						unit.control_spell = "control_demon"
+						unit.summon_spell = "summon_demon"
+						unit.control_roll = int(demon["control_roll"])
 						break
 			unit.campaign_base = str(entry.get("campaign_base", ""))
 			unit.familiar = entry.get("familiar", false)

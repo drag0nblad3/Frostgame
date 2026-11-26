@@ -126,7 +126,7 @@ func _process(delta: float) -> void:
 
 
 func set_watch_mode(on: bool) -> void:
-	if controller.state.active() != null or controller.state.group.in_progress() or not player.idle():
+	if controller.state.active() != null or controller.state.group.in_progress() or controller.awaiting_reaction() or not player.idle():
 		hud.set_watch(watch_mode, false, false)
 		return
 	watch_mode = on
@@ -149,7 +149,7 @@ func _on_event(event: GameEvent) -> void:
 func _refresh() -> void:
 	_dirty = false
 	_update_status()
-	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress(), true)
+	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress() and not controller.awaiting_reaction(), true)
 	if _human_turn():
 		player_input.refresh()
 	else:
@@ -180,6 +180,9 @@ func _update_status() -> void:
 	var score := ""
 	for side in s.side_count():
 		score += "  |  %s: %d" % [s.side_names[side], s.secured_count(side)]
+	if s.pending_initiative:
+		hud.set_status("Turn %d · Initiative choice%s" % [s.turn, score])
+		return
 	if s.over:
 		var result := "Draw" if s.winner < 0 else "%s win" % s.side_names[s.winner]
 		hud.set_status("Turn %d — %s%s" % [s.turn, result, score])

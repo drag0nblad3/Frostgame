@@ -29,6 +29,8 @@ var storm_penalty := 0
 var words: Array[Dictionary] = []
 var fast_acts := {}
 ## Sides in initiative order this turn, and whose go it is within the phase.
+var telescope_ready := {}
+var pending_initiative := false
 var order: Array[int] = []
 var order_index := 0
 var active_id := -1

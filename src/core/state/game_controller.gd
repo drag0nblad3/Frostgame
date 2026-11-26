@@ -41,7 +41,7 @@ func start_game() -> void:
 
 ## Figures the side to play may activate now.
 func activatable() -> Array[Figure]:
-	if state.over:
+	if state.over or state.pending_initiative:
 		var none: Array[Figure] = []
 		return none
 	return state.waiting(state.current_side())
@@ -390,8 +390,12 @@ func cast_max_empowerment() -> int:
 	return _magic.max_empowerment()
 
 
+func answer_initiative(use: bool) -> bool:
+	return _flow.answer_initiative(use)
+
+
 func awaiting_reaction() -> bool:
-	if not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
+	if state.pending_initiative or not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
 		return true
 	if state.push_winner < 0:
 		return false

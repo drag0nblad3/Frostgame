@@ -42,10 +42,16 @@ func deployment() -> Dictionary:
 		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true})
 	if str(data.get("prepared_illusion", "")) != "":
 		units.append({"type": data["prepared_illusion"], "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_illusion": true})
+	var demon: Dictionary = data.get("prepared_demon", {})
+	if not demon.is_empty():
+		for entry: Dictionary in units:
+			if int(entry.get("campaign_id", -1)) == int(demon["caster"]):
+				units.append({"type": demon["type"], "at": [0, 0], "prepared_demon": demon.duplicate(true)})
+				break
 	# Two deployment ranks prevent extra prepared figures from exceeding the table.
 	for i in units.size():
 		units[i]["at"] = [4.5 + 3.0 * (i % 10), 3.0 + 1.5 * floori(i / 10.0)]
-	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units}
+	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": BaseResources.owns(data, "celestial_telescope")}
 
 
 func can_deploy() -> bool:
@@ -96,6 +102,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data["preparation_started"] = false
 	data["prepared_zombie"] = false
 	data["prepared_illusion"] = ""
+	data.erase("prepared_demon")
 	for unit: Dictionary in data["units"]:
 		unit["familiar"] = false
 		unit["awareness"] = false
@@ -265,6 +272,7 @@ func choose_base(id: String) -> bool:
 	data["base"] = id
 	data["resources"] = []
 	data.erase("reserve_id")
+	data.erase("prepared_demon")
 	return true
 
 

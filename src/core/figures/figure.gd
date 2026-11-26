@@ -19,6 +19,7 @@ var controller_id := -1
 var control_spell := ""
 var control_roll := 0
 var summoned_by := -1
+var prepared_demon_caster := -1
 var summon_spell := ""
 var def: FigureDef
 var side := 0

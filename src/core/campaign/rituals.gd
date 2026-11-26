@@ -1,7 +1,7 @@
 class_name Rituals
 extends RefCounted
 ## Campaign-only spell attempts keyed by battle number, caster and spell.
-const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier", "reveal_secret"]
+const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier", "reveal_secret", "summon_demon"]
 const AFTER := ["absorb_knowledge", "write_scroll", "miraculous_cure", "embed_enchantment"]
 const ANIMALS := ["bear", "ice_toad", "snow_leopard", "wolf"]
 const CONSTRUCTS := ["small_construct", "medium_construct", "large_construct"]
@@ -27,6 +27,9 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 				out.append("")
 		"familiar", "awareness", "reveal_secret":
 			out.append("")
+		"summon_demon":
+			if BaseDemonRitual.available(d, caster):
+				out.append("")
 		"illusionary_soldier":
 			if not d.has("prepared_illusion") or d["prepared_illusion"] == "":
 				var db := FigureDb.load_files()
@@ -83,6 +86,8 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice) -> bool:
 	if not choices(d, caster, id).has(option):
 		return false
+	if id == "summon_demon":
+		return BaseDemonRitual.attempt(d, caster, dice)
 	var u: Dictionary = d["units"][caster]
 	var mod := 0
 	if BEFORE.has(id):

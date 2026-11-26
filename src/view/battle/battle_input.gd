@@ -43,6 +43,11 @@ func refresh() -> void:
 	available.clear()
 	reach = null
 	var f := c.state.active()
+	if c.state.pending_initiative:
+		available.assign(["telescope_use", "telescope_save"])
+		mode = "initiative_choice"
+		preview()
+		return
 	if not c.state.pending_resistance.is_empty():
 		empower = 0
 		mode = "resist"
@@ -270,6 +275,8 @@ func preview() -> void:
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
+		"initiative_choice":
+			hint = "Before initiative is rolled: use the telescope for +5, or save it for a later turn?"
 		"intercept":
 			var choice: Dictionary = c.state.pending_intercept["choice"]
 			var guard: Figure = choice["guard"]
@@ -347,6 +354,8 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key in ["telescope_use", "telescope_save"]:
+		return c.answer_initiative(key == "telescope_use")
 	if key == "potion_cancel":
 		mode = ""
 		refresh()

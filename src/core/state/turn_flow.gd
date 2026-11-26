@@ -30,10 +30,45 @@ func start_turn() -> void:
 		f.spell_effects.erase("time_walk")
 		f.actions_left = 0
 	s.fast_acts.clear()
+	s.order.clear()
+	s.order_index = 0
+	s.phase = Phase.WIZARD
+	if _can_telescope(s.reaction_side):
+		s.pending_initiative = true
+		_c.emit("initiative_choice", {"turn": s.turn})
+		return
+	_roll_initiative(false)
+
+
+func _can_telescope(side: int) -> bool:
+	var s := _c.state
+	if not s.telescope_ready.has(side):
+		return false
+	for f in s.figures:
+		if f.in_play() and f.side == side and f.def.role == "wizard":
+			return true
+	return false
+
+
+func answer_initiative(use: bool) -> bool:
+	if not _c.state.pending_initiative:
+		return false
+	_c.state.pending_initiative = false
+	_roll_initiative(use)
+	return true
+
+
+func _roll_initiative(use: bool) -> void:
+	var s := _c.state
 	var bonuses := {}
 	for f in s.figures:
 		if f.in_play() and f.side >= 0 and f.spell_effects.has("awareness"):
 			bonuses[f.side] = mini(4, int(bonuses.get(f.side, 0)) + 2)
+	for side: int in s.telescope_ready.keys():
+		if _can_telescope(side) and (side != s.reaction_side or use):
+			bonuses[side] = int(bonuses.get(side, 0)) + 5
+			s.telescope_ready.erase(side)
+			_c.emit("telescope_used", {"side": side})
 	var ini := Initiative.roll(_c.dice, s.side_count(), bonuses)
 	s.order = ini["order"]
 	s.order_index = 0
