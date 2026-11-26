@@ -76,6 +76,7 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false) 
 		var dmg := ElevationRules.fall_damage(height - t.elevation)
 		if dmg > 0 and MagicEquipment.bonus(t, "slow_fall") == 0:
 			c._hurt(t, dmg, t, false)
+	ScenarioSites.end_move(c, t)
 
 
 func force(t: Figure, direction: Vector2, distance: float) -> void:

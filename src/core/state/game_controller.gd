@@ -106,6 +106,7 @@ func move_to(node: Vector2i) -> bool:
 		f.actions_left -= 1
 		f.moves_taken += 1
 		emit("move", {"id": f.id, "path": path, "cost": float(r.cost[node])})
+		ScenarioSites.end_move(self, f)
 		return true
 	return _commit_move(f, path, float(r.cost[node]), [])
 
@@ -141,6 +142,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 		return true
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
+	ScenarioSites.end_move(self, f)
 	_magic.illusions.after_move(f)
 	return true
 

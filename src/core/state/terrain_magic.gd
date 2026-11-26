@@ -205,7 +205,15 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 		var at := path[i]
 		chunk.append(at)
 		var hits := triggered(f, at)
-		if hits.is_empty():
+		var hut := ScenarioSites.site_at(c.state, "haunted_floor", at) if c.state.scenario_special == "haunted_houses" and f.side >= 0 else null
+		var undiscovered := hut != null and not c.state.discovered_huts.has(hut.rect.position)
+		var occupied := false
+		if c.state.scenario_special == "haunted_houses":
+			for other in c.state.figures:
+				if other != f and other.in_play() and other.side != f.side and absf(other.elevation - c.state.board.height_at(at)) < 0.5 and Contact.touching(other.pos, at):
+					occupied = true
+					break
+		if hits.is_empty() and not undiscovered and not occupied:
 			continue
 		f.pos = at
 		f.elevation = c.state.board.height_at(at)
@@ -214,6 +222,11 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 		for p in hits:
 			explode(p)
 		if not f.in_play():
+			return false
+		if undiscovered and ScenarioSites.enter(c, f) and Contact.in_combat(c.state.figures, f):
+			return false
+		# A newly revealed occupant can stop an already planned path at contact.
+		if occupied and i < path.size() - 1:
 			return false
 	f.pos = path[path.size() - 1]
 	f.elevation = c.state.board.height_at(f.pos)

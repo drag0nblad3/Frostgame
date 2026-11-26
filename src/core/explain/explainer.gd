@@ -13,6 +13,12 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"hut_discovered":
+			return "Hut searched: %s." % ("empty" if d.get("creature", "") == "" else str(d["creature"]).capitalize())
+		"disc_transport":
+			return "Arcane disc transports a figure (roll %d)." % d["roll"]
+		"disc_stay":
+			return "Arcane disc: no transport (roll %d)." % d["roll"]
 		"well_drink":
 			return "%s drinks from the well (+%d campaign XP)." % [name_of(s, d["id"]), d["xp"]]
 		"break_ice":

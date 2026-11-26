@@ -10,7 +10,7 @@ func _init(controller: GameController) -> void:
 
 func can_target(f: Figure, id: String, token: TreasureToken) -> bool:
 	var s := c.state
-	if not token.unresolved() or token.frozen:
+	if not token.unresolved() or token.frozen or ScenarioSites.treasure_protected(s, origin(token)):
 		return false
 	if id == "telekinesis":
 		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and Vector2(f.pos.distance_to(token.pos), f.elevation - s.board.height_at(token.pos)).length() <= 16.0 and WizardEye.visible(s.board, f, token.pos)
@@ -64,6 +64,7 @@ func apply(f: Figure, id: String, token: TreasureToken, at: Vector2, roll: int) 
 		var t := c.state.figure(token.carrier_id)
 		c._magic.resistance.attempt(t, roll, _drop_result.bind(t, at, token.id))
 	else:
+		ScenarioSites.discover(c, token.pos, f.side)
 		token.pos = at
 		c.emit("treasure_moved", {"treasure": token.id, "at": at})
 

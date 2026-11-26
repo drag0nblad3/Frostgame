@@ -21,6 +21,7 @@ func pick_up(id: int) -> bool:
 	_c._spend(f)
 	if _c.state.museum and not _c._encounters.museum_pickup(f):
 		return true
+	ScenarioSites.discover(_c, token.pos, f.side)
 	_c._magic.illusions.reveal(f)
 	if f.treasure_id >= 0:
 		f.second_treasure_id = f.treasure_id
