@@ -38,11 +38,11 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 
 ## Could `shooter` shoot `target` if it stood at `at`? (range, sight, target free)
 static func possible_from(board: Board, figures: Array[Figure], shooter: Figure, at: Vector2, target: Figure) -> bool:
-	if shooter.ranged == null or not IllusionRules.visible_to(figures, shooter, target) or Contact.in_combat(figures, target):
+	if shooter.ring_side!=target.ring_side or shooter.ranged == null or not IllusionRules.visible_to(figures, shooter, target) or Contact.in_combat(figures, target):
 		return false
 	if maxf(Vector2(at.distance_to(target.pos),board.height_at(at)-target.elevation).length() - 2.0 * Figure.BASE_RADIUS, 0.0) > shooter.ranged.range_in:
 		return false
-	return LineOfSight.check(board, at, target.pos).clear
+	return LineOfSight.check(board, at, target.pos,shooter).clear
 
 
 ## Bonus to the target's roll from terrain.

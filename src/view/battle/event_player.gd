@@ -52,6 +52,10 @@ func _play(e: GameEvent) -> void:
 			add_child(v)
 			v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 			views[f.id] = v
+		"ring_switch":
+			var v := _view(d["id"])
+			v.refresh(state.figure(d["id"]))
+			BattleEffects.pulse(self,v.position+Vector3.UP*0.15,Color(0.32,0.85,0.76))
 		"creature_transformed":
 			var creature := _view(d["id"])
 			creature.refresh(state.figure(d["id"]))
@@ -274,6 +278,15 @@ func build_treasures() -> void:
 			_build_rescue(marker)
 		else:
 			TerrainDressing.chest(marker)
+		if RedKingRingworld.active(state):
+			var label := Label3D.new()
+			label.text="IN" if token.ring_side==1 else "OUT"
+			label.modulate=Color(0.35,0.95,0.82) if token.ring_side==1 else Color(1.0,0.75,0.4)
+			label.font_size=50
+			label.pixel_size=0.01
+			label.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+			label.position.y=0.6
+			marker.add_child(label)
 		var height := state.board.height_at(token.pos)
 		if not token.surface_id.is_empty():
 			var layout := FloorLayout.from_dict(state.board.floor_layout)

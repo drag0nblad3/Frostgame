@@ -91,6 +91,8 @@ func setup(f: Figure, _side_name: String) -> void:
 func refresh(f: Figure) -> void:
 	var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	var base_color := color.darkened(0.12)
+	if f.ring_side==1:
+		base_color=base_color.lerp(Color(0.31,0.85,0.76),0.65)
 	if _base.material_override==null or _base.material_override.albedo_color!=base_color:
 		_base.material_override = BoardView._mat(base_color,0.62)
 	_profile=MiniatureMotion.profile(f)
@@ -132,6 +134,8 @@ func refresh(f: Figure) -> void:
 	_shield_ring.visible = f.elemental_shield > 0 or f.spell_effects.has("shield")
 	var suffix := " · Illusion" if phantom else (" · Invisible" if transparent else "")
 	var status := " · Loot" if f.treasure_id >= 0 else ""
+	if RedKingRingworld.active(RedKingVeil.of(f)):
+		status+=" · INSIDE" if f.ring_side==1 else " · OUTSIDE"
 	if f.poisoned:
 		status += " · Poison"
 	if ScenarioNull.muted(f):

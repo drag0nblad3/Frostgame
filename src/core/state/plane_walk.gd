@@ -32,7 +32,7 @@ static func reach(s: GameState, f: Figure, phased: bool = true) -> MoveReach:
 			if RedKingSinkhole.active(s) and Geometry2D.get_closest_point_to_segment(RedKingSinkhole.center(s),f.pos,at).distance_to(RedKingSinkhole.center(s))<RedKingSinkhole.RADIUS+Figure.BASE_RADIUS-0.001:
 				continue
 			for other in s.figures:
-				if other != f and other.in_play() and absf(other.elevation - s.board.height_at(at)) < 0.5 and other.pos.distance_to(at) < Contact.OVERLAP:
+				if other != f and other.ring_side==f.ring_side and other.in_play() and absf(other.elevation - s.board.height_at(at)) < 0.5 and other.pos.distance_to(at) < Contact.OVERLAP:
 					clear = false
 					break
 			if clear and not phased:
@@ -43,7 +43,7 @@ static func reach(s: GameState, f: Figure, phased: bool = true) -> MoveReach:
 						clear = false
 						break
 				for other in s.figures:
-					if other != f and other.in_play() and absf(other.elevation - s.board.height_at(at)) < 0.5 and other.side != f.side and Contact.touching(other.pos, at) and not IllusionRules.visible_to(s.figures, f, other):
+					if other != f and other.ring_side==f.ring_side and other.in_play() and absf(other.elevation - s.board.height_at(at)) < 0.5 and other.side != f.side and Contact.touching(other.pos, at) and not IllusionRules.visible_to(s.figures, f, other):
 						clear = false
 						break
 			if clear:

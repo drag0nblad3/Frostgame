@@ -89,6 +89,10 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	if RedKingRingworld.can_switch(c,f):
+		available.append("ring_switch")
+	if RedKingRingworld.can_escape(c,f):
+		available.append("ring_escape")
 	if c.can_drink_well():
 		available.append("drink_well")
 	if c.can_break_ice():
@@ -393,6 +397,10 @@ func action(key: String) -> bool:
 		mode = ""
 		refresh()
 		return false
+	if key=="ring_switch":
+		return RedKingRingworld.switch(c,c.state.active())
+	if key=="ring_escape":
+		return RedKingRingworld.escape(c,c.state.active())
 	if key == "drink_well":
 		return c.drink_well()
 	if key == "break_ice":

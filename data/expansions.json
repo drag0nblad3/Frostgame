@@ -107,6 +107,11 @@
           "The Bridge",
           "Cross the dimensional void through a narrow bridge defended by Hrut.",
           "The veil changes position each turn, blocking movement and sight for warbands but not Hrut. Forced movement into the void requires a Move test (TN16). Escape only from the bridge's far edge."
+        ],
+        "red_king_ringworld": [
+          "Ringworld of the Red King",
+          "Destroy the four Key-Masters in a mirrored pocket dimension.",
+          "Switch between inside and outside using a movement action. Short edges wrap; escape through contact with a living Key-Master. Destroy all four to save Frostgrave, but anyone remaining is permanently lost."
         ]
       }
     }

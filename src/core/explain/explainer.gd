@@ -21,6 +21,12 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Hrut hunting parties arrive."
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
+		"ring_switch":
+			return "%s shifts to the %s of the ring."%[name_of(s,d["id"]),"inside" if d["plane"]==1 else "outside"]
+		"ring_reinforcements":
+			return "Hrut arrive at marker %d (%s)."%[d["marker"],"inside" if d["plane"]==1 else "outside"]
+		"ring_finale":
+			return "The four Key-Masters are destroyed. Frostgrave is saved; those left behind are lost." if d["success"] else "The warbands leave the Ringworld without destroying every Key-Master."
 		"bridge_veil":
 			return "The dimensional veil shifts to edge markers %d and %d."%[d["left"],d["right"]]
 		"bridge_void":

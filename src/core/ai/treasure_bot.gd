@@ -3,6 +3,18 @@ extends RefCounted
 ## Objective-first bot policy. Combat remains the fallback if no route is usable.
 
 static func play(c: GameController, f: Figure) -> bool:
+	if RedKingRingworld.active(c.state):
+		if f.treasure_id>=0 and RedKingRingworld.escape(c,f):
+			return true
+		var same_plane := false
+		for key in c.state.figures:
+			if key.in_play() and RedKingRingworld.key_master(key) and key.ring_side==f.ring_side:
+				same_plane=true
+		if not same_plane and RedKingRingworld.switch(c,f):
+			return true
+		# Do not use ordinary table-edge retreat logic here.
+		if f.treasure_id>=0:
+			return false
 	if RedKingMind.active(c.state):
 		return _mind_move(c,f)
 	if RedKingMadMan.hunter(f):
@@ -90,7 +102,7 @@ static func _nearest(c: GameController, f: Figure) -> TreasureToken:
 	var best: TreasureToken = null
 	var distance := INF
 	for token in c.state.treasures:
-		if not token.on_ground():
+		if token.ring_side!=f.ring_side or not token.on_ground():
 			continue
 		var field := MovePlanner.distance_field(c.state.board, token.pos)
 		var route: float = field.get(MovePlanner.node_at(f.pos), INF)

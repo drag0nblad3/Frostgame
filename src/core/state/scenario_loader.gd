@@ -53,6 +53,10 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if RedKingFire.active(s):
 				var x := 1.0+1.1*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.1*floori(deploy_index/4.0)]
+			if RedKingRingworld.active(s):
+				var offsets: Array[Vector2]=[Vector2.ZERO,Vector2(1,0),Vector2(-1,0),Vector2(0,1),Vector2(0,-1),Vector2(1,1),Vector2(-1,1),Vector2(1,-1),Vector2(-1,-1),Vector2(0,2)]
+				var p := Vector2(8.0 if side==0 else 22.0,18.0)+offsets[deploy_index%offsets.size()]
+				at=[p.x,p.y]
 			if RedKingBridge.active(s):
 				var p := RedKingBridge.deployment(s,side,deploy_index)
 				at=[p.x,p.y]
