@@ -3,6 +3,7 @@ extends RefCounted
 ## Shooting: d20 + Shoot against the target's d20 + Fight + cover. Only the
 ## shooter can deal damage.
 
+const WRAITH := "gear_rk_wraith_bow"
 const LIGHT_COVER := 2
 const HEAVY_COVER := 4
 const INTERVENING := 1
@@ -21,7 +22,7 @@ static func distance(a: Figure, b: Figure) -> float:
 
 
 ## Why `shooter` can't shoot `target`, or "" if the shot is allowed.
-static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure, target: Figure) -> String:
+static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure, target: Figure,wraith: bool=false) -> String:
 	if shooter.spell_effects.has("blinding_light"):
 		return "blinded"
 	if shooter.ranged == null:
@@ -38,7 +39,10 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "in combat"
 	if distance(shooter, target) > shooter.ranged.range_in:
 		return "out of range"
-	if not LineOfSight.check_figures(board, shooter, target).clear:
+	if wraith:
+		if not ActiveGear.ready(shooter,WRAITH) or shooter.ranged.id!="bow" or wraith_line(board,shooter,target)==null:
+			return "no wraith shot"
+	elif not LineOfSight.check_figures(board, shooter, target).clear:
 		return "no line of sight"
 	return ""
 
@@ -67,8 +71,14 @@ static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, c
 	return resolve_rolls(board, shooter, target, dice.d20(), dice.d20(), critical_hits, storm_penalty)
 
 
-static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
+static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0,wraith: bool=false) -> Dictionary:
 	var los := LineOfSight.check_figures(board, shooter, target)
+	if wraith:
+		var special := wraith_line(board,shooter,target)
+		if special!=null:
+			los=special
+		else:
+			los.intervening+=1
 	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
 	if target.def.traits.has("large"):
 		mod -= 2
@@ -91,3 +101,18 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	if target.def.traits.has("missile_resistant") and shooter.ranged.id in ["bow","crossbow","javelin"] and not WeaponActions.magic_attack(shooter,shooter.ranged):
 		dmg=mini(dmg,2)
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}
+
+
+static func wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
+	if not board.floor_layout.is_empty() or board.reality_sphere or f.ring_side!=t.ring_side or RealityCrackGeometry.cross_relation(board,f.pos,t.pos)!=0:
+		return null
+	var best: LineOfSight.Result=null
+	for piece in board.pieces:
+		if piece.kind.ground_surface or piece.kind.id in ["red_king_portal","red_king_sinkhole_orb","reality_portal","reality_hoof"] or (not Geom.crosses(f.pos,t.pos,piece.rect) and not piece.rect.has_point(t.pos)):
+			continue
+		if not piece.kind.blocks_los and piece.kind.cover==TerrainKind.Cover.NONE:
+			continue
+		var result := LineOfSight.plain_check(board,f.pos,t.pos,f,piece)
+		if result.clear and (best==null or target_mod(result)<target_mod(best)):
+			best=result
+	return best

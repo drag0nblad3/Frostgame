@@ -501,8 +501,10 @@
       "type": "bow",
       "buy": 0,
       "sell": 250,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "damage": 1
+      },
+      "live": true,
       "artefact": true,
       "unlock_tn": 16,
       "expansion": "red_king"

@@ -159,6 +159,8 @@ func refresh() -> void:
 			available.append("fight")
 		if c.can_shoot(enemy.id) and not available.has("shoot"):
 			available.append("shoot")
+		if c.can_shoot(enemy.id,true) and not available.has("wraith_shot"):
+			available.append("wraith_shot")
 	for token in c.state.treasures:
 		if c.can_pick_up(token.id):
 			available.append("collect")
@@ -388,6 +390,12 @@ func preview() -> void:
 			targets.assign(GearActions.gutter_targets(c))
 			radius=0.65
 			hint="Free Gutter Flail attack: select an enemy or skip."
+		"wraith_shot":
+			for t in c.state.figures:
+				if c.can_shoot(t.id,true):
+					targets.append(t)
+			radius=0.65
+			hint="Choose a target for the once-per-battle shot through one terrain piece."
 		"fight", "shoot":
 			for t in c.state.figures:
 				if (c.can_fight(t.id) if mode == "fight" else c.can_shoot(t.id)):
@@ -684,7 +692,7 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight","wraith_shot"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
@@ -725,6 +733,7 @@ func tap(screen: Vector2) -> bool:
 			"fight_hand": return c.fight_hand(id)
 			"gutter_fight": return GearActions.gutter_fight(c,id)
 			"fight": return c.fight(id)
+			"wraith_shot": return c.shoot(id,true)
 			"shoot": return c.shoot(id)
 	var hit: Variant = _surface_at(screen)
 	if hit == null:

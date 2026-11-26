@@ -176,3 +176,7 @@ Elemental damage is routed through a shared reducer for elemental shots, wall co
 ## Gutter Flail
 
 A legal ordinary or layered movement into new melee contact offers an immediate optional free fight with the equipped flail. It does not spend an action, uses normal combat and displacement handling, and is checkpointed. Rival AI automatically takes a legal free attack. Existing contact at the beginning of the move does not trigger it; unresolved layered reactions and special movement modes remain excluded.
+
+## Wraith Bow
+
+Magic bow with +1 damage and an explicit once-per-game shot option through one terrain piece. Other blockers remain in effect; the bypassed piece contributes +1 target Fight. Fate combat carries the shot flag through rerolls, followed by a Will TN8 curse check. The special ray is restricted to ordinary non-wrapping boards; layered volume and reality-wrap sight are not yet integrated. When multiple pieces could be bypassed, the engine chooses the best legal line.

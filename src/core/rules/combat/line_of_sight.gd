@@ -44,7 +44,7 @@ static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null
 	return plain_check(board,from,to,observer)
 
 
-static func plain_check(board: Board,from: Vector2,to: Vector2,observer: Figure=null) -> Result:
+static func plain_check(board: Board,from: Vector2,to: Vector2,observer: Figure=null,ignore: TerrainPiece=null) -> Result:
 	var r := Result.new()
 	if board.ringworld and (observer==null or observer.ring_side==0) and from.distance_to(to)>18.0:
 		r.clear=false
@@ -59,6 +59,9 @@ static func plain_check(board: Board,from: Vector2,to: Vector2,observer: Figure=
 		r.clear = false
 		return r
 	for piece in board.pieces:
+		if piece==ignore:
+			r.intervening+=1
+			continue
 		if piece.kind.ground_surface:
 			continue
 		if piece.kind.id in ["red_king_portal","red_king_sinkhole_orb","reality_portal","reality_hoof"]:

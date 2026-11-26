@@ -11,8 +11,8 @@ func _init(controller: GameController) -> void:
 	c = controller
 
 
-func start(a: Figure, b: Figure, kind: String, declared: int = -1) -> void:
-	c.state.pending_combat = {"a": a.id, "b": b.id, "kind": kind, "declared": declared, "rolls": [c.dice.d20(), c.dice.d20()], "stage": 0}
+func start(a: Figure, b: Figure, kind: String, declared: int = -1,wraith: bool=false) -> void:
+	c.state.pending_combat = {"a": a.id, "b": b.id, "kind": kind, "declared": declared,"wraith":wraith, "rolls": [c.dice.d20(), c.dice.d20()], "stage": 0}
 	advance()
 
 
@@ -22,7 +22,9 @@ func result(p: Dictionary) -> Dictionary:
 	var rolls: Array = p["rolls"]
 	if p["kind"] == "fight":
 		return Melee.resolve_rolls(c.state.figures, a, b, rolls[0], rolls[1], c.state.critical_hits)
-	return Shooting.resolve_rolls(c.state.board, a, b, rolls[0], rolls[1], c.state.critical_hits, c.state.storm_penalty)
+	var res := Shooting.resolve_rolls(c.state.board,a,b,rolls[0],rolls[1],c.state.critical_hits,c.state.storm_penalty,bool(p.get("wraith",false)))
+	res["wraith"]=p.get("wraith",false)
+	return res
 
 
 func advance() -> void:

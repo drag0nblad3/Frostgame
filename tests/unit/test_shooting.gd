@@ -96,3 +96,17 @@ func test_glow_adds_to_shooting_damage() -> void:
 	c.state.figure(2).spell_effects["glow"] = true
 	check(c.shoot(2))
 	check_eq(c.state.figure(2).health, 5)
+
+
+func test_wraith_bow_shoots_through_one_ruin_and_curse() -> void:
+	var c := _shot(make_board([["ruin",14,8,2,4]]),"archer",Vector2(20,10),[10,5,1])
+	var f := c.state.active()
+	f.items.append({"gear":Shooting.WRAITH,"gear_info":RedKingRewards.catalog()[Shooting.WRAITH]})
+	check(not c.can_shoot(2))
+	check(c.can_shoot(2,true))
+	check(c.shoot(2,true))
+	check_eq(int(f.spell_effects.get("curse",0)),14)
+	check(not ActiveGear.ready(f,Shooting.WRAITH))
+	var blocked := _shot(make_board([["ruin",13,8,2,4],["ruin",17,8,2,4]]),"archer",Vector2(20,10),[])
+	blocked.state.active().items.append({"gear":Shooting.WRAITH,"gear_info":RedKingRewards.catalog()[Shooting.WRAITH]})
+	check(not blocked.can_shoot(2,true))

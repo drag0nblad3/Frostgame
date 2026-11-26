@@ -319,22 +319,22 @@ func _auto_tie_withdraw() -> void:
 	stay_in_combat()
 
 
-func can_shoot(target_id: int) -> bool:
+func can_shoot(target_id: int,wraith: bool=false) -> bool:
 	var t := state.figure(target_id)
-	return can_act() and t != null and not RedKingMadMan.is_ryce(t) and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board, state.figures, state.active(), t) == ""
+	return can_act() and t != null and not RedKingMadMan.is_ryce(t) and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board,state.figures,state.active(),t,wraith)==""
 
 
-func shoot(target_id: int) -> bool:
-	if not can_shoot(target_id):
+func shoot(target_id: int,wraith: bool=false) -> bool:
+	if not can_shoot(target_id,wraith):
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	_magic.beauty.authorize(f, ShotTarget.participants(state.figures, t), _shoot_authorized.bind(f, t))
+	_magic.beauty.authorize(f, ShotTarget.participants(state.figures, t), _shoot_authorized.bind(f,t,wraith))
 	return true
 
 
-func _shoot_authorized(f: Figure, t: Figure) -> void:
-	if not f.in_play() or not t.in_play():
+func _shoot_authorized(f: Figure,t: Figure,wraith: bool=false) -> void:
+	if not f.in_play() or not t.in_play() or (wraith and not ActiveGear.spend(f,Shooting.WRAITH)):
 		return
 	_magic.illusions.reveal(f)
 	var declared := t.id
@@ -342,7 +342,7 @@ func _shoot_authorized(f: Figure, t: Figure) -> void:
 	_spend(f)
 	if f.ranged.needs_reload:
 		f.loaded = false
-	_fate_combat.start(f, t, "shoot", declared)
+	_fate_combat.start(f,t,"shoot",declared,wraith)
 
 
 func finish_fate_shot(f: Figure, t: Figure, res: Dictionary, declared: int) -> void:
@@ -355,6 +355,12 @@ func finish_fate_shot(f: Figure, t: Figure, res: Dictionary, declared: int) -> v
 		f.spell_effects.erase("potion_fairy_dust")
 	if f.ranged != null:
 		f.spell_effects.erase("elemental_hammer")
+	if res.get("wraith",false) and f.in_play():
+		var raw := dice.d20()
+		var success := StatRoll.succeeds(raw,f.effective_will()+f.roll_penalty(),8)
+		if not success:
+			f.spell_effects["curse"]=14
+		emit("creature_test",{"id":f.id,"trait":"wraith_bow","roll":raw,"success":success})
 
 
 ## Reload may replace the movement action (p. 34); never while engaged.
