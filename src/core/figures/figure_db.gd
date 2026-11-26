@@ -19,6 +19,17 @@ static func load_files(fig_path: String = FIGURES, weapon_path: String = WEAPONS
 		if not key.begins_with("_"):
 			db.weapons[key] = WeaponDef.from_dict(key, wd[key])
 	var fd: Dictionary = JsonFile.read(fig_path)
+	if fig_path==FIGURES:
+		for pack_id: String in db.content_profile.enabled:
+			var pack: Dictionary=db.content_profile.packs.get(pack_id,{})
+			if pack.get("status","ready")!="ready":
+				continue
+			var path := str(pack.get("catalogs",{}).get("figures",""))
+			if not path.is_empty():
+				var optional: Dictionary=JsonFile.read(path)
+				for id: String in optional:
+					if db.content_profile.allows("figures",id) and not fd.has(id):
+						fd[id]=optional[id]
 	for key: String in fd:
 		if not key.begins_with("_"):
 			db.figures[key] = FigureDef.from_dict(key, fd[key], db.weapons)

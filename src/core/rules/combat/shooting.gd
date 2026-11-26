@@ -75,4 +75,6 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 			dmg += 5
 	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and (null_target or not WeaponActions.magic_attack(shooter, shooter.ranged)):
 		dmg = 0
+	if target.def.traits.has("missile_resistant") and shooter.ranged.id in ["bow","crossbow","javelin"] and not WeaponActions.magic_attack(shooter,shooter.ranged):
+		dmg=mini(dmg,2)
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}

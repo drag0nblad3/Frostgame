@@ -139,7 +139,7 @@ func effective_shoot() -> int:
 
 
 func immune_to_poison() -> bool:
-	return def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")
+	return def.traits.has("immune_poison") or def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")
 
 
 func treasure_encumbered() -> bool:

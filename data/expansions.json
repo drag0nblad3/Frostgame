@@ -28,7 +28,23 @@
           "red_king_reality_cracks",
           "red_king_ragged_warbands",
           "red_king_treasure"
+        ],
+        "figures": [
+          "blood_marked_berserker",
+          "burning_man",
+          "foulhorn",
+          "red_king_herald",
+          "hrut_warrior",
+          "hrut_stinger",
+          "hrut_longhammer",
+          "hrut_darter",
+          "red_king_key_master",
+          "mindshrike",
+          "nullman"
         ]
+      },
+      "catalogs": {
+        "figures": "res://data/expansions/red_king/figures.json"
       }
     }
   },

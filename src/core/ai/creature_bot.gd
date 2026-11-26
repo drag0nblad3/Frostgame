@@ -14,7 +14,10 @@ static func weakest(s: GameState, f: Figure) -> Figure:
 static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 	var target: Figure = null
 	for t in c.state.figures:
-		if t.side < 0 or not t.in_play() or not IllusionRules.visible_to(c.state.figures, f, t) or not LineOfSight.check(c.state.board, f.pos, t.pos).clear:
+		if t.side < 0 or not t.in_play():
+			continue
+		var normal := IllusionRules.visible_to(c.state.figures,f,t) and LineOfSight.check_figures(c.state.board,f,t).clear
+		if not normal and (shot or not CreatureSenses.detects(f,t)):
 			continue
 		if shot and not c.can_shoot(t.id):
 			continue

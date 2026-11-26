@@ -1,0 +1,238 @@
+{
+  "blood_marked_berserker": {
+    "name": "Blood-Marked Berserker",
+    "role": "creature",
+    "move": 6,
+    "fight": 3,
+    "shoot": 0,
+    "armour": 10,
+    "will": 4,
+    "health": 14,
+    "cost": 0,
+    "weapons": [
+      "two_handed"
+    ],
+    "traits": [
+      "blood_marked",
+      "never_wounded",
+      "self_combustion"
+    ],
+    "verify": false
+  },
+  "burning_man": {
+    "name": "Burning Man",
+    "role": "creature",
+    "move": 6,
+    "fight": 4,
+    "shoot": 0,
+    "armour": 10,
+    "will": 2,
+    "health": 10,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "automatic_damage",
+      "elemental_resistance_5",
+      "immune_critical",
+      "immune_poison",
+      "magic_attack",
+      "melt_weapon",
+      "missile_resistant"
+    ],
+    "verify": false
+  },
+  "foulhorn": {
+    "name": "Foulhorn",
+    "role": "creature",
+    "move": 7,
+    "fight": 4,
+    "shoot": 0,
+    "armour": 12,
+    "will": 5,
+    "health": 12,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "horns",
+      "keen_senses"
+    ],
+    "verify": false
+  },
+  "red_king_herald": {
+    "name": "Herald of the Red King",
+    "role": "creature",
+    "move": 6,
+    "fight": 5,
+    "shoot": 0,
+    "armour": 12,
+    "will": 8,
+    "health": 18,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "aura_of_pain",
+      "demon",
+      "elemental_blast",
+      "elemental_resistance_3",
+      "immune_control_demon",
+      "immune_critical",
+      "immune_mind_control",
+      "levitate",
+      "magic_attack",
+      "spell_reflection"
+    ],
+    "verify": false
+  },
+  "hrut_warrior": {
+    "name": "Hrut Warrior",
+    "role": "creature",
+    "move": 7,
+    "fight": 3,
+    "shoot": 0,
+    "armour": 12,
+    "will": 3,
+    "health": 12,
+    "cost": 0,
+    "weapons": [
+      "hand_weapon"
+    ],
+    "traits": [
+      "demon",
+      "pain_blink",
+      "sense_magic"
+    ],
+    "verify": false
+  },
+  "hrut_stinger": {
+    "name": "Hrut Stinger",
+    "role": "creature",
+    "move": 7,
+    "fight": 3,
+    "shoot": 1,
+    "armour": 11,
+    "will": 3,
+    "health": 12,
+    "cost": 0,
+    "weapons": [
+      "hand_weapon",
+      "crossbow"
+    ],
+    "traits": [
+      "demon",
+      "flying",
+      "pain_blink",
+      "sense_magic"
+    ],
+    "verify": false
+  },
+  "hrut_longhammer": {
+    "name": "Hrut Longhammer",
+    "role": "creature",
+    "move": 5,
+    "fight": 4,
+    "shoot": 0,
+    "armour": 13,
+    "will": 5,
+    "health": 14,
+    "cost": 0,
+    "weapons": [
+      "two_handed"
+    ],
+    "traits": [
+      "demon",
+      "large",
+      "pain_blink",
+      "sense_magic"
+    ],
+    "verify": false
+  },
+  "hrut_darter": {
+    "name": "Hrut Darter",
+    "role": "creature",
+    "move": 7,
+    "fight": 1,
+    "shoot": 3,
+    "armour": 11,
+    "will": 3,
+    "health": 12,
+    "cost": 0,
+    "weapons": [
+      "hand_weapon",
+      "crossbow"
+    ],
+    "traits": [
+      "demon",
+      "pain_blink",
+      "sense_magic"
+    ],
+    "verify": false
+  },
+  "red_king_key_master": {
+    "name": "Key-Master of the Red King",
+    "role": "creature",
+    "move": 7,
+    "fight": 2,
+    "shoot": 0,
+    "armour": 12,
+    "will": 10,
+    "health": 16,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "demon",
+      "elemental_resistance_3",
+      "immune_control_demon",
+      "immune_mind_control"
+    ],
+    "verify": false
+  },
+  "mindshrike": {
+    "name": "Mindshrike",
+    "role": "creature",
+    "move": 6,
+    "fight": 2,
+    "shoot": 0,
+    "armour": 14,
+    "will": 6,
+    "health": 1,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "immune_mind_control",
+      "levitate",
+      "powerful",
+      "sense_magic",
+      "suicide_attack"
+    ],
+    "verify": false
+  },
+  "nullman": {
+    "name": "Nullman",
+    "role": "creature",
+    "move": 6,
+    "fight": 1,
+    "shoot": 0,
+    "armour": 12,
+    "will": 10,
+    "health": 5,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "antithetical_magic",
+      "sense_magic"
+    ],
+    "verify": false
+  }
+}
