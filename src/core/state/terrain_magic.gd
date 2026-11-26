@@ -1,7 +1,7 @@
 class_name TerrainMagic
 extends RefCounted
 ## Dynamic terrain on the exposed-surface heightfield.
-const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection"]
+const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection", "bridge"]
 var c: GameController
 
 
@@ -11,6 +11,8 @@ func _init(controller: GameController) -> void:
 
 func footprint(id: String, at: Vector2, rotated: bool) -> Rect2:
 	var size := Vector2(6, 6) if id == "mud" else (Vector2(1, 6) if rotated else Vector2(6, 1))
+	if id == "bridge":
+		size = Vector2(2, 6) if rotated else Vector2(6, 2)
 	if id == "circle_of_protection":
 		size = Vector2(3, 3)
 	if id in ["explosive_rune", "planar_tear", "grenade"]:
@@ -23,6 +25,8 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 	var rect := footprint(id, at, rotated)
 	if not b.contains(rect.position) or not b.contains(rect.end):
 		return false
+	if id == "bridge":
+		return bridge_legal(f, rect, rotated)
 	if id == "circle_of_protection":
 		for p in b.pieces:
 			if p.kind.id == "spell_circle_of_protection" and p.caster_id == f.id:
@@ -105,10 +109,18 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14) ->
 	kind.height = 0.04 if id in ["mud", "explosive_rune", "circle_of_protection"] else 3.0
 	kind.blocks_los = id in ["wall", "fog"]
 	kind.blocks_move = id == "wall"
-	kind.walkable_top = id == "wall"
+	kind.walkable_top = id in ["wall", "bridge"]
 	kind.move_mult = 2.0 if id == "mud" else 1.0
 	var p := TerrainPiece.new(kind, footprint(id, at, rotated))
 	p.circular = id in ["mud", "explosive_rune", "circle_of_protection"]
+	if id == "bridge":
+		var ends := bridge_ends(p.rect, rotated)
+		p.ramp = true
+		p.ramp_rotated = rotated
+		p.ramp_start = ends.x
+		p.ramp_end = ends.y
+		kind.height = maxf(ends.x, ends.y)
+		kind.stairs = true
 	p.cast_turn = c.state.turn
 	p.caster_id = f.id
 	c.state.board.pieces.append(p)
@@ -120,6 +132,10 @@ func expire() -> void:
 	var s := c.state
 	for p in s.board.pieces.duplicate():
 		if p.cast_turn < 0:
+			continue
+		if p.kind.id == "spell_bridge":
+			if c.dice.d20() <= 2:
+				remove(p)
 			continue
 		if p.kind.id == "spell_circle_of_protection":
 			if c.dice.d20() <= 3:
@@ -215,5 +231,48 @@ static func ward_blocks(b: Board, f: Figure, at: Vector2) -> bool:
 		return false
 	for p in b.pieces:
 		if p.kind.id == "spell_circle_of_protection" and p.rect.get_center().distance_to(at) < 1.5 + Figure.BASE_RADIUS and absf(b.height_at(at) - b.height_at(p.rect.get_center())) < 0.5:
+			return true
+	return false
+
+
+func bridge_ends(rect: Rect2, rotated: bool) -> Vector2:
+	var axis := Vector2.DOWN if rotated else Vector2.RIGHT
+	var b := c.state.board
+	return Vector2(b.height_at(rect.get_center() - axis * 2.99), b.height_at(rect.get_center() + axis * 2.99))
+
+
+func bridge_legal(f: Figure, rect: Rect2, rotated: bool) -> bool:
+	var b := c.state.board
+	for p in b.pieces:
+		if p.kind.id == "spell_bridge" and (p.caster_id == f.id or p.rect.intersects(rect)):
+			return false
+	var ends := bridge_ends(rect, rotated)
+	for i in range(13):
+		var ratio := float(i) / 12.0
+		var axis := Vector2.DOWN if rotated else Vector2.RIGHT
+		var across := Vector2.RIGHT if rotated else Vector2.DOWN
+		var at := rect.get_center() + axis * lerpf(-2.99, 2.99, ratio)
+		var height := lerpf(ends.x, ends.y, ratio)
+		for j in [-0.9, 0.0, 0.9]:
+			var sample := at + across * j
+			if b.height_at(sample) > height + 0.1 or not LineOfSight.check(b, f.pos, sample).clear:
+				return false
+			for p in b.pieces_at(sample):
+				if p.kind.blocks_move and p.kind.height > height + 0.1:
+					return false
+	for t in c.state.figures:
+		if t.in_play() and rect.has_point(t.pos):
+			var ratio := (t.pos.y - rect.position.y) / rect.size.y if rotated else (t.pos.x - rect.position.x) / rect.size.x
+			if absf(lerpf(ends.x, ends.y, ratio) - t.elevation) > 0.1:
+				return false
+	return true
+
+
+func cancel_bridge(f: Figure) -> bool:
+	if f == null or c.awaiting_reaction() or not c.state.pending_cast.is_empty():
+		return false
+	for p in c.state.board.pieces:
+		if p.kind.id == "spell_bridge" and p.caster_id == f.id:
+			remove(p)
 			return true
 	return false

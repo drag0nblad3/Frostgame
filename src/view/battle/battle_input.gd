@@ -82,6 +82,10 @@ func refresh() -> void:
 				if not available.has(key):
 					available.append(key)
 				break
+	for p in c.state.board.pieces:
+		if p.kind.id == "spell_bridge" and p.caster_id == f.id:
+			available.append("cancel_bridge")
+			break
 	if c.can_use_stored_action():
 		available.append("use_stored_action")
 	if c.can_move():
@@ -110,7 +114,7 @@ func refresh() -> void:
 		if not c._magic.counter_options(id).is_empty():
 			cast_options.append(id)
 			continue
-		if not c._magic.placement_points(id, true).is_empty() or (id in ["fog", "wall"] and not c._magic.placement_points(id, true, true).is_empty()):
+		if not c._magic.placement_points(id, true).is_empty() or (id in ["fog", "wall", "bridge"] and not c._magic.placement_points(id, true, true).is_empty()):
 			cast_options.append(id)
 			continue
 		for t in c.state.figures:
@@ -190,7 +194,7 @@ func preview() -> void:
 		"spell_point":
 			points.assign(c._magic.placement_points(selected_spell, false, spell_rotated))
 			hint = "Choose a marked spell location."
-			if selected_spell in ["fog", "wall"]:
+			if selected_spell in ["fog", "wall", "bridge"]:
 				hint += " · " + ("North–south" if spell_rotated else "East–west")
 		"cancel_control":
 			for t in c.state.figures:
@@ -320,11 +324,13 @@ func action(key: String) -> bool:
 		if selected_spell in ["telekinesis", "fools_gold"]:
 			mode = "treasure_spell"
 		available.assign(["spell_cancel"])
-		if selected_spell in ["fog", "wall"]:
+		if selected_spell in ["fog", "wall", "bridge"]:
 			available.append("rotate_spell")
 		preview()
 		return false
 	match key:
+		"cancel_bridge":
+			return c._magic.terrain.cancel_bridge(c.state.active())
 		"use_stored_action":
 			return c.use_stored_action()
 		"resist_plus", "resist_minus":

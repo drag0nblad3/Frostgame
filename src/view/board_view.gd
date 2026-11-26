@@ -26,6 +26,17 @@ func build(board: Board) -> void:
 func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var h := piece.kind.height
+	if piece.ramp:
+		var box := BoxMesh.new()
+		var slope := atan2(piece.ramp_end - piece.ramp_start, 6.0)
+		var length := Vector2(6.0, piece.ramp_end - piece.ramp_start).length()
+		box.size = Vector3(2.0, 0.08, length) if piece.ramp_rotated else Vector3(length, 0.08, 2.0)
+		mi.mesh = box
+		mi.rotation.x = -slope if piece.ramp_rotated else 0.0
+		mi.rotation.z = 0.0 if piece.ramp_rotated else slope
+		mi.position = TableSpace.to_world(piece.rect.get_center(), (piece.ramp_start + piece.ramp_end) * 0.5 - 0.04)
+		mi.material_override = _mat(Color(0.87, 0.72, 0.38), 0.8)
+		return mi
 	if piece.circular:
 		var cylinder := CylinderMesh.new()
 		cylinder.top_radius = piece.rect.size.x * 0.5

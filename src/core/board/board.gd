@@ -65,7 +65,13 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 		return false
 	for piece in pieces:
 		if piece.kind.blocks_move and not piece.kind.walkable_top and piece.rect.grow(radius).has_point(p):
-			return false
+			var over := false
+			for bridge in pieces_at(p):
+				if bridge.ramp and bridge.surface_height(p) >= piece.kind.height:
+					over = true
+					break
+			if not over:
+				return false
 	return true
 
 
@@ -74,7 +80,7 @@ func height_at(p: Vector2) -> float:
 	var height := 0.0
 	for piece in pieces_at(p):
 		if piece.kind.walkable_top:
-			height = maxf(height, piece.kind.height)
+			height = maxf(height, piece.surface_height(p))
 	return height
 
 

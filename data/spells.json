@@ -257,7 +257,7 @@
     "name": "Bridge",
     "school": "sigilist",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "draining_word": {
     "name": "Draining Word",

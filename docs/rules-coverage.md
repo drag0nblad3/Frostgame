@@ -221,3 +221,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Beauty
 
 - pp.113,134: self spell stores the casting result; opposing non-creature figures test Will before direct targeting, ordinary shooting (including potential melee targets) or moving into contact. The shared resistance UI permits caster empowerment; one result per attacker/subject per turn. True Sight within six inches and creatures/animals bypass the restriction. Failed tests leave the action available for another target. Area-effect shooting and indirect targeting paths are not all covered, and forced interception against a protected caster is conservatively suppressed rather than offering a separate Will test. 
+
+## Bridge
+
+- p.115: one six-by-two-inch projected magical path per caster, oriented along either table axis; endpoint heights are sampled from existing exposed terrain, and the surface interpolates between them. The path is visually sloped, costs actual slope distance instead of climb multipliers, does not block sight, expires on 1–2, can be dispelled or dismissed by its active caster, and uses falling rules on removal. This implementation is constrained by the heightfield: no manually selected floating endpoints, true six-inch slope-length restriction, or under-bridge movement. Placement rejects occupied height changes and intersections rather than lifting figures.
