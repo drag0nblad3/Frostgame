@@ -65,6 +65,13 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 	if not contains(p, radius):
 		return false
 	for piece in pieces:
+		if piece.kind.id == "temple_column":
+			# Contact must be legal on every face; Rect2.has_point includes
+			# the minimum boundary but excludes the maximum boundary.
+			var nearest := Vector2(clampf(p.x, piece.rect.position.x, piece.rect.end.x), clampf(p.y, piece.rect.position.y, piece.rect.end.y))
+			if p.distance_to(nearest) < radius - 0.001:
+				return false
+			continue
 		if piece.kind.blocks_move and not piece.kind.walkable_top and piece.rect.grow(radius).has_point(p):
 			var over := false
 			for bridge in pieces_at(p):
