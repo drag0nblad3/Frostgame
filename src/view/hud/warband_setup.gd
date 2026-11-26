@@ -192,7 +192,7 @@ func _build_recruits(body: VBoxContainer,bounds: Vector2) -> void:
 	_recruits=_option(choose)
 	for id: String in draft.db.figures:
 		var d := draft.db.get_def(id)
-		if d.role=="soldier":
+		if d.role=="soldier" and draft.db.available(id):
 			_recruits.add_item("%s · %d gc"%[d.name,d.cost])
 			_recruits.set_item_metadata(_recruits.item_count-1,id)
 	_recruits.item_selected.connect(func(_i: int) -> void:_update())

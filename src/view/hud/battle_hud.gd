@@ -100,7 +100,7 @@ func _ready() -> void:
 	scenarios.fit_to_longest_item=false
 	scenarios.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	scenarios.custom_minimum_size=Vector2(160,48)
-	for id: String in ScenarioBriefing.ENTRIES:
+	for id: String in ScenarioBriefing.available_entries(WarbandSlots.content_profile()):
 		scenarios.add_item(ScenarioBriefing.title(id))
 		scenarios.set_item_metadata(scenarios.item_count-1,id)
 	scenarios.select(1)

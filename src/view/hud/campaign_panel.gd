@@ -89,7 +89,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 			changed())
 	recruit = OptionButton.new()
 	for id: String in db.figures:
-		if db.get_def(id).role in ["soldier", "apprentice"]:
+		if db.available(id) and db.get_def(id).role in ["soldier", "apprentice"]:
 			recruit.add_item(db.get_def(id).name)
 			recruit.set_item_metadata(recruit.item_count - 1, id)
 	col.add_child(recruit)
@@ -111,6 +111,8 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 			changed())
 	base_choice = OptionButton.new()
 	for id in CampaignProgress.BASES:
+		if not db.content_profile.allows("bases",id):
+			continue
 		base_choice.add_item(id.capitalize() + " · " + str(BaseRules.BENEFITS.get(id, "")))
 		base_choice.set_item_metadata(base_choice.item_count - 1, id)
 	col.add_child(base_choice)
@@ -145,7 +147,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	_scenario=OptionButton.new()
 	_scenario.fit_to_longest_item=false
 	_scenario.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
-	for id: String in ScenarioBriefing.ENTRIES:
+	for id: String in ScenarioBriefing.available_entries(db.content_profile):
 		_scenario.add_item(ScenarioBriefing.title(id))
 		_scenario.set_item_metadata(_scenario.item_count-1,id)
 		if id=="treasure_skirmish":

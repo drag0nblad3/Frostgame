@@ -42,8 +42,9 @@ func _populate() -> void:
 	_context.text="Using %s."%WarbandSlots.roster().get("name","the default expedition")
 	if not _from_home:
 		_context.text+=" Starting a new battle replaces unsaved progress."
-	for id: String in ScenarioBriefing.ENTRIES:
-		var entry: Array=ScenarioBriefing.ENTRIES[id]
+	var entries := ScenarioBriefing.available_entries(WarbandSlots.content_profile())
+	for id: String in entries:
+		var entry: Array=entries[id]
 		var data: Dictionary=JsonFile.read(ScenarioLoader.DIR+id+".json")
 		_card(id,entry[0],entry[1]+"\n"+entry[2],str(data["board"]))
 	_scroll.scroll_vertical=0

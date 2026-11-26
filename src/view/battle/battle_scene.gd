@@ -44,7 +44,8 @@ var _picker: SkirmishPicker
 
 func _ready() -> void:
 	GraphicsQuality.apply(get_viewport())
-	_figures = FigureDb.load_files()
+	var profile := WarbandSlots.content_profile()
+	_figures = FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
 	_terrain = TerrainDb.load_file()
 	_atmosphere = BattleAtmosphere.new()
 	add_child(_atmosphere)
@@ -88,14 +89,18 @@ func _ready() -> void:
 	hud.save_battle_pressed.connect(_save_battle)
 	hud.resume_battle_pressed.connect(_resume_battle)
 	hud.scenario_selected.connect(func(id: String) -> void:
+		if not _figures.content_profile.allows("scenarios",id):
+			return
 		_scenario_id = id
 		hud.notify("Next battle: " + ScenarioBriefing.title(id)))
 	_campaign.load_save()
+	if not _campaign.data.is_empty():
+		_campaign.data["expansions"]=profile.enabled.duplicate()
 	_roster=WarbandSlots.roster()
 	if get_tree().root.has_meta("frostgame_scenario"):
 		_scenario_id=str(get_tree().root.get_meta("frostgame_scenario"))
 		get_tree().root.remove_meta("frostgame_scenario")
-		if not ScenarioBriefing.ENTRIES.has(_scenario_id):
+		if not ScenarioBriefing.available_entries(profile).has(_scenario_id):
 			_scenario_id=SCENARIO
 		hud.select_scenario(_scenario_id)
 	_rig.tapped.connect(_on_tap)
@@ -223,6 +228,8 @@ func _open_briefing(start: bool) -> void:
 
 
 func new_game(seed_value: int) -> void:
+	if not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
+		_scenario_id=SCENARIO
 	if _training >= 0:
 		_rig.distance = 34.0
 	_training = -1
@@ -450,7 +457,7 @@ func _create_campaign() -> void:
 		var draft := WarbandDraft.new(_figures)
 		draft.choose_defaults()
 		roster = draft.as_warband()
-	_campaign.start(roster)
+	_campaign.start(roster,_figures.content_profile)
 	_campaign.save()
 	_campaign_dialog.refresh(false)
 
@@ -508,6 +515,9 @@ func _resume_battle() -> void:
 		hud.notify("No compatible saved battle.")
 		return
 	var meta: Dictionary = data.get("meta", {})
+	if not _figures.content_profile.same(meta.get("expansions",[])):
+		hud.notify("Restore this checkpoint's rulebook content selection from Home before resuming.")
+		return
 	if meta.get("campaign", false) and (meta.get("campaign_hash", "") == "" or meta["campaign_hash"] != _campaign_fingerprint()):
 		hud.notify("Campaign changed since this checkpoint; cannot resume it.")
 		return

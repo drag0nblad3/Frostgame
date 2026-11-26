@@ -19,11 +19,11 @@ const ENTRIES := {
 
 
 static func title(id: String) -> String:
-	return str(ENTRIES.get(id, ["Skirmish"])[0])
+	return str(all_entries().get(id, ["Skirmish"])[0])
 
 
 static func description(id: String) -> String:
-	var entry: Array = ENTRIES.get(id, ["Skirmish", "Recover treasure or defeat the opposing warband.", ""])
+	var entry: Array = all_entries().get(id, ["Skirmish", "Recover treasure or defeat the opposing warband.", ""])
 	return "%s\n\n%s" % [entry[1], entry[2]]
 
 
@@ -64,3 +64,14 @@ static func progress(s: GameState) -> String:
 				var genie := s.figure(s.genie_id)
 				text += " | Genie %s" % ("escaping" if genie != null and genie.in_play() and s.genie_kills >= 3 else ("active" if genie != null and genie.in_play() else "gone"))
 	return text
+
+
+static func all_entries() -> Dictionary:
+	var result := ENTRIES.duplicate(true)
+	for pack: Dictionary in ContentProfile.registered().values():
+		result.merge(pack.get("briefings",{}))
+	return result
+
+
+static func available_entries(profile: ContentProfile) -> Dictionary:
+	return profile.filter("scenarios",all_entries())

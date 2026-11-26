@@ -27,7 +27,7 @@ func _ready() -> void:
 			_pages.append({"title":lines[0].capitalize(),"text":lines[1]})
 	_pages.append({"title":"Warbands & campaign","text":"Create and save a wizard, spellbook and recruits from the home screen. Select the warband slot before starting a battle. Each slot keeps separate campaign and battle progress. Starting rosters have a 400 gc budget, up to eight soldiers and up to four specialists. Apprentice recruitment costs 100 gc. Campaign headquarters handles recruitment, treasure, injuries, equipment, experience and improvements."})
 	_pages.append({"title":"Scenarios","text":"Choose a battlefield from New Skirmish. Each scenario has its own treasure and special rules. Read its briefing before playing. The Scenarios section below describes the current digital implementation."})
-	for id: String in ScenarioBriefing.ENTRIES:
+	for id: String in ScenarioBriefing.available_entries(WarbandSlots.content_profile()):
 		_pages.append({"title":ScenarioBriefing.title(id),"text":ScenarioBriefing.description(id)})
 	for page in _pages:
 		_topics.add_item(str(page["title"]))

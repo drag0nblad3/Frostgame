@@ -214,7 +214,7 @@ func _edit_warband() -> void:
 		_editor.queue_free()
 	_editor=WarbandSetup.new()
 	add_child(_editor)
-	_editor.setup(FigureDb.load_files(),WarbandSlots.roster())
+	_editor.setup(FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,WarbandSlots.content_profile()),WarbandSlots.roster())
 	_editor.get_ok_button().text="Save warband"
 	_editor.drafted.connect(func(roster: Dictionary) -> void:
 		if WarbandSlots.save_roster(roster):

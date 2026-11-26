@@ -119,7 +119,7 @@ func refresh() -> void:
 		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))
 	for id: String in catalog:
 		var info: Dictionary = catalog[id]
-		if not info["live"] or int(info["buy"]) <= 0:
+		if not info["live"] or int(info["buy"]) <= 0 or not ContentProfile.from_campaign(d).item_allowed(id):
 			continue
 		shop.add_item("%s · %d gc" % [info["name"], info["buy"]])
 		shop.set_item_metadata(shop.item_count - 1, id)
