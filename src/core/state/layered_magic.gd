@@ -9,7 +9,7 @@ static func can_teleport(c: GameController,n: Vector3i) -> bool:
 	var f := s.active()
 	if s.board.floor_layout.is_empty() or f==null or not c.can_act() or not CasterLoadout.is_caster(f.def.role):
 		return false
-	if f.surface_id.begins_with("climb:"):
+	if f.surface_id.begins_with("climb:") or ScenarioNull.muted(f):
 		return false
 	if not c._magic.available_spell(f,"teleport") or Contact.in_combat(s.figures,f) or f.spell_effects.has("blinding_light") or s.group.in_progress():
 		return false
@@ -25,6 +25,8 @@ static func can_teleport_with(c: GameController,n: Vector3i,layout: FloorLayout,
 		return false
 	var to := layout.world(n)
 	var from := Vector3(f.pos.x,f.elevation,f.pos.y)
+	if ScenarioNull.muted(f) or ScenarioNull.field_at(s.board,layout.point(n)):
+		return false
 	if from.distance_to(to)<0.1:
 		return false
 	for t in s.figures:

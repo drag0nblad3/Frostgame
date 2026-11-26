@@ -12,11 +12,11 @@ func build(layout: FloorLayout) -> void:
 	for s in layout.surfaces:
 		if s.id.begins_with("bridge:"):
 			_bridge(s)
-		elif s.id=="stairs":
+		elif s.id=="stairs" or s.id.begins_with("stair_") and not is_equal_approx(s.level,s.end_level):
 			_stairs(s)
 		elif s.id=="street":
 			_box(Vector3(s.rect.get_center().x,-0.16,s.rect.get_center().y),Vector3(s.rect.size.x,0.3,s.rect.size.y),Color(0.63,0.74,0.81),false)
-		elif s.id=="landing":
+		elif s.id=="landing" or s.id.ends_with("_landing"):
 			_box(Vector3(s.rect.get_center().x,s.level-0.09,s.rect.get_center().y),Vector3(s.rect.size.x,0.18,s.rect.size.y),Color(0.51,0.60,0.67),true)
 	for solid in layout.solids:
 		var roof := solid.position.y>=2.5
@@ -60,7 +60,7 @@ func _stairs(s: FloorSurface) -> void:
 	for i in count:
 		var x := s.rect.position.x+w*(i+0.5)
 		var h := s.height_at(Vector2(x,s.rect.get_center().y))
-		_box(Vector3(x,h-0.08,s.rect.get_center().y),Vector3(w+0.012,0.16,s.rect.size.y),Color(0.55,0.65,0.72),false)
+		_box(Vector3(x,h-0.08,s.rect.get_center().y),Vector3(w+0.012,0.16,s.rect.size.y),Color(0.55,0.65,0.72),h>=2.5 and s.id!="stairs")
 
 
 func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> void:
@@ -73,6 +73,12 @@ func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> void:
 	add_child(node)
 	if upper:
 		upper_nodes.append(node)
+
+
+func cut_at(height: float) -> void:
+	for child in get_children():
+		if child is MeshInstance3D:
+			child.visible=child.position.y<=height+0.1
 
 
 func show_upper(on: bool) -> void:

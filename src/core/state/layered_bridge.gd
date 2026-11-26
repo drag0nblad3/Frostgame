@@ -13,7 +13,7 @@ static func owned(s: GameState,id: int) -> String:
 
 static func eligible(c: GameController) -> bool:
 	var f := c.state.active()
-	return f!=null and not c.state.board.floor_layout.is_empty() and c.can_act() and CasterLoadout.is_caster(f.def.role) and c._magic.available_spell(f,"bridge") and owned(c.state,f.id).is_empty() and not Contact.in_combat(c.state.figures,f) and not f.spell_effects.has("blinding_light") and not f.surface_id.begins_with("climb:")
+	return f!=null and not ScenarioNull.muted(f) and not c.state.board.floor_layout.is_empty() and c.can_act() and CasterLoadout.is_caster(f.def.role) and c._magic.available_spell(f,"bridge") and owned(c.state,f.id).is_empty() and not Contact.in_combat(c.state.figures,f) and not f.spell_effects.has("blinding_light") and not f.surface_id.begins_with("climb:")
 
 
 static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayout) -> Dictionary:
@@ -41,7 +41,7 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 		for offset: float in [-1.0,0.0,1.0]:
 			var at := p.lerp(q,ratio)+across*offset
 			var world := Vector3(at.x,h,at.y)
-			if not c.state.board.contains(at) or not LayeredSight.clear(layout,eye,world+Vector3.UP*0.03):
+			if ScenarioNull.field_at(c.state.board,at,0.0) or not c.state.board.contains(at) or not LayeredSight.clear(layout,eye,world+Vector3.UP*0.03):
 				return {}
 			if not layout.clearance(world,0.02,0.1):
 				return {}
@@ -121,6 +121,7 @@ static func remove(c: GameController,id: String) -> void:
 		f.elevation=layout.height(n)
 		c.emit("terrain_fall",{"id":f.id})
 		LayeredFall.apply(c,f,old-f.elevation,f)
+		ScenarioNull.enter(c,f)
 	for token in s.treasures:
 		if not token.on_ground() or token.surface_id!=id:
 			continue

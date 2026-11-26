@@ -15,7 +15,9 @@ var _layout_revision := 0
 
 
 func _ready() -> void:
-	controller=LayeredBattle.create(FigureDb.load_files(),TerrainDb.load_file(),17)
+	var board_id := str(get_tree().root.get_meta("layered_board","stacked_gatehouse"))
+	get_tree().root.remove_meta("layered_board")
+	controller=LayeredBattle.create(FigureDb.load_files(),TerrainDb.load_file(),17,board_id)
 	var s := controller.state
 	layout=FloorLayout.from_dict(s.board.floor_layout)
 	_layout_revision=s.board.floor_layout.hash()
@@ -78,6 +80,10 @@ func _ui() -> void:
 		button.text=entry[0]
 		button.pressed.connect(_leave.bind(str(entry[1])))
 		row.add_child(button)
+	var tower_button := Button.new()
+	tower_button.text="Gatehouse" if controller.state.board.id=="layered_silent_tower" else "Silent Tower"
+	tower_button.pressed.connect(_switch_board)
+	row.add_child(tower_button)
 	var space := Control.new()
 	space.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	space.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -85,6 +91,13 @@ func _ui() -> void:
 	controls=LayeredSkirmishControls.new()
 	col.add_child(controls)
 	controls.setup(self)
+
+
+func _switch_board() -> void:
+	if not player.idle():
+		return
+	get_tree().root.set_meta("layered_board","stacked_gatehouse" if controller.state.board.id=="layered_silent_tower" else "layered_silent_tower")
+	get_tree().reload_current_scene()
 
 
 func _leave(path: String) -> void:
@@ -118,7 +131,10 @@ func refresh() -> void:
 	var index := floor_choice.selected
 	var all := index==layout.surfaces.size()
 	var chosen := "" if all else layout.surfaces[index].id
-	art.show_upper(all or chosen in ["upper","landing"] or chosen.begins_with("bridge:"))
+	if controller.state.board.id=="layered_silent_tower":
+		art.cut_at(INF if all else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level))
+	else:
+		art.show_upper(all or chosen in ["upper","landing"] or chosen.begins_with("bridge:"))
 	var s := controller.state
 	for f in s.figures:
 		var view: FigureView = player.views[f.id]
@@ -126,7 +142,7 @@ func refresh() -> void:
 	for t in s.treasures:
 		var model: MeshInstance3D = player.treasure_views[t.id]
 		model.visible=t.unresolved() and (all or t.surface_id==chosen or t.carrier_id>=0)
-	status.text="GATEHOUSE  •  Turn %d  |  %s  |  Loot %d:%d" % [s.turn,Phase.name_of(s.phase),s.secured_count(0),s.secured_count(1)]
+	status.text="%s  •  Turn %d  |  %s  |  Loot %d:%d" % ["SILENT TOWER" if s.board.id=="layered_silent_tower" else "GATEHOUSE",s.turn,Phase.name_of(s.phase),s.secured_count(0),s.secured_count(1)]
 	controls.refresh()
 	targets.clear()
 	var active := s.active()

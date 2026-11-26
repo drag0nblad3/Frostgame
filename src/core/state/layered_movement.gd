@@ -9,7 +9,7 @@ static func eligible(c: GameController) -> bool:
 	var f := s.active()
 	if s.board.floor_layout.is_empty() or not c.can_move() or f.surface_id.is_empty():
 		return false
-	if s.forced_combat or not s.scenario_special.is_empty() or s.group.in_progress() or FuryRules.target(s,f)!=null:
+	if s.forced_combat or (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or s.group.in_progress() or FuryRules.target(s,f)!=null:
 		return false
 	if f.spell_effects.has("plane_walk") or f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
 		return false
@@ -54,4 +54,15 @@ static func move(c: GameController,node: Vector3i) -> bool:
 	f.elevation=layout.height(node)
 	f.surface_id=layout.surface_id(node)
 	c.emit("layered_move",{"id":f.id,"path":path,"surfaces":surfaces,"cost":float(reachable.cost[node])})
+	for point in path:
+		if ScenarioNull.field_at(c.state.board,Vector2(point.x,point.z)):
+			# Record any crossing, including an interior waypoint rather than
+			# only the final position. Cancellation is permanent on entry.
+			var finish := f.pos
+			f.pos=Vector2(point.x,point.z)
+			ScenarioNull.enter(c,f)
+			f.pos=finish
+			if not f.in_play():
+				break
+	ScenarioNull.enter(c,f)
 	return true

@@ -4,11 +4,18 @@ extends RefCounted
 var layout: FloorLayout
 var mover: Figure
 var others: Array[Figure] = []
+var null_boundary := false
+var null_board: Board
 
 
 func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> void:
 	layout=floors
 	mover=f
+	if f!=null and f.battle_ref!=null:
+		var s: GameState = f.battle_ref.get_ref()
+		if s!=null and s.board.floor_layout.has("null_regions"):
+			null_board=s.board
+			null_boundary=not ScenarioNull.field_at(null_board,f.pos) and (not f.spell_effects.is_empty() or f.elemental_shield>0 or f.controller_id>=0 or f.familiar)
 	for other in figures:
 		if other!=f and other.in_play():
 			others.append(other)
@@ -27,6 +34,8 @@ func open(n: Vector3i) -> bool:
 func stops(n: Vector3i) -> bool:
 	if mover==null:
 		return false
+	if null_boundary and ScenarioNull.field_at(null_board,layout.point(n)):
+		return true
 	for other in others:
 		if other.side!=mover.side and absf(other.elevation-layout.height(n))<0.5 and Contact.touching(other.pos,layout.point(n)):
 			return true

@@ -19,7 +19,7 @@ func setup(host: Node3D) -> void:
 	var col := VBoxContainer.new()
 	add_child(col)
 	log_line=Label.new()
-	log_line.text="Experimental skirmish • six figures, two treasures"
+	log_line.text="Experimental skirmish • %d figures, %d treasures" % [c.state.figures.size(),c.state.treasures.size()]
 	log_line.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(log_line)
 	hint=Label.new()
@@ -116,7 +116,9 @@ func refresh() -> void:
 		shoot=shoot or c.can_shoot(t.id)
 	_show("fight",fight)
 	_show("shoot",shoot)
-	var teleport := CasterLoadout.is_caster(f.def.role) and c.can_act() and c._magic.available_spell(f,"teleport") and not Contact.in_combat(s.figures,f)
+	if ScenarioNull.muted(f):
+		hint.text+=" • NULL FIELD"
+	var teleport := not ScenarioNull.muted(f) and CasterLoadout.is_caster(f.def.role) and c.can_act() and c._magic.available_spell(f,"teleport") and not Contact.in_combat(s.figures,f)
 	_show("teleport",teleport)
 	var leap := false
 	for t in s.figures:

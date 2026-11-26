@@ -9,6 +9,8 @@ static func eligible(c: GameController,t: Figure) -> bool:
 	var f := s.active()
 	if s.board.floor_layout.is_empty() or f==null or t==null or not t.in_play() or t.side!=f.side:
 		return false
+	if ScenarioNull.muted(f) or ScenarioNull.muted(t):
+		return false
 	if not c.can_act() or not CasterLoadout.is_caster(f.def.role) or not c._magic.available_spell(f,"leap"):
 		return false
 	if Contact.in_combat(s.figures,f) or f.spell_effects.has("blinding_light") or s.group.in_progress():
@@ -20,7 +22,7 @@ static func eligible(c: GameController,t: Figure) -> bool:
 
 static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,grid: LayeredGrid) -> PackedVector3Array:
 	var empty := PackedVector3Array()
-	if not grid.open(n) or layout.surface_id(n).begins_with("climb:"):
+	if not grid.open(n) or layout.surface_id(n).begins_with("climb:") or ScenarioNull.field_at(c.state.board,layout.point(n)):
 		return empty
 	var a := Vector3(t.pos.x,t.elevation,t.pos.y)
 	var b := layout.world(n)
@@ -40,7 +42,7 @@ static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,gri
 		for i in range(1,steps+1):
 			var ratio := float(i)/steps
 			var p := a.lerp(b,ratio)+Vector3.UP*(4.0*rise*ratio*(1.0-ratio))
-			if not layout.clearance(p,Figure.BASE_RADIUS,1.6):
+			if ScenarioNull.field_at(c.state.board,Vector2(p.x,p.z)) or not layout.clearance(p,Figure.BASE_RADIUS,1.6):
 				clear=false
 				break
 			length+=points[points.size()-1].distance_to(p)

@@ -60,4 +60,5 @@ static func apply(c: GameController,own: bool) -> bool:
 	path.append(layout.world(node))
 	c.emit("layered_move",{"id":f.id,"path":path,"surfaces":[old_surface,f.surface_id],"cost":0.0})
 	LayeredFall.apply(c,f,from.y-f.elevation,other)
+	ScenarioNull.enter(c,f)
 	return true

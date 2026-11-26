@@ -63,9 +63,13 @@ Floating endpoints, arbitrary rotations, full collision resolution on occupied
 landings and AI bridge placement remain outstanding.
 
 The separate layered_silent_tower board has stacked 3, 6 and 10-inch floors,
-two annexes, walkways and external climbing routes. It is a geometry test
-fixture only: null-field regions are authored but not yet enforced, and no
-campaign scenario is replaced. Internal stairs and null-field rules are next.
+two annexes, walkways and external climbing routes. The layered skirmish toolbar opens the alternate Silent Tower with five
+treasures and two three-figure warbands. Null-field regions cancel ongoing
+magic on ordinary entry, block casting and magical arrivals, and award the
+existing tower-entry XP once per caster. Stair bays on the south and north
+sides provide routes between levels; cutaways use selected height. The
+original campaign scenario is unchanged. Stair geometry and full simulation
+must pass before treating this as a campaign replacement.
 
 ## Current boundary
 
