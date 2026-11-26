@@ -102,7 +102,7 @@ func can_cast(id: String, target_id: int) -> bool:
 	if id=="control_demon" and t.def.traits.has("immune_control_demon"):
 		return false
 	if id == "suggestion":
-		return t != f and not t.def.traits.has("mind_lock") and not t.spell_effects.has("mind_lock")
+		return t != f and not t.mind_locked()
 	if id == "bones_of_the_earth":
 		return not t.def.traits.has("large") and t.elevation < 0.01 and not t.spell_effects.has(id)
 	if id == "leap":

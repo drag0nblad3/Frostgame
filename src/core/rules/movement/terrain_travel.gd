@@ -23,7 +23,7 @@ static func cost(board: Board,a: Vector2,b: Vector2,mover: Figure = null) -> flo
 	var previous_surface := board.surface_at(a)
 	var previous := board.height_at(a)
 	var total := 0.0
-	var levitate := mover != null and mover.def.traits.has("levitate")
+	var levitate := mover != null and mover.levitates()
 	var expert := mover != null and mover.def.traits.has("expert_climber")
 	for i in range(1,cuts.size()):
 		var start := a.lerp(b,cuts[i-1])

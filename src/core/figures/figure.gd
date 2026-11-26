@@ -191,3 +191,16 @@ func carried_treasures() -> Array[int]:
 	if second_treasure_id >= 0:
 		result.append(second_treasure_id)
 	return result
+
+
+## Effective traits supplied by equipped expansion items.
+func levitates() -> bool:
+	return def.traits.has("levitate") or (ActiveGear.has(self,"gear_rk_ring_of_levitation") and not MagicEquipment.suppressed(self))
+
+
+func mind_locked() -> bool:
+	return def.traits.has("mind_lock") or spell_effects.has("mind_lock") or (ActiveGear.has(self,"gear_rk_mind_lock_collar") and not MagicEquipment.suppressed(self))
+
+
+func has_horns() -> bool:
+	return def.traits.has("horns") or ActiveGear.has(self,"gear_rk_construct_spikes")

@@ -93,5 +93,5 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 		if p.ramp and p.contains(pa) and p.contains(pb):
 			var delta := board.height_at(pa) - board.height_at(pb)
 			return Vector2(pa.distance_to(pb), delta).length()
-	var multiplier := 1.0 if mover != null and mover.def.traits.has("levitate") else board.move_mult_at(mid)
+	var multiplier := 1.0 if mover != null and mover.levitates() else board.move_mult_at(mid)
 	return pa.distance_to(pb) * multiplier + board.climb_cost(pa, pb, mover)

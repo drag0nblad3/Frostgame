@@ -62,7 +62,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if not layout.clearance(start.lerp(finish,0.5),Figure.BASE_RADIUS,1.6):
 			continue
 		var mult := layout.surfaces[n.z].rough
-		if mover!=null and mover.def.traits.has("levitate"):
+		if mover!=null and mover.levitates():
 			mult=1.0
 		out.append({"to":next,"cost":start.distance_to(finish)*mult})
 	for edge: Dictionary in layout.links.get(n,[]):
@@ -70,7 +70,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if not open(next):
 			continue
 		var cost: float = edge["cost"]
-		if edge["kind"]=="climb" and mover!=null and (mover.def.traits.has("expert_climber") or mover.def.traits.has("levitate")):
+		if edge["kind"]=="climb" and mover!=null and (mover.def.traits.has("expert_climber") or mover.levitates()):
 			cost=layout.point(n).distance_to(layout.point(next))+ceilf(absf(layout.height(n)-layout.height(next)))
 		out.append({"to":next,"cost":cost})
 	return out

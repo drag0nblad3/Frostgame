@@ -99,3 +99,19 @@ func test_campaign_and_spell_item_helpers() -> void:
 	check(not RedKingGear.sticky(c.state,0))
 	check_eq(RedKingGear.destiny_survival(2),2)
 	check_eq(RedKingGear.destiny_survival(9),8)
+
+
+func test_equipment_traits() -> void:
+	var catalog := RedKingRewards.catalog()
+	var f := fig("wizard",0,Vector2(10,10))
+	check(not f.levitates())
+	f.items.append({"gear":"gear_rk_ring_of_levitation","gear_info":catalog["gear_rk_ring_of_levitation"]})
+	check(f.levitates())
+	check_eq(f.effective_will(),f.def.will-3)
+	var dog := fig("war_hound",0,Vector2(12,10))
+	dog.items.append({"gear":"gear_rk_mind_lock_collar","gear_info":catalog["gear_rk_mind_lock_collar"]})
+	check(dog.mind_locked())
+	check_eq(dog.effective_will(),dog.def.will)
+	var construct := fig("medium_construct",0,Vector2(14,10))
+	construct.items.append({"gear":"gear_rk_construct_spikes","gear_info":catalog["gear_rk_construct_spikes"]})
+	check(construct.has_horns())

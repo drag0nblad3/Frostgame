@@ -115,7 +115,7 @@ func refresh() -> void:
 		recipient_choice.set_item_metadata(0, -1)
 	for unit: Dictionary in d["units"]:
 		var capacity := CampaignInventory.slots(unit, db)
-		if unit["dead"] or unit.get("dismissed", false) or unit.get("ragged_absent",false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"]):
+		if unit["dead"] or unit.get("dismissed", false) or unit.get("ragged_absent",false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"] and not (db.content_profile.enabled.has("red_king") and (db.get_def(unit["type"]).traits.has("animal") or db.get_def(unit["type"]).traits.has("construct")))):
 			continue
 		var items := CampaignInventory.loadout(d, int(unit["id"]))
 		var used := items.size()
@@ -129,7 +129,8 @@ func refresh() -> void:
 				caster_equipment.add_item("%s #%d · %s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, preset])
 				caster_equipment.set_item_metadata(caster_equipment.item_count - 1, {"owner": int(unit["id"]), "preset": preset})
 		if capacity == 0:
-			recipient_choice.add_item("%s #%d · Hammer graft only" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1])
+			var special := "Special equipment only" if db.content_profile.enabled.has("red_king") else "Hammer graft only"
+			recipient_choice.add_item("%s #%d · %s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1,special])
 		else:
 			recipient_choice.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
 		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))

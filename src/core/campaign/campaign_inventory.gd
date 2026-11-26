@@ -66,6 +66,26 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 			return false
 	if not is_item(item):
 		return false
+	if item.get("gear","") in ["gear_rk_mind_lock_collar","gear_rk_construct_spikes"]:
+		if not ContentProfile.from_campaign(d).item_allowed(item_id(item)):
+			return false
+		var collar: bool=item["gear"]=="gear_rk_mind_lock_collar"
+		if collar and owner==-1:
+			item["owner"]=-1
+			return true
+		if (not collar and int(item.get("owner",-1))>=0) or owner<0 or owner>=d["units"].size():
+			return false
+		var recipient: Dictionary=d["units"][owner]
+		if recipient["dead"] or recipient.get("dismissed",false) or recipient.get("ragged_absent",false):
+			return false
+		var definition := db.get_def(recipient["type"])
+		if not definition.traits.has("animal" if collar else "construct"):
+			return false
+		for other: Dictionary in d["loot"]:
+			if other!=item and int(other.get("owner",-1))==owner and (collar or other.get("gear","")==item["gear"]):
+				return false
+		item["owner"]=owner
+		return true
 	if item.get("gear", "") == "gear_construct_hammer":
 		if int(item.get("owner", -1)) >= 0 or owner < 0 or owner >= d["units"].size():
 			return false
@@ -115,8 +135,9 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 			var other_info: Dictionary = catalog()[item_id(other)]
 			if (item.get("gear","")=="gear_rk_lightning_brooch" and (other_info.get("bonus",{}).has("elemental_resistance") or other_info.get("type","")=="heavy_armour")) or (other.get("gear","")=="gear_rk_lightning_brooch" and (info.get("bonus",{}).has("elemental_resistance") or info.get("type","")=="heavy_armour")):
 				return false
-			if item["kind"] == "gear" and other["kind"] == "gear" and catalog()[item_id(other)]["type"] == info["type"]:
-				return false
+			if item["kind"] == "gear" and other["kind"] == "gear":
+				if item_id(item)==item_id(other) or (info["type"]!="item" and other_info["type"]==info["type"]):
+					return false
 			used += 1
 	if caster:
 		if not CasterLoadout.fits(d, unit, index, item):

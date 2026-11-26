@@ -156,7 +156,7 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 	if delta < 0.001:
 		return 0.0
 	var multiplier := 2.0
-	if climber != null and (climber.def.traits.has("expert_climber") or climber.def.traits.has("levitate")):
+	if climber != null and (climber.def.traits.has("expert_climber") or climber.levitates()):
 		multiplier = 1.0
 	for p in pieces_at(a) + pieces_at(b):
 		if p.kind.stairs:

@@ -180,7 +180,7 @@
       "buy": 200,
       "sell": 50,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_lightning_brooch": {
@@ -361,8 +361,9 @@
       "buy": 200,
       "sell": 50,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "permanent": true
     },
     "gear_rk_burning_icon": {
       "name": "Burning Icon",
@@ -605,8 +606,10 @@
       "type": "item",
       "buy": 0,
       "sell": 300,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "will": -3
+      },
+      "live": true,
       "artefact": true,
       "unlock_tn": 16,
       "expansion": "red_king"

@@ -82,7 +82,7 @@ static func discard(d: Dictionary,index: int) -> bool:
 	if not active(d) or index<0 or index>=d["loot"].size():
 		return false
 	var item: Dictionary=d["loot"][index]
-	if not CampaignInventory.is_item(item) or item.get("ragged_sealed",false) or absent_owner(d,item):
+	if not CampaignInventory.is_item(item) or item.get("ragged_sealed",false) or absent_owner(d,item) or (item.get("gear","")=="gear_rk_construct_spikes" and int(item.get("owner",-1))>=0):
 		return false
 	d["loot"].remove_at(index)
 	return true

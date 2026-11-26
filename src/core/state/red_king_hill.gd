@@ -82,7 +82,7 @@ static func _shift_from_seam(c: GameController,f: Figure) -> void:
 
 
 static func airborne(f: Figure) -> bool:
-	return f.def.traits.has("flying") or f.def.traits.has("levitate") or f.spell_effects.has("levitate")
+	return f.def.traits.has("flying") or f.levitates() or f.spell_effects.has("levitate")
 
 
 static func before_move(c: GameController,f: Figure) -> bool:
