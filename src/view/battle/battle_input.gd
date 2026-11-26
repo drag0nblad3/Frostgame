@@ -82,6 +82,10 @@ func refresh() -> void:
 				if not available.has(key):
 					available.append(key)
 				break
+	for t in c.state.figures:
+		if c._potions.can_breathe(t):
+			available.append("breathe_fire")
+			break
 	for p in c.state.board.pieces:
 		if p.kind.id == "spell_bridge" and p.caster_id == f.id:
 			available.append("cancel_bridge")
@@ -153,6 +157,17 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"potion_point":
+			points.assign(c._potions.points(selected_potion))
+			hint = "Choose the potion destination."
+		"potion_coat":
+			hint = "Choose melee weapon or ammunition."
+		"breathe_fire":
+			for t in c.state.figures:
+				if c._potions.can_breathe(t):
+					targets.append(t)
+			radius = 0.65
+			hint = "Choose a target for fire breath."
 		"potion_target":
 			for t in c.state.figures:
 				if c._potions.can_drink(selected_potion, t):
@@ -298,8 +313,25 @@ func action(key: String) -> bool:
 		mode = ""
 		refresh()
 		return false
+	if key in ["coat_melee", "coat_ranged"]:
+		return c._potions.coat(selected_potion, key == "coat_ranged")
 	if key.begins_with("potion_"):
 		selected_potion = key.trim_prefix("potion_")
+		if selected_potion in PotionActions.POINTS:
+			mode = "potion_point"
+			available.assign(["potion_cancel"])
+			preview()
+			return false
+		if selected_potion in PotionActions.COATINGS:
+			mode = "potion_coat"
+			available.assign(["potion_cancel"])
+			var f := c.state.active()
+			if PotionActions.can_coat(f, selected_potion, f.melee):
+				available.append("coat_melee")
+			if PotionActions.can_coat(f, selected_potion, f.ranged):
+				available.append("coat_ranged")
+			preview()
+			return false
 		if c.state.active().def.id == "apothecary":
 			mode = "potion_target"
 			available.assign(["potion_cancel"])
@@ -410,11 +442,13 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
+			"breathe_fire":
+				return c._potions.breathe(c.state.figure(id))
 			"potion_target":
 				return c._potions.drink(selected_potion, c.state.figure(id))
 			"swap_second":
@@ -459,6 +493,8 @@ func tap(screen: Vector2) -> bool:
 		var t := c.state.figure(spell_first)
 		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return c._magic.start_move(selected_spell, spell_first, destination)
+	if mode == "potion_point":
+		return c._potions.use_at(selected_potion, at.round() if selected_potion == "explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return c._magic.start_at(selected_spell, destination, spell_rotated)

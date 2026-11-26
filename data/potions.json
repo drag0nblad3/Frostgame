@@ -38,21 +38,21 @@
     "name": "Explosive Cocktail",
     "buy": 100,
     "sell": 30,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "teleportation": {
     "name": "Potion of Teleportation",
     "buy": 500,
     "sell": 100,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "elemental_absorption": {
     "name": "Potion of Elemental Absorption",
     "buy": 200,
     "sell": 80,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "clearsight": {
@@ -66,7 +66,7 @@
     "name": "Poison",
     "buy": 100,
     "sell": 30,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "fury": {
@@ -94,7 +94,7 @@
     "name": "Philtre of Fairy Dust",
     "buy": 50,
     "sell": 30,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "construct_oil": {
@@ -108,7 +108,7 @@
     "name": "Potion of Fire Breath",
     "buy": 200,
     "sell": 80,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "preservation": {
@@ -129,7 +129,7 @@
     "name": "Cordial of Empowerment",
     "buy": 500,
     "sell": 200,
-    "live": false,
+    "live": true,
     "greater": true,
     "ingredients": 200
   },
@@ -169,7 +169,7 @@
     "name": "Bottle of Darkness",
     "buy": 1500,
     "sell": 300,
-    "live": false,
+    "live": true,
     "greater": true,
     "ingredients": 600
   },
@@ -185,7 +185,7 @@
     "name": "Potion of Invulnerability",
     "buy": 0,
     "sell": 400,
-    "live": false,
+    "live": true,
     "greater": true,
     "ingredients": 2000
   },

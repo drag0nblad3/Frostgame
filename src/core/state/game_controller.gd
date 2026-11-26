@@ -163,8 +163,8 @@ func fight(target_id: int) -> bool:
 	emit("fight", res)
 	_magic.illusions.reveal(f)
 	_magic.illusions.reveal(t)
-	_hurt(t, res["b_dmg"], f)
-	_hurt(f, res["a_dmg"], t)
+	_weapon_damage(t, res["b_dmg"], f, f.melee)
+	_weapon_damage(f, res["a_dmg"], t, t.melee)
 	if int(res["b_dmg"]) > 0:
 		f.spell_effects.erase("elemental_hammer")
 	if int(res["a_dmg"]) > 0:
@@ -204,7 +204,9 @@ func _shoot_authorized(f: Figure, t: Figure) -> void:
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("shoot", res)
-	_hurt(t, res["dmg"], f)
+	_weapon_damage(t, res["dmg"], f, f.ranged)
+	if f.spell_effects.get("potion_fairy_dust", "") == f.ranged.id:
+		f.spell_effects.erase("potion_fairy_dust")
 	if f.ranged != null:
 		f.spell_effects.erase("elemental_hammer")
 
@@ -444,3 +446,11 @@ func fight_hand(id: int) -> bool:
 		_hurt(f, maxi(0, defend - f.effective_armour() + f.melee.enemy_damage_mod), t)
 	emit("fight_hand", {"id": f.id, "target": id, "attack": attack, "defence": defend, "freed": freed})
 	return true
+
+
+func _weapon_damage(t: Figure, dmg: int, f: Figure, w: WeaponDef) -> void:
+	var old := t.health
+	_hurt(t, dmg, f)
+	if t.health < old and f.poison_weapon == w.id:
+		f.poison_weapon = ""
+		poison(t)

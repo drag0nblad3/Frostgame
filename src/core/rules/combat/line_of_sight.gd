@@ -19,6 +19,9 @@ class Result:
 
 static func check(board: Board, from: Vector2, to: Vector2) -> Result:
 	var r := Result.new()
+	if board.darkness and Vector2(from.distance_to(to), board.height_at(from) - board.height_at(to)).length() > 12.0:
+		r.clear = false
+		return r
 	for piece in board.pieces:
 		if not Geom.crosses(from, to, piece.rect) and not piece.rect.has_point(to):
 			continue

@@ -68,4 +68,6 @@ static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, c
 		dmg = Damage.amount(st, shooter.ranged.damage_mod + MagicEquipment.bonus(shooter, "damage", shooter.ranged.id), target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits)
 		if dmg > 0 and shooter.spell_effects.has("elemental_hammer"):
 			dmg += 5
+	if target.spell_effects.has("potion_invulnerability") and not WeaponActions.magic_attack(shooter, shooter.ranged):
+		dmg = 0
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}

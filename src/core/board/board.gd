@@ -4,6 +4,7 @@ extends RefCounted
 
 var id := ""
 var name := ""
+var darkness := false
 var size := Vector2(36, 36)
 var pieces: Array[TerrainPiece] = []
 

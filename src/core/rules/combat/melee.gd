@@ -45,6 +45,8 @@ static func resolve(dice: Dice, figures: Array[Figure], a: Figure, b: Figure, cr
 
 
 static func _damage(total: int, winner: Figure, loser: Figure, natural: int, critical_hits: bool) -> int:
+	if loser.spell_effects.has("potion_invulnerability") and not WeaponActions.magic_attack(winner, winner.melee):
+		return 0
 	var extra := 2 if winner.def.traits.has("strong") else 0
 	var dmg := Damage.amount(total, winner.melee.damage_mod + MagicEquipment.bonus(winner, "damage", winner.melee.id) + MagicEquipment.bonus(winner, "melee_damage") + loser.melee.enemy_damage_mod + extra, loser.effective_armour(), natural, false)
 	if winner.def.traits.has("powerful"):

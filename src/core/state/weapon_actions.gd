@@ -9,6 +9,8 @@ func _init(controller: GameController) -> void:
 
 
 static func magical(t: Figure, w: WeaponDef) -> bool:
+	if not w.is_ranged() and t.spell_effects.get("potion_fairy_dust", "") == w.id:
+		return true
 	if t.spell_effects.has("enchant_weapon") and (w == t.ranged or (t.ranged == null and w == t.melee)):
 		return true
 	for item in t.items:
@@ -47,3 +49,7 @@ func destroy(t: Figure, id: String) -> void:
 				t.loaded = true
 				break
 	c.emit("weapon_destroyed", {"id": t.id, "weapon": id})
+
+
+static func magic_attack(f: Figure, w: WeaponDef) -> bool:
+	return f.is_demon() or magical(f, w) or f.spell_effects.get("potion_fairy_dust", "") == w.id or (f.spell_effects.has("elemental_hammer") and (w == f.ranged or f.ranged == null))

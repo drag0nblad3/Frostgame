@@ -259,10 +259,11 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var plane_penalty := PlaneWalk.penalty(f, c.state.turn) if id == "plane_walk" else 0
 	if id == "plane_walk":
 		PlaneWalk.record(f, c.state.turn)
-	var total := 14 if scroll else CastingRoll.modified(raw, plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
+	var empowered := not scroll and f.spell_effects.erase("potion_empowerment")
+	var total := 14 if scroll else CastingRoll.modified(raw, (4 if empowered else 0) + plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	c._spend(f)
-	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll}
+	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll, "cordial": empowered}
 	if at != null:
 		c.state.pending_cast["at"] = at
 		c.state.pending_cast["rotated"] = rotated
@@ -301,7 +302,7 @@ func finish(health: int) -> bool:
 	s.pending_cast = {}
 	var power := PowerPool.spend(f, int(result["health_spent"]))
 	var hp := int(result["health_spent"]) - power
-	c._hurt(f, hp + int(result["failure_damage"]), f, false)
+	c._hurt(f, hp + int(result["failure_damage"]) + (2 if p.get("cordial", false) else 0), f, false)
 	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": hp, "power": power, "tn": p["tn"], "failure_damage": result["failure_damage"], "scroll": p.get("scroll", false)})
 	if id == "summon_demon" and int(p["raw"]) == 1 and not p.get("scroll", false):
 		summons.miscast_demon(f)
@@ -465,6 +466,8 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var dmg := Damage.amount(a, 0, t.effective_armour(), ar, s.critical_hits) if won else 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
+	if elemental:
+		dmg = PotionActions.absorb(t, dmg)
 	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d})
 	c._hurt(t, dmg, f)
 
@@ -476,10 +479,14 @@ func _resist_effect(f: Figure, id: String) -> void:
 
 
 func on_activate(f: Figure) -> void:
+	if f.spell_effects.has("potion_invulnerability") and c.dice.d20() >= 17:
+		f.spell_effects.erase("potion_invulnerability")
+		c.emit("spell_expired", {"id": f.id, "spell": "potion_invulnerability"})
 	_resist_effect(f, "furious_quill")
 
 
 func on_end_activation(f: Figure) -> void:
+	f.spell_effects.erase("potion_fire_breath")
 	f.petrified_skip = false
 	_resist_effect(f, "slow")
 	_resist_effect(f, "plague_of_insects")
