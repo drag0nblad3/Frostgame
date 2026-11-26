@@ -68,3 +68,23 @@ func test_other_magical_creatures_bake() -> void:
 		var model := MiniatureFactory.create(f,Color.PURPLE)
 		check(not model.find_children("*","MeshInstance3D",true,false).is_empty())
 		model.free()
+
+
+func test_motion_profiles_and_leg_pivots() -> void:
+	var defs := db()
+	for id: String in ["wizard","knight","wolf","bear","ice_spider","ice_toad","wraith","giant_worm"]:
+		var f := Figure.new(1,defs.get_def(id),0,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.BLUE)
+		var kind := MiniatureMotion.profile(f)
+		MiniatureMotion.travel(model,kind,1.2,0.12)
+		if id in ["wizard","knight","wolf","bear","ice_spider"]:
+			check(model.has_node("Leg0"))
+			var leg := model.get_node("Leg0") as Node3D
+			check(absf(leg.rotation.x)>0.01)
+		MiniatureMotion.action(model,kind,"attack",1.0,0.12,"staff")
+		MiniatureMotion.action(model,kind,"attack",0.0,0.12,"staff")
+		check(is_equal_approx(model.position.y,0.12))
+		check(is_zero_approx(model.rotation.x))
+		if model.has_node("Leg0"):
+			check(is_zero_approx((model.get_node("Leg0") as Node3D).rotation.x))
+		model.free()

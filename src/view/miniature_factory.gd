@@ -10,6 +10,7 @@ const SKIN := Color(0.78, 0.61, 0.46)
 
 static func create(f: Figure, faction: Color, school_override: String = "") -> Node3D:
 	var model := Node3D.new()
+	model.set_meta("painted_miniature",true)
 	var color := faction
 	if CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
 		MiniatureBatch.bake(model)
@@ -94,7 +95,7 @@ static func weapon(model: Node3D, f: Figure, school: String = "") -> void:
 	if f.ranged != null:
 		if f.ranged.id == "bow":
 			RangedSculpt.bow(model)
-		else:
+		elif f.ranged.id=="crossbow":
 			RangedSculpt.crossbow(model)
 	if f.def.shield:
 		WeaponSculpt.shield(model, f.def.id in ["knight", "templar"])

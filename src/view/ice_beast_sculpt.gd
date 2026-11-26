@@ -17,10 +17,13 @@ static func spider(root: Node3D) -> void:
 			var b := Vector3(side*(0.46+0.035*i),0.66,z*1.4)
 			var c := Vector3(side*0.67,0.28,z*1.65)
 			var d := Vector3(side*0.77,0.04,z*1.8)
+			var pivot := MiniaturePose.leg(root,i+(4 if side>0 else 0),a)
+			var first := root.get_child_count()
 			CreatureSculpt.limb(root,a,b,0.065,ICE,0.8)
 			MiniatureFactory.sphere(root,b,Vector3.ONE*0.12,DARK)
 			CreatureSculpt.limb(root,b,c,0.048,DARK.lightened(0.12),0.8)
 			CreatureSculpt.limb(root,c,d,0.037,ICE,0.03)
+			MiniaturePose.attach(root,pivot,first)
 		for i in 3:
 			CreatureSculpt.eye(root,Vector3(side*(0.055+i*0.055),0.43+0.035*(i%2),-0.48),Color("b4e8f2"))
 		CreatureSculpt.limb(root,Vector3(side*0.13,0.33,-0.46),Vector3(side*0.09,0.17,-0.61),0.06,ICE.lightened(0.2),0.04)

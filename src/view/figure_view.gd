@@ -17,6 +17,9 @@ var _shield_ring: MeshInstance3D
 var _model_rest_y := 0.12
 var _moving := false
 var _stride := 0.0
+var _profile := "walk"
+var _weapon := ""
+var _ranged := ""
 
 
 func setup(f: Figure, _side_name: String) -> void:
@@ -30,6 +33,7 @@ func setup(f: Figure, _side_name: String) -> void:
 	_base.mesh = cyl
 	_base.position.y = 0.06
 	add_child(_base)
+	MiniaturePlinth.create(self,f.id)
 	_ring = MeshInstance3D.new()
 	var torus := TorusMesh.new()
 	torus.inner_radius = 0.55
@@ -74,7 +78,10 @@ func setup(f: Figure, _side_name: String) -> void:
 
 func refresh(f: Figure) -> void:
 	var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
-	_base.material_override = BoardView._mat(color.darkened(0.24), 0.6)
+	_base.material_override = BoardView._mat(color.darkened(0.12), 0.62)
+	_profile=MiniatureMotion.profile(f)
+	_weapon=f.melee.id if f.melee!=null else ""
+	_ranged=f.ranged.id if f.ranged!=null else ""
 	var phantom := IllusionRules.phantom(f)
 	var transparent := f.spell_effects.has("invisibility") or phantom
 	var key := "%d:%s:%s:%s:%s" % [f.side, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", transparent,SchoolArt.of_figure(f)]
@@ -139,45 +146,34 @@ func end_move() -> void:
 		_model.position.y = _model_rest_y
 		_model.rotation.x = 0.0
 		_model.rotation.z = 0.0
-		MiniaturePose.arms(_model, 0.0, 0.0)
+		MiniatureMotion.reset(_model)
 
 
 func _process(delta: float) -> void:
 	if not _moving or _model == null:
 		return
-	_stride += delta * 19.0
-	_model.position.y = _model_rest_y + absf(sin(_stride)) * 0.085
-	_model.rotation.z = sin(_stride) * 0.035
-	_model.rotation.x = -0.07
-	MiniaturePose.arms(_model, sin(_stride) * 0.22, -sin(_stride) * 0.22)
+	_stride += delta * MiniatureMotion.frequency(_profile)
+	MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y)
 
 
 func attack_pose(amount: float) -> void:
-	if _model == null:
-		return
-	_model.rotation.x = -0.14 * amount
-	MiniaturePose.arms(_model, -0.95 * amount, 0.28 * amount)
+	if _model != null:
+		MiniatureMotion.action(_model,_profile,"attack",amount,_model_rest_y,_weapon)
 
 
 func cast_pose(amount: float) -> void:
-	if _model == null:
-		return
-	_model.position.y = _model_rest_y + amount*0.075
-	_model.rotation.x = -0.08*amount
-	MiniaturePose.arms(_model,-0.68*amount,-0.92*amount)
+	if _model != null:
+		MiniatureMotion.action(_model,_profile,"cast",amount,_model_rest_y,_weapon)
 
 
 func shot_pose(amount: float) -> void:
-	if _model == null:
-		return
-	_model.rotation.x = -0.06 * amount
-	MiniaturePose.arms(_model, -0.18 * amount, 0.55 * amount)
+	if _model != null:
+		MiniatureMotion.action(_model,_profile,"shot",amount,_model_rest_y,_ranged)
 
 
 func recoil_pose(amount: float) -> void:
 	if _model != null:
-		_model.rotation.x = 0.20 * amount
-		MiniaturePose.arms(_model, 0.20 * amount, 0.40 * amount)
+		MiniatureMotion.action(_model,_profile,"recoil",amount,_model_rest_y,_weapon)
 
 
 func set_active(on: bool) -> void:

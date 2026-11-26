@@ -15,7 +15,7 @@ static func metal(node: MeshInstance3D) -> void:
 
 static func sword(root: Node3D, length: float, broad: bool) -> void:
 	var width := 0.13 if broad else 0.095
-	var x := 0.39
+	var x := 0.37
 	var bottom := 0.83
 	var blade := CylinderMesh.new()
 	blade.top_radius = width * 0.46

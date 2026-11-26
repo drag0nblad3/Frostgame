@@ -55,7 +55,9 @@ static func genie(root: Node3D) -> void:
 		wrap.rotation.z=0.15
 	WeaponSculpt.metal(MiniatureFactory.sphere(root,Vector3(0,1.50,-0.19),Vector3(0.12,0.14,0.06),GOLD))
 	CreatureSculpt.eye(root,Vector3(0,1.50,-0.23),Color("facd7c"))
-	WeaponSculpt.metal(MiniatureFactory.cylinder(root,Vector3(0,0.80,0),0.26,0.25,0.10,GOLD)).scale.z=0.76
+	var belt := MiniatureFactory.cylinder(root,Vector3(0,0.80,0),0.26,0.25,0.10,GOLD)
+	belt.scale.z=0.76
+	WeaponSculpt.metal(belt)
 
 
 static func _vortex(root: Node3D,color: Color,width: float,height: float,twist: float) -> void:

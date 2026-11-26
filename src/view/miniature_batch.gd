@@ -4,12 +4,13 @@ extends RefCounted
 ## Materials remain unique per model, so invisibility does not affect other figures.
 
 
-static func bake(root: Node3D) -> void:
+static func bake(root: Node3D,painted: bool=false) -> void:
+	painted=painted or root.has_meta("painted_miniature")
 	var groups := {}
 	for child in root.get_children():
 		if not child is MeshInstance3D:
 			if child is Node3D:
-				bake(child)
+				bake(child,painted)
 			continue
 		var mi: MeshInstance3D = child
 		var mat := mi.material_override as StandardMaterial3D
@@ -24,7 +25,7 @@ static func bake(root: Node3D) -> void:
 			groups[key] = {"mat": copy, "vertices": PackedVector3Array(), "normals": PackedVector3Array(), "colors": PackedColorArray(), "indices": PackedInt32Array()}
 		var group: Dictionary = groups[key]
 		for i in mi.mesh.get_surface_count():
-			_append(group, mi.mesh.surface_get_arrays(i), mi.transform, mat.albedo_color)
+			_append(group, mi.mesh.surface_get_arrays(i), mi.transform, mat.albedo_color,painted and not mat.emission_enabled)
 		root.remove_child(mi)
 		mi.free()
 	for group: Dictionary in groups.values():
@@ -44,7 +45,7 @@ static func bake(root: Node3D) -> void:
 		root.add_child(node)
 
 
-static func _append(group: Dictionary, arrays: Array, at: Transform3D, color: Color) -> void:
+static func _append(group: Dictionary, arrays: Array, at: Transform3D, color: Color,painted: bool=false) -> void:
 	var vertices: PackedVector3Array = group["vertices"]
 	var normals: PackedVector3Array = group["normals"]
 	var colors: PackedColorArray = group["colors"]
@@ -55,8 +56,11 @@ static func _append(group: Dictionary, arrays: Array, at: Transform3D, color: Co
 	var normal_basis := at.basis.inverse().transposed()
 	for i in source.size():
 		vertices.append(at * source[i])
-		normals.append((normal_basis * source_normals[i]).normalized())
-		colors.append(color)
+		var normal := (normal_basis * source_normals[i]).normalized()
+		normals.append(normal)
+		# Gentle hand-painted edge lighting and recess tone; no texture lookups.
+		var tone := clampf(normal.y,-1.0,1.0)
+		colors.append((color.lightened(0.07*tone) if tone>0 else color.darkened(-0.06*tone)) if painted else color)
 	if arrays[Mesh.ARRAY_INDEX] == null or arrays[Mesh.ARRAY_INDEX].is_empty():
 		for i in source.size():
 			indices.append(offset + i)

@@ -32,9 +32,12 @@ static func create(root: Node3D,f: Figure,school: String,faction: Color) -> void
 	var livery := WizardLivery.color(faction)
 	var profile := posmod(index,4)
 	for x: float in [-0.13,0.13]:
+		var leg := MiniaturePose.leg(root,1 if x>0 else 0,Vector3(x,0.60,0))
+		var first := root.get_child_count()
 		CreatureSculpt.limb(root,Vector3(x,0.60,0),Vector3(x*1.2,0.19,0.035),0.105,coat.darkened(0.20),0.9)
 		MiniatureFactory.sphere(root,Vector3(x*1.2,0.12,-0.06),Vector3(0.21,0.21,0.34),LEATHER)
 		MiniatureFactory.cylinder(root,Vector3(x*1.2,0.26,0.02),0.11,0.10,0.18,LEATHER)
+		MiniaturePose.attach(root,leg,first)
 	if long_robe:
 		WizardTailoring.skirt(root,coat,lining,0.15,0.36,profile,false)
 	else:

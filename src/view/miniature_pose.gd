@@ -29,3 +29,18 @@ static func arms(root: Node3D, right: float, left: float) -> void:
 		r.rotation.x = right
 	if l != null:
 		l.rotation.x = left
+
+
+static func leg(root: Node3D,index: int,at: Vector3) -> Node3D:
+	var pivot := Node3D.new()
+	pivot.name="Leg%d" % index
+	pivot.position=at
+	root.add_child(pivot)
+	return pivot
+
+
+static func legs(root: Node3D,angles: Array[float]) -> void:
+	for i in angles.size():
+		var pivot := root.get_node_or_null("Leg%d" % i) as Node3D
+		if pivot!=null:
+			pivot.rotation.x=angles[i]

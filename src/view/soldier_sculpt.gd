@@ -29,6 +29,8 @@ static func create(root: Node3D,f: Figure,faction: Color) -> void:
 		var hip := Vector3(side*0.13,0.62,0)
 		var knee := Vector3(side*0.16,0.37,-0.045 if side>0 else 0.04)
 		var foot := Vector3(side*0.17,0.11,-0.09 if side>0 else 0.04)
+		var leg := MiniaturePose.leg(root,1 if side>0 else 0,hip)
+		var leg_first := root.get_child_count()
 		CreatureSculpt.limb(root,hip,knee,0.115,coat.darkened(0.18),0.92)
 		CreatureSculpt.limb(root,knee,foot,0.102,LEATHER,0.88)
 		MiniatureFactory.sphere(root,foot+Vector3(0,-0.015,-0.06),Vector3(0.22,0.19,0.34),LEATHER.darkened(0.12))
@@ -36,6 +38,7 @@ static func create(root: Node3D,f: Figure,faction: Color) -> void:
 		if plate:
 			WeaponSculpt.metal(MiniatureFactory.sphere(root,knee+Vector3(0,0,-0.075),Vector3(0.18,0.19,0.12),STEEL))
 			WeaponSculpt.metal(MiniatureFactory.box(root,foot+Vector3(0,0.14,-0.085),Vector3(0.17,0.21,0.065),STEEL.darkened(0.1)))
+		MiniaturePose.attach(root,leg,leg_first)
 		var pivot := MiniaturePose.arm(root,side>0)
 		var first := root.get_child_count()
 		var shoulder := Vector3(side*0.26,1.12,0)

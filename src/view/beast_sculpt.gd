@@ -32,12 +32,16 @@ static func create(root: Node3D,f: Figure,faction: Color) -> void:
 			var hip := Vector3(side*width*0.73,height-0.07,z)*bulk
 			var knee := Vector3(side*width*0.9,0.25,z+(0.11 if rear else -0.055))*bulk
 			var foot := Vector3(side*width*1.0,0.07,z+(-0.045 if rear else -0.095))*bulk
+			var index := (2 if side>0 else 0)+(1 if rear else 0)
+			var pivot := MiniaturePose.leg(root,index,hip)
+			var first := root.get_child_count()
 			CreatureSculpt.limb(root,hip,knee,(0.15 if bear else 0.10)*bulk,fur,0.73)
 			CreatureSculpt.limb(root,knee,foot,(0.11 if bear else 0.067)*bulk,fur.darkened(0.16),0.84)
 			MiniatureFactory.sphere(root,foot+Vector3(0,0,-0.04)*bulk,Vector3(0.24 if bear else 0.15,0.13,0.23)*bulk,DARK if boar else fur.darkened(0.22))
 			if not boar:
 				for i in 3:
 					CreatureSculpt.limb(root,foot+Vector3((i-1)*0.04,0,-0.12)*bulk,foot+Vector3((i-1)*0.04,-0.01,-0.16)*bulk,0.013*bulk,IVORY,0.02)
+			MiniaturePose.attach(root,pivot,first)
 	var head := Vector3(0,height+(0.10 if bear or dog else 0.045),-0.49)*bulk
 	var head_size := Vector3(0.46,0.39,0.43) if bear else (Vector3(0.35,0.32,0.34) if cat else Vector3(0.30,0.30,0.36))
 	MiniatureFactory.sphere(root,head,head_size*bulk,fur)
