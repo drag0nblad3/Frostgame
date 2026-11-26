@@ -27,7 +27,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["run_for_it","Run 3″"],["run_talisman","Run 6″ (Talisman)"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["run_for_it","Run 3″"],["run_talisman","Run 6″ (Talisman)"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["gutter_skip","Skip free flail attack"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -90,6 +90,11 @@ func refresh() -> void:
 		if not c.resolve_push(false):
 			c.stay_in_combat()
 		scene.call_deferred("refresh")
+		return
+	if s.pending_gutter>=0 and human():
+		mode="gutter_fight"
+		_show("gutter_skip",true)
+		hint.text="Gutter Flail: tap an enemy for a free attack or skip."
 		return
 	if not human():
 		_show("rival",true)
@@ -256,6 +261,9 @@ func command(key: String) -> void:
 			c.resolve_push(key=="push_self")
 		"push_self_5","push_self_15","push_self_20","push_self_25","push_self_30":
 			c.resolve_push(true,float(key.trim_prefix("push_self_"))/10.0)
+		"gutter_skip":
+			GearActions.gutter_skip(c)
+			mode="move"
 		"stay":
 			c.stay_in_combat()
 		"end":
@@ -271,7 +279,7 @@ func tap_figure(screen: Vector2) -> bool:
 	if not human() or not scene.player.idle() or not c.state.pending_cast.is_empty() or c.state.push_winner>=0:
 		return false
 	var f := c.state.active()
-	if f!=null and mode not in ["fight","shoot","leap"]:
+	if f!=null and mode not in ["fight","shoot","leap","gutter_fight"]:
 		return false
 	var chosen: Figure = null
 	var distance := 38.0
@@ -283,6 +291,8 @@ func tap_figure(screen: Vector2) -> bool:
 			continue
 		if f!=null:
 			if mode=="leap" and not LayeredLeap.eligible(c,t):
+				continue
+			if mode=="gutter_fight" and not GearActions.gutter_targets(c).has(t):
 				continue
 			if mode=="fight" and not c.can_fight(t.id):
 				continue
@@ -301,6 +311,9 @@ func tap_figure(screen: Vector2) -> bool:
 		c.activate(chosen.id)
 		mode="move"
 		scene.floor_choice.select(scene.layout.index_of(chosen.surface_id))
+	elif mode=="gutter_fight":
+		GearActions.gutter_fight(c,chosen.id)
+		mode="move"
 	elif mode=="fight":
 		c.fight(chosen.id)
 	elif mode=="leap":

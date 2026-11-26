@@ -172,3 +172,7 @@ Adds the missing core first-action run: three inches regardless of movement pena
 ## Elemental absorption
 
 Elemental damage is routed through a shared reducer for elemental shots, wall contact, scenario portals, reality attacks, creature contact and elemental weapon damage. The amulet removes one point, or may be armed/disarmed during activation to risk absorbing the next elemental hit (1–16 succeeds; 17+ destroys it and adds three damage). Pre-arming avoids interrupting synchronous multi-target damage; exact after-roll reaction timing remains pending. AI risks it against large lethal hits.
+
+## Gutter Flail
+
+A legal ordinary or layered movement into new melee contact offers an immediate optional free fight with the equipped flail. It does not spend an action, uses normal combat and displacement handling, and is checkpointed. Rival AI automatically takes a legal free attack. Existing contact at the beginning of the move does not trigger it; unresolved layered reactions and special movement modes remain excluded.

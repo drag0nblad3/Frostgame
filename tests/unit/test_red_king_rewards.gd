@@ -277,3 +277,19 @@ func test_elemental_amulet_passive_and_overload() -> void:
 	f.used_gear[RedKingElemental.ARMED]=true
 	check_eq(RedKingElemental.reduce(c,f,5),8)
 	check(not ActiveGear.has(f,RedKingElemental.AMULET))
+
+
+func test_gutter_flail_free_attack_after_charge() -> void:
+	var f := fig("infantryman",0,Vector2(10,10))
+	var t := fig("thug",1,Vector2(14,10))
+	var c := make_game(make_board(),[f,t],LoadedDice.new([8,1]))
+	c.state.active_id=f.id
+	c.state.reaction_side=f.side
+	f.actions_left=2
+	f.items.append({"gear":GearActions.GUTTER,"gear_info":RedKingRewards.catalog()[GearActions.GUTTER]})
+	check(c.move_to(Vector2i(26,20)))
+	check_eq(c.state.pending_gutter,f.id)
+	check(GearActions.gutter_fight(c,t.id))
+	check_eq(f.actions_left,1)
+	check(not f.acted)
+	check_eq(c.state.pending_gutter,-1)

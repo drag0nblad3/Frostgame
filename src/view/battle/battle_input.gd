@@ -93,6 +93,11 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	if c.state.pending_gutter>=0:
+		available.assign(["gutter_skip"])
+		mode="gutter_fight"
+		preview()
+		return
 	if RealityCracks.can_exit_center(c):
 		available.append("reality_exit")
 	if RedKingRingworld.can_switch(c,f):
@@ -379,6 +384,10 @@ func preview() -> void:
 					targets.append(t)
 			radius = 0.65
 			hint = "Attack the skeletal hand holding this figure."
+		"gutter_fight":
+			targets.assign(GearActions.gutter_targets(c))
+			radius=0.65
+			hint="Free Gutter Flail attack: select an enemy or skip."
 		"fight", "shoot":
 			for t in c.state.figures:
 				if (c.can_fight(t.id) if mode == "fight" else c.can_shoot(t.id)):
@@ -635,6 +644,8 @@ func action(key: String) -> bool:
 			return false
 		"cast_confirm":
 			return c.finish_cast(empower)
+		"gutter_skip":
+			return GearActions.gutter_skip(c)
 		"stay":
 			return c.stay_in_combat()
 		"push_self":
@@ -673,7 +684,7 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
@@ -712,6 +723,7 @@ func tap(screen: Vector2) -> bool:
 				return false
 			"select": return c.activate(id)
 			"fight_hand": return c.fight_hand(id)
+			"gutter_fight": return GearActions.gutter_fight(c,id)
 			"fight": return c.fight(id)
 			"shoot": return c.shoot(id)
 	var hit: Variant = _surface_at(screen)

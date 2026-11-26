@@ -293,7 +293,7 @@
       "buy": 300,
       "sell": 100,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_hypnotic_puppet": {

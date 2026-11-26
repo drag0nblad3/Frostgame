@@ -13,6 +13,7 @@ var turn := 0
 var phase := Phase.WIZARD
 var early := EarlyPhase.new()
 var group := GroupActivation.new()
+var pending_gutter := -1
 var push_winner := -1
 var push_loser := -1
 var push_tie := false

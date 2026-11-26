@@ -153,3 +153,52 @@ static func use_cape(c: GameController,f: Figure) -> bool:
 		return false
 	c.emit("gear_used",{"id":f.id,"gear":CAPE})
 	return true
+
+
+const GUTTER := "gear_rk_gutter_flail"
+
+
+static func gutter_bearer(f: Figure) -> bool:
+	return f!=null and f.in_play() and f.melee!=null and f.melee.id=="two_handed" and not f.destroyed_weapons.has("two_handed") and not MagicEquipment.suppressed(f) and ActiveGear.has(f,GUTTER) and not f.spell_effects.has("blinding_light")
+
+
+static func gutter_targets(c: GameController) -> Array[Figure]:
+	var out: Array[Figure]=[]
+	var f := c.state.figure(c.state.pending_gutter)
+	if not gutter_bearer(f) or c.state.active()!=f:
+		return out
+	for t in Contact.enemies_of(c.state.figures,f):
+		if not (RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(t)):
+			out.append(t)
+	return out
+
+
+static func gutter_after_move(c: GameController,f: Figure,engaged: bool) -> void:
+	if engaged or not gutter_bearer(f):
+		return
+	c.state.pending_gutter=f.id
+	var targets := gutter_targets(c)
+	if targets.is_empty():
+		c.state.pending_gutter=-1
+	elif f.side!=c.state.reaction_side:
+		gutter_fight(c,targets[0].id)
+	else:
+		c.emit("gear_used",{"id":f.id,"gear":GUTTER,"offer":true})
+
+
+static func gutter_fight(c: GameController,target: int) -> bool:
+	var t := c.state.figure(target)
+	if not gutter_targets(c).has(t) or c.awaiting_reaction() or not c.state.pending_cast.is_empty():
+		return false
+	var f := c.state.active()
+	c.state.pending_gutter=-1
+	c.emit("gear_used",{"id":f.id,"gear":GUTTER,"target":target})
+	c._fate_combat.start(f,t,"fight")
+	return true
+
+
+static func gutter_skip(c: GameController) -> bool:
+	if c.state.pending_gutter<0:
+		return false
+	c.state.pending_gutter=-1
+	return true

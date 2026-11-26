@@ -97,7 +97,7 @@ func activate(id: int) -> bool:
 
 func can_move() -> bool:
 	var f := state.active()
-	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and (not RedKingMind.is_wizard(state,f) or f.moves_taken==0) and MoveRules.can_move(f, state.figures)
+	return state.pending_gutter<0 and not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and (not RedKingMind.is_wizard(state,f) or f.moves_taken==0) and MoveRules.can_move(f, state.figures)
 
 
 ## Where the active figure could go with its next movement action.
@@ -210,6 +210,7 @@ func _move_authorized(f: Figure, path: PackedVector2Array, cost: float, ignored:
 
 
 func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Dictionary) -> bool:
+	var engaged := Contact.in_combat(state.figures,f)
 	if not intercept.is_empty():
 		path.resize(int(intercept["index"]) + 1)
 	f.spell_effects.erase("petrify")
@@ -219,6 +220,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 		if f.in_play():
 			CreatureSenses.reveal_contacts(self,f)
 			_magic.illusions.after_move(f)
+			GearActions.gutter_after_move(self,f,engaged)
 		return true
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
@@ -227,6 +229,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 	RedKingSinkhole.record_xp(self,f)
 	CreatureSenses.reveal_contacts(self,f)
 	_magic.illusions.after_move(f)
+	GearActions.gutter_after_move(self,f,engaged)
 	return true
 
 
@@ -235,7 +238,7 @@ func can_act(for_fight: bool = false) -> bool:
 	var f := state.active()
 	if not for_fight and FuryRules.target(state, f) != null:
 		return false
-	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (f.non_moves<2 if RedKingMind.is_wizard(state,f) else (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2)))) and not state.group.movement_pass()
+	return state.pending_gutter<0 and not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (f.non_moves<2 if RedKingMind.is_wizard(state,f) else (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2)))) and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:
@@ -375,7 +378,7 @@ func reload() -> bool:
 
 func can_end_activation() -> bool:
 	var f := state.active()
-	if f == null or awaiting_reaction() or not state.pending_cast.is_empty():
+	if f == null or state.pending_gutter>=0 or awaiting_reaction() or not state.pending_cast.is_empty():
 		return false
 	if FuryRules.target(state, f) == null or f.actions_left <= 0:
 		return true

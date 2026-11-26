@@ -43,6 +43,7 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 	if node==reachable.start or not reachable.can_reach(node):
 		return false
 	var f := c.state.active()
+	var engaged := Contact.in_combat(c.state.figures,f)
 	if run and boost and not ActiveGear.spend(f,RunForIt.TALISMAN):
 		return false
 	if cape and not GearActions.use_cape(c,f):
@@ -75,4 +76,6 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 		f.actions_left=0
 		c.emit("run_for_it",{"id":f.id,"boost":boost})
 		c.end_activation()
+	else:
+		GearActions.gutter_after_move(c,f,engaged)
 	return true

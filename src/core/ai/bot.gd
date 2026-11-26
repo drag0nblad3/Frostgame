@@ -77,7 +77,7 @@ static func _fight_if_engaged(c: GameController, f: Figure) -> bool:
 	var t := BotTargets.weakest_contact(c.state, f)
 	if t == null:
 		return false
-	if c.can_act():
+	if c.can_act() and c.state.push_winner<0:
 		c.fight(t.id)
 	return true
 
