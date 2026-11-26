@@ -128,3 +128,7 @@ Bottle Imp adds a contextual equipment action and legal placement preview; it co
 ## Enchanted crafting supplies
 
 Wax and vials now award six charges, trade individually at the prose-rule prices (30gc/10gc), and are vault supplies rather than carried equipment. Ritual UI lets players opt in before casting; failure spends no material. Waxed scrolls resolve at 15. Enchanted vials roll once upon use in battle or campaign: 19–20 retains an ordinary potion. Enhanced copies are selected first when otherwise identical consumables coexist. Settlement persists the remaining enchanted count, including a retained potion whose enchantment was spent. Sealed vault supplies are inaccessible during Ragged Warbands.
+
+## Dazzling Cape
+
+One optional move out of combat per battle, with original melee opponents excluded from forced-combat interception and all other normal terrain, action, movement and reaction checks intact. Available from Equipment on ordinary boards and via a dedicated escape control on the supported layered movement path. Layered movement retains its existing restrictions on unresolved scenario and reaction systems; rivals do not yet deliberately spend the cape.

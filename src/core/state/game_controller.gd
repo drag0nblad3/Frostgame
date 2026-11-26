@@ -151,11 +151,11 @@ func reach() -> MoveReach:
 	return FuryRules.restrict(state, f, r)
 
 
-func move_to(node: Vector2i) -> bool:
-	if not can_move():
+func move_to(node: Vector2i,cape: bool=false) -> bool:
+	if not (GearActions.cape_ready(self) if cape else can_move()):
 		return false
 	var r := reach()
-	if not r.can_reach(node):
+	if not r.can_reach(node) or (cape and float(r.cost[node])<=0.001):
 		return false
 	var f := state.active()
 	var path := r.path_to(node)
@@ -181,21 +181,25 @@ func move_to(node: Vector2i) -> bool:
 		emit("move", {"id": f.id, "path": path, "cost": float(r.cost[node])})
 		ScenarioSites.end_move(self, f)
 		return true
-	return _commit_move(f, path, float(r.cost[node]), [])
+	var ignored: Array[int]=[]
+	if cape:
+		for enemy in Contact.enemies_of(state.figures,f):
+			ignored.append(enemy.id)
+	return _commit_move(f,path,float(r.cost[node]),ignored,cape)
 
 
-func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int]) -> bool:
+func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int],cape: bool=false) -> bool:
 	var targets: Array[Figure] = []
 	var at := path[path.size() - 1]
 	for t in state.figures:
 		if t.in_play() and t.ring_side==f.ring_side and t.side != f.side and absf(t.elevation - state.board.height_at(at)) < 0.5 and Contact.touching(t.pos, at):
 			targets.append(t)
-	_magic.beauty.authorize(f, targets, _move_authorized.bind(f, path, cost, ignored))
+	_magic.beauty.authorize(f, targets, _move_authorized.bind(f,path,cost,ignored,cape))
 	return true
 
 
-func _move_authorized(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int]) -> void:
-	if not f.in_play():
+func _move_authorized(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int],cape: bool=false) -> void:
+	if not f.in_play() or (cape and not GearActions.use_cape(self,f)):
 		return
 	var intercept := _displacement.intercept(f, path, ignored) if state.forced_combat else {}
 	if not intercept.is_empty() and int(intercept["guard"].side) == state.reaction_side:

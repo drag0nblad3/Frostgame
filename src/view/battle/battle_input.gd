@@ -104,6 +104,8 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if GearActions.cape_ready(c) and c.state.board.floor_layout.is_empty():
+		available.append(GearActions.CAPE)
 	if not GearActions.bottle_points(c).is_empty():
 		available.append("gear_rk_bottle_imp")
 	for t in c.state.figures:
@@ -220,6 +222,13 @@ func preview() -> void:
 			hint = "Transfer %d Health to %s (maximum %d)." % [transfer_amount, t.label(), GearActions.transfer_max(c, t)]
 			if transfer_amount == f.health:
 				hint += " Warning: caster will be knocked out."
+		"gear_cape_move":
+			reach=GearActions.cape_reach(c)
+			for n: Vector2i in reach.nodes():
+				if float(reach.cost[n])>0.001:
+					nodes.append(n)
+					points.append(MoveGrid.to_pos(n))
+			hint="Choose a legal escape move. The cape is spent only when the move is authorized."
 		"gear_bottle_imp":
 			points.assign(GearActions.bottle_points(c))
 			hint="Place the released uncontrolled imp within 1 inch."
@@ -432,6 +441,11 @@ func action(key: String) -> bool:
 		return false
 	if key == "gear_ring_transference":
 		mode = "gear_transfer_target"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key==GearActions.CAPE:
+		mode="gear_cape_move"
 		available.assign(["potion_cancel"])
 		preview()
 		return false
@@ -693,6 +707,9 @@ func tap(screen: Vector2) -> bool:
 		for p in drops:
 			if at.distance_to(p) <= 0.3:
 				return c._loot.drop(p, c.state.active().shrunk_treasure_id if mode == "drop_shrunk" else -1)
+	if mode=="gear_cape_move":
+		var n := MovePlanner.node_at(at)
+		return nodes.has(n) and c.move_to(n,true)
 	if mode in ["move", "exit"]:
 		var n := MovePlanner.node_at(at)
 		if nodes.has(n):

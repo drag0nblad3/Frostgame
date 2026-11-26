@@ -134,3 +134,22 @@ static func bottle_imp(c: GameController,at: Vector2) -> bool:
 	c._encounters._spawn_at("imp",at,-1,f.ring_side)
 	c.emit("gear_used",{"id":f.id,"gear":"gear_rk_bottle_imp"})
 	return true
+
+
+const CAPE := "gear_rk_dazzling_cape"
+
+
+static func cape_ready(c: GameController) -> bool:
+	var f := c.state.active()
+	return f!=null and f.in_play() and f.actions_left>0 and not c.awaiting_reaction() and c.state.pending_cast.is_empty() and c.state.push_winner<0 and (not RedKingMind.is_wizard(c.state,f) or f.moves_taken==0) and not f.spell_effects.has("bones_of_the_earth") and not f.spell_effects.has("plane_walk") and not f.spell_effects.has("potion_burrowing") and FuryRules.target(c.state,f)==null and Contact.in_combat(c.state.figures,f) and ActiveGear.ready(f,CAPE)
+
+
+static func cape_reach(c: GameController) -> MoveReach:
+	return c.reach() if cape_ready(c) else MoveReach.new()
+
+
+static func use_cape(c: GameController,f: Figure) -> bool:
+	if not ActiveGear.spend(f,CAPE):
+		return false
+	c.emit("gear_used",{"id":f.id,"gear":CAPE})
+	return true

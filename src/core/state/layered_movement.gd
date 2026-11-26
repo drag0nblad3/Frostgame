@@ -4,10 +4,10 @@ extends RefCounted
 ## Until reactions and magic are migrated, reject those cases rather than silently skip them.
 
 
-static func eligible(c: GameController) -> bool:
+static func eligible(c: GameController,cape: bool=false) -> bool:
 	var s := c.state
 	var f := s.active()
-	if s.board.floor_layout.is_empty() or not c.can_move() or f.surface_id.is_empty():
+	if s.board.floor_layout.is_empty() or not (GearActions.cape_ready(c) if cape else c.can_move()) or f.surface_id.is_empty():
 		return false
 	if s.forced_combat or (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or FuryRules.target(s,f)!=null:
 		return false
@@ -22,8 +22,8 @@ static func eligible(c: GameController) -> bool:
 	return true
 
 
-static func reach(c: GameController) -> LayeredReach:
-	if not eligible(c):
+static func reach(c: GameController,cape: bool=false) -> LayeredReach:
+	if not eligible(c,cape):
 		return LayeredReach.new()
 	var s := c.state
 	var f := s.active()
@@ -33,14 +33,16 @@ static func reach(c: GameController) -> LayeredReach:
 	var start := layout.node(f.surface_id,f.pos)
 	if not layout.standable(start) or not layout.point(start).is_equal_approx(f.pos) or not is_equal_approx(layout.height(start),f.elevation):
 		return LayeredReach.new()
-	return LayeredReach.search(LayeredGrid.new(layout,f,s.figures),start,MoveRules.allowance(f))
+	return LayeredReach.search(LayeredGrid.new(layout,f,s.figures),start,MoveRules.allowance(f),cape)
 
 
-static func move(c: GameController,node: Vector3i) -> bool:
-	var reachable := reach(c)
+static func move(c: GameController,node: Vector3i,cape: bool=false) -> bool:
+	var reachable := reach(c,cape)
 	if node==reachable.start or not reachable.can_reach(node):
 		return false
 	var f := c.state.active()
+	if cape and not GearActions.use_cape(c,f):
+		return false
 	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
 	var path := PackedVector3Array()
 	var surfaces: Array[String] = []
