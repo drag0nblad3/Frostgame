@@ -3,6 +3,14 @@ extends Node3D
 
 const SCENARIO := "treasure_skirmish"
 var _scenario_id := SCENARIO
+var _active_scenario_id := SCENARIO
+var _briefing: ScenarioDialog
+var _inspector: FigureInspector
+var _guide: AcceptDialog
+var _training := -1
+var _training_complete := false
+var _training_failed := false
+var _training_prompt: AcceptDialog
 ## Pause between bot activations in Auto mode (seconds).
 const AUTO_DELAY := 0.35
 
@@ -14,6 +22,7 @@ var watch_mode := false
 var player_side := 0
 var player_input: BattleInput
 var _markers: BattleMarkers
+var _sites: ScenarioMarkers
 var _dirty := true
 var _roster: Dictionary = {}
 var _setup: WarbandSetup
@@ -23,14 +32,18 @@ var _campaign_dialog: CampaignPanel
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
+var _atmosphere: BattleAtmosphere
 var _rig: CameraRig
 var _wait := 0.0
+var _launch_intent := ""
+var _title_prompt: AcceptDialog
 
 
 func _ready() -> void:
 	_figures = FigureDb.load_files()
 	_terrain = TerrainDb.load_file()
-	_add_lighting()
+	_atmosphere = BattleAtmosphere.new()
+	add_child(_atmosphere)
 	_board_view = BoardView.new()
 	add_child(_board_view)
 	_rig = CameraRig.new()
@@ -43,22 +56,173 @@ func _ready() -> void:
 	hud.auto_toggled.connect(func(on: bool) -> void: auto_play = on)
 	hud.watch_toggled.connect(set_watch_mode)
 	hud.action_pressed.connect(_on_action)
-	hud.new_game_pressed.connect(func() -> void:
+	_briefing = ScenarioDialog.new()
+	add_child(_briefing)
+	_briefing.start_requested.connect(func() -> void:
 		_campaign_battle = false
 		new_game(0))
+	hud.new_game_pressed.connect(func() -> void: _open_briefing(true))
+	hud.briefing_pressed.connect(func() -> void: _open_briefing(false))
+	_inspector = FigureInspector.new()
+	add_child(_inspector)
+	hud.inspect_pressed.connect(_open_inspector)
+	hud.guide_pressed.connect(_open_guide)
+	hud.atmosphere_toggled.connect(func() -> void:
+		_atmosphere.set_effects(not _atmosphere.enabled)
+		hud.notify("Snow effects %s." % ("on" if _atmosphere.enabled else "off")))
+	hud.camera_requested.connect(_camera_preset)
+	hud.title_requested.connect(_confirm_title)
+	hud.training_requested.connect(_confirm_training)
+	hud.training_next.connect(_next_training)
+	hud.training_retry.connect(func() -> void:
+		if _training >= 0 and player.idle():
+			_start_training(_training))
+	hud.training_leave.connect(_leave_training)
 	hud.roster_pressed.connect(_open_roster)
 	hud.campaign_pressed.connect(_open_campaign)
 	hud.save_battle_pressed.connect(_save_battle)
 	hud.resume_battle_pressed.connect(_resume_battle)
-	hud.scenario_selected.connect(func(id: String) -> void: _scenario_id = id)
+	hud.scenario_selected.connect(func(id: String) -> void:
+		_scenario_id = id
+		hud.notify("Next battle: " + ScenarioBriefing.title(id)))
 	_campaign.load_save()
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
 	add_child(_markers)
+	_sites = ScenarioMarkers.new()
+	add_child(_sites)
+	new_game(0)
+	if get_tree().root.has_meta("frostgame_launch"):
+		_launch_intent = str(get_tree().root.get_meta("frostgame_launch"))
+		get_tree().root.remove_meta("frostgame_launch")
+
+
+func _open_launch_intent() -> void:
+	var intent := _launch_intent
+	_launch_intent = ""
+	match intent:
+		"resume": _resume_battle()
+		"warband": _open_roster()
+		"campaign": _open_campaign()
+		"training": _start_training(0)
+		"guide": _open_guide()
+		"skirmish": _open_briefing(true)
+
+
+func _confirm_title() -> void:
+	if not player.idle():
+		hud.notify("Finish the current animation before leaving.")
+		return
+	if _title_prompt == null:
+		_title_prompt = AcceptDialog.new()
+		_title_prompt.title = "Return to title?"
+		_title_prompt.dialog_text = "Unsaved battle progress will be lost. Your campaign and saved battle remain on disk."
+		_title_prompt.exclusive = true
+		_title_prompt.get_ok_button().text = "Return to title"
+		_title_prompt.add_cancel_button("Stay here")
+		_title_prompt.confirmed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/title.tscn"))
+		add_child(_title_prompt)
+	_title_prompt.popup_centered(Vector2i(500,220))
+
+
+func _confirm_training() -> void:
+	if _training_prompt == null:
+		_training_prompt = AcceptDialog.new()
+		_training_prompt.title = "Practice in the Training Yard"
+		_training_prompt.dialog_text = "Four short lessons teach movement, treasure, combat and magic. Training replaces the current battle, but never changes your campaign. Save your battle first if needed."
+		_training_prompt.exclusive = true
+		_training_prompt.get_ok_button().text = "Start training"
+		_training_prompt.confirmed.connect(func() -> void: _start_training(0))
+		add_child(_training_prompt)
+	_training_prompt.popup_centered(Vector2i(500, 240))
+
+
+func _start_training(index: int) -> void:
+	_training = index
+	_training_complete = false
+	_training_failed = false
+	_campaign_battle = false
+	watch_mode = false
+	_active_scenario_id = "training_yard"
+	var s := TrainingLesson.build(index, _figures, _terrain)
+	s.reaction_side = player_side
+	_rig.distance = 23.0
+	_attach_battle(GameController.new(s, Dice.new(1)), true)
+
+
+func _next_training() -> void:
+	if _training < 0 or not _training_complete or not player.idle():
+		return
+	if _training + 1 < TrainingLesson.NAMES.size():
+		_start_training(_training + 1)
+	else:
+		_leave_training()
+		hud.notify("Training complete. You are ready for a skirmish!")
+
+
+func _leave_training() -> void:
+	if _training < 0 or not player.idle():
+		return
+	_scenario_id = SCENARIO
+	hud.select_scenario(SCENARIO)
 	new_game(0)
 
 
+func _camera_preset(mode: int) -> void:
+	if controller == null:
+		return
+	var s := controller.state
+	if mode == 2:
+		var f := s.active()
+		if f != null:
+			_rig.focus_figure(TableSpace.to_world(f.pos, f.elevation + 0.7))
+			return
+	_rig.frame_board(s.board.size, mode == 1)
+
+
+func _open_inspector() -> void:
+	if controller == null or not player.idle():
+		return
+	_inspector.open(controller.state, controller.state.active_id)
+
+
+func _open_guide() -> void:
+	if _guide == null:
+		_guide = AcceptDialog.new()
+		_guide.title = "Field guide"
+		_guide.exclusive = true
+		_guide.theme = BattleTheme.create()
+		var body := RichTextLabel.new()
+		body.text = FieldGuide.OVERVIEW
+		body.fit_content = false
+		body.scroll_active = true
+		body.add_theme_font_size_override("normal_font_size", 20)
+		var viewport := get_viewport().get_visible_rect().size
+		body.custom_minimum_size = Vector2(minf(600, viewport.x * 0.78), minf(380, viewport.y * 0.60))
+		_guide.add_child(body)
+		add_child(_guide)
+	_guide.popup_centered()
+
+
+func _info_open() -> bool:
+	return (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
+
+
+func _open_briefing(start: bool) -> void:
+	if _training >= 0 and not start:
+		hud.notify(TrainingLesson.HINTS[_training])
+		return
+	_briefing.show_briefing(_scenario_id if start else _active_scenario_id, controller.state if controller != null else null, start)
+
+
 func new_game(seed_value: int) -> void:
+	if _training >= 0:
+		_rig.distance = 34.0
+	_training = -1
+	_training_complete = false
+	_training_failed = false
+	hud.set_training(-1, false)
+	_active_scenario_id = _scenario_id
 	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
 	if _campaign_battle:
 		data["warbands"][0] = _campaign.deployment()
@@ -78,7 +242,11 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_wait = 0.0
 	controller = c
 	var state := c.state
+	_board_view.scenario_id = _active_scenario_id
 	_board_view.build(state.board)
+	_atmosphere.configure(state.board, _active_scenario_id)
+	_sites.reset()
+	_sites.update_sites(state)
 	_markers.board = state.board
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
 	player = EventPlayer.new()
@@ -88,6 +256,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 		var v := FigureView.new()
 		player.add_child(v)
 		v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
+		v.face_toward(TableSpace.to_world(state.board.size * 0.5, f.elevation))
 		player.views[f.id] = v
 		v.set_active(f.id == state.active_id)
 		if f.out_of_action:
@@ -97,6 +266,8 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player.build_treasures()
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
+	player.notice.connect(hud.notify)
+	player.roll_resolved.connect(hud.show_roll)
 	controller.event_emitted.connect(player.push)
 	controller.event_emitted.connect(_on_event)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
@@ -123,11 +294,21 @@ func step() -> void:
 
 
 func _process(delta: float) -> void:
-	if (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
+	if _info_open() or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
 		return
+	if not _launch_intent.is_empty():
+		_open_launch_intent()
+		return
+	if _training >= 0:
+		_training_complete = TrainingLesson.completed(_training, controller)
+		_training_failed = not _training_complete and (controller.state.over or not controller.state.figure(1).in_play() or controller.state.figure(1).activated)
+		hud.set_training(_training, _training_complete, _training_failed)
 	if _dirty:
 		_refresh()
+	if _training >= 0 and (_training_complete or _training_failed):
+		_wait = 0.0
+		return
 	var s := controller.state
 	if s.over and _campaign_battle:
 		_campaign_battle = false
@@ -147,7 +328,7 @@ func _process(delta: float) -> void:
 
 
 func set_watch_mode(on: bool) -> void:
-	if controller.state.active() != null or controller.state.group.in_progress() or controller.awaiting_reaction() or not player.idle():
+	if _training >= 0 or controller.state.active() != null or controller.state.group.in_progress() or controller.awaiting_reaction() or not player.idle():
 		hud.set_watch(watch_mode, false, false)
 		return
 	watch_mode = on
@@ -158,7 +339,7 @@ func set_watch_mode(on: bool) -> void:
 
 
 func _human_turn() -> bool:
-	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
+	return not (_training >= 0 and (_training_complete or _training_failed)) and not _info_open() and (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
 
 
 func _on_event(event: GameEvent) -> void:
@@ -169,6 +350,7 @@ func _on_event(event: GameEvent) -> void:
 
 func _refresh() -> void:
 	_dirty = false
+	_sites.update_sites(controller.state)
 	_update_status()
 	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress() and not controller.awaiting_reaction(), true)
 	if _human_turn():
@@ -198,6 +380,8 @@ func _on_tap(at: Vector2) -> void:
 
 func _update_status() -> void:
 	var s := controller.state
+	hud.set_objective(("Training Yard" if _training >= 0 else ScenarioBriefing.title(_active_scenario_id)) + " | " + ScenarioBriefing.progress(s))
+	hud.set_training(_training, _training_complete, _training_failed)
 	var score := ""
 	for side in s.side_count():
 		score += "  |  %s: %d" % [s.side_names[side], s.secured_count(side)]
@@ -209,23 +393,6 @@ func _update_status() -> void:
 		hud.set_status("Turn %d — %s%s" % [s.turn, result, score])
 		return
 	hud.set_status("Turn %d · %s · %s%s" % [s.turn, Phase.name_of(s.phase), ("Creatures" if s.current_side() < 0 else s.side_names[s.current_side()]), score])
-
-
-func _add_lighting() -> void:
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-55, 35, 0)
-	sun.light_energy = 1.1
-	sun.shadow_enabled = true
-	add_child(sun)
-	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.1, 0.13, 0.18)
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.7, 0.78, 0.9)
-	e.ambient_light_energy = 0.35
-	env.environment = e
-	add_child(env)
 
 
 func _open_roster() -> void:
@@ -295,35 +462,45 @@ func _campaign_fingerprint() -> String:
 
 
 func _save_battle() -> void:
-	if controller == null or not player.idle() or not BattleSnapshot.can_save(controller):
-		hud.add_line("Finish the current roll or animation before saving.")
+	if _training >= 0:
+		hud.notify("Training does not replace your saved battle.")
 		return
-	var meta := {"scenario": _scenario_id, "campaign": _campaign_battle, "campaign_hash": _campaign_fingerprint() if _campaign_battle else "", "watch": watch_mode}
+	if controller == null or not player.idle() or not BattleSnapshot.can_save(controller):
+		hud.notify("Finish the current roll or animation before saving.")
+		return
+	var meta := {"scenario": _active_scenario_id, "campaign": _campaign_battle, "campaign_hash": _campaign_fingerprint() if _campaign_battle else "", "watch": watch_mode}
 	if BattleSnapshot.save(controller, meta):
-		hud.add_line("Battle saved.")
+		hud.notify("Battle saved.")
 	else:
-		hud.add_line("Could not save this battle.")
+		hud.notify("Could not save this battle.")
 
 
 func _resume_battle() -> void:
 	if controller != null and not player.idle():
-		hud.add_line("Finish the current animation before resuming.")
+		hud.notify("Finish the current animation before resuming.")
 		return
 	var data := BattleSnapshot.read()
 	if data.is_empty():
-		hud.add_line("No compatible saved battle.")
+		hud.notify("No compatible saved battle.")
 		return
 	var meta: Dictionary = data.get("meta", {})
 	if meta.get("campaign", false) and (meta.get("campaign_hash", "") == "" or meta["campaign_hash"] != _campaign_fingerprint()):
-		hud.add_line("Campaign changed since this checkpoint; cannot resume it.")
+		hud.notify("Campaign changed since this checkpoint; cannot resume it.")
 		return
 	var restored := BattleSnapshot.rebuild(data, _figures)
 	if restored == null:
-		hud.add_line("Could not restore the saved battle.")
+		hud.notify("Could not restore the saved battle.")
 		return
+	if _training >= 0:
+		_rig.distance = 34.0
+	_training = -1
+	_training_complete = false
+	_training_failed = false
+	hud.set_training(-1, false)
 	_scenario_id = str(meta.get("scenario", SCENARIO))
+	_active_scenario_id = _scenario_id
 	hud.select_scenario(_scenario_id)
 	_campaign_battle = bool(meta.get("campaign", false))
 	watch_mode = bool(meta.get("watch", false))
 	_attach_battle(restored, false)
-	hud.add_line("Battle resumed.")
+	hud.notify("Battle resumed.")

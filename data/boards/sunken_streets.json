@@ -1,0 +1,168 @@
+{
+  "id": "sunken_streets",
+  "name": "Sunken Streets",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "sunken_ground",
+      "rect": [
+        11,
+        12,
+        14,
+        12
+      ],
+      "level": -2
+    },
+    {
+      "kind": "stone_stairs",
+      "rect": [
+        15,
+        8,
+        6,
+        4
+      ],
+      "ramp": {
+        "start": 0,
+        "end": -2,
+        "axis": "y"
+      }
+    },
+    {
+      "kind": "stone_ramp",
+      "rect": [
+        15,
+        24,
+        6,
+        5
+      ],
+      "ramp": {
+        "start": -2,
+        "end": 0,
+        "axis": "y"
+      }
+    },
+    {
+      "kind": "raised_ground",
+      "rect": [
+        3,
+        15,
+        5,
+        9
+      ],
+      "level": 1.5
+    },
+    {
+      "kind": "stone_ramp",
+      "rect": [
+        8,
+        17,
+        3,
+        5
+      ],
+      "ramp": {
+        "start": 1.5,
+        "end": -2,
+        "axis": "x"
+      }
+    },
+    {
+      "kind": "raised_ground",
+      "rect": [
+        28,
+        15,
+        5,
+        9
+      ],
+      "level": 1.5
+    },
+    {
+      "kind": "stone_stairs",
+      "rect": [
+        25,
+        17,
+        3,
+        5
+      ],
+      "ramp": {
+        "start": -2,
+        "end": 1.5,
+        "axis": "x"
+      }
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        8,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        25,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        26,
+        7,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        27,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        10,
+        6,
+        4,
+        0.8
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        22,
+        29.5,
+        4,
+        0.8
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        7,
+        6,
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        26,
+        30,
+        2,
+        2
+      ]
+    }
+  ]
+}

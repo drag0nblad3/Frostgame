@@ -1,0 +1,57 @@
+class_name ScenarioColumns
+extends RefCounted
+## Guardian columns in the Complex Temple (p. 151).
+
+static func contact(board: Board, at: Vector2) -> TerrainPiece:
+	if board.id != "complex_temple" or board.height_at(at) >= 0.5:
+		return null
+	for p in board.pieces:
+		if p.kind.id != "temple_column":
+			continue
+		var nearest := Vector2(clampf(at.x, p.rect.position.x, p.rect.end.x), clampf(at.y, p.rect.position.y, p.rect.end.y))
+		if at.distance_to(nearest) <= Figure.BASE_RADIUS + 0.25:
+			return p
+	return null
+
+
+static func challenge(c: GameController, f: Figure) -> bool:
+	if not f.in_play() or f.side < 0 or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
+		return false
+	var s := c.state
+	var p := contact(s.board, f.pos)
+	if p == null:
+		return false
+	var token: TreasureToken = null
+	for t in s.treasures:
+		if t.frozen and t.pos.distance_to(p.rect.get_center()) < 0.01:
+			token = t
+			break
+	if token == null:
+		return false
+	var raw := c.dice.d20()
+	var defence := c.dice.d20()
+	var total := raw + mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + (1 if f.ranged == null and f.spell_effects.has("enchant_weapon") else 0), 10) + f.roll_penalty()
+	var win := total > defence
+	var lose := total < defence
+	if s.critical_hits:
+		if raw == 20 or defence == 20:
+			win = raw == 20 and defence != 20
+			lose = defence == 20 and raw != 20
+	var xp := 0
+	if not s.column_fighters.has(f.id):
+		s.column_fighters[f.id] = true
+		xp = 30 if f.def.role == "wizard" else (20 if f.def.role == "apprentice" else 0)
+	c.emit("column_fight", {"id": f.id, "side": f.side, "xp": xp, "treasure": token.id, "total": total, "column": defence, "won": win, "lost": lose})
+	if lose:
+		c._hurt(f, Damage.amount(defence, f.melee.enemy_damage_mod, f.effective_armour(), defence, s.critical_hits), f, true)
+	elif win:
+		s.board.pieces.erase(p)
+		s.board.invalidate_terrain()
+		token.frozen = false
+		c.emit("terrain_changed", {"spell": "temple_column", "created": false})
+		c.emit("column_opened", {"id": f.id, "treasure": token.id})
+		# Free collection is automatic for eligible winners. A figure already
+		# carrying treasure or threatened by enemies leaves the token on the floor.
+		if f.pos.distance_to(token.pos) <= Figure.BASE_RADIUS + 1.0 and f.in_play():
+			c._loot.claim_free(f, token)
+	return true

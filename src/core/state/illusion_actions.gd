@@ -27,9 +27,9 @@ func sweep() -> void:
 
 func after_move(f: Figure) -> void:
 	for t in Contact.enemies_of(c.state.figures, f):
-		if f.spell_effects.has("potion_clearsight") and IllusionRules.phantom(t):
+		if (f.def.traits.has("true_sight") or f.spell_effects.has("potion_clearsight")) and IllusionRules.phantom(t):
 			c._magic.summons.vanish(t)
-		elif t.spell_effects.has("potion_clearsight") and IllusionRules.phantom(f):
+		elif (t.def.traits.has("true_sight") or t.spell_effects.has("potion_clearsight")) and IllusionRules.phantom(f):
 			c._magic.summons.vanish(f)
 	if Contact.in_combat(c.state.figures, f):
 		reveal(f)

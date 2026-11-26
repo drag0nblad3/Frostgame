@@ -292,3 +292,28 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ### Additional scenarios and tactical AI
 - pp. 140, 144, 146, 187: Well of Dreams and Sorrows (one drink per caster, +50/+30 XP, lethal well push, no central reroll), Library (climbable shelves, restricted doorways, frozen central treasure with TN14 Fight test, bonus scroll and noncentral treasure rerolls), Worm Hunts (creature-phase emergence roll, collected-token modifier, single giant worm with burrowing, +20 damage/+50 kill XP). Fixed layouts, automatic legal worm placement, simplified well geometry and library doors. Reveal Secret interaction applies Library rerolls to both candidates. Other scenarios remain to be added.
 - Rival AI ranks legal casts by estimated success, target condition, treasure ownership and threat; uses power, scroll insurance and active casting gear, avoids shooting into mixed combat, prioritizes carriers and can plan extraction through terrain to legal exits. Apothecaries choose injured adjacent allies. More specialized spells, terrain tactics and multi-figure coordination remain incomplete.
+
+### Haunted Houses and The Keep
+- pp. 148, 150: five open-roof huts with hidden ghoul/wraith encounters, first entry or magical treasure movement, discovery XP, persistent revealed sites. Printed encounter ranges overlap at 17; assigned 17 to wraith. Four visible transport discs with d20 direction, legal automatic placement, no chain transport, protection of treasure on discs and one caster XP bonus each. Full discs leave the mover in place. Fixed north/south board orientation defines left/right. Movement uses sampled nodes and landing checks; no manual disc landing choice. Both scenarios are selectable and checkpointed.
+
+### Genie in the Bottle
+- pp. 148–149: first pickup d20 discovery (guaranteed final token), one genie, normal weapons ineffective, magical missile weapon, three victims trigger retreat toward edge and shooting. Lamp replaces normal loot with 250gc; discovery +30 XP, killing +50 XP. Automatically selects legal placement near finder (relaxes placement if blocked), uses the existing shot model and a 24-inch range, and nearest reachable edge rather than user placement. If engaged, fights rather than retreating illegally. Lamp, genie ID and victim counter persist across checkpoints.
+
+### Silent Tower and Complex Temple
+- pp. 143, 151: 10-inch stepped tower with connected annexes, movement-triggered null field, suppressed magic equipment and spellcasting/targeting, blocked magic landings, protected treasures within six inches and one caster-entry XP bonus. Single heightfield uses climbable terraces instead of internal floors; ongoing potion magic is cleared with other effects, and null protection extends to the linked structures. Some global and indirect spell interactions remain approximations.
+- Six guardian columns challenge figures on contact without spending an extra action. Opposed Fight vs +0, loss deals damage, win removes the column and reveals a previously hidden token. Eligible winners automatically collect for free, otherwise the treasure is left on the ground. Ties leave the column standing. Caster challenge awards XP once each. Movement previews stop at columns and bot can attempt them again. No manual free-pickup choice, Fate Stone reaction or separate column animation yet. Frozen placeholders are used internally so victory waits for unresolved columns.
+
+### Bestiary expansion
+- All three random encounter tiers (pp. 176–177) and six additional creature definitions (boar, white gorilla, frost giant, werewolf, vampire, skeleton archer) added. Horns applies to the initiating melee fighter after movement; bounty gold for werewolf/boar kills, innate Mind Lock, True Sight illusion contact, elemental resistance and critical damage immunity. Levitate ignores rough-ground costs. Pack spawn placement uses existing near-edge placement, not synchronized pack activation. Climbing and special creature movement remain simplified.
+
+### Creature and objective AI refinement
+- Connected neutral Pack Hunters randomly select a leader, share pursuit/heading, and activate consecutively; state is checkpointed. Individual moves still use ordinary controller legality rather than simultaneous formation movement. Creatures in combat choose lowest Health exactly; missile creatures prioritize closest legal shot. Warband AI prefers damageable foes and avoids immune guards when other objectives are available, using terrain-distance fields rather than straight-line distance. Scenario simulation matrix now uses two seeds per map.
+
+### Uneven ground (p. 46)
+- Authored exposed profiles support negative and positive elevations. Ramps and designed stair routes use inclined distance; abrupt banks use ordinary climbing costs. Staircases are continuous slope approximations. Original optional Sunken Streets skirmish exercises these rules; existing scenarios are unchanged. Ray and movement lattice approximations remain. No swimming, running jumps, mid-wall standing, stacked floors, or general vertical anchors for terrain spells yet. See docs/uneven-terrain.md.
+
+
+- Layered group activation (pp. 40–43): command eligibility uses figure-to-figure 3D range and slab-aware LOS; the existing movement-first group sequence supports floor routes and jumps, explicit member selection and checkpoint restoration. Teleport/Leap in groups and layered campaign deployment remain restricted.
+
+
+- Layered figure spells: explicit migration of 17 figure-only effects, including healing, shielding, direct shots and selected buffs/debuffs. Use actual 3D range and floor-volume occlusion, ordinary casting and empowerment; area, placement and forced movement effects remain restricted.

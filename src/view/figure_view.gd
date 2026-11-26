@@ -10,10 +10,22 @@ var _model_key := ""
 var _base: MeshInstance3D
 var _ring: MeshInstance3D
 var _height := 1.6
+var _facing := 0.0
+var _health_track: MeshInstance3D
+var _health_fill: MeshInstance3D
+var _shield_ring: MeshInstance3D
+var _model_rest_y := 0.12
+var _moving := false
+var _stride := 0.0
+var _profile := "walk"
+var _weapon := ""
+var _ranged := ""
+var _running := false
 
 
 func setup(f: Figure, _side_name: String) -> void:
 	figure_id = f.id
+	set_process(false)
 	_base = MeshInstance3D.new()
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = Figure.BASE_RADIUS
@@ -22,6 +34,7 @@ func setup(f: Figure, _side_name: String) -> void:
 	_base.mesh = cyl
 	_base.position.y = 0.06
 	add_child(_base)
+	MiniaturePlinth.create(self,f.id)
 	_ring = MeshInstance3D.new()
 	var torus := TorusMesh.new()
 	torus.inner_radius = 0.55
@@ -31,6 +44,28 @@ func setup(f: Figure, _side_name: String) -> void:
 	_ring.position.y = 0.08
 	_ring.visible = false
 	add_child(_ring)
+	var health_bar := BoxMesh.new()
+	health_bar.size = Vector3(0.82, 0.045, 0.095)
+	_health_track = MeshInstance3D.new()
+	_health_track.mesh = health_bar
+	_health_track.material_override = BoardView._mat(Color(0.09, 0.12, 0.16), 0.8)
+	_health_track.position = Vector3(0, 0.10, 0.46)
+	add_child(_health_track)
+	_health_fill = MeshInstance3D.new()
+	_health_fill.mesh = health_bar
+	_health_fill.position = Vector3(0, 0.133, 0.46)
+	add_child(_health_fill)
+	_shield_ring = MeshInstance3D.new()
+	var ward := TorusMesh.new()
+	ward.inner_radius = 0.46
+	ward.outer_radius = 0.51
+	_shield_ring.mesh = ward
+	var ward_mat := BoardView._mat(Color(0.23, 0.72, 0.98), 0.35)
+	ward_mat.emission_enabled = true
+	ward_mat.emission = Color(0.15, 0.52, 0.86)
+	_shield_ring.material_override = ward_mat
+	_shield_ring.position.y = 0.16
+	add_child(_shield_ring)
 	_plate = Label3D.new()
 	_plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	_plate.no_depth_test = true
@@ -44,32 +79,106 @@ func setup(f: Figure, _side_name: String) -> void:
 
 func refresh(f: Figure) -> void:
 	var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
-	_base.material_override = BoardView._mat(color.darkened(0.24), 0.6)
+	_base.material_override = BoardView._mat(color.darkened(0.12), 0.62)
+	_profile=MiniatureMotion.profile(f)
+	_weapon=f.melee.id if f.melee!=null else ""
+	_ranged=f.ranged.id if f.ranged!=null else ""
 	var phantom := IllusionRules.phantom(f)
 	var transparent := f.spell_effects.has("invisibility") or phantom
-	var key := "%d:%s:%s:%s" % [f.side, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", transparent]
+	var key := "%d:%s:%s:%s:%s" % [f.side, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", transparent,SchoolArt.of_figure(f)]
 	if key != _model_key or _model == null:
 		if _model != null:
 			remove_child(_model)
 			_model.queue_free()
 		_model = MiniatureFactory.create(f, color)
 		_model.position.y += 0.12
+		_model_rest_y = _model.position.y
+		_model.rotation.y = _facing
 		add_child(_model)
 		_model_key = key
 		if transparent:
-			for child in _model.get_children():
-				if child is MeshInstance3D:
-					var material: StandardMaterial3D = child.material_override
-					material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-					material.albedo_color.a = 0.35
+			MiniatureBatch.fade(_model)
 	_height = 2.0 if f.def.traits.has("large") else (1.8 if f.def.role in ["wizard", "apprentice"] else 1.5)
+	if f.def.traits.has("animal") and f.def.id != "white_gorilla":
+		_height = 0.95 if not f.def.traits.has("large") else 1.3
+	if f.def.id in ["imp", "small_construct", "animated_skull"]:
+		_height = 1.15
+	elif f.def.id in ["giant_worm", "major_demon", "large_construct"]:
+		_height = 2.35
+	elif f.def.id == "genie":
+		_height = 1.85
 	_plate.position.y = _height + 0.42
+	var ratio := clampf(float(f.health) / maxf(1.0, float(f.def.health)), 0.0, 1.0)
+	_health_fill.scale.x = maxf(0.01, ratio)
+	_health_fill.position.x = -0.41 * (1.0 - ratio)
+	_health_fill.material_override = BoardView._mat(Color(0.31, 0.75, 0.47) if ratio > 0.5 else Color(0.95, 0.49, 0.23), 0.7)
+	_shield_ring.visible = f.elemental_shield > 0 or f.spell_effects.has("shield")
 	var suffix := " · Illusion" if phantom else (" · Invisible" if transparent else "")
 	var status := " · Loot" if f.treasure_id >= 0 else ""
 	if f.poisoned:
 		status += " · Poison"
+	if ScenarioNull.muted(f):
+		status += " · Null"
+	if f.def.traits.has("immune_normal"):
+		status += " · Magic only"
 	_plate.text = "%s%s%s\n%d/%d" % [f.label(), suffix, status, f.health, f.def.health]
 	_plate.modulate = Color(1, 1, 1) if f.health * 2 > f.def.health else Color(1, 0.6, 0.4)
+
+
+func face_toward(at: Vector3) -> void:
+	var dir := at - position
+	if Vector2(dir.x, dir.z).length_squared() < 0.0001:
+		return
+	_facing = atan2(-dir.x, -dir.z)
+	if _model != null:
+		if not _moving:
+			_model.rotation.y = _facing
+
+
+func begin_move(distance: float=0.0) -> void:
+	_running=distance>=4.0
+	_moving = true
+	_stride = 0.0
+	set_process(true)
+
+
+func end_move() -> void:
+	_moving = false
+	set_process(false)
+	if _model != null:
+		_model.position.y = _model_rest_y
+		_model.rotation.x = 0.0
+		_model.rotation.z = 0.0
+		MiniatureMotion.reset(_model)
+		_model.rotation.y=_facing
+
+
+func _process(delta: float) -> void:
+	if not _moving or _model == null:
+		return
+	_model.rotation.y=lerp_angle(_model.rotation.y,_facing,1.0-exp(-24.0*delta))
+	_stride += delta * MiniatureMotion.frequency(_profile)*(1.25 if _running else 1.0)
+	MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y,_running)
+
+
+func attack_pose(amount: float) -> void:
+	if _model != null:
+		MiniatureMotion.action(_model,_profile,"attack",amount,_model_rest_y,_weapon)
+
+
+func cast_pose(amount: float) -> void:
+	if _model != null:
+		MiniatureMotion.action(_model,_profile,"cast",amount,_model_rest_y,_weapon)
+
+
+func shot_pose(amount: float) -> void:
+	if _model != null:
+		MiniatureMotion.action(_model,_profile,"shot",amount,_model_rest_y,_ranged)
+
+
+func recoil_pose(amount: float) -> void:
+	if _model != null:
+		MiniatureMotion.action(_model,_profile,"recoil",amount,_model_rest_y,_weapon)
 
 
 func set_active(on: bool) -> void:
@@ -79,6 +188,9 @@ func set_active(on: bool) -> void:
 func take_out() -> void:
 	_plate.visible = false
 	_ring.visible = false
+	_health_fill.hide()
+	_health_track.hide()
+	_shield_ring.hide()
 	var t := create_tween()
 	t.tween_property(self, "rotation:z", PI * 0.5, 0.4)
 	t.tween_property(self, "scale", Vector3(0.6, 0.6, 0.6), 0.3)

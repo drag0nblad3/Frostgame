@@ -23,6 +23,12 @@ func footprint(id: String, at: Vector2, rotated: bool) -> Rect2:
 func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 	var b := c.state.board
 	var rect := footprint(id, at, rotated)
+	if ScenarioNull.field_at(b, at, 0.0):
+		return false
+	if b.id == "silent_tower":
+		for p in b.pieces:
+			if p.kind.id.begins_with("null_") and p.rect.intersects(rect):
+				return false
 	if not b.contains(rect.position) or not b.contains(rect.end):
 		return false
 	if id == "bridge":
@@ -203,17 +209,46 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var chunk := PackedVector2Array([f.pos])
 	for i in range(1, path.size()):
 		var at := path[i]
+		var occupied := false
+		if c.state.scenario_special == "haunted_houses" and not c.state.discovered_huts.is_empty():
+			for other in c.state.figures:
+				if other == f or not other.in_play() or absf(other.elevation - c.state.board.height_at(at)) >= 0.5:
+					continue
+				if other.pos.distance_to(at) < Contact.OVERLAP:
+					# A creature appeared after planning; keep the last safe position.
+					f.pos = path[i - 1]
+					f.elevation = c.state.board.height_at(f.pos)
+					if chunk.size() > 1:
+						c.emit("move", {"id": f.id, "path": chunk, "cost": cost})
+					return false
+				if other.side != f.side and Contact.touching(other.pos, at):
+					occupied = true
 		chunk.append(at)
 		var hits := triggered(f, at)
-		if hits.is_empty():
+		var hut := ScenarioSites.site_at(c.state, "haunted_floor", at) if c.state.scenario_special == "haunted_houses" and f.side >= 0 else null
+		var undiscovered := hut != null and not c.state.discovered_huts.has(hut.rect.position)
+		var null_field := ScenarioNull.field_at(c.state.board, at)
+		var column := f.side >= 0 and not IllusionRules.phantom(f) and ScenarioColumns.contact(c.state.board, at) != null
+		if hits.is_empty() and not undiscovered and not occupied and not null_field and not column:
 			continue
 		f.pos = at
 		f.elevation = c.state.board.height_at(at)
 		c.emit("move", {"id": f.id, "path": chunk, "cost": cost})
 		chunk = PackedVector2Array([at])
+		ScenarioNull.enter(c, f)
+		if not f.in_play():
+			return false
 		for p in hits:
 			explode(p)
 		if not f.in_play():
+			return false
+		if column and i < path.size() - 1:
+			ScenarioColumns.challenge(c, f)
+			return false
+		if undiscovered and ScenarioSites.enter(c, f) and Contact.in_combat(c.state.figures, f):
+			return false
+		# A newly revealed occupant can stop an already planned path at contact.
+		if occupied and i < path.size() - 1:
 			return false
 	f.pos = path[path.size() - 1]
 	f.elevation = c.state.board.height_at(f.pos)

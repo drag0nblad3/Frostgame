@@ -53,6 +53,7 @@ func push(own: bool) -> bool:
 	var fall := ElevationRules.fall_damage(old_height - moving.elevation)
 	if fall > 0 and MagicEquipment.bonus(moving, "slow_fall") == 0:
 		c._hurt(moving, fall, other, false)
+	ScenarioSites.end_move(c, moving)
 	return true
 
 
@@ -94,4 +95,5 @@ func force_contact(info: Dictionary) -> void:
 	guard.elevation = c.state.board.height_at(guard.pos)
 	c.emit("force_combat", {"id": guard.id, "path": PackedVector2Array([from, guard.pos])})
 	c._magic.terrain.trigger_landing(guard)
+	ScenarioSites.end_move(c, guard)
 	c._magic.illusions.after_move(guard)

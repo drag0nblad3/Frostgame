@@ -45,11 +45,15 @@ static func value(c: GameController, f: Figure, t: Figure, id: String) -> float:
 	elif id in ATTACKS:
 		if ally:
 			return 0.0
+		if t.def.traits.has("immune_normal") and id in ["bone_dart", "poison_dart"]:
+			return 0.0
 		if id in ["elemental_ball", "elemental_bolt", "bone_dart", "poison_dart"]:
 			for other in ShotTarget.participants(s.figures, t):
 				if other.side == f.side:
 					return 0.0
 		score = (4.0 + 5.0 / maxf(t.health, 1.0)) * priority
+		if t.def.traits.has("immune_normal"):
+			score += 4.0
 		if id == "steal_health" and f.health < f.def.health:
 			score += 2.0
 		if id == "strike_dead":

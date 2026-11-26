@@ -23,6 +23,10 @@ func _process(_delta: float) -> bool:
 	if setup == null or not setup.draft.errors().is_empty():
 		quit(1)
 		return true
+	if setup._recruit_portrait._model == null or setup._recruit_info.text.is_empty():
+		printerr("Recruitment preview unavailable")
+		quit(1)
+		return true
 	setup.draft.wizard_name = "CI Wizard"
 	setup.draft.school = "witch"
 	setup.draft.choose_defaults()
@@ -33,7 +37,7 @@ func _process(_delta: float) -> bool:
 		return true
 	setup._confirm()
 	var s: GameState = _scene.controller.state
-	if s.side_names[0] != "CI Wizard" or s.spellbooks[0].size() != 8 or s.side_figures(0).size() != 5:
+	if s.side_names[0] != "CI Wizard" or s.spellbooks[0].size() != 8 or s.side_schools.get(0) != "witch" or s.side_figures(0).size() != 5:
 		printerr("Roster deployment failed")
 		quit(1)
 		return true

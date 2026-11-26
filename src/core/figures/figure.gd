@@ -25,6 +25,8 @@ var def: FigureDef
 var side := 0
 var pos := Vector2.ZERO
 var elevation := 0.0
+## Stable ID for explicit layered surfaces; empty on legacy maps.
+var surface_id := ""
 var health := 0
 var out_of_action := false
 var exited := false

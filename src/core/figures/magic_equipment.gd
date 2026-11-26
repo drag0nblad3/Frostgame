@@ -27,6 +27,8 @@ static func compatible(def: FigureDef, info: Dictionary) -> bool:
 
 
 static func bonus(f: Figure, stat: String, weapon: String = "") -> int:
+	if ScenarioNull.muted(f):
+		return 0
 	var total := 0
 	for item: Dictionary in f.items:
 		var info: Dictionary = item.get("gear_info", {})

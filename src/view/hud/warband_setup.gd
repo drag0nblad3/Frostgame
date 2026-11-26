@@ -13,11 +13,15 @@ var _name: LineEdit
 var _school: OptionButton
 var _apprentice: CheckBox
 var _hire: Button
+var _recruit_portrait: MiniaturePortrait
+var _recruit_info: Label
+var _wizard_portrait: MiniaturePortrait
 
 
 func setup(db: FigureDb) -> void:
 	draft = WarbandDraft.new(db)
 	draft.choose_defaults()
+	theme = BattleTheme.create()
 	title = "Create a wizard and warband"
 	get_ok_button().text = "Begin skirmish"
 	dialog_hide_on_ok = false
@@ -36,12 +40,16 @@ func setup(db: FigureDb) -> void:
 		_update())
 	_school = OptionButton.new()
 	for id: String in draft.schools:
-		_school.add_item(id.capitalize())
+		_school.add_icon_item(ActionArt.school(id),id.capitalize())
 		_school.set_item_metadata(_school.item_count - 1, id)
 		if id == draft.school:
 			_school.select(_school.item_count - 1)
 	body.add_child(_school)
+	_school.add_theme_constant_override("icon_max_width",32)
 	_school.item_selected.connect(_change_school)
+	_wizard_portrait = MiniaturePortrait.new()
+	_wizard_portrait.custom_minimum_size = Vector2(260, 190)
+	body.add_child(_wizard_portrait)
 	_spell_rows = VBoxContainer.new()
 	body.add_child(_spell_rows)
 	_apprentice = CheckBox.new()
@@ -71,6 +79,15 @@ func setup(db: FigureDb) -> void:
 	_hire.pressed.connect(func() -> void:
 		draft.hire(str(_recruits.get_selected_metadata()))
 		_update())
+	var recruit_card := HBoxContainer.new()
+	body.add_child(recruit_card)
+	_recruit_portrait = MiniaturePortrait.new()
+	_recruit_portrait.custom_minimum_size = Vector2(190, 165)
+	recruit_card.add_child(_recruit_portrait)
+	_recruit_info = Label.new()
+	_recruit_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_recruit_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	recruit_card.add_child(_recruit_info)
 	_roster = ItemList.new()
 	_roster.custom_minimum_size.y = 130
 	body.add_child(_roster)
@@ -103,8 +120,10 @@ func _rebuild_spells() -> void:
 		child.queue_free()
 	for slot in 8:
 		var choice := OptionButton.new()
+		choice.add_theme_constant_override("icon_max_width",28)
 		var label := Label.new()
 		label.text = "Home school %d" % (slot + 1) if slot < 3 else ("Aligned: " + str(draft.schools[draft.school]["aligned"][slot - 3]).capitalize() if slot < 6 else "Neutral school")
+		label.modulate = Color(0.93,0.84,0.61)
 		_spell_rows.add_child(label)
 		for id in draft.candidates(slot):
 			var info: Dictionary = draft.catalog[id]
@@ -112,19 +131,31 @@ func _rebuild_spells() -> void:
 			var suffix := "" if live else " · NOT PLAYABLE YET"
 			if Rituals.BEFORE.has(id) or Rituals.AFTER.has(id):
 				suffix = " · Campaign ritual" if info["kind"] == "ritual" else " · Battle / preparation"
-			choice.add_item("%s · %s · TN%d%s" % [info["name"], str(info["school"]).capitalize(), draft.casting_number(id), suffix])
+			choice.add_icon_item(ActionArt.school(str(info["school"])),"%s · %s · TN%d%s" % [info["name"], str(info["school"]).capitalize(), draft.casting_number(id), suffix])
 			choice.set_item_metadata(choice.item_count - 1, id)
 			if draft.spells[slot] == id:
 				choice.select(choice.item_count - 1)
 		_spell_rows.add_child(choice)
+		var detail := Label.new()
+		detail.add_theme_font_size_override("font_size",15)
+		detail.modulate = Color(0.72,0.82,0.87)
+		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		if slot < draft.spells.size():
+			var chosen := draft.spells[slot]
+			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
+		_spell_rows.add_child(detail)
 		choice.item_selected.connect(func(index: int) -> void:
 			draft.spells[slot] = str(choice.get_item_metadata(index))
+			var chosen := draft.spells[slot]
+			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
 			_update())
 
 
 func _update() -> void:
 	if _summary == null:
 		return
+	var wizard_def := CasterLoadout.definition(draft.db.get_def("wizard"), draft.wizard_weapons, draft.db)
+	_wizard_portrait.set_figure(Figure.new(0, wizard_def, 0, Vector2.ZERO, draft.db.unarmed()), FigureView.SIDE_COLORS[0], draft.school)
 	_roster.clear()
 	for id in draft.soldiers:
 		var d := draft.db.get_def(id)
@@ -135,7 +166,12 @@ func _update() -> void:
 		if draft.catalog[id]["kind"] != "unimplemented" or Rituals.BEFORE.has(id) or Rituals.AFTER.has(id):
 			live += 1
 	_summary.text = "%d gc left | %d/8 soldiers | %d/4 specialists | %d/8 implemented spells\n%s" % [WarbandDraft.BUDGET - draft.cost(), draft.soldiers.size(), draft.specialists(), live, "Campaign rituals are available between battles." if problems.is_empty() else "\n".join(problems)]
-	_hire.disabled = not draft.can_hire(str(_recruits.get_selected_metadata()))
+	var recruit_id := str(_recruits.get_selected_metadata())
+	_hire.disabled = not draft.can_hire(recruit_id)
+	var definition := draft.db.get_def(recruit_id)
+	if definition != null:
+		_recruit_portrait.set_figure(Figure.new(0, definition, 0, Vector2.ZERO, draft.db.unarmed()), FigureView.SIDE_COLORS[0])
+		_recruit_info.text = "%s · %d gc\nM %d″   F %+d   S %+d\nA %d   W %+d   H %d\n%s" % [definition.name, definition.cost, definition.move, definition.fight, definition.shoot, definition.armour, definition.will, definition.health, "Specialist" if definition.specialist else "Standard soldier"]
 	get_ok_button().disabled = not problems.is_empty()
 
 

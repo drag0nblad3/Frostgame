@@ -17,16 +17,33 @@ class Result:
 	var intervening := 0
 
 
+## The layered fixture uses physical floor volumes instead of a highest-surface ray.
+static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
+	if board.floor_layout.is_empty():
+		return check(board,from.pos,to.pos)
+	var result := Result.new()
+	var layout := FloorLayout.from_dict(board.floor_layout)
+	result.clear = layout.errors.is_empty() and LayeredSight.figures_clear(layout,from,to)
+	if board.darkness and Shooting.distance(from,to)>12.0:
+		result.clear=false
+	return result
+
+
 static func check(board: Board, from: Vector2, to: Vector2) -> Result:
 	var r := Result.new()
 	if board.darkness and Vector2(from.distance_to(to), board.height_at(from) - board.height_at(to)).length() > 12.0:
 		r.clear = false
 		return r
+	if board.has_ground_profiles and _ray_hits_ground(board,from,to):
+		r.clear = false
+		return r
 	for piece in board.pieces:
+		if piece.kind.ground_surface:
+			continue
 		if not Geom.crosses(from, to, piece.rect) and not piece.rect.has_point(to):
 			continue
 		var kind := piece.kind
-		if kind.walkable_top or board.height_at(from) > 0.0 or board.height_at(to) > 0.0:
+		if kind.walkable_top or absf(board.height_at(from)) > 0.001 or absf(board.height_at(to)) > 0.001:
 			if not _ray_hits_piece(board, from, to, piece):
 				continue
 		if kind.blocks_los:
@@ -50,6 +67,18 @@ static func _ray_hits_piece(board: Board, from: Vector2, to: Vector2, piece: Ter
 	var steps := maxi(1, ceili(from.distance_to(to) / 0.15))
 	for i in range(steps + 1):
 		var t := float(i) / steps
-		if piece.rect.has_point(from.lerp(to, t)) and lerpf(a, b, t) <= piece.kind.height:
+		var point := from.lerp(to,t)
+		if piece.contains(point) and lerpf(a,b,t) <= piece.surface_height(point):
+			return true
+	return false
+
+
+static func _ray_hits_ground(board: Board,from: Vector2,to: Vector2) -> bool:
+	var a := board.height_at(from)+1.5
+	var b := board.height_at(to)+1.0
+	var steps := maxi(1,ceili(from.distance_to(to)/0.10))
+	for i in range(1,steps):
+		var t := float(i)/steps
+		if board.ground_height_at(from.lerp(to,t))>lerpf(a,b,t)+0.001:
 			return true
 	return false

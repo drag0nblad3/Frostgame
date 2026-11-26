@@ -1,0 +1,62 @@
+name: Visual previews
+on:
+  pull_request:
+    paths: ['src/view/**', 'data/boards/**', 'data/visual_palettes.json', 'tools/capture.gd', 'tools/miniature_gallery.gd', 'tools/interface_capture.gd', 'assets/**', '.github/workflows/visuals.yml']
+  workflow_dispatch:
+concurrency:
+  group: visual-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot and software GL
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          mv Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb libgl1-mesa-dri
+      - name: Import
+        run: |
+          set -euo pipefail
+          godot --headless --import 2>&1 | tee import.log
+          if grep -E 'SCRIPT ERROR|Parse Error' import.log; then exit 1; fi
+      - name: Render miniatures and battlefields
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          set -euo pipefail
+          mkdir -p previews
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/layered_capture.gd 2>&1 | tee gatehouse.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/layered_capture.gd -- tower 2>&1 | tee tower.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/sunken-streets.png 0 sunken_streets 2>&1 | tee sunken.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/title_capture.gd -- previews/title.png 2>&1 | tee title.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/miniatures.png 2>&1 | tee gallery.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/bestiary.png bestiary 2>&1 | tee bestiary.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/schools.png schools 2>&1 | tee schools.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1600x1000 -s tools/miniature_gallery.gd -- previews/apprentices.png apprentices 2>&1 | tee apprentices.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1600x1000 -s tools/miniature_gallery.gd -- previews/soldiers.png soldiers 2>&1 | tee soldiers.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1600x1000 -s tools/miniature_gallery.gd -- previews/beasts.png beasts 2>&1 | tee beasts.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1920x1200 -s tools/miniature_gallery.gd -- previews/supernatural.png supernatural 2>&1 | tee supernatural.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/frozen-ruins.png 0 treasure_skirmish 2>&1 | tee ruins.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/complex-temple.png 0 complex_temple 2>&1 | tee temple.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/library.png 0 underground_library 2>&1 | tee library.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/well.png 0 dreams_well 2>&1 | tee well.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/keep.png 0 the_keep 2>&1 | tee keep.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/interface_capture.gd -- previews/roster.png roster 2>&1 | tee roster.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/interface_capture.gd -- previews/headquarters.png campaign 2>&1 | tee headquarters.log
+          if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed|SHADER ERROR|Shader error' tower.log gatehouse.log sunken.log roster.log headquarters.log title.log gallery.log bestiary.log schools.log apprentices.log soldiers.log beasts.log supernatural.log ruins.log temple.log library.log well.log keep.log; then exit 1; fi
+          grep -F 'scenario=treasure_skirmish board=frozen_ruins' ruins.log
+          grep -F 'scenario=complex_temple board=complex_temple' temple.log
+          grep -F 'scenario=underground_library board=underground_library' library.log
+          grep -F 'scenario=dreams_well board=dreams_well' well.log
+          grep -F 'scenario=the_keep board=the_keep' keep.log
+          for file in tower-upper tower-cutaway gatehouse-upper gatehouse-cutaway sunken-streets roster headquarters title miniatures bestiary schools apprentices soldiers beasts supernatural frozen-ruins complex-temple library well keep; do test -s "previews/$file.png"; done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Frostgame-Visual-Previews
+          path: previews/

@@ -12,6 +12,8 @@ func options(f: Figure) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var board := c.state.board
 	for p in board.pieces:
+		if p.kind.id.begins_with("null_") or p.kind.id == "temple_column":
+			continue
 		if p.kind.id != "spell_wall" and (p.cast_turn >= 0 or not p.kind.blocks_move or p.kind.height < 1.0):
 			continue
 		var near := Vector2(clampf(f.pos.x, p.rect.position.x, p.rect.end.x), clampf(f.pos.y, p.rect.position.y, p.rect.end.y)).lerp(f.pos, 0.02)

@@ -58,6 +58,8 @@ func start_member(s: GameState, f: Figure) -> void:
 		s.early.record_activation(s, f)
 		f.moves_taken = 0
 		f.acted = false
+		f.non_moves = 0
+		f.used_stored_action = false
 
 
 ## Returns true once the entire group has finished. Both passes allow any member order.

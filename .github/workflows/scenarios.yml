@@ -1,0 +1,47 @@
+name: Scenario simulations
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'data/**'
+      - 'src/core/**'
+      - 'tests/scenario_sim.gd'
+      - '.github/workflows/scenarios.yml'
+concurrency:
+  group: scenario-sim-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  simulate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        seed: [17, 42]
+        scenario: [treasure_skirmish, mausoleum, living_museum, dreams_well, worm_hunts, underground_library, haunted_houses, the_keep, genie_in_the_bottle, silent_tower, complex_temple, sunken_streets, stacked_gatehouse, layered_silent_tower]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          mv Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Import
+        run: |
+          set -o pipefail
+          godot --headless --import 2>&1 | tee import.log
+          ! grep -E "SCRIPT ERROR|Parse Error" import.log
+      - name: Full scenario battle
+        run: |
+          set -o pipefail
+          timeout 600s godot --headless -s tests/scenario_sim.gd -- ${{ matrix.scenario }} ${{ matrix.seed }} 2>&1 | tee simulation.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script" simulation.log
+          grep -q '^SCENARIO_RESULT|' simulation.log
+      - name: Upload simulation log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: scenario-${{ matrix.scenario }}-${{ matrix.seed }}
+          path: simulation.log
+          if-no-files-found: ignore

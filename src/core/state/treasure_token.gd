@@ -4,6 +4,7 @@ extends RefCounted
 
 var id: int
 var pos: Vector2
+var surface_id := ""
 var carrier_id := -1
 var secured_by := -1
 var lost := false

@@ -34,9 +34,11 @@ func _init(controller: GameController) -> void:
 
 func can_cast(id: String, target_id: int) -> bool:
 	var s := c.state
+	if not s.board.floor_layout.is_empty() and not LayeredFigureSpells.SUPPORTED.has(id):
+		return false
 	var f := s.active()
 	var t := s.figure(target_id)
-	if not c.can_act() or f == null or t == null or not t.in_play():
+	if not c.can_act() or f == null or t == null or not t.in_play() or ScenarioNull.muted(t):
 		return false
 	if f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(s.figures, f):
 		return false
@@ -70,7 +72,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var limit := 1.0 if kind == "touch" else float(spell.get("range", 24.0))
 	if t != f:
-		if kind == "area_shot":
+		if not s.board.floor_layout.is_empty():
+			if not LayeredFigureSpells.visible(s.board,f,t,limit):
+				return false
+		elif kind == "area_shot":
 			if Shooting.distance(f, t) > limit or not LineOfSight.check(s.board, f.pos, t.pos).clear:
 				return false
 		elif not WizardEye.visible(s.board, f, t.pos, limit):
@@ -91,7 +96,7 @@ func can_cast(id: String, target_id: int) -> bool:
 	if id == "plague_of_insects":
 		return not t.insects_immune() and not t.spell_effects.has(id)
 	if id == "suggestion":
-		return t != f and not t.spell_effects.has("mind_lock")
+		return t != f and not t.def.traits.has("mind_lock") and not t.spell_effects.has("mind_lock")
 	if id == "bones_of_the_earth":
 		return not t.def.traits.has("large") and t.elevation < 0.01 and not t.spell_effects.has(id)
 	if id == "leap":
@@ -207,6 +212,8 @@ func start_swap(first: int, second: int) -> bool:
 func placement_points(id: String, first_only: bool = false, rotated: bool = false) -> Array[Vector2]:
 	var f := c.state.active()
 	var empty: Array[Vector2] = []
+	if not c.state.board.floor_layout.is_empty():
+		return empty
 	if not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f):
 		return empty
 	if not available_spell(f, id) or not is_placement(id):
@@ -362,6 +369,9 @@ func _finish_one(health: int) -> bool:
 	if id in ["telekinesis", "fools_gold"]:
 		treasure_magic.apply(f, id, s.treasure(p["effect"]["token"]), p["at"], int(result["roll"]))
 		return true
+	if id=="bridge" and p.get("effect",{}).has("layered_bridge"):
+		LayeredBridge.apply(c,p["effect"]["layered_bridge"])
+		return true
 	if TerrainMagic.SPELLS.has(id):
 		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))
 		return true
@@ -392,7 +402,13 @@ func _finish_one(health: int) -> bool:
 			t.spell_effects[id] = true
 			illusions.sweep()
 		"teleport", "leap":
-			movement.move(t, p["at"], true)
+			if p.get("effect",{}).has("floor_destination"):
+				if id=="leap":
+					LayeredLeap.apply(c,t,p["effect"])
+				else:
+					LayeredMagic.apply_teleport(c,t,p["effect"])
+			else:
+				movement.move(t, p["at"], true)
 		"suggestion":
 			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]))
 			return true
@@ -413,7 +429,7 @@ func _finish_one(health: int) -> bool:
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
 			var old_health := t.health
-			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt")
+			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt", id)
 			if id == "poison_dart" and t.health < old_health:
 				c.poison(t)
 		"call_storm":
@@ -424,12 +440,12 @@ func _finish_one(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
 					_banish(f, other, int(result["roll"]), 4)
 		"scatter_shot":
 			for other in s.figures:
 				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
-					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos)
+					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
@@ -456,7 +472,7 @@ func _finish_one(health: int) -> bool:
 						if not affected.has(member):
 							affected.append(member)
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else f.pos, true)
+				_shot(f, other, 5, t.pos if other != t else f.pos, true, true, id)
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty()
@@ -482,12 +498,15 @@ func _heal(t: Figure, amount: int) -> void:
 	c.emit("heal", {"id": t.id, "amount": t.health - old})
 
 
-func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true) -> void:
-	if not t.in_play() or t.spell_effects.has("plane_walk"):
+func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:
+	if not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t):
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
-	var mod := Shooting.target_mod(LineOfSight.check(s.board, from, t.pos)) + (1 if f.moves_taken > 0 else 0)
+	var los := LineOfSight.check(s.board, from, t.pos) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if not los.clear and not s.board.floor_layout.is_empty():
+		return
+	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
 		mod -= 2
 	var ar := c.dice.d20()
@@ -497,14 +516,14 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var won := a > d
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)
-	var dmg := Damage.amount(a, 0, t.effective_armour(), ar, s.critical_hits) if won else 0
+	var dmg := Damage.amount(a, 0, t.effective_armour() + (2 if elemental and t.def.traits.has("elemental_resistance_2") else 0), ar, s.critical_hits and not t.def.traits.has("immune_critical")) if won else 0
 	if not magical and t.def.traits.has("immune_normal"):
 		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
 	if elemental:
 		dmg = PotionActions.absorb(t, dmg)
-	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d})
+	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from if s.board.floor_layout.is_empty() else null})
 	c._hurt(t, dmg, f)
 
 
@@ -535,6 +554,8 @@ func on_end_activation(f: Figure) -> void:
 
 
 func on_end_turn() -> void:
+	if not c.state.board.floor_layout.is_empty():
+		LayeredBridge.expire(c)
 	terrain.expire()
 	for f in c.state.figures:
 		if f.spell_effects.erase("plane_walk"):
@@ -551,6 +572,8 @@ func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
 
 
 func _direct_attack(f: Figure, t: Figure, power: int) -> void:
+	if ScenarioNull.muted(t):
+		return
 	var a := c.dice.d20() + power
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
 	if a > d:
@@ -591,6 +614,8 @@ func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
 
 
 func available_spell(f: Figure, id: String) -> bool:
+	if ScenarioNull.muted(f):
+		return false
 	if id in ["summon_demon", "control_demon"]:
 		for t in c.state.figures:
 			if t.in_play() and t.prepared_demon_caster == f.id:
@@ -600,6 +625,8 @@ func available_spell(f: Figure, id: String) -> bool:
 
 func available_spells(f: Figure) -> Array[String]:
 	var out: Array[String] = []
+	if ScenarioNull.muted(f):
+		return out
 	for id: String in c.state.spellbooks.get(f.side, {}):
 		out.append(id)
 	for item in f.items:

@@ -1,7 +1,7 @@
 class_name EarlyPhase
 extends RefCounted
 ## Wizard/apprentice phase eligibility snapshot and normal individual activations (pp. 40–43).
-## Separate group activation (all movement before second actions) is a later rule.
+## Both individual and grouped activation use the same phase-start eligibility.
 
 const MAX_SOLDIERS := 3
 const RANGE := 3.0
@@ -34,7 +34,7 @@ func capture(s: GameState) -> void:
 			if soldier.activated or Phase.of_figure(soldier) != Phase.SOLDIER:
 				continue
 			var edge_distance := Shooting.distance(leader, soldier)
-			if edge_distance <= RANGE and LineOfSight.check(s.board, leader.pos, soldier.pos).clear:
+			if edge_distance <= RANGE and LineOfSight.check_figures(s.board, leader, soldier).clear:
 				ids.append(soldier.id)
 		eligible[side] = ids
 

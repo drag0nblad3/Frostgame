@@ -29,7 +29,16 @@ static func ground(board: Board) -> MultiMeshInstance3D:
 
 
 static func decorate(root: Node3D, piece: TerrainPiece) -> void:
-	if piece.kind.id not in ["ruin", "wall", "platform", "tower", "library_shelf", "dreams_well"]:
+	if piece.kind.id == "arcane_disc":
+		var ring := TorusMesh.new()
+		ring.inner_radius = 1.12
+		ring.outer_radius = 1.38
+		MiniatureFactory.mesh(root, ring, TableSpace.to_world(piece.rect.get_center(), 0.07), Color(0.89, 0.74, 0.29)).scale.y = 0.16
+		for i in 8:
+			var at := piece.rect.get_center() + Vector2.RIGHT.rotated(TAU * i / 8.0) * 0.85
+			MiniatureFactory.box(root, TableSpace.to_world(at, 0.07), Vector3(0.14, 0.04, 0.14), Color(0.89, 0.74, 0.29))
+		return
+	if piece.kind.id not in ["ruin", "wall", "platform", "tower", "library_shelf", "dreams_well", "hut_wall", "null_annex", "null_walk", "null_lower", "null_middle", "null_upper", "temple_column"]:
 		return
 	var decor := Node3D.new()
 	root.add_child(decor)
@@ -52,14 +61,4 @@ static func decorate(root: Node3D, piece: TerrainPiece) -> void:
 				MiniatureFactory.box(decor, Vector3(rect.position.x + 0.025, 0.42 + level * 0.72, z), Vector3(0.05, 0.44, 0.55), shade)
 				MiniatureFactory.box(decor, Vector3(rect.end.x - 0.025, 0.42 + level * 0.72, z), Vector3(0.05, 0.44, 0.55), shade.darkened(0.13))
 		return
-	# Snow cap lies on the exact terrain top; narrow mortar lines break up solid blocks.
-	MiniatureFactory.box(decor, TableSpace.to_world(center, h + 0.017), Vector3(rect.size.x, 0.035, rect.size.y), Color(0.77, 0.84, 0.91))
-	for level in maxi(1, floori(h / 0.65)):
-		var y := 0.36 + level * 0.65
-		if y >= h:
-			break
-		var color := Color(0.30, 0.35, 0.40)
-		for z: float in [rect.position.y + 0.015, rect.end.y - 0.015]:
-			MiniatureFactory.box(decor, Vector3(center.x, y, z), Vector3(rect.size.x * 0.98, 0.055, 0.035), color)
-		for x: float in [rect.position.x + 0.015, rect.end.x - 0.015]:
-			MiniatureFactory.box(decor, Vector3(x, y, center.y), Vector3(0.035, 0.055, rect.size.y * 0.98), color)
+	# Stone surfaces use StoneFinish's procedural snow and masonry shader.

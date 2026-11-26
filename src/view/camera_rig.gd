@@ -36,6 +36,29 @@ func look_at_table(center: Vector3) -> void:
 	_apply()
 
 
+## Fit the whole board, with enough margin for the command strips.
+func frame_board(size: Vector2, overhead: bool = false) -> void:
+	yaw = PI
+	pitch = deg_to_rad(87.0 if overhead else 55.0)
+	var viewport := get_viewport().get_visible_rect().size
+	var aspect := maxf(0.5, viewport.x / maxf(1.0, viewport.y))
+	var vertical := deg_to_rad(camera.fov * 0.5)
+	var horizontal := atan(tan(vertical) * aspect)
+	var along := size.y * sin(pitch) * 0.5
+	var depth := size.y * cos(pitch) * 0.5
+	var fit_x := size.x * 0.54 / tan(horizontal)
+	var fit_y := along * 1.24 / tan(vertical)
+	distance = maxf(fit_x, fit_y) + depth + 1.5
+	max_distance = maxf(80.0, distance)
+	look_at_table(TableSpace.to_world(size * 0.5))
+
+
+func focus_figure(at: Vector3) -> void:
+	distance = 13.0
+	pitch = deg_to_rad(44.0)
+	look_at_table(at)
+
+
 func _apply() -> void:
 	if camera == null:
 		return

@@ -57,6 +57,8 @@ func stops(n: Vector2i) -> bool:
 	if mover == null:
 		return false
 	var p := to_pos(n)
+	if mover.side >= 0 and not IllusionRules.phantom(mover) and ScenarioColumns.contact(board, p) != null:
+		return true
 	for o in others:
 		if o.side != mover.side and absf(o.elevation - board.height_at(p)) < 0.5 and Contact.touching(o.pos, p):
 			return true
@@ -74,8 +76,11 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	var mid := (pa + pb) * 0.5
 	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
+	if board.has_ground_profiles or board.has_ramps:
+		return TerrainTravel.cost(board,pa,pb,mover)
 	for p in board.pieces_at(mid):
 		if p.ramp and p.contains(pa) and p.contains(pb):
 			var delta := board.height_at(pa) - board.height_at(pb)
 			return Vector2(pa.distance_to(pb), delta).length()
-	return pa.distance_to(pb) * board.move_mult_at(mid) + board.climb_cost(pa, pb, mover)
+	var multiplier := 1.0 if mover != null and mover.def.traits.has("levitate") else board.move_mult_at(mid)
+	return pa.distance_to(pb) * multiplier + board.climb_cost(pa, pb, mover)

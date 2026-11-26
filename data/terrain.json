@@ -63,5 +63,122 @@
     "cover": 0,
     "height": 2.5,
     "walkable_top": true
+  },
+  "haunted_floor": {
+    "name": "Haunted house floor",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "height": 0.045
+  },
+  "hut_wall": {
+    "name": "Stone hut wall",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 2
+  },
+  "arcane_disc": {
+    "name": "Arcane transport disc",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "height": 0.06
+  },
+  "null_annex": {
+    "name": "Silent annex",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_walk": {
+    "name": "Silent walkway",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_lower": {
+    "name": "Silent Tower, lower terrace",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_middle": {
+    "name": "Silent Tower, middle terrace",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 6,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_upper": {
+    "name": "Silent Tower, summit",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 10,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "temple_column": {
+    "name": "Guardian column",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3
+  },
+  "sunken_ground": {
+    "name": "Sunken ground",
+    "ground_surface": true,
+    "walkable_top": true,
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "move_mult": 1,
+    "height": -2,
+    "stairs": false
+  },
+  "raised_ground": {
+    "name": "Raised ground",
+    "ground_surface": true,
+    "walkable_top": true,
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "move_mult": 1,
+    "height": 0,
+    "stairs": false
+  },
+  "stone_ramp": {
+    "name": "Sloping stone road",
+    "ground_surface": true,
+    "walkable_top": true,
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "move_mult": 1,
+    "height": 0,
+    "stairs": false
+  },
+  "stone_stairs": {
+    "name": "Stone stairs",
+    "ground_surface": true,
+    "walkable_top": true,
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "move_mult": 1,
+    "height": 0,
+    "stairs": true
   }
 }

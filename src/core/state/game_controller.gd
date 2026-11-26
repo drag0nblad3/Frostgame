@@ -53,6 +53,8 @@ func activate(id: int) -> bool:
 	var f := state.figure(id)
 	if state.active_id != -1 or f == null or not activatable().has(f):
 		return false
+	f = PackRules.select(self, f)
+	id = f.id
 	state.active_id = id
 	var time_walk := f.spell_effects.has("time_walk") and f.walk_phases.has(state.phase)
 	var fast := state.is_fast(f)
@@ -81,7 +83,46 @@ func can_move() -> bool:
 
 
 ## Where the active figure could go with its next movement action.
+## Explicit experimental API; do not allow legacy two-dimensional moves on layered maps.
+func layered_reach() -> LayeredReach:
+	return LayeredMovement.reach(self)
+
+
+func move_on_floor(node: Vector3i) -> bool:
+	return LayeredMovement.move(self,node)
+
+
+func floor_exit_nodes() -> Array[Vector3i]:
+	return LayeredLoot.exit_nodes(self)
+
+
+func exit_on_floor(node: Vector3i) -> bool:
+	return LayeredLoot.exit(self,node)
+
+
+func teleport_on_floor(node: Vector3i) -> bool:
+	return LayeredMagic.start_teleport(self,node)
+
+
+func jump_on_floor(node: Vector3i) -> bool:
+	return LayeredJump.move(self,node)
+
+
+func leap_on_floor(target_id: int,node: Vector3i) -> bool:
+	return LayeredLeap.start(self,state.figure(target_id),node)
+
+
+func bridge_on_floors(a: Vector3i,b: Vector3i) -> bool:
+	return LayeredBridge.start(self,a,b)
+
+
+func cancel_floor_bridge() -> bool:
+	return LayeredBridge.cancel(self)
+
+
 func reach() -> MoveReach:
+	if not state.board.floor_layout.is_empty():
+		return MoveReach.new()
 	var f := state.active()
 	if f.spell_effects.has("plane_walk"):
 		return PlaneWalk.reach(state, f)
@@ -101,11 +142,16 @@ func move_to(node: Vector2i) -> bool:
 	var f := state.active()
 	var path := r.path_to(node)
 	if f.spell_effects.has("plane_walk"):
+		if state.scenario_special == "silent_tower":
+			for i in range(1, path.size()):
+				if ScenarioNull.field_at(state.board, path[i]):
+					return false
 		f.pos = MoveGrid.to_pos(node)
 		f.elevation = state.board.height_at(f.pos)
 		f.actions_left -= 1
 		f.moves_taken += 1
 		emit("move", {"id": f.id, "path": path, "cost": float(r.cost[node])})
+		ScenarioSites.end_move(self, f)
 		return true
 	return _commit_move(f, path, float(r.cost[node]), [])
 
@@ -138,9 +184,12 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 	f.actions_left -= 1
 	f.moves_taken += 1
 	if not _magic.terrain.travel(f, path, cost):
+		if f.in_play():
+			_magic.illusions.after_move(f)
 		return true
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
+	ScenarioSites.end_move(self, f)
 	_magic.illusions.after_move(f)
 	return true
 
@@ -281,6 +330,7 @@ func end_activation() -> void:
 		return
 	f.activated = true
 	_magic.on_end_activation(f)
+	PackRules.finish(state, f)
 	_flow.after_activation()
 
 
@@ -315,6 +365,7 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 	if out:
 		_loot.drop_on_death(f)
 		emit("out_of_action", {"id": f.id, "by": by.id})
+		ScenarioGenie.record_kill(self, f, by)
 
 
 func can_pick_up(id: int) -> bool:
@@ -356,7 +407,7 @@ func finish_early_phase() -> bool:
 
 
 func can_begin_group() -> bool:
-	return not state.over and state.active_id == -1 and state.group.can_begin(state, state.current_side())
+	return not state.over and not state.pending_initiative and state.active_id == -1 and state.group.can_begin(state, state.current_side())
 
 
 func begin_group(ids: Array[int]) -> bool:
@@ -367,10 +418,14 @@ func begin_group(ids: Array[int]) -> bool:
 
 
 func can_push(own_figure: bool) -> bool:
+	if not state.board.floor_layout.is_empty():
+		return LayeredPush.destination(self,own_figure)!=null
 	return _displacement.destination(own_figure) != null
 
 
 func resolve_push(own_figure: bool) -> bool:
+	if not state.board.floor_layout.is_empty():
+		return LayeredPush.apply(self,own_figure)
 	return _displacement.push(own_figure)
 
 

@@ -30,6 +30,7 @@ func start_turn() -> void:
 		f.spell_effects.erase("time_walk")
 		f.actions_left = 0
 	s.fast_acts.clear()
+	PackRules.clear(s)
 	s.order.clear()
 	s.order_index = 0
 	s.phase = Phase.WIZARD

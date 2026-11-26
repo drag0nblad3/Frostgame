@@ -7,6 +7,8 @@ var name := ""
 var darkness := false
 var size := Vector2(36, 36)
 var pieces: Array[TerrainPiece] = []
+## Authored experimental floor data. Legacy maps leave this empty.
+var floor_layout := {}
 
 
 func contains(p: Vector2, margin: float = 0.0) -> bool:
@@ -52,6 +54,8 @@ var _stand_cache := {}
 var _mult_cache := {}
 ## Bot distance fields by target node (see MovePlanner.distance_field).
 var field_cache := {}
+var has_ground_profiles := false
+var has_ramps := false
 
 
 func _key(p: Vector2) -> Variant:
@@ -65,6 +69,13 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 	if not contains(p, radius):
 		return false
 	for piece in pieces:
+		if piece.kind.id == "temple_column":
+			# Contact must be legal on every face; Rect2.has_point includes
+			# the minimum boundary but excludes the maximum boundary.
+			var nearest := Vector2(clampf(p.x, piece.rect.position.x, piece.rect.end.x), clampf(p.y, piece.rect.position.y, piece.rect.end.y))
+			if p.distance_to(nearest) < radius - 0.001:
+				return false
+			continue
 		if piece.kind.blocks_move and not piece.kind.walkable_top and piece.rect.grow(radius).has_point(p):
 			var over := false
 			for bridge in pieces_at(p):
@@ -76,13 +87,37 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 	return true
 
 
-## One exposed standing surface at each XY. Overlapping indoor floors are future work.
-func height_at(p: Vector2) -> float:
+## Ground profiles replace the zero plane; elevated decks can sit above them.
+func ground_piece_at(p: Vector2) -> TerrainPiece:
+	for i in range(pieces.size()-1,-1,-1):
+		var piece := pieces[i]
+		if piece.kind.ground_surface and piece.contains(p):
+			return piece
+	return null
+
+
+func ground_height_at(p: Vector2) -> float:
+	var piece := ground_piece_at(p)
+	return piece.surface_height(p) if piece != null else 0.0
+
+
+func surface_at(p: Vector2) -> TerrainPiece:
+	var top: TerrainPiece
 	var height := 0.0
+	if has_ground_profiles:
+		top = ground_piece_at(p)
+		if top != null:
+			height = top.surface_height(p)
 	for piece in pieces_at(p):
-		if piece.kind.walkable_top:
-			height = maxf(height, piece.surface_height(p))
-	return height
+		if piece.kind.walkable_top and not piece.kind.ground_surface and piece.surface_height(p) > height:
+			top = piece
+			height = piece.surface_height(p)
+	return top
+
+
+func height_at(p: Vector2) -> float:
+	var piece := surface_at(p)
+	return piece.surface_height(p) if piece != null else 0.0
 
 
 func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
@@ -99,6 +134,11 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 
 
 func invalidate_terrain() -> void:
+	has_ground_profiles = false
+	has_ramps = false
+	for piece in pieces:
+		has_ground_profiles = has_ground_profiles or piece.kind.ground_surface
+		has_ramps = has_ramps or piece.ramp
 	_stand_cache.clear()
 	_mult_cache.clear()
 	field_cache.clear()

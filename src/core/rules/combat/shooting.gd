@@ -29,7 +29,7 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "in combat"
 	if distance(shooter, target) > shooter.ranged.range_in:
 		return "out of range"
-	if not LineOfSight.check(board, shooter.pos, target.pos).clear:
+	if not LineOfSight.check_figures(board, shooter, target).clear:
 		return "no line of sight"
 	return ""
 
@@ -38,7 +38,7 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 static func possible_from(board: Board, figures: Array[Figure], shooter: Figure, at: Vector2, target: Figure) -> bool:
 	if shooter.ranged == null or not IllusionRules.visible_to(figures, shooter, target) or Contact.in_combat(figures, target):
 		return false
-	if maxf(at.distance_to(target.pos) - 2.0 * Figure.BASE_RADIUS, 0.0) > shooter.ranged.range_in:
+	if maxf(Vector2(at.distance_to(target.pos),board.height_at(at)-target.elevation).length() - 2.0 * Figure.BASE_RADIUS, 0.0) > shooter.ranged.range_in:
 		return false
 	return LineOfSight.check(board, at, target.pos).clear
 
@@ -59,17 +59,20 @@ static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, c
 
 
 static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
-	var los := LineOfSight.check(board, shooter.pos, target.pos)
+	var los := LineOfSight.check_figures(board, shooter, target)
 	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
 	if target.def.traits.has("large"):
 		mod -= 2
-	var st := sr + mini(shooter.effective_shoot() + MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id) - storm_penalty + (1 if shooter.spell_effects.has("enchant_weapon") else 0) + (3 if target.spell_effects.has("glow") else 0), 10) + shooter.roll_penalty()
+	var null_target := ScenarioNull.muted(target)
+	var magic_shoot := 0 if null_target else MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id)
+	var magic_damage := 0 if null_target else MagicEquipment.bonus(shooter, "damage", shooter.ranged.id)
+	var st := sr + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and shooter.spell_effects.has("enchant_weapon") else 0) + (3 if target.spell_effects.has("glow") else 0), 10) + shooter.roll_penalty()
 	var tt := tr + mini(target.effective_fight() + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
-		dmg = Damage.amount(st, shooter.ranged.damage_mod + MagicEquipment.bonus(shooter, "damage", shooter.ranged.id), target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits)
-		if dmg > 0 and shooter.spell_effects.has("elemental_hammer"):
+		dmg = Damage.amount(st, shooter.ranged.damage_mod + magic_damage, target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits and not target.def.traits.has("immune_critical"))
+		if dmg > 0 and not null_target and shooter.spell_effects.has("elemental_hammer"):
 			dmg += 5
-	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and not WeaponActions.magic_attack(shooter, shooter.ranged):
+	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and (null_target or not WeaponActions.magic_attack(shooter, shooter.ranged)):
 		dmg = 0
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}

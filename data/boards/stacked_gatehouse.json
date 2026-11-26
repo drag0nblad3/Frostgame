@@ -1,0 +1,148 @@
+{
+  "id": "stacked_gatehouse",
+  "name": "Stacked Gatehouse (experimental)",
+  "size": [
+    18,
+    16
+  ],
+  "pieces": [],
+  "floor_layout": {
+    "surfaces": [
+      {
+        "id": "street",
+        "rect": [
+          0,
+          0,
+          18,
+          16
+        ],
+        "level": 0
+      },
+      {
+        "id": "upper",
+        "rect": [
+          5,
+          5,
+          8,
+          6
+        ],
+        "level": 3
+      },
+      {
+        "id": "stairs",
+        "rect": [
+          1.5,
+          6,
+          3,
+          4
+        ],
+        "level": 0,
+        "end_level": 3,
+        "axis": "x"
+      },
+      {
+        "id": "landing",
+        "rect": [
+          4,
+          6,
+          1.5,
+          4
+        ],
+        "level": 3
+      }
+    ],
+    "solids": [
+      [
+        5,
+        2.6,
+        5,
+        8,
+        0.4,
+        6
+      ],
+      [
+        5,
+        0,
+        5,
+        0.4,
+        2.6,
+        1
+      ],
+      [
+        12.6,
+        0,
+        5,
+        0.4,
+        2.6,
+        6
+      ],
+      [
+        5,
+        0,
+        10.6,
+        8,
+        2.6,
+        0.4
+      ]
+    ],
+    "links": [
+      {
+        "from": [
+          "street",
+          1,
+          8
+        ],
+        "to": [
+          "stairs",
+          2,
+          8
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stairs",
+          4,
+          8
+        ],
+        "to": [
+          "landing",
+          4.5,
+          8
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "landing",
+          5,
+          8
+        ],
+        "to": [
+          "upper",
+          5.5,
+          8
+        ],
+        "kind": "walk"
+      }
+    ],
+    "exit_surfaces": [
+      "street"
+    ],
+    "climbs": [
+      {
+        "id": "east_wall",
+        "from": [
+          "street",
+          13.5,
+          8
+        ],
+        "to": [
+          "upper",
+          12.5,
+          8
+        ]
+      }
+    ]
+  }
+}

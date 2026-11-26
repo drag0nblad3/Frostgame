@@ -30,6 +30,10 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for side in warbands.size():
 		var wb: Dictionary = warbands[side]
 		s.side_names.append(wb.get("name", "Warband %d" % (side + 1)))
+		var schools: Dictionary = JsonFile.read("res://data/schools.json")
+		var school := str(wb.get("school", wb.get("name", ""))).to_lower()
+		if schools.has(school):
+			s.side_schools[side] = school
 		s.spellbooks[side] = wb.get("spells", {})
 		if wb.get("telescope", false):
 			s.telescope_ready[side] = true
@@ -91,6 +95,6 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for at: Array in d.get("treasures", []):
 		var token := TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1]))
 		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
-		token.frozen = s.scenario_special == "underground_library" and token.central
+		token.frozen = (s.scenario_special == "underground_library" and token.central) or s.scenario_special == "complex_temple"
 		s.treasures.append(token)
 	return s

@@ -28,4 +28,6 @@ static func in_combat(figures: Array[Figure], f: Figure) -> bool:
 
 
 static func figures_touch(a: Figure, b: Figure) -> bool:
+	if not a.surface_id.is_empty() and not b.surface_id.is_empty() and a.surface_id!=b.surface_id:
+		return false
 	return absf(a.elevation - b.elevation) < 0.5 and touching(a.pos, b.pos)

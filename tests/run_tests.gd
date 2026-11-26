@@ -20,9 +20,10 @@ func _init() -> void:
 			continue
 		var started := Time.get_ticks_msec()
 		var script: GDScript = load("res://tests/unit/" + f)
-		if script == null:
+		if script == null or not script.can_instantiate():
 			failed.append("Could not load " + f)
 			continue
+		var before := total
 		for m in script.get_script_method_list():
 			var name: String = m["name"]
 			if not name.begins_with("test_"):
@@ -32,6 +33,8 @@ func _init() -> void:
 			tc.call(name)
 			total += 1
 			failed.append_array(tc.failures)
+		if total == before:
+			failed.append("No executable tests in " + f)
 		timings.append({"file": f, "ms": Time.get_ticks_msec() - started})
 	timings.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["ms"] > b["ms"])
 	for entry: Dictionary in timings.slice(0, 10):

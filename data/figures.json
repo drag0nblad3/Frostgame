@@ -682,5 +682,144 @@
       "large"
     ],
     "verify": false
+  },
+  "genie": {
+    "name": "Genie",
+    "role": "creature",
+    "move": 7,
+    "fight": 3,
+    "shoot": 3,
+    "armour": 13,
+    "will": 5,
+    "health": 14,
+    "cost": 0,
+    "weapons": [
+      "natural",
+      "genie_bolt"
+    ],
+    "traits": [
+      "demon",
+      "immune_normal"
+    ],
+    "verify": false
+  },
+  "boar": {
+    "name": "Boar",
+    "role": "creature",
+    "move": 6,
+    "fight": 2,
+    "shoot": 0,
+    "armour": 12,
+    "will": 2,
+    "health": 8,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "animal",
+      "bounty_10",
+      "horns"
+    ],
+    "verify": false
+  },
+  "white_gorilla": {
+    "name": "White Gorilla",
+    "role": "creature",
+    "move": 6,
+    "fight": 4,
+    "shoot": 0,
+    "armour": 12,
+    "will": 8,
+    "health": 14,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "animal",
+      "strong"
+    ],
+    "verify": false
+  },
+  "frost_giant": {
+    "name": "Frost Giant",
+    "role": "creature",
+    "move": 6,
+    "fight": 5,
+    "shoot": 0,
+    "armour": 15,
+    "will": 4,
+    "health": 25,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "elemental_resistance_2",
+      "large",
+      "strong"
+    ],
+    "verify": false
+  },
+  "werewolf": {
+    "name": "Werewolf",
+    "role": "creature",
+    "move": 7,
+    "fight": 4,
+    "shoot": 0,
+    "armour": 11,
+    "will": 5,
+    "health": 12,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "bounty_20",
+      "expert_climber"
+    ],
+    "verify": false
+  },
+  "vampire": {
+    "name": "Vampire",
+    "role": "creature",
+    "move": 7,
+    "fight": 4,
+    "shoot": 0,
+    "armour": 12,
+    "will": 5,
+    "health": 14,
+    "cost": 0,
+    "weapons": [
+      "natural"
+    ],
+    "traits": [
+      "immune_normal",
+      "magic_attack",
+      "mind_lock",
+      "true_sight",
+      "undead"
+    ],
+    "verify": false
+  },
+  "skeleton_archer": {
+    "name": "Skeleton Archer",
+    "role": "creature",
+    "move": 6,
+    "fight": 0,
+    "shoot": 0,
+    "armour": 10,
+    "will": 0,
+    "health": 1,
+    "cost": 0,
+    "weapons": [
+      "natural",
+      "bow"
+    ],
+    "traits": [
+      "undead"
+    ],
+    "verify": false
   }
 }

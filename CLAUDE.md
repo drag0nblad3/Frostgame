@@ -33,7 +33,7 @@ Stargrave is planned as a second content set on the same engine.
 - Movement searches a 0.5" lattice (`MoveGrid`/`MovePlanner`, Dijkstra, rough terrain ×2).
 - Terrain pieces are axis-aligned rectangles with a kind (`data/terrain.json`): blocks sight,
   blocks movement, cover (none/light/heavy), move multiplier, model height.
-- No elevation yet: heights are cosmetic.
+- One exposed standing surface per XY, including negative ground profiles, authored ramps, stairs and elevated tops. Overlapping floors and mid-wall standing require a separate surface graph.
 
 ## File map
 | Path | What |

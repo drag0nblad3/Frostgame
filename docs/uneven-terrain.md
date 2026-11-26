@@ -1,0 +1,10 @@
+# Uneven terrain and next-generation floor graph
+
+Ground profiles replace the base plane in authored rectangles, last declared wins. Flat profiles use an absolute level; ramp profiles have an axis and start/end heights. Ramps and stairs are continuous surfaces, measured along the incline; discontinuous banks use ordinary climbing costs. This is an implementation interpretation of the unobstructed stair rule (2e p. 46). The existing grid remains 0.5 inches. Center-ray ground occlusion is sampled. Ditches are dry; swimming and running jumps are not added here.
+
+## Overlapping floors
+
+See [the staged multi-floor implementation plan](multifloor-plan.md) for migration,
+rule implications, interface requirements and acceptance tests.
+
+Replace the single exposed-height lookup with explicit surface IDs and a graph of walkable nodes (x, y, surface ID), connected by stairs, ladders, jumps, drops, and spell-specific transitions. Terrain volumes must have lower and upper bounds. Figures and treasure tokens must store their surface ID plus elevation; occupancy and melee contact become floor-aware. Shooting and magic use true 3D rays through solid walls, ceilings and floor slabs; portals and vertical spell targeting need explicit rules. AI pathfinding, reachable highlights, displacement, snapshots and scenario data must use the graph. Keep existing maps migrated to a single surface, then add a two-storey ruin with an underpass as an integration fixture. Provide floor selection and cutaway visibility before introducing multi-storey maps to campaign play.

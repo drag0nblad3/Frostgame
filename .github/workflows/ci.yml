@@ -23,12 +23,20 @@ jobs:
           godot --headless --import 2>&1 | tee import.log
           ! grep -E "SCRIPT ERROR|Parse Error" import.log
       - name: Unit tests
-        run: godot --headless -s tests/run_tests.gd
+        run: |
+          set -o pipefail
+          godot --headless -s tests/run_tests.gd 2>&1 | tee unit-tests.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script" unit-tests.log
       - name: Player interaction smoke test
         run: |
           set -o pipefail
           godot --headless -s tests/player_smoke.gd 2>&1 | tee player-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" player-smoke.log
+      - name: Scenario briefing smoke test
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless -s tests/scenario_ui_smoke.gd 2>&1 | tee scenario-ui.log
+          ! grep -E "SCRIPT ERROR|Parse Error" scenario-ui.log
       - name: Roster editor smoke test
         run: |
           set -o pipefail
@@ -39,6 +47,21 @@ jobs:
           set -o pipefail
           timeout 30s godot --headless -s tests/inventory_smoke.gd 2>&1 | tee inventory-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" inventory-smoke.log
+      - name: Title navigation smoke test
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless -s tests/title_smoke.gd 2>&1 | tee title-smoke.log
+          ! grep -E "SCRIPT ERROR|Parse Error" title-smoke.log
+      - name: Layered gatehouse smoke test
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless -s tests/layered_demo_smoke.gd 2>&1 | tee layered-demo.log
+          ! grep -E "SCRIPT ERROR|Parse Error" layered-demo.log
+      - name: Layered skirmish interface smoke test
+        run: |
+          set -o pipefail
+          timeout 60s godot --headless -s tests/layered_skirmish_smoke.gd 2>&1 | tee layered-skirmish.log
+          ! grep -E "SCRIPT ERROR|Parse Error" layered-skirmish.log
       - name: Smoke run main scene
         run: |
           set -o pipefail

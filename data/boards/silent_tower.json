@@ -1,0 +1,145 @@
+{
+  "id": "silent_tower",
+  "name": "The Silent Tower",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        5,
+        8,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        24,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        7,
+        25,
+        5,
+        0.5
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        24,
+        9,
+        5,
+        0.5
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        8,
+        14,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        26,
+        19,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "platform",
+      "rect": [
+        4,
+        20,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "platform",
+      "rect": [
+        29,
+        13,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "null_annex",
+      "rect": [
+        9,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "null_annex",
+      "rect": [
+        23,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "null_walk",
+      "rect": [
+        13,
+        17,
+        3,
+        2
+      ]
+    },
+    {
+      "kind": "null_walk",
+      "rect": [
+        20,
+        17,
+        3,
+        2
+      ]
+    },
+    {
+      "kind": "null_lower",
+      "rect": [
+        15,
+        15,
+        6,
+        6
+      ]
+    },
+    {
+      "kind": "null_middle",
+      "rect": [
+        16,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "null_upper",
+      "rect": [
+        17,
+        17,
+        2,
+        2
+      ]
+    }
+  ]
+}

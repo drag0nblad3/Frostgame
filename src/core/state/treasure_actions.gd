@@ -21,6 +21,26 @@ func pick_up(id: int) -> bool:
 	_c._spend(f)
 	if _c.state.museum and not _c._encounters.museum_pickup(f):
 		return true
+	return _claim(f, token)
+
+
+func claim_free(f: Figure, token: TreasureToken) -> bool:
+	# Column contact is with its edge, rather than the newly revealed centre.
+	if f == null or token == null or not token.on_ground() or token.frozen or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
+		return false
+	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
+		return false
+	for enemy in _c.state.figures:
+		if enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
+			continue
+		if Shooting.distance(enemy, f) <= 1.0 or Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, _c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
+			return false
+	return _claim(f, token)
+
+
+func _claim(f: Figure, token: TreasureToken) -> bool:
+	var id := token.id
+	ScenarioSites.discover(_c, token.pos, f.side)
 	_c._magic.illusions.reveal(f)
 	if f.treasure_id >= 0:
 		f.second_treasure_id = f.treasure_id
@@ -29,6 +49,7 @@ func pick_up(id: int) -> bool:
 	_c.emit("treasure_pickup", {"id": f.id, "treasure": id})
 	if not token.ever_collected:
 		token.ever_collected = true
+		ScenarioGenie.first_pickup(_c, f, token)
 		_c._encounters.on_pickup()
 	return true
 
@@ -43,10 +64,19 @@ func can_drop(at: Vector2) -> bool:
 		return false
 	if f.pos.distance_to(at) < 0.85 or f.pos.distance_to(at) > 1.25:
 		return false
-	if not _c.state.board.can_stand(at, TreasureRules.TOKEN_RADIUS) or not is_equal_approx(_c.state.board.height_at(at), f.elevation):
+	var height := _c.state.board.height_at(at)
+	if not f.surface_id.is_empty():
+		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)
+		var index := layout.index_of(f.surface_id)
+		if index<0 or not layout.surfaces[index].contains(at,TreasureRules.TOKEN_RADIUS):
+			return false
+		height=layout.surfaces[index].height_at(at)
+		if not layout.clearance(Vector3(at.x,height,at.y),TreasureRules.TOKEN_RADIUS,0.5):
+			return false
+	elif not _c.state.board.can_stand(at,TreasureRules.TOKEN_RADIUS) or not is_equal_approx(height,f.elevation):
 		return false
 	for other in _c.state.figures:
-		if other.in_play() and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
+		if other.in_play() and (f.surface_id.is_empty() or absf(other.elevation-height)<0.5) and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
 			return false
 	return f.moves_taken == 0 or _c.can_act()
 
@@ -79,7 +109,14 @@ func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
 	_c._magic.illusions.reveal(f)
 	_clear_carrier(token)
 	token.pos = at
-	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at})
+	token.surface_id = f.surface_id
+	var height := _c.state.board.height_at(at)
+	if not f.surface_id.is_empty():
+		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)
+		var index := layout.index_of(f.surface_id)
+		if index>=0:
+			height=layout.surfaces[index].height_at(at)
+	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at,"height":height})
 
 
 func cancel_shrinking(f: Figure) -> void:

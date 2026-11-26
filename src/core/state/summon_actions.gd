@@ -33,13 +33,13 @@ func can_control(f: Figure, t: Figure, id: String) -> bool:
 	if (t.side == f.side and t.controller_id < 0 and t.summon_spell == "") or (existing != null and existing != t):
 		return false
 	if id == "mind_control":
-		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless") and not t.spell_effects.has("mind_lock")
+		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless") and not t.def.traits.has("mind_lock") and not t.spell_effects.has("mind_lock")
 	return t.is_demon() if id == "control_demon" else t.def.traits.has(CONTROL[id])
 
 
 func can_place(f: Figure, id: String, at: Vector2) -> bool:
 	var s := c.state
-	if s.creature_db == null or not s.board.can_stand(at, Figure.BASE_RADIUS):
+	if s.creature_db == null or ScenarioNull.field_at(s.board, at) or not s.board.can_stand(at, Figure.BASE_RADIUS):
 		return false
 	if id == "animate_skull" and summoned(f, id) != null:
 		return false
