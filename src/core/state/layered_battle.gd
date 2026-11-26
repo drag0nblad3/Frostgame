@@ -12,7 +12,7 @@ static func create(db: FigureDb,terrain: TerrainDb,seed_value: int = 17,board_id
 	s.creature_db=db
 	s.spell_catalog=JsonFile.read("res://data/spells.json")
 	s.side_schools={0:"illusionist",1:"illusionist"}
-	s.spellbooks={0:{"teleport":10,"leap":12,"bridge":14},1:{"teleport":10,"leap":12,"bridge":14}}
+	s.spellbooks={0:{"teleport":10,"leap":12,"bridge":14,"heal":12,"elemental_bolt":12,"elemental_shield":10},1:{"teleport":10,"leap":12,"bridge":14,"heal":12,"elemental_bolt":12,"elemental_shield":10}}
 	var layout := FloorLayout.from_dict(s.board.floor_layout)
 	var deployment: Array = [[0,"wizard","street",Vector2(3,3)],[0,"thug","stairs",Vector2(2,8)],[0,"archer","street",Vector2(3,12)],[1,"wizard","street",Vector2(15,3)],[1,"thug","street",Vector2(10,8)],[1,"archer","street",Vector2(15,12)]]
 	if tower:

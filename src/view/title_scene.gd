@@ -70,6 +70,8 @@ func _ready() -> void:
 	_button("campaign","Campaign headquarters")
 	_button("training","Training yard")
 	_button("gatehouse","Gatehouse · experimental battle")
+	if not LayeredCheckpoint.read().is_empty():
+		_button("resume_layered","Resume 3D battle")
 	_button("guide","Field guide")
 	_label("A fan-made tactical tabletop simulator",13,Color(0.65,0.73,0.79))
 	var space := Control.new()
@@ -103,8 +105,10 @@ func _launch(key: String) -> void:
 		return
 	_launching = true
 	get_tree().root.set_meta(LAUNCH_KEY,key)
-	if key=="gatehouse":
+	if key in ["gatehouse","resume_layered"]:
 		get_tree().root.remove_meta(LAUNCH_KEY)
+		if key=="resume_layered":
+			get_tree().root.set_meta("layered_resume",true)
 		if get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")!=OK:
 			_launching=false
 		return

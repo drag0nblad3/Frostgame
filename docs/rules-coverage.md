@@ -314,3 +314,6 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 
 
 - Layered group activation (pp. 40–43): command eligibility uses figure-to-figure 3D range and slab-aware LOS; the existing movement-first group sequence supports floor routes and jumps, explicit member selection and checkpoint restoration. Teleport/Leap in groups and layered campaign deployment remain restricted.
+
+
+- Layered figure spells: explicit migration of 17 figure-only effects, including healing, shielding, direct shots and selected buffs/debuffs. Use actual 3D range and floor-volume occlusion, ordinary casting and empowerment; area, placement and forced movement effects remain restricted.

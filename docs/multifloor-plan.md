@@ -183,3 +183,17 @@ half-rate second movement and snapshot restoration between passes. Teleport
 and Leap remain unavailable during groups; other unsupported effects remain
 restricted. The rival still chooses individual activations. Live campaign
 routing remains deliberately disabled.
+
+
+## Layered battle checkpoint and figure-target spell migration
+
+The skirmish now has a separate local checkpoint and title-screen resume,
+including active figure, group pass, dynamic floor layout and carried loot.
+The experimental spellbooks expose Heal, Elemental Shield and Elemental Bolt
+in addition to movement/bridge spells. A conservative allowlist also permits
+migrated figure-only effects from a campaign roster or scroll, with true
+three-dimensional range and solid-volume line of sight. The named spell
+target selector identifies figures by floor. Placement, summoning, area
+magic and forced relocation are not enabled by this migration. The bot still
+uses its existing movement/bridge tactics. Full campaign settlement and
+unsupported roster equipment remain separate work.

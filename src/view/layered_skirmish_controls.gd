@@ -27,7 +27,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -125,6 +125,7 @@ func refresh() -> void:
 		shoot=shoot or c.can_shoot(t.id)
 	_show("fight",fight)
 	_show("shoot",shoot)
+	_show("cast",not LayeredFigureSpells.options(c).is_empty())
 	if ScenarioNull.muted(f):
 		hint.text+=" • NULL FIELD"
 	var teleport := not ScenarioNull.muted(f) and CasterLoadout.is_caster(f.def.role) and c.can_act() and c._magic.available_spell(f,"teleport") and not Contact.in_combat(s.figures,f) and not s.group.in_progress()
@@ -212,6 +213,8 @@ func command(key: String) -> void:
 			LayeredGroupPicker.choose(self,c,scene.refresh)
 		"finish_early":
 			c.finish_early_phase()
+		"cast":
+			LayeredSpellPicker.choose(self,c,scene.refresh)
 		"move","jump","fight","shoot","exit","teleport","leap","bridge":
 			mode=key
 			bridge_start=null

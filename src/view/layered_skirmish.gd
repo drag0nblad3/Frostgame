@@ -17,7 +17,13 @@ var _layout_revision := 0
 func _ready() -> void:
 	var board_id := str(get_tree().root.get_meta("layered_board","stacked_gatehouse"))
 	get_tree().root.remove_meta("layered_board")
-	controller=LayeredBattle.create(FigureDb.load_files(),TerrainDb.load_file(),17,board_id)
+	var db := FigureDb.load_files()
+	var resume := bool(get_tree().root.get_meta("layered_resume",false))
+	get_tree().root.remove_meta("layered_resume")
+	if resume:
+		controller=LayeredCheckpoint.load_battle(db)
+	if controller==null:
+		controller=LayeredBattle.create(db,TerrainDb.load_file(),17,board_id)
 	var s := controller.state
 	layout=FloorLayout.from_dict(s.board.floor_layout)
 	_layout_revision=s.board.floor_layout.hash()
@@ -39,11 +45,9 @@ func _ready() -> void:
 		player.add_child(v)
 		v.setup(f,s.side_names[f.side])
 		player.views[f.id]=v
+		v.set_active(s.active_id==f.id)
 	controller.event_emitted.connect(player.push)
 	player.build_treasures()
-	for token in s.treasures:
-		var mesh: MeshInstance3D = player.treasure_views[token.id]
-		mesh.position=layout.world(layout.node(token.surface_id,token.pos))+Vector3.UP*0.25
 	marks=MultiMeshInstance3D.new()
 	add_child(marks)
 	_ui()
@@ -91,6 +95,37 @@ func _ui() -> void:
 	controls=LayeredSkirmishControls.new()
 	col.add_child(controls)
 	controls.setup(self)
+	var save := Button.new()
+	save.text="Save 3D battle"
+	save.pressed.connect(_save)
+	row.add_child(save)
+	if not LayeredCheckpoint.read().is_empty():
+		var resume := Button.new()
+		resume.text="Load 3D save"
+		resume.pressed.connect(_resume)
+		row.add_child(resume)
+
+
+func _save() -> void:
+	if not player.idle():
+		return
+	if LayeredCheckpoint.save(controller):
+		controls.log_line.text="3D battle saved. Resume it from the title screen."
+	else:
+		controls.log_line.text="Finish pending actions before saving."
+
+
+func _resume() -> void:
+	if not player.idle():
+		return
+	var confirm := ConfirmationDialog.new()
+	confirm.dialog_text="Load the saved 3D battle? Unsaved progress will be replaced."
+	add_child(confirm)
+	confirm.confirmed.connect(func() -> void:
+		get_tree().root.set_meta("layered_resume",true)
+		get_tree().reload_current_scene())
+	confirm.canceled.connect(confirm.queue_free)
+	confirm.popup_centered()
 
 
 func _switch_board() -> void:
@@ -141,7 +176,9 @@ func refresh() -> void:
 		view.visible=f.in_play() and (all or f.surface_id==chosen)
 	for t in s.treasures:
 		var model: MeshInstance3D = player.treasure_views[t.id]
-		model.visible=t.unresolved() and (all or t.surface_id==chosen or t.carrier_id>=0)
+		var carrier := s.figure(t.carrier_id)
+		var surface := carrier.surface_id if carrier!=null else t.surface_id
+		model.visible=t.unresolved() and (all or surface==chosen)
 	status.text="%s  •  Turn %d  |  %s  |  Loot %d:%d" % ["SILENT TOWER" if s.board.id=="layered_silent_tower" else "GATEHOUSE",s.turn,Phase.name_of(s.phase),s.secured_count(0),s.secured_count(1)]
 	controls.refresh()
 	targets.clear()

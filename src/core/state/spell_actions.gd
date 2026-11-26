@@ -34,7 +34,7 @@ func _init(controller: GameController) -> void:
 
 func can_cast(id: String, target_id: int) -> bool:
 	var s := c.state
-	if not s.board.floor_layout.is_empty():
+	if not s.board.floor_layout.is_empty() and not LayeredFigureSpells.SUPPORTED.has(id):
 		return false
 	var f := s.active()
 	var t := s.figure(target_id)
@@ -72,7 +72,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var limit := 1.0 if kind == "touch" else float(spell.get("range", 24.0))
 	if t != f:
-		if kind == "area_shot":
+		if not s.board.floor_layout.is_empty():
+			if not LayeredFigureSpells.visible(s.board,f,t,limit):
+				return false
+		elif kind == "area_shot":
 			if Shooting.distance(f, t) > limit or not LineOfSight.check(s.board, f.pos, t.pos).clear:
 				return false
 		elif not WizardEye.visible(s.board, f, t.pos, limit):
@@ -500,7 +503,10 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
-	var mod := Shooting.target_mod(LineOfSight.check(s.board, from, t.pos)) + (1 if f.moves_taken > 0 else 0)
+	var los := LineOfSight.check(s.board, from, t.pos) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if not los.clear and not s.board.floor_layout.is_empty():
+		return
+	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
 		mod -= 2
 	var ar := c.dice.d20()
@@ -517,7 +523,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 		dmg = ceili(dmg / 2.0)
 	if elemental:
 		dmg = PotionActions.absorb(t, dmg)
-	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from})
+	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from if s.board.floor_layout.is_empty() else null})
 	c._hurt(t, dmg, f)
 
 
