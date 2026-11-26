@@ -65,8 +65,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 				return false
 			used += 1
 	# Magic staves replace the caster's starting staff; other items use spare slots.
-	var caster := unit["type"] in ["wizard", "apprentice"]
-	var staff := item["kind"] == "gear" and info["type"] == "staff"
+	var caster: bool = unit["type"] in ["wizard", "apprentice"]
+	var staff: bool = item["kind"] == "gear" and info["type"] == "staff"
 	if caster and not staff:
 		var magic_staff := false
 		for other: Dictionary in d["loot"]:
