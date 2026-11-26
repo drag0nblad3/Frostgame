@@ -2,6 +2,7 @@ class_name CampaignPanel
 extends AcceptDialog
 ## Between-battle campaign overview. Starting a campaign is an explicit action.
 signal start_requested
+signal story_requested(include_veil: bool)
 signal begin_requested
 signal restart_requested
 signal scenario_selected(id: String)
@@ -14,6 +15,8 @@ var _spell_catalog: Dictionary
 var spells: OptionButton
 var improve: Button
 var start: Button
+var story_start: Button
+var story_veil: CheckBox
 var begin: Button
 var db: FigureDb
 var stat: OptionButton
@@ -144,6 +147,11 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	start.text = "Start campaign with current drafted warband"
 	col.add_child(start)
 	start.pressed.connect(func() -> void: start_requested.emit())
+	story_veil=CheckBox.new()
+	story_veil.text="Include optional Veil of Unreality"
+	story_veil.button_pressed=true
+	col.add_child(story_veil)
+	story_start=_command(col,"Start The Red King storyline",func() -> void: story_requested.emit(story_veil.button_pressed))
 	_scenario=OptionButton.new()
 	_scenario.fit_to_longest_item=false
 	_scenario.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -164,8 +172,12 @@ func refresh(in_battle: bool) -> void:
 	var d := campaign.data
 	base_banner.refresh(d)
 	start.visible = d.is_empty()
+	story_start.visible=d.is_empty() and db.content_profile.enabled.has("red_king") and db.content_profile.allows("campaigns","red_king")
+	story_veil.visible=story_start.visible
 	begin.visible = not d.is_empty()
-	_scenario.visible=not d.is_empty() and not in_battle
+	_scenario.visible=not d.is_empty() and not in_battle and not RedKingCampaign.active(d)
+	var stage := RedKingCampaign.next_stage(d)
+	begin.text=("Play "+str(stage.get("title","")) if not stage.is_empty() else "Story concluded") if RedKingCampaign.active(d) else "Play next campaign skirmish"
 	spells.visible = not d.is_empty()
 	improve.visible = not d.is_empty()
 	var pending: Array = d.get("pending_treasure", [])
@@ -190,6 +202,10 @@ func refresh(in_battle: bool) -> void:
 	rituals.refresh()
 	base_upgrades.refresh()
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
+	if RedKingCampaign.active(d):
+		lines.append("THE RED KING · "+("Story concluded" if stage.is_empty() else "Act %d · %s"%[stage["act"],stage["title"]]))
+		if RedKingCampaign.economy_locked(d) and not RaggedWarbands.active(d):
+			lines.append("Pursued by the Red King: no purchases, hiring or base benefits before the Veil.")
 	if RaggedWarbands.active(d):
 		lines.append("RAGGED WARBANDS · No hiring, purchases or base benefits. Free random replacements before battle.")
 	for unit: Dictionary in d["units"]:

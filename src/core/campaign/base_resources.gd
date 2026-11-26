@@ -8,11 +8,11 @@ static func catalog() -> Dictionary:
 
 
 static func owns(d: Dictionary, id: String) -> bool:
-	return not RaggedWarbands.active(d) and d.get("resources", []).has(id)
+	return not RedKingCampaign.economy_locked(d) and d.get("resources", []).has(id)
 
 
 static func buy(d: Dictionary, id: String) -> bool:
-	if RaggedWarbands.active(d) or d.is_empty() or str(d.get("base", "")) == "" or owns(d, id) or not ContentProfile.from_campaign(d).allows("base_resources",id):
+	if RedKingCampaign.economy_locked(d) or d.is_empty() or str(d.get("base", "")) == "" or owns(d, id) or not ContentProfile.from_campaign(d).allows("base_resources",id):
 		return false
 	var info: Dictionary = catalog().get(id, {})
 	if not info.get("live", false) or int(d["gold"]) < int(info.get("cost", 0)):
@@ -86,7 +86,7 @@ static func fits(d: Dictionary, db: FigureDb, extra_type: String = "") -> bool:
 
 static func reserve_candidates(d: Dictionary, db: FigureDb) -> Array[int]:
 	var candidates: Array[int] = []
-	if RaggedWarbands.active(d) or d.get("base", "") != "inn":
+	if RedKingCampaign.economy_locked(d) or d.get("base", "") != "inn":
 		return candidates
 	var ready: Array[Dictionary] = []
 	var kennel_id := -1

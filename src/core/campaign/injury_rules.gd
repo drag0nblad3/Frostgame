@@ -45,6 +45,8 @@ static func blind(unit: Dictionary) -> bool:
 
 
 static func treatment_price(d: Dictionary, unit: Dictionary) -> int:
+	if RedKingCampaign.economy_locked(d):
+		return -1
 	var count := int(unit.get("injury_types", {}).get("niggling_injury", 0))
 	if count == 0 or unit.get("niggle_paid", false) or unit["dead"] or unit.get("dismissed", false):
 		return -1

@@ -9,21 +9,21 @@
       "title": "The Squatter",
       "act": 1,
       "number": 1,
-      "status": "pending"
+      "status": "prototype"
     },
     {
       "id": "red_king_investigations",
       "title": "Investigations",
       "act": 1,
       "number": 2,
-      "status": "pending"
+      "status": "prototype"
     },
     {
       "id": "red_king_veil",
       "title": "The Veil of Unreality",
       "act": 1,
       "number": 3,
-      "status": "pending",
+      "status": "prototype",
       "optional": true
     },
     {
@@ -31,21 +31,21 @@
       "title": "Back Into the Fire",
       "act": 2,
       "number": 4,
-      "status": "pending"
+      "status": "prototype"
     },
     {
       "id": "red_king_demons_and_mad_man",
       "title": "The Demons and the Mad Man",
       "act": 2,
       "number": 5,
-      "status": "pending"
+      "status": "prototype"
     },
     {
       "id": "red_king_mind",
       "title": "In the Mind of Kalamon Ryce",
       "act": 2,
       "number": 6,
-      "status": "pending",
+      "status": "prototype",
       "requires_flag": "secured_kalamon",
       "solo": true
     },
@@ -54,7 +54,7 @@
       "title": "Herded Like Cattle!",
       "act": 3,
       "number": 7,
-      "status": "pending",
+      "status": "prototype",
       "campaign_mode": "ragged_warbands"
     },
     {
@@ -62,7 +62,7 @@
       "title": "Planar Sinkhole",
       "act": 3,
       "number": 8,
-      "status": "pending",
+      "status": "prototype",
       "campaign_mode": "ragged_warbands"
     },
     {
@@ -70,7 +70,7 @@
       "title": "King of the Hill",
       "act": 3,
       "number": 9,
-      "status": "pending",
+      "status": "prototype",
       "campaign_mode": "ragged_warbands"
     },
     {
@@ -78,7 +78,7 @@
       "title": "Ethereal Tethers",
       "act": 3,
       "number": 10,
-      "status": "pending",
+      "status": "prototype",
       "campaign_mode": "ragged_warbands"
     },
     {
@@ -86,7 +86,7 @@
       "title": "The Bridge",
       "act": 3,
       "number": 11,
-      "status": "pending",
+      "status": "prototype",
       "campaign_mode": "ragged_warbands"
     },
     {
@@ -94,7 +94,7 @@
       "title": "Ringworld of the Red King",
       "act": 3,
       "number": 12,
-      "status": "pending",
+      "status": "prototype",
       "campaign_mode": "ragged_warbands"
     }
   ]

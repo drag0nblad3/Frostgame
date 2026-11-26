@@ -439,6 +439,7 @@ func _open_campaign() -> void:
 		_campaign_dialog.setup(_campaign, _figures)
 		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
 		_campaign_dialog.start_requested.connect(_create_campaign)
+		_campaign_dialog.story_requested.connect(_create_story_campaign)
 		_campaign_dialog.restart_requested.connect(_restart_campaign)
 		_campaign_dialog.scenario_selected.connect(func(id: String) -> void:
 			_scenario_id=id
@@ -462,6 +463,15 @@ func _create_campaign() -> void:
 	_campaign_dialog.refresh(false)
 
 
+func _create_story_campaign(include_veil: bool) -> void:
+	if not _campaign.data.is_empty():
+		return
+	_create_campaign()
+	if RedKingCampaign.start(_campaign.data,_figures.content_profile,include_veil):
+		_campaign.save()
+	_campaign_dialog.refresh(false)
+
+
 func _restart_campaign() -> void:
 	if _campaign_battle:
 		return
@@ -472,6 +482,11 @@ func _restart_campaign() -> void:
 func _begin_campaign_battle() -> void:
 	if _campaign_battle or not _campaign.can_deploy():
 		return
+	if RedKingCampaign.active(_campaign.data):
+		_scenario_id=RedKingCampaign.next_id(_campaign.data)
+		if _scenario_id.is_empty() or not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
+			return
+		hud.select_scenario(_scenario_id)
 	for unit: Dictionary in _campaign.data["units"]:
 		if InjuryRules.blind(unit) and not unit["dead"]:
 			unit["dead"] = true
@@ -479,7 +494,7 @@ func _begin_campaign_battle() -> void:
 			_campaign.data["last_report"].append("%s retires after losing both eyes." % str(unit["type"]).capitalize())
 	if RaggedWarbands.stage(_scenario_id):
 		RaggedWarbands.enter(_campaign.data)
-		RaggedWarbands.fill(_campaign.data,_figures,Dice.new(0))
+		RaggedWarbands.fill(_campaign.data,_figures,Dice.new(int(_campaign.data.get("games",0))+1))
 	if not _campaign.save():
 		return
 	_campaign_battle = true

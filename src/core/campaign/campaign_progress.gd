@@ -19,19 +19,20 @@ func start(roster: Dictionary,profile: ContentProfile=null) -> void:
 func deployment() -> Dictionary:
 	var units: Array = []
 	var ragged := RaggedWarbands.active(data)
-	var reserve := -1 if ragged else BaseResources.reserve_id(data, FigureDb.load_files())
+	var locked := RedKingCampaign.economy_locked(data)
+	var reserve := -1 if locked else BaseResources.reserve_id(data, FigureDb.load_files())
 	for unit: Dictionary in data["units"]:
 		if unit["dead"] or unit.get("dismissed", false) or (ragged and unit.get("ragged_absent",false)) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
 			continue
 		var entry := {"type": unit["type"], "campaign_id": unit["id"], "at": [4.5 + 3.0 * units.size(), 3.0]}
 		if unit["type"] in ["wizard", "apprentice"]:
 			entry["stat_bonus"] = data.get("advances", {}).duplicate()
-		elif not ragged and data.get("base", "") == "brewery":
+		elif not locked and data.get("base", "") == "brewery":
 			entry["stat_bonus"] = {"will": 1}
 		var bonuses := InjuryRules.bonuses(unit, entry.get("stat_bonus", {}))
 		entry["injury_types"] = unit.get("injury_types", {}).duplicate(true)
 		entry["starting_loss"] = InjuryRules.starting_loss(unit)
-		entry["campaign_base"] = "" if ragged else data.get("base", "")
+		entry["campaign_base"] = "" if locked else data.get("base", "")
 		entry["familiar"] = unit.get("familiar", false)
 		entry["awareness"] = unit.get("awareness", false)
 		if unit.get("familiar", false):
@@ -65,6 +66,8 @@ func deployment() -> Dictionary:
 
 
 func can_deploy() -> bool:
+	if RedKingCampaign.active(data) and RedKingCampaign.next_id(data).is_empty():
+		return false
 	if not data.get("pending_treasure", []).is_empty():
 		return false
 	if RaggedWarbands.active(data) and RaggedWarbands.has_unassigned(data):
@@ -78,8 +81,13 @@ func can_deploy() -> bool:
 func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	if data.is_empty() or not c.state.over or not data.get("pending_treasure", []).is_empty():
 		return false
+	if not RedKingCampaign.permits(data,c.state.scenario_special):
+		return false
 	if RedKingMind.active(c.state):
-		return RedKingMindRewards.settle(data,c,side)
+		var ok := RedKingMindRewards.settle(data,c,side)
+		if ok:
+			RedKingCampaign.advance(data,c.state.scenario_special)
+		return ok
 	CampaignInventory.settle(data, c, side)
 	var report: Array[String] = []
 	var xp := 0
@@ -264,7 +272,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			secrets -= 1
 		else:
 			_award_treasure(raw, dice, report, token.id)
-	match ("" if RaggedWarbands.active(data) else str(data.get("base", ""))):
+	match ("" if RedKingCampaign.suppress_base_after(data,c.state.scenario_special) else str(data.get("base", ""))):
 		"temple":
 			if dice.d20() >= 16:
 				data["loot"].append({"kind": "potion", "potion": "healing", "owner": -1})
@@ -299,6 +307,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				data["gold"] = int(data["gold"]) + gold
 				report.append("Treasury: +%d gc." % gold)
 	data["last_report"] = report
+	RedKingCampaign.advance(data,c.state.scenario_special)
 	return true
 
 
@@ -364,7 +373,7 @@ static func random_spell(dice: Dice) -> String:
 
 
 func choose_base(id: String) -> bool:
-	if RaggedWarbands.active(data) or data.is_empty() or int(data["games"]) == 0 or not BASES.has(id) or not ContentProfile.from_campaign(data).allows("bases",id):
+	if RedKingCampaign.economy_locked(data) or data.is_empty() or int(data["games"]) == 0 or not BASES.has(id) or not ContentProfile.from_campaign(data).allows("bases",id):
 		return false
 	if id == data.get("base", ""):
 		return true
@@ -424,7 +433,7 @@ func recruitment_cost(id: String, db: FigureDb) -> int:
 
 
 func can_hire(id: String, db: FigureDb) -> bool:
-	if RaggedWarbands.active(data):
+	if RedKingCampaign.economy_locked(data):
 		return false
 	if not CampaignSuccession.living_wizard(data) or not db.available(id) or not ContentProfile.from_campaign(data).allows("figures",id) or int(data["gold"]) < recruitment_cost(id, db):
 		return false
@@ -449,7 +458,7 @@ func hire(id: String, db: FigureDb) -> bool:
 
 
 func dismiss(index: int) -> bool:
-	if RaggedWarbands.active(data) or data.is_empty() or index < 0 or index >= data["units"].size():
+	if RedKingCampaign.economy_locked(data) or data.is_empty() or index < 0 or index >= data["units"].size():
 		return false
 	var unit: Dictionary = data["units"][index]
 	if unit["dead"] or unit["type"] == "wizard" or unit.get("dismissed", false):
@@ -462,7 +471,7 @@ func dismiss(index: int) -> bool:
 
 
 func treat(index: int) -> bool:
-	if RaggedWarbands.active(data) or data.is_empty() or index < 0 or index >= data["units"].size():
+	if RedKingCampaign.economy_locked(data) or data.is_empty() or index < 0 or index >= data["units"].size():
 		return false
 	var unit: Dictionary = data["units"][index]
 	if unit["dead"] or int(unit["miss"]) == 0 or unit["type"] not in ["wizard", "apprentice"] or unit.get("dismissed", false):

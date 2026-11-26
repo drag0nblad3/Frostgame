@@ -43,7 +43,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 			for p: String in CampaignInventory.LESSER:
 				out.append(p)
 			var catalog: Dictionary = JsonFile.read("res://data/potions.json")
-			if wizard and not RaggedWarbands.active(d):
+			if wizard and not RedKingCampaign.economy_locked(d):
 				for p: String in CampaignInventory.GREATER:
 					if int(d["gold"]) >= int(catalog[p]["ingredients"]):
 						out.append(p)
@@ -102,7 +102,7 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 		mod = -4
 	if id == "miraculous_cure" and d["units"][int(option)]["dead"]:
 		mod = -4
-	if not RaggedWarbands.active(d):
+	if not RedKingCampaign.economy_locked(d):
 		mod += BaseRules.casting_bonus(str(d.get("base", "")), id) + BaseResources.casting_bonus(d, id)
 	var attempts: Dictionary = d.get("ritual_attempts", {})
 	attempts["%d:%s" % [caster, id]] = true

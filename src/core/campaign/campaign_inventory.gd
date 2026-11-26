@@ -112,7 +112,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 
 static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 	var potions := catalog()
-	if RaggedWarbands.active(d) or d.is_empty() or not potions.has(id) or not ContentProfile.from_campaign(d).item_allowed(id):
+	if RedKingCampaign.economy_locked(d) or d.is_empty() or not potions.has(id) or not ContentProfile.from_campaign(d).item_allowed(id):
 		return false
 	var price := int(potions[id]["buy"])
 	if price <= 0 or int(d["gold"]) < price:
@@ -133,7 +133,7 @@ static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 
 
 static func can_sell(d: Dictionary, item: Dictionary) -> bool:
-	if RaggedWarbands.active(d):
+	if RedKingCampaign.economy_locked(d):
 		return false
 	if item["kind"] == "grimoire":
 		return d.get("spells", {}).has(item.get("spell", ""))
