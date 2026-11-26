@@ -47,6 +47,8 @@ static func resolve_rolls(figures: Array[Figure], a: Figure, b: Figure, ar: int,
 
 
 static func _damage(total: int, winner: Figure, loser: Figure, natural: int, critical_hits: bool) -> int:
+	if loser.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(winner,winner.melee) and winner.melee.id=="natural":
+		return 0
 	if (loser.spell_effects.has("potion_invulnerability") or loser.def.traits.has("immune_normal")) and not WeaponActions.magic_attack(winner, winner.melee):
 		return 0
 	var extra := (2 if winner.def.traits.has("strong") else 0) + (1 if winner.spell_effects.has("potion_fury") else 0)

@@ -38,7 +38,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var f := s.active()
 	var t := s.figure(target_id)
-	if not c.can_act() or f == null or t == null or not t.in_play() or ScenarioNull.muted(t):
+	if not c.can_act() or f == null or t == null or not t.in_play() or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
 		return false
 	if f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(s.figures, f):
 		return false
@@ -95,6 +95,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return true
 	if id == "plague_of_insects":
 		return not t.insects_immune() and not t.spell_effects.has(id)
+	if id=="mind_control" and t.def.traits.has("immune_mind_control"):
+		return false
+	if id=="control_demon" and t.def.traits.has("immune_control_demon"):
+		return false
 	if id == "suggestion":
 		return t != f and not t.def.traits.has("mind_lock") and not t.spell_effects.has("mind_lock")
 	if id == "bones_of_the_earth":
@@ -499,7 +503,7 @@ func _heal(t: Figure, amount: int) -> void:
 
 
 func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:
-	if not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t):
+	if not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
@@ -516,7 +520,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var won := a > d
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)
-	var dmg := Damage.amount(a, 0, t.effective_armour() + (2 if elemental and t.def.traits.has("elemental_resistance_2") else 0), ar, s.critical_hits and not t.def.traits.has("immune_critical")) if won else 0
+	var dmg := Damage.amount(a, 0, t.effective_armour() + (CreatureEffects.elemental_resistance(t) if elemental else 0), ar, s.critical_hits and not t.def.traits.has("immune_critical")) if won else 0
 	if not magical and t.def.traits.has("immune_normal"):
 		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:

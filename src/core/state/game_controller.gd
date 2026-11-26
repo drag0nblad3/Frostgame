@@ -74,6 +74,10 @@ func activate(id: int) -> bool:
 		f.non_moves = 0
 		f.used_stored_action = false
 	emit("activate", {"id": id})
+	if not state.group.in_progress() or state.group.movement_pass():
+		CreatureEffects.activation(self,f)
+	if not f.in_play():
+		f.actions_left=0
 	return true
 
 
@@ -223,13 +227,16 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 	emit("fight", res)
 	_magic.illusions.reveal(f)
 	_magic.illusions.reveal(t)
-	_weapon_damage(t, res["b_dmg"], f, f.melee)
-	_weapon_damage(f, res["a_dmg"], t, t.melee)
+	var a_weapon := f.melee
+	var b_weapon := t.melee
+	_weapon_damage(t, res["b_dmg"], f, a_weapon)
+	_weapon_damage(f, res["a_dmg"], t, b_weapon)
+	CreatureEffects.after_fight(self,f,t,res,a_weapon,b_weapon)
 	if int(res["b_dmg"]) > 0:
 		f.spell_effects.erase("elemental_hammer")
 	if int(res["a_dmg"]) > 0:
 		t.spell_effects.erase("elemental_hammer")
-	if f.in_play() and t.in_play() and int(res["winner"]) >= 0:
+	if f.in_play() and t.in_play() and Contact.figures_touch(f,t) and int(res["winner"]) >= 0:
 		var winner := state.figure(res["winner"])
 		if winner.side >= 0:
 			state.push_winner = winner.id
@@ -366,6 +373,8 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		_loot.drop_on_death(f)
 		emit("out_of_action", {"id": f.id, "by": by.id})
 		ScenarioGenie.record_kill(self, f, by)
+	else:
+		CreatureEffects.after_damage(self,f)
 
 
 func can_pick_up(id: int) -> bool:

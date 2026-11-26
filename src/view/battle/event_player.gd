@@ -52,6 +52,15 @@ func _play(e: GameEvent) -> void:
 			add_child(v)
 			v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 			views[f.id] = v
+		"creature_transformed":
+			var creature := _view(d["id"])
+			creature.refresh(state.figure(d["id"]))
+			BattleEffects.burst(self,creature.position+Vector3.UP,Color(1.0,0.4,0.12))
+		"forced_relocation":
+			var v := _view(d["id"])
+			BattleEffects.pulse(self,v.position+Vector3.UP*0.15,Color(0.73,0.42,0.95))
+			v.position=TableSpace.to_world(d["at"],d["height"])
+			BattleEffects.pulse(self,v.position+Vector3.UP*0.15,Color(0.73,0.42,0.95))
 		"layered_move":
 			_animate_layered_move(_view(d["id"]),d["path"])
 		"move", "push_back", "force_combat":
