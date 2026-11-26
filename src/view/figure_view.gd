@@ -103,7 +103,7 @@ func refresh(f: Figure) -> void:
 		if _model != null:
 			remove_child(_model)
 			_model.queue_free()
-		_model = MiniatureFactory.create(f, color)
+		_model = TetherView.build() if RedKingTethers.pylon(f) else MiniatureFactory.create(f, color)
 		_model.position.y += 0.12
 		_model_rest_y = _model.position.y
 		_model.rotation.y = _facing
@@ -120,6 +120,8 @@ func refresh(f: Figure) -> void:
 		_height = 2.35
 	elif f.def.id == "genie":
 		_height = 1.85
+	if RedKingTethers.pylon(f):
+		_height=2.8
 	_plate.position.y = _height + 0.42
 	var ratio := clampf(float(f.health) / maxf(1.0, float(f.def.health)), 0.0, 1.0)
 	_health_fill.scale.x = maxf(0.01, ratio)

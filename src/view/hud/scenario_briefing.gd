@@ -49,6 +49,12 @@ static func progress(s: GameState) -> String:
 			text+=" | Ryce fleeing"
 		elif rescue!=null:
 			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
+	if RedKingTethers.active(s):
+		text+=" | Pylons: %d/5 intact"%RedKingTethers.remaining(s)
+		if RedKingTethers.remaining(s)>0:
+			text+=" · Exit locked"
+		if not s.board.edge_links.is_empty():
+			text+=" · Connected edges"
 	if RedKingHill.active(s):
 		text+=" | "+("Pyramid formed · Balance TN16" if RedKingHill.cracked(s) else "Reality unstable")
 		if RedKingHill.guarded(s,s.treasure(0)):

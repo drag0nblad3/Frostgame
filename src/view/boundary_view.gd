@@ -28,6 +28,21 @@ static func build(board: Board) -> Node3D:
 			if (blocks_sight or lethal) and not seam:
 				var height := 2.6+top-bottom
 				_bar(root,center,bottom+height*0.5,Vector3(length,height,0.035),end-start,Color(tint,0.20))
+	for link in board.edge_links:
+		var source := Vector2((float(link["min_x"])+float(link["max_x"]))*0.5,float(link["y"]))
+		var target: Vector2=link["to"]
+		var strip := floori(source.x/(board.size.x/3.0))
+		var index := strip*2+(1 if source.y>board.size.y*0.5 else 0)
+		var color := Color.from_hsv(float(index)/6.0,0.6,0.95)
+		var marker := Label3D.new()
+		marker.text="%d → %d"%[index+1,floori(target.x/(board.size.x/3.0))*2+(2 if target.y>board.size.y*0.5 else 1)]
+		marker.font_size=80
+		marker.pixel_size=0.018
+		marker.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+		marker.modulate=color
+		marker.position=TableSpace.to_world(source,0.8)
+		root.add_child(marker)
+		_bar(root,source,0.08,Vector3(float(link["max_x"])-float(link["min_x"])-1.0,0.10,0.22),Vector2.RIGHT,color)
 	return root
 
 

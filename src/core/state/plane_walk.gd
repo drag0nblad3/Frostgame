@@ -25,6 +25,8 @@ static func reach(s: GameState, f: Figure, phased: bool = true) -> MoveReach:
 			if cost > allowance + 0.001 or not s.board.can_stand(at, Figure.BASE_RADIUS):
 				continue
 			var clear := true
+			if BattleBoundary.blocks_segment(s.board.boundaries,f.pos,at,"movement",f):
+				continue
 			if RedKingSinkhole.active(s) and Geometry2D.get_closest_point_to_segment(RedKingSinkhole.center(s),f.pos,at).distance_to(RedKingSinkhole.center(s))<RedKingSinkhole.RADIUS+Figure.BASE_RADIUS-0.001:
 				continue
 			for other in s.figures:

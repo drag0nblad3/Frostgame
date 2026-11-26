@@ -62,7 +62,7 @@ func sync_terrain(board: Board) -> void:
 		build(board)
 		return
 	var scenario := board.id if scenario_id.is_empty() else scenario_id
-	var boundary_key := str(board.boundaries)
+	var boundary_key := str(board.boundaries)+str(board.edge_links)
 	if _boundary_view==null or _boundary_key!=boundary_key:
 		_remove(_boundary_view)
 		_boundary_view=BoundaryView.build(board)

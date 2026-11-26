@@ -21,6 +21,12 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Hrut hunting parties arrive."
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
+		"pylon_destroyed":
+			return "A tether shatters, revealing treasure."
+		"tethers_crack":
+			return "The battlefield folds into three connected strips."
+		"tethers_restored":
+			return "All tethers destroyed. The battlefield returns to normal; exits open."
 		"hill_crack":
 			return "Reality cracks: the battlefield becomes four planar slopes."
 		"hill_balance":

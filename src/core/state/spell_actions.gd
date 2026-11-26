@@ -46,6 +46,8 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
+	if RedKingTethers.pylon(t) and kind not in ["shot","area_shot"]:
+		return false
 	if kind in ["unimplemented", "ritual", "placement", "counter", "treasure"]:
 		return false
 	if kind == "self":
@@ -503,7 +505,7 @@ func _heal(t: Figure, amount: int) -> void:
 
 
 func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:
-	if not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
+	if (RedKingTethers.pylon(t) and not magical) or not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin

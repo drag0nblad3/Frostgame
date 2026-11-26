@@ -53,9 +53,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if RedKingFire.active(s):
 				var x := 1.0+1.1*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.1*floori(deploy_index/4.0)]
-			if RedKingTethers.active(s):
-		RedKingTethers.setup(s)
-	if RedKingHerded.active(s):
+			if RedKingHerded.active(s):
 				var x := 1.0+1.2*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.2*floori(deploy_index/4.0)]
 			deploy_index += 1
@@ -117,6 +115,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		stand.central=false
 		stand.investigation=true
 		s.treasures.append(stand)
+	if RedKingTethers.active(s):
+		RedKingTethers.setup(s)
 	if RedKingHerded.active(s):
 		s.board.darkness=true
 		RedKingHerded.setup(s)
