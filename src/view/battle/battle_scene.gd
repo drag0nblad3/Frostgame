@@ -37,6 +37,7 @@ var _rig: CameraRig
 var _wait := 0.0
 var _launch_intent := ""
 var _title_prompt: AcceptDialog
+var _picker: SkirmishPicker
 
 
 func _ready() -> void:
@@ -61,7 +62,7 @@ func _ready() -> void:
 	_briefing.start_requested.connect(func() -> void:
 		_campaign_battle = false
 		new_game(0))
-	hud.new_game_pressed.connect(func() -> void: _open_briefing(true))
+	hud.new_game_pressed.connect(_open_map_picker)
 	hud.briefing_pressed.connect(func() -> void: _open_briefing(false))
 	_inspector = FigureInspector.new()
 	add_child(_inspector)
@@ -86,6 +87,13 @@ func _ready() -> void:
 		_scenario_id = id
 		hud.notify("Next battle: " + ScenarioBriefing.title(id)))
 	_campaign.load_save()
+	_roster=WarbandSlots.roster()
+	if get_tree().root.has_meta("frostgame_scenario"):
+		_scenario_id=str(get_tree().root.get_meta("frostgame_scenario"))
+		get_tree().root.remove_meta("frostgame_scenario")
+		if not ScenarioBriefing.ENTRIES.has(_scenario_id):
+			_scenario_id=SCENARIO
+		hud.select_scenario(_scenario_id)
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
 	add_child(_markers)
@@ -106,7 +114,8 @@ func _open_launch_intent() -> void:
 		"campaign": _open_campaign()
 		"training": _start_training(0)
 		"guide": _open_guide()
-		"skirmish": _open_briefing(true)
+		"skirmish": _open_map_picker()
+		"selected_skirmish": _open_briefing(false)
 
 
 func _confirm_title() -> void:
@@ -115,14 +124,19 @@ func _confirm_title() -> void:
 		return
 	if _title_prompt == null:
 		_title_prompt = AcceptDialog.new()
-		_title_prompt.title = "Return to title?"
-		_title_prompt.dialog_text = "Unsaved battle progress will be lost. Your campaign and saved battle remain on disk."
+		_title_prompt.title = "Return home?"
+		_title_prompt.dialog_text = "Save this battle in the active warband slot before leaving, or leave without saving."
 		_title_prompt.exclusive = true
-		_title_prompt.get_ok_button().text = "Return to title"
+		_title_prompt.get_ok_button().text = "Leave without saving"
 		_title_prompt.add_cancel_button("Stay here")
+		_title_prompt.add_button("Save & Home",true,"save_home")
+		_title_prompt.custom_action.connect(func(action: StringName) -> void:
+			if action=="save_home" and _save_battle():
+				_title_prompt.hide()
+				get_tree().change_scene_to_file("res://scenes/title.tscn"))
 		_title_prompt.confirmed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/title.tscn"))
 		add_child(_title_prompt)
-	_title_prompt.popup_centered(Vector2i(500,220))
+	PhoneSafeArea.popup_dialog(_title_prompt,Vector2(500,220))
 
 
 func _confirm_training() -> void:
@@ -134,7 +148,7 @@ func _confirm_training() -> void:
 		_training_prompt.get_ok_button().text = "Start training"
 		_training_prompt.confirmed.connect(func() -> void: _start_training(0))
 		add_child(_training_prompt)
-	_training_prompt.popup_centered(Vector2i(500, 240))
+	PhoneSafeArea.popup_dialog(_training_prompt,Vector2(500,240))
 
 
 func _start_training(index: int) -> void:
@@ -197,15 +211,15 @@ func _open_guide() -> void:
 		body.fit_content = false
 		body.scroll_active = true
 		body.add_theme_font_size_override("normal_font_size", 20)
-		var viewport := get_viewport().get_visible_rect().size
+		var viewport := PhoneSafeArea.safe_rect(get_viewport(),14).size
 		body.custom_minimum_size = Vector2(minf(600, viewport.x * 0.78), minf(380, viewport.y * 0.60))
 		_guide.add_child(body)
 		add_child(_guide)
-	_guide.popup_centered()
+	PhoneSafeArea.popup_dialog(_guide)
 
 
 func _info_open() -> bool:
-	return (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
+	return (_picker != null and _picker.visible) or (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
 
 
 func _open_briefing(start: bool) -> void:
@@ -316,7 +330,7 @@ func _process(delta: float) -> void:
 		if _campaign.save():
 			var checkpoint := BattleSnapshot.read()
 			if checkpoint.get("meta", {}).get("campaign", false):
-				DirAccess.remove_absolute(BattleSnapshot.PATH)
+				DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
 		_open_campaign()
 	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side and (s.active() == null or s.active().side >= 0)):
 		_wait = 0.0
@@ -399,13 +413,17 @@ func _open_roster() -> void:
 	if _setup == null:
 		_setup = WarbandSetup.new()
 		add_child(_setup)
-		_setup.setup(_figures)
+		_setup.setup(_figures,_roster)
+		_setup.get_ok_button().text="Save & deploy"
 		_setup.drafted.connect(func(roster: Dictionary) -> void:
+			if not WarbandSlots.save_roster(roster):
+				hud.notify("Could not save warband.")
+				return
 			_roster = roster
 			_campaign_battle = false
 			watch_mode = false
 			new_game(0))
-	_setup.popup_centered_ratio(0.9)
+	PhoneSafeArea.popup_dialog(_setup,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.94)
 
 
 func _open_campaign() -> void:
@@ -416,8 +434,13 @@ func _open_campaign() -> void:
 		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
 		_campaign_dialog.start_requested.connect(_create_campaign)
 		_campaign_dialog.restart_requested.connect(_restart_campaign)
+		_campaign_dialog.scenario_selected.connect(func(id: String) -> void:
+			_scenario_id=id
+			hud.select_scenario(id))
+	_campaign_dialog.select_scenario(_scenario_id)
 	_campaign_dialog.refresh(_campaign_battle)
-	_campaign_dialog.popup_centered_ratio(0.85)
+	_campaign_dialog.fit_phone()
+	PhoneSafeArea.popup_dialog(_campaign_dialog,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.92)
 
 
 func _create_campaign() -> void:
@@ -458,21 +481,23 @@ func _begin_campaign_battle() -> void:
 
 
 func _campaign_fingerprint() -> String:
-	return FileAccess.get_sha256(CampaignProgress.PATH) if FileAccess.file_exists(CampaignProgress.PATH) else ""
+	var path := WarbandSlots.path_for(CampaignProgress.PATH)
+	return FileAccess.get_sha256(path) if FileAccess.file_exists(path) else ""
 
 
-func _save_battle() -> void:
+func _save_battle() -> bool:
 	if _training >= 0:
 		hud.notify("Training does not replace your saved battle.")
-		return
+		return false
 	if controller == null or not player.idle() or not BattleSnapshot.can_save(controller):
 		hud.notify("Finish the current roll or animation before saving.")
-		return
+		return false
 	var meta := {"scenario": _active_scenario_id, "campaign": _campaign_battle, "campaign_hash": _campaign_fingerprint() if _campaign_battle else "", "watch": watch_mode}
 	if BattleSnapshot.save(controller, meta):
 		hud.notify("Battle saved.")
-	else:
-		hud.notify("Could not save this battle.")
+		return true
+	hud.notify("Could not save this battle.")
+	return false
 
 
 func _resume_battle() -> void:
@@ -504,3 +529,23 @@ func _resume_battle() -> void:
 	watch_mode = bool(meta.get("watch", false))
 	_attach_battle(restored, false)
 	hud.notify("Battle resumed.")
+
+
+func _open_map_picker() -> void:
+	if not player.idle():
+		hud.notify("Finish the current action before choosing a scenario.")
+		return
+	if _picker==null:
+		_picker=SkirmishPicker.new()
+		add_child(_picker)
+		_picker.selected.connect(func(id: String) -> void:
+			_scenario_id=id
+			hud.select_scenario(id)
+			_open_briefing(true))
+	_picker.open(false)
+
+
+func _notification(what: int) -> void:
+	if what==NOTIFICATION_WM_GO_BACK_REQUEST and is_instance_valid(player):
+		if not _info_open() and (_setup==null or not _setup.visible) and (_campaign_dialog==null or not _campaign_dialog.visible):
+			_confirm_title()

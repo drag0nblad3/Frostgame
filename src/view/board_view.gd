@@ -50,6 +50,7 @@ func build(board: Board) -> void:
 					RuinSilhouette.decorate(self, piece)
 				if board.id == "mausoleum" and piece.kind.id == "ruin" and piece.rect.has_point(board.size * 0.5):
 					SiteArt.crypt(self, piece)
+	add_child(EnvironmentDressing.build(board,board.id if scenario_id.is_empty() else scenario_id))
 
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:

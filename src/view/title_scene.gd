@@ -7,6 +7,10 @@ var _elapsed := 0.0
 var _launching := false
 var _buttons := {}
 var _menu: VBoxContainer
+var _slots: OptionButton
+var _picker: SkirmishPicker
+var _editor: WarbandSetup
+var _notice: Label
 
 
 func _ready() -> void:
@@ -35,44 +39,49 @@ func _ready() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	screen.add_child(shade)
-	var margin := MarginContainer.new()
+	var margin := PhoneSafeArea.new()
+	margin.padding=14
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for edge: String in ["top","bottom","left","right"]:
-		margin.add_theme_constant_override("margin_"+edge,28)
 	screen.add_child(margin)
 	var row := HBoxContainer.new()
 	margin.add_child(row)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel",BattleTheme.panel(Color(0.035,0.065,0.095,0.95),Color(0.61,0.51,0.31),4))
-	panel.custom_minimum_size.x = 420
+	panel.custom_minimum_size.x = minf(430,PhoneSafeArea.safe_rect(get_viewport(),14).size.x)
+	panel.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	row.add_child(panel)
 	var wrap := MarginContainer.new()
 	for edge: String in ["top","bottom","left","right"]:
 		wrap.add_theme_constant_override("margin_"+edge,18)
 	panel.add_child(wrap)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	wrap.add_child(scroll)
 	_menu = VBoxContainer.new()
+	_menu.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_menu.alignment = BoxContainer.ALIGNMENT_CENTER
 	_menu.add_theme_constant_override("separation",10)
-	wrap.add_child(_menu)
+	scroll.add_child(_menu)
 	_label("A WIZARD'S EXPEDITION",16,Color(0.80,0.70,0.48))
 	_label("FROSTGAME",49,Color(0.92,0.95,0.97))
 	_label("RIVAL WARBANDS  /  FROZEN RUINS",15,Color(0.67,0.80,0.88))
 	_menu.add_child(HSeparator.new())
-	var checkpoint := BattleSnapshot.read()
-	var meta: Dictionary = checkpoint.get("meta",{})
-	var compatible := not checkpoint.is_empty()
-	if meta.get("campaign",false):
-		compatible = compatible and FileAccess.file_exists(CampaignProgress.PATH) and FileAccess.get_sha256(CampaignProgress.PATH) == meta.get("campaign_hash","")
-	if compatible:
-		_button("resume","Resume saved battle",true)
-	_button("skirmish","New skirmish",not compatible)
-	_button("warband","Create a warband")
+	_label("ACTIVE WARBAND",14,Color("c6b17d"))
+	_slots=OptionButton.new()
+	_slots.fit_to_longest_item=false
+	_slots.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	_menu.add_child(_slots)
+	_slots.item_selected.connect(_select_slot)
+	_button("resume","Resume saved battle",true)
+	_button("skirmish","New skirmish",true)
+	_button("warband","Create / edit warband")
 	_button("campaign","Campaign headquarters")
 	_button("training","Training yard")
-	_button("gatehouse","Gatehouse · experimental battle")
-	if not LayeredCheckpoint.read().is_empty():
-		_button("resume_layered","Resume 3D battle")
 	_button("guide","Field guide")
+	_notice=Label.new()
+	_notice.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_menu.add_child(_notice)
+	_refresh_slots()
 	_label("A fan-made tactical tabletop simulator",13,Color(0.65,0.73,0.79))
 	var space := Control.new()
 	space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -103,15 +112,14 @@ func _button(key: String, value: String, primary: bool = false) -> void:
 func _launch(key: String) -> void:
 	if _launching:
 		return
+	if key=="skirmish":
+		_choose_scenario()
+		return
+	if key=="warband":
+		_edit_warband()
+		return
 	_launching = true
 	get_tree().root.set_meta(LAUNCH_KEY,key)
-	if key in ["gatehouse","resume_layered"]:
-		get_tree().root.remove_meta(LAUNCH_KEY)
-		if key=="resume_layered":
-			get_tree().root.set_meta("layered_resume",true)
-		if get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")!=OK:
-			_launching=false
-		return
 	if get_tree().change_scene_to_file(BATTLE) != OK:
 		get_tree().root.remove_meta(LAUNCH_KEY)
 		_launching = false
@@ -126,3 +134,60 @@ func _frame() -> void:
 	# Slow scenic pan, only on this presentation scene.
 	_camera.position = Vector3(8.8+sin(_elapsed*0.095)*1.5,7.1,1.0+cos(_elapsed*0.095)*0.7)
 	_camera.look_at(Vector3(14.6,4.6,19.0))
+
+
+func _refresh_slots() -> void:
+	_slots.clear()
+	for i in WarbandSlots.COUNT:
+		_slots.add_item("%d · %s"%[i+1,WarbandSlots.summary(i)])
+	_slots.select(WarbandSlots.active())
+	var checkpoint := BattleSnapshot.read()
+	var meta: Dictionary=checkpoint.get("meta",{})
+	var compatible := not checkpoint.is_empty()
+	var path := WarbandSlots.path_for(CampaignProgress.PATH)
+	if meta.get("campaign",false):
+		compatible=compatible and FileAccess.file_exists(path) and FileAccess.get_sha256(path)==meta.get("campaign_hash","")
+	_buttons["resume"].visible=compatible
+	_buttons["warband"].text="Create warband" if WarbandSlots.roster().is_empty() else "Edit saved warband"
+	var roster := WarbandSlots.roster()
+	_notice.text="Starting roster: %s. Each slot has separate saves."%roster.get("name","default expedition")
+	if roster.is_empty():
+		_notice.text+=" Create a warband to customize your troops."
+
+
+func _select_slot(index: int) -> void:
+	if WarbandSlots.select_slot(index):
+		_refresh_slots()
+	else:
+		_notice.text="Could not switch save slot."
+		_slots.select(WarbandSlots.active())
+
+
+func _choose_scenario() -> void:
+	if _picker==null:
+		_picker=SkirmishPicker.new()
+		add_child(_picker)
+		_picker.selected.connect(func(id: String) -> void:
+			_launching=true
+			get_tree().root.set_meta("frostgame_scenario",id)
+			get_tree().root.set_meta(LAUNCH_KEY,"selected_skirmish")
+			if get_tree().change_scene_to_file(BATTLE)!=OK:
+				_launching=false)
+	_picker.open(true)
+
+
+func _edit_warband() -> void:
+	if _editor!=null:
+		remove_child(_editor)
+		_editor.queue_free()
+	_editor=WarbandSetup.new()
+	add_child(_editor)
+	_editor.setup(FigureDb.load_files(),WarbandSlots.roster())
+	_editor.get_ok_button().text="Save warband"
+	_editor.drafted.connect(func(roster: Dictionary) -> void:
+		if WarbandSlots.save_roster(roster):
+			_refresh_slots()
+			_notice.text="Warband saved to slot %d."%(WarbandSlots.active()+1)
+		else:
+			_notice.text="Could not save warband. Reopen the editor and try again.")
+	PhoneSafeArea.popup_dialog(_editor,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.96)

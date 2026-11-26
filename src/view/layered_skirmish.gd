@@ -79,7 +79,7 @@ func _ui() -> void:
 	floor_choice.select(layout.surfaces.size())
 	floor_choice.item_selected.connect(func(_i: int) -> void:refresh())
 	row.add_child(floor_choice)
-	for entry: Array in [["Title","res://scenes/title.tscn"],["Floor lab","res://scenes/layered_demo.tscn"]]:
+	for entry: Array in [["Home","res://scenes/title.tscn"],["Floor lab","res://scenes/layered_demo.tscn"]]:
 		var button := Button.new()
 		button.text=entry[0]
 		button.pressed.connect(_leave.bind(str(entry[1])))
@@ -136,8 +136,20 @@ func _switch_board() -> void:
 
 
 func _leave(path: String) -> void:
-	if player.idle():
-		get_tree().change_scene_to_file(path)
+	if not player.idle():
+		return
+	var confirm := ConfirmationDialog.new()
+	confirm.title="Leave experimental battle?"
+	confirm.dialog_text="Save the 3D battle first if you want to resume it later."
+	confirm.get_ok_button().text="Leave without saving"
+	confirm.add_button("Save & leave",true,"save_leave")
+	add_child(confirm)
+	confirm.confirmed.connect(func() -> void:get_tree().change_scene_to_file(path))
+	confirm.custom_action.connect(func(action: StringName) -> void:
+		if action=="save_leave" and LayeredCheckpoint.save(controller):
+			get_tree().change_scene_to_file(path))
+	confirm.canceled.connect(confirm.queue_free)
+	confirm.popup_centered()
 
 
 func _process(_delta: float) -> void:

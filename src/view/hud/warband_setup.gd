@@ -18,19 +18,27 @@ var _recruit_info: Label
 var _wizard_portrait: MiniaturePortrait
 
 
-func setup(db: FigureDb) -> void:
+func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	draft = WarbandDraft.new(db)
 	draft.choose_defaults()
+	if not saved.is_empty():
+		draft.restore_roster(saved)
 	theme = BattleTheme.create()
 	title = "Create a wizard and warband"
 	get_ok_button().text = "Begin skirmish"
 	dialog_hide_on_ok = false
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(700, 480)
-	add_child(scroll)
-	var body := VBoxContainer.new()
-	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(body)
+	var frame := VBoxContainer.new()
+	add_child(frame)
+	_summary=Label.new()
+	_summary.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	frame.add_child(_summary)
+	var tabs := TabContainer.new()
+	var viewport := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
+	tabs.custom_minimum_size=Vector2(minf(740,viewport.x*0.83),minf(440,viewport.y*0.62))
+	frame.add_child(tabs)
+	var body := _tab(tabs,"1 · Wizard")
+	var spells_body := _tab(tabs,"2 · Spells")
+	var recruits_body := _tab(tabs,"3 · Recruits")
 	_name = LineEdit.new()
 	_name.placeholder_text = "Wizard name"
 	_name.text = draft.wizard_name
@@ -48,10 +56,10 @@ func setup(db: FigureDb) -> void:
 	_school.add_theme_constant_override("icon_max_width",32)
 	_school.item_selected.connect(_change_school)
 	_wizard_portrait = MiniaturePortrait.new()
-	_wizard_portrait.custom_minimum_size = Vector2(260, 190)
+	_wizard_portrait.custom_minimum_size = Vector2(minf(260,viewport.x*0.40),minf(190,viewport.y*0.28))
 	body.add_child(_wizard_portrait)
 	_spell_rows = VBoxContainer.new()
-	body.add_child(_spell_rows)
+	spells_body.add_child(_spell_rows)
 	_apprentice = CheckBox.new()
 	_apprentice.text = "Hire apprentice (100 gc)"
 	_apprentice.button_pressed = draft.apprentice
@@ -61,10 +69,16 @@ func setup(db: FigureDb) -> void:
 		_update())
 	_add_loadout(body, "Wizard weapons", false)
 	_add_loadout(body, "Apprentice weapons", true)
+	var intro := Label.new()
+	intro.text="Hire soldiers using the available gold. Free recruits still use roster slots."
+	intro.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	recruits_body.add_child(intro)
 	var row := HBoxContainer.new()
-	body.add_child(row)
+	recruits_body.add_child(row)
 	_recruits = OptionButton.new()
 	_recruits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_recruits.fit_to_longest_item=false
+	_recruits.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	for id: String in db.figures:
 		var d := db.get_def(id)
 		if d.role != "soldier":
@@ -80,9 +94,9 @@ func setup(db: FigureDb) -> void:
 		draft.hire(str(_recruits.get_selected_metadata()))
 		_update())
 	var recruit_card := HBoxContainer.new()
-	body.add_child(recruit_card)
+	recruits_body.add_child(recruit_card)
 	_recruit_portrait = MiniaturePortrait.new()
-	_recruit_portrait.custom_minimum_size = Vector2(190, 165)
+	_recruit_portrait.custom_minimum_size = Vector2(minf(190,viewport.x*0.30),minf(165,viewport.y*0.24))
 	recruit_card.add_child(_recruit_portrait)
 	_recruit_info = Label.new()
 	_recruit_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -90,18 +104,24 @@ func setup(db: FigureDb) -> void:
 	recruit_card.add_child(_recruit_info)
 	_roster = ItemList.new()
 	_roster.custom_minimum_size.y = 130
-	body.add_child(_roster)
+	recruits_body.add_child(_roster)
 	var remove := Button.new()
 	remove.text = "Remove selected soldier"
-	body.add_child(remove)
+	recruits_body.add_child(remove)
 	remove.pressed.connect(func() -> void:
 		var selected := _roster.get_selected_items()
 		if not selected.is_empty():
 			draft.soldiers.remove_at(selected[0])
 			_update())
-	_summary = Label.new()
-	_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body.add_child(_summary)
+	add_cancel_button("Back")
+	var fill := Button.new()
+	fill.text="Fill empty slots with free recruits"
+	recruits_body.add_child(fill)
+	fill.pressed.connect(func() -> void:
+		while draft.can_hire("thug"):
+			if not draft.hire("thug"):
+				break
+		_update())
 	confirmed.connect(_confirm)
 	_rebuild_spells()
 	_update()
@@ -120,6 +140,8 @@ func _rebuild_spells() -> void:
 		child.queue_free()
 	for slot in 8:
 		var choice := OptionButton.new()
+		choice.fit_to_longest_item=false
+		choice.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		choice.add_theme_constant_override("icon_max_width",28)
 		var label := Label.new()
 		label.text = "Home school %d" % (slot + 1) if slot < 3 else ("Aligned: " + str(draft.schools[draft.school]["aligned"][slot - 3]).capitalize() if slot < 6 else "Neutral school")
@@ -144,10 +166,14 @@ func _rebuild_spells() -> void:
 			var chosen := draft.spells[slot]
 			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
 		_spell_rows.add_child(detail)
+		for i in choice.item_count:
+			var id := str(choice.get_item_metadata(i))
+			choice.set_item_disabled(i,_spell_conflict(slot,id))
 		choice.item_selected.connect(func(index: int) -> void:
 			draft.spells[slot] = str(choice.get_item_metadata(index))
 			var chosen := draft.spells[slot]
 			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
+			_refresh_spell_availability()
 			_update())
 
 
@@ -167,11 +193,16 @@ func _update() -> void:
 			live += 1
 	_summary.text = "%d gc left | %d/8 soldiers | %d/4 specialists | %d/8 implemented spells\n%s" % [WarbandDraft.BUDGET - draft.cost(), draft.soldiers.size(), draft.specialists(), live, "Campaign rituals are available between battles." if problems.is_empty() else "\n".join(problems)]
 	var recruit_id := str(_recruits.get_selected_metadata())
+	for i in _recruits.item_count:
+		var id := str(_recruits.get_item_metadata(i))
+		_recruits.set_item_disabled(i,not draft.can_hire(id) and id!=recruit_id)
 	_hire.disabled = not draft.can_hire(recruit_id)
+	_apprentice.disabled=not draft.apprentice and draft.cost()+draft.db.get_def("apprentice").cost>WarbandDraft.BUDGET
+	_summary.modulate=Color("a4d3b0") if problems.is_empty() else Color("e3ae8d")
 	var definition := draft.db.get_def(recruit_id)
 	if definition != null:
 		_recruit_portrait.set_figure(Figure.new(0, definition, 0, Vector2.ZERO, draft.db.unarmed()), FigureView.SIDE_COLORS[0])
-		_recruit_info.text = "%s · %d gc\nM %d″   F %+d   S %+d\nA %d   W %+d   H %d\n%s" % [definition.name, definition.cost, definition.move, definition.fight, definition.shoot, definition.armour, definition.will, definition.health, "Specialist" if definition.specialist else "Standard soldier"]
+		_recruit_info.text = "%s · %d gc\nMove %d″ · Fight %+d · Shoot %+d\nArmour %d · Will %+d · Health %d\n%s" % [definition.name, definition.cost, definition.move, definition.fight, definition.shoot, definition.armour, definition.will, definition.health, "Specialist" if definition.specialist else "Standard soldier"]
 	get_ok_button().disabled = not problems.is_empty()
 
 
@@ -193,6 +224,7 @@ func _add_loadout(body: VBoxContainer, title_text: String, for_apprentice: bool)
 		choice.add_item("%s · %d slots" % [preset, CasterLoadout.weapon_slots(weapons)])
 		choice.set_item_metadata(choice.item_count - 1, preset)
 	body.add_child(choice)
+	_select_loadout(choice,for_apprentice)
 	choice.item_selected.connect(func(index: int) -> void:
 		var weapons: Array = CasterLoadout.PRESETS[choice.get_item_metadata(index)]
 		if for_apprentice:
@@ -200,3 +232,45 @@ func _add_loadout(body: VBoxContainer, title_text: String, for_apprentice: bool)
 		else:
 			draft.wizard_weapons = weapons.duplicate()
 		_update())
+
+
+func _tab(tabs: TabContainer,label: String) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name=label
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	tabs.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation",8)
+	scroll.add_child(body)
+	return body
+
+
+func _select_loadout(choice: OptionButton,for_apprentice: bool) -> void:
+	var current: Array=draft.apprentice_weapons if for_apprentice else draft.wizard_weapons
+	for i in choice.item_count:
+		if CasterLoadout.PRESETS[choice.get_item_metadata(i)]==current:
+			choice.select(i)
+			return
+
+
+func _spell_conflict(slot: int,id: String) -> bool:
+	for i in draft.spells.size():
+		if i==slot:
+			continue
+		var other := draft.spells[i]
+		if other==id:
+			return true
+		if slot>=6 and i>=6 and draft.catalog[id]["school"]==draft.catalog[other]["school"]:
+			return true
+	return false
+
+
+func _refresh_spell_availability() -> void:
+	var slot := 0
+	for child in _spell_rows.get_children():
+		if child is OptionButton:
+			var choice: OptionButton=child
+			for i in choice.item_count:
+				choice.set_item_disabled(i,_spell_conflict(slot,str(choice.get_item_metadata(i))))
+			slot+=1

@@ -41,7 +41,10 @@ static func create() -> Theme:
 	theme.set_stylebox("hover", "PopupMenu", hover)
 	theme.set_color("font_color", "PopupMenu", Color(0.94, 0.94, 0.88))
 	theme.set_color("font_hover_color", "PopupMenu", Color(1.0, 0.90, 0.65))
-	theme.set_constant("v_separation", "PopupMenu", 12)
+	theme.set_constant("v_separation", "PopupMenu", 16)
+	theme.set_constant("scrollbar_h_separation","ScrollContainer",10)
+	theme.set_constant("scrollbar_v_separation","ScrollContainer",10)
+	theme.set_constant("h_separation","TabContainer",12)
 	theme.set_constant("h_separation", "HBoxContainer", 6)
 	theme.set_constant("v_separation", "VBoxContainer", 4)
 	return theme

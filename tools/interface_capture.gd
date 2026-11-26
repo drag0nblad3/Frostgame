@@ -17,7 +17,15 @@ func _setup() -> void:
 	root.gui_embed_subwindows = true
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
-	if _dialog == "campaign":
+	if _dialog=="maps":
+		scene.player.speed=30.0
+		while not scene.player.idle():
+			await process_frame
+		scene._open_map_picker()
+		if scene._picker==null or not scene._picker.visible:
+			quit(1)
+			return
+	elif _dialog == "campaign":
 		var draft := WarbandDraft.new(scene._figures)
 		draft.choose_defaults()
 		scene._campaign.start(draft.as_warband())

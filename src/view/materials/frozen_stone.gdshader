@@ -52,6 +52,12 @@ void fragment() {
 	vec3 ice = mix(vec3(0.52, 0.64, 0.72), vec3(0.84, 0.89, 0.92), noise2(horizontal * 2.2));
 	if (ground) {
 		rock = mix(rock, rock * 0.8 + vec3(0.11, 0.13, 0.14), 0.4);
+		// Broad scoured snow, dirty thaw patches and irregular icy ruts.
+		float erosion = smoothstep(0.40,0.72,noise2(horizontal*0.38 + vec2(9.0,3.0)));
+		float ruts = noise2(horizontal*vec2(1.5,0.27));
+		rock = mix(rock,rock*0.78+vec3(0.055,0.044,0.032),erosion*0.60);
+		snow *= 1.0-erosion*0.38;
+		ice = mix(ice,vec3(0.45,0.57,0.65),smoothstep(0.62,0.86,ruts)*0.44);
 		if (city_paving) {
 			// Crossing cobbled streets and weathered courtyards, flush to the ground.
 			vec2 local = horizontal / footprint_size;

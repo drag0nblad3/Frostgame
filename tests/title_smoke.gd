@@ -13,6 +13,22 @@ func _run() -> void:
 		printerr("Title navigation missing")
 		quit(1)
 		return
+	title_scene._buttons["skirmish"].pressed.emit()
+	if title_scene._picker==null or title_scene._picker._list.get_child_count()!=12:
+		printerr("Standard scenario catalog incomplete")
+		quit(1)
+		return
+	if title_scene._buttons.has("gatehouse") or title_scene._buttons.has("resume_layered"):
+		printerr("Experimental maps exposed in player menu")
+		quit(1)
+		return
+	title_scene._picker.hide()
+	title_scene._buttons["warband"].pressed.emit()
+	if title_scene._editor==null or not title_scene._editor.visible:
+		printerr("Home warband editor missing")
+		quit(1)
+		return
+	title_scene._editor.hide()
 	title_scene._buttons["training"].pressed.emit()
 	await scene_changed
 	var battle := current_scene
