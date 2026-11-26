@@ -3,6 +3,7 @@ extends RefCounted
 ## Two-stage spellcasting: announce target, roll, choose Health, then resolve.
 
 var c: GameController
+var shatter := Shatterstar.new()
 var summons: SummonActions
 var terrain: TerrainMagic
 var movement: MagicMovement
@@ -239,6 +240,18 @@ func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
 	var f := c.state.active()
+	if shatter.eligible(f, c.state, id):
+		var declared := shatter.declare(f, id, target_id, at, rotated, second, effect)
+		if declared.is_empty():
+			return false
+		_dispatch_shatter(declared)
+		advance_shatter()
+		return true
+	return _authorize_roll(id, target_id, at, rotated, second, effect)
+
+
+func _authorize_roll(id: String, target_id: int, at: Variant, rotated: bool, second: int, effect: Dictionary) -> bool:
+	var f := c.state.active()
 	var targets: Array[Figure] = [c.state.figure(target_id)]
 	if second >= 0:
 		targets.append(c.state.figure(second))
@@ -270,7 +283,10 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var empowered := not scroll and f.spell_effects.erase("potion_empowerment")
 	var total := 14 if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
-	c._spend(f)
+	if not shatter.spent:
+		c._spend(f)
+		if not shatter.next.is_empty() or shatter.resolving:
+			shatter.spent = true
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll, "cordial": empowered}
 	if at != null:
 		c.state.pending_cast["at"] = at
@@ -295,6 +311,15 @@ func max_empowerment() -> int:
 
 
 func finish(health: int) -> bool:
+	shatter.resolving = true
+	var ok := _finish_one(health)
+	shatter.resolving = false
+	if ok:
+		advance_shatter()
+	return ok
+
+
+func _finish_one(health: int) -> bool:
 	var s := c.state
 	var p := s.pending_cast
 	if p.is_empty() or health < 0 or health > max_empowerment():
@@ -496,6 +521,8 @@ func on_activate(f: Figure) -> void:
 
 
 func on_end_activation(f: Figure) -> void:
+	shatter.clear()
+	f.spell_effects.erase("potion_shatterstar")
 	f.next_cast_gear = ""
 	f.spell_effects.erase("potion_fire_breath")
 	f.spell_effects.erase("potion_burrowing")
@@ -620,4 +647,42 @@ func reroll_fate() -> bool:
 	p["raw"] = raw
 	p["total"] = int(p["total"]) + raw - old
 	c.emit("fate_reroll", {"id": f.id, "first": old, "second": raw})
+	return true
+
+
+func _dispatch_shatter(entry: Dictionary) -> void:
+	var f := c.state.active()
+	if f == null or not f.in_play() or f.id != int(entry["caster"]):
+		return
+	var t := c.state.figure(entry["target"])
+	if t == null or not t.in_play():
+		return
+	if entry["second"] >= 0 and not c.state.figure(entry["second"]).in_play():
+		return
+	_authorize_roll(entry["id"], entry["target"], entry["at"], entry["rotated"], entry["second"], entry["effect"])
+
+
+func advance_shatter() -> void:
+	if shatter.resolving or not c.state.pending_cast.is_empty() or c.awaiting_reaction():
+		return
+	if not shatter.next.is_empty():
+		var entry := shatter.next
+		shatter.next = {}
+		shatter.resolving = true
+		_dispatch_shatter(entry)
+		shatter.resolving = false
+	if c.state.pending_cast.is_empty() and not c.awaiting_reaction():
+		shatter.spent = false
+
+
+func single_shatter() -> bool:
+	if shatter.first.is_empty():
+		return false
+	var entry := shatter.first
+	shatter.first = {}
+	var f := c.state.active()
+	if f == null or not f.in_play() or f.id != int(entry["caster"]):
+		return false
+	f.spell_effects.erase("potion_shatterstar")
+	_dispatch_shatter(entry)
 	return true

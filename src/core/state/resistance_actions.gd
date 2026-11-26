@@ -81,3 +81,4 @@ func _resolve(p: Dictionary, spend: int, done: Callable) -> void:
 		c._hurt(t, spend - power, t, false)
 	c.emit("resistance_result", {"id": t.id, "raw": p["raw"], "mod": p["mod"], "tn": p["tn"], "spent": spend - power, "power": power, "success": success})
 	done.call(success)
+	c._magic.advance_shatter()

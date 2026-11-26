@@ -36,6 +36,8 @@ func can_drink(id: String, target: Figure = null) -> bool:
 		return false
 	if id == "fire_breath" and (f.actions_left < 2 or f.moves_taken > 0):
 		return false
+	if id == "shatterstar" and (target != f or f.def.role not in ["wizard", "apprentice"] or f.actions_left < 2 or f.moves_taken > 0 or f.acted or f.spell_effects.has("potion_shatterstar")):
+		return false
 	if id == "empowerment" and (f.def.role not in ["wizard", "apprentice"] or f.empowerment_used):
 		return false
 	if id in COATINGS and not can_coat(f, id, f.melee) and not can_coat(f, id, f.ranged):

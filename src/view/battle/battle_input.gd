@@ -312,6 +312,8 @@ func preview() -> void:
 	markers.show_points(points, color, radius)
 	if not selected.is_empty():
 		markers.show_points(selected, Color(1.0, 0.78, 0.15), 0.85, true)
+	if not c._magic.shatter.first.is_empty():
+		hint = "Shatterstar: first attempt declared. Choose the second target before rolling. " + hint
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
@@ -377,6 +379,8 @@ func action(key: String) -> bool:
 			preview()
 			return false
 		return c._potions.drink(selected_potion)
+	if key == "shatter_single":
+		return c._magic.single_shatter()
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false
@@ -388,6 +392,8 @@ func action(key: String) -> bool:
 			counter_index = 0
 			mode = "counter_select"
 			available.assign(["spell_cancel", "counter_confirm"])
+			if not c._magic.shatter.first.is_empty():
+				available.append("shatter_single")
 			if counter_choices.size() > 1:
 				available.append("counter_previous")
 				available.append("counter_next")
@@ -397,6 +403,8 @@ func action(key: String) -> bool:
 		if selected_spell in ["telekinesis", "fools_gold"]:
 			mode = "treasure_spell"
 		available.assign(["spell_cancel"])
+		if not c._magic.shatter.first.is_empty():
+			available.append("shatter_single")
 		if selected_spell in ["fog", "wall", "bridge"]:
 			available.append("rotate_spell")
 		preview()
@@ -437,7 +445,7 @@ func action(key: String) -> bool:
 		"counter_confirm":
 			if selected_spell == "horn":
 				return GearActions.horn(c, counter_choices[counter_index]["piece"])
-			return c._magic.start_counter(selected_spell, counter_index)
+			return _declared(c._magic.start_counter(selected_spell, counter_index))
 		"rotate_spell":
 			spell_rotated = not spell_rotated
 			preview()
@@ -452,6 +460,7 @@ func action(key: String) -> bool:
 			preview()
 			return false
 		"spell_cancel":
+			c._magic.shatter.first.clear()
 			mode = ""
 			refresh()
 			return false
@@ -510,14 +519,14 @@ func tap(screen: Vector2) -> bool:
 			"potion_target":
 				return c._potions.drink(selected_potion, c.state.figure(id))
 			"swap_second":
-				return c._magic.start_swap(spell_first, id)
+				return _declared(c._magic.start_swap(spell_first, id))
 			"spell_target":
 				if selected_spell in ["leap", "transpose", "suggestion"]:
 					spell_first = id
 					mode = "swap_second" if selected_spell == "transpose" else "leap_destination"
 					preview()
 					return false
-				return c.start_cast(selected_spell, id)
+				return _declared(c.start_cast(selected_spell, id))
 			"cancel_control":
 				return c._magic.cancel(id)
 			"group_select":
@@ -546,18 +555,18 @@ func tap(screen: Vector2) -> bool:
 				preview()
 				return false
 	if mode == "treasure_destination":
-		return c._magic.start_treasure(selected_spell, spell_first, MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return _declared(c._magic.start_treasure(selected_spell, spell_first, MoveGrid.to_pos(MovePlanner.node_at(at))))
 	if mode == "leap_destination":
 		var t := c.state.figure(spell_first)
 		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return c._magic.start_move(selected_spell, spell_first, destination)
+		return _declared(c._magic.start_move(selected_spell, spell_first, destination))
 	if mode == "gear_teleport":
 		return GearActions.teleport(c, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "potion_point":
 		return c._potions.use_at(selected_potion, at.round() if selected_potion == "explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return c._magic.start_at(selected_spell, destination, spell_rotated)
+		return _declared(c._magic.start_at(selected_spell, destination, spell_rotated))
 	if mode == "collect":
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:
@@ -642,3 +651,11 @@ func _resist_buttons() -> void:
 		available.append("resist_plus")
 	if empower > 0:
 		available.append("resist_minus")
+
+
+func _declared(ok: bool) -> bool:
+	if not ok and not c._magic.shatter.first.is_empty():
+		var key := "spell_" + str(c._magic.shatter.first["id"])
+		available.assign([key])
+		action(key)
+	return ok
