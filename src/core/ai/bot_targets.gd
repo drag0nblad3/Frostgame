@@ -24,7 +24,7 @@ static func best_shot(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	var best_v := 0.0
 	for t in s.figures:
-		if Shooting.blocked_reason(s.board, s.figures, f, t) != "":
+		if t.side == f.side or Contact.in_combat(s.figures, t) or Shooting.blocked_reason(s.board, s.figures, f, t) != "":
 			continue
 		var v := shot_value(s, f, f.pos, t)
 		if v > best_v:

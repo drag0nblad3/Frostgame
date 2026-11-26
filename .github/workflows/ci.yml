@@ -26,6 +26,11 @@ jobs:
           set -o pipefail
           godot --headless -s tests/player_smoke.gd 2>&1 | tee player-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" player-smoke.log
+      - name: Roster editor smoke test
+        run: |
+          set -o pipefail
+          godot --headless -s tests/roster_smoke.gd 2>&1 | tee roster-smoke.log
+          ! grep -E "SCRIPT ERROR|Parse Error" roster-smoke.log
       - name: Smoke run main scene
         run: |
           set -o pipefail

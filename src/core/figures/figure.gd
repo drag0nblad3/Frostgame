@@ -55,7 +55,8 @@ func effective_fight() -> int:
 
 
 func effective_armour() -> int:
-	return mini(def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0), maxi(def.armour, 14))
+	var total := def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0)
+	return total if def.role == "creature" else mini(total, 15)
 
 
 func effective_move() -> int:

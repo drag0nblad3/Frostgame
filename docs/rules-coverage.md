@@ -79,3 +79,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Starting warband creation
 
 - pp. 17–32: school relationship table (all ten), eight starting spell slots with home/aligned/neutral constraints, casting-number adjustments, wizard name, optional apprentice, 400gc budget, eight soldier/four specialist limits. Warband editor deploys the custom blue warband in a fresh battle. Catalog contains thirty initial spell records (three per school, eleven functional; pending entries visibly marked and excluded from casting). This is not yet a complete spell catalog, and no campaign persistence or starting equipment customization is implemented.
+
+## Integration refinements
+
+- pp. 36, 57–59, 65, 197: permanent warband Armour cap 15 (core rules), Glow correctly increases attack total, hasty-shot modifier on spell attacks, random targeting among connected melee participants for mundane and single-target spell shots. AI avoids uncertain friendly-fire shots where possible. Strong and Powerful creature melee traits are functional. Roster dialog construction and deployment smoke coverage added. Existing flat line of sight and cover approximations remain.

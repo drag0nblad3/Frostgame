@@ -29,7 +29,7 @@ func pick_up(id: int) -> bool:
 
 
 func can_drop(at: Vector2) -> bool:
-	if _c.state.group.movement_pass():
+	if _c.state.group.movement_pass() or not _c.state.pending_cast.is_empty():
 		return false
 	var f := _c.state.active()
 	if f == null or not f.in_play() or f.treasure_id < 0 or f.actions_left <= 0:

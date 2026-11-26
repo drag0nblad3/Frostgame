@@ -32,7 +32,7 @@ func can_cast(id: String, target_id: int) -> bool:
 	if spell.has("range") and Shooting.distance(f, t) > float(spell["range"]):
 		return false
 	if kind == "shot":
-		return t != f and not Contact.in_combat(s.figures, t)
+		return t != f
 	if kind in ["heal", "resist"] and (t.def.traits.has("undead") or t.def.traits.has("construct")):
 		return false
 	if kind == "resist":
@@ -82,6 +82,7 @@ func finish(health: int) -> bool:
 		"elemental_shield":
 			t.elemental_shield = 3
 		"elemental_bolt", "bone_dart":
+			t = ShotTarget.randomize(c.dice, s.figures, t)
 			_shot(f, t, int(s.spell_catalog[id]["power"]))
 		"steal_health":
 			if not StatRoll.succeeds(c.dice.d20(), t.effective_will(), result["roll"]):
@@ -102,14 +103,12 @@ func _heal(t: Figure, amount: int) -> void:
 
 func _shot(f: Figure, t: Figure, power: int) -> void:
 	var s := c.state
-	var mod := Shooting.target_mod(LineOfSight.check(s.board, f.pos, t.pos))
+	var mod := Shooting.target_mod(LineOfSight.check(s.board, f.pos, t.pos)) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
 		mod -= 2
-	if t.spell_effects.has("glow"):
-		mod -= 3
 	var ar := c.dice.d20()
 	var dr := c.dice.d20()
-	var a := ar + power
+	var a := ar + mini(power + (3 if t.spell_effects.has("glow") else 0), 10)
 	var d := dr + mini(t.effective_fight() + mod, 10)
 	var won := a > d
 	if s.critical_hits:

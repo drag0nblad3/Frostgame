@@ -132,7 +132,10 @@ func shoot(target_id: int) -> bool:
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
+	var declared := t.id
+	t = ShotTarget.randomize(dice, state.figures, t)
 	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits)
+	res["declared"] = declared
 	_spend(f)
 	if f.ranged.needs_reload:
 		f.loaded = false
