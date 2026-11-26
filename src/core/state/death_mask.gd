@@ -26,7 +26,7 @@ static func toggle(c: GameController) -> bool:
 	if not can_toggle(c):
 		return false
 	var f := c.state.active()
-	var wear := not f.used_gear.get(WORN,false)
+	var wear: bool=not f.used_gear.get(WORN,false)
 	f.used_gear[WORN]=wear
 	if wear:
 		f.used_gear[EVER]=true
