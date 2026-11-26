@@ -132,3 +132,18 @@ func test_nested_hinges_bend_and_reset() -> void:
 		MiniatureMotion.reset(model)
 		check(is_zero_approx((model.get_node("Leg0/Knee") as Node3D).rotation.x))
 		model.free()
+
+
+func test_tabletop_finish_covers_catalog_and_stays_batched() -> void:
+	var defs := db()
+	var data: Dictionary=JsonFile.read("res://data/figures.json")
+	for id: String in data:
+		if id.begins_with("_"):
+			continue
+		var f := Figure.new(12,defs.get_def(id),0,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.BLUE)
+		var meshes := model.find_children("*","MeshInstance3D",true,false)
+		check(not meshes.is_empty())
+		# Limit draw calls even for articulated and emissive figures.
+		check(meshes.size()<100)
+		model.free()

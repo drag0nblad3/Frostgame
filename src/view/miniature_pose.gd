@@ -16,7 +16,7 @@ static func attach(root: Node3D, pivot: Node3D, first: int) -> void:
 	for child in children:
 		if not child is MeshInstance3D:
 			continue
-		var pose := child.transform
+		var pose: Transform3D = child.transform
 		root.remove_child(child)
 		pivot.add_child(child)
 		child.transform = _relative(root,pivot).affine_inverse()*pose

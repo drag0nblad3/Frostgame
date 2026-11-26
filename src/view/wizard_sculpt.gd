@@ -42,6 +42,7 @@ static func create(root: Node3D,f: Figure,school: String,faction: Color) -> void
 		CreatureSculpt.limb(root,knee,Vector3(x*1.2,0.19,0.035),0.098,coat.darkened(0.20),0.9)
 		MiniatureFactory.sphere(root,Vector3(x*1.2,0.12,-0.06),Vector3(0.21,0.21,0.34),LEATHER)
 		MiniatureFactory.cylinder(root,Vector3(x*1.2,0.26,0.02),0.11,0.10,0.18,LEATHER)
+		TabletopKit.boot(root,Vector3(x*1.2,0.12,-0.06),LEATHER,false)
 		MiniaturePose.attach(root,shin,first)
 	if long_robe:
 		WizardTailoring.skirt(root,coat,lining,0.15,0.36,profile,false)
@@ -63,6 +64,7 @@ static func create(root: Node3D,f: Figure,school: String,faction: Color) -> void
 		CreatureSculpt.limb(root,Vector3(x*1.20,0.79,-0.08),Vector3(x*1.20,0.76,-0.09),0.106,trim,1.0)
 		MiniatureFactory.sphere(root,Vector3(x*1.20,0.75,-0.09),Vector3(0.13,0.16,0.14),skin)
 		MiniatureFactory.sphere(root,Vector3(x*1.04,0.76,-0.15),Vector3(0.065,0.085,0.07),skin)
+		TabletopKit.cuff(root,Vector3(x*1.20,0.80,-0.08),trim,false)
 		MiniaturePose.attach(root,forearm,first)
 	_face(root,skin,hair,index,apprentice)
 	WizardWardrobe.dress(root,school,coat,lining,hair,apprentice)

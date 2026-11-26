@@ -36,6 +36,12 @@ static func sword(root: Node3D, length: float, broad: bool) -> void:
 	metal(MiniatureFactory.box(root, Vector3(x, 0.80, -0.08), Vector3(width * 2.8, 0.055, 0.075), BRASS))
 	MiniatureFactory.cylinder(root, Vector3(x, 0.68, -0.08), 0.037, 0.037, 0.20, WOOD)
 	metal(MiniatureFactory.sphere(root, Vector3(x, 0.57, -0.08), Vector3.ONE * 0.105, BRASS))
+	# Broad central fuller and a stepped crossguard read even at battle zoom.
+	metal(MiniatureFactory.box(root,Vector3(x,bottom+length*0.40,-0.104),Vector3(width*0.20,length*0.67,0.009),STEEL.darkened(0.32)))
+	for side: float in [-1.0,1.0]:
+		metal(MiniatureFactory.sphere(root,Vector3(x+side*width*1.32,0.80,-0.08),Vector3(0.055,0.07,0.07),BRASS.lightened(0.15)))
+	for i in 3:
+		MiniatureFactory.cylinder(root,Vector3(x,0.63+i*0.045,-0.08),0.043,0.043,0.016,WOOD.lightened(0.22))
 
 
 static func shield(root: Node3D, knight: bool) -> void:
@@ -48,6 +54,13 @@ static func shield(root: Node3D, knight: bool) -> void:
 	var face := MiniatureFactory.cylinder(root, center + Vector3(0, 0, -0.05), r * 0.83, r * 0.83, 0.055, shield_color)
 	face.rotation.x = PI * 0.5
 	metal(MiniatureFactory.sphere(root, center + Vector3(0, 0, -0.10), Vector3.ONE * 0.15, STEEL))
+	for i in 3:
+		var dx := (i-1)*r*0.46
+		var span := 2.0*sqrt(maxf(0.0,pow(r*0.76,2)-dx*dx))
+		MiniatureFactory.box(root,center+Vector3(dx,0,-0.081),Vector3(0.017,span,0.015),shield_color.darkened(0.28))
+	if knight:
+		for side: float in [-1.0,1.0]:
+			metal(MiniatureFactory.box(root,center+Vector3(side*r*0.38,0,-0.09),Vector3(0.055,r*0.92,0.018),BRASS))
 	for i in 8:
 		var angle := TAU * i / 8.0
 		metal(MiniatureFactory.sphere(root, center + Vector3(cos(angle) * r * 0.9, sin(angle) * r * 0.9, -0.047), Vector3.ONE * 0.037, STEEL))

@@ -41,6 +41,7 @@ static func create(root: Node3D,f: Figure,faction: Color) -> void:
 		if plate:
 			WeaponSculpt.metal(MiniatureFactory.sphere(root,knee+Vector3(0,0,-0.075),Vector3(0.18,0.19,0.12),STEEL))
 			WeaponSculpt.metal(MiniatureFactory.box(root,foot+Vector3(0,0.14,-0.085),Vector3(0.17,0.21,0.065),STEEL.darkened(0.1)))
+		TabletopKit.boot(root,foot+Vector3(0,-0.015,-0.06),LEATHER,plate)
 		MiniaturePose.attach(root,shin,leg_first)
 		var pivot := MiniaturePose.arm(root,side>0)
 		var first := root.get_child_count()
@@ -60,6 +61,7 @@ static func create(root: Node3D,f: Figure,faction: Color) -> void:
 		MiniatureFactory.sphere(root,hand,Vector3(0.15,0.17,0.15),LEATHER if plate else skin)
 		if plate:
 			WeaponSculpt.metal(MiniatureFactory.sphere(root,elbow+Vector3(0,0,-0.04),Vector3(0.19,0.18,0.16),STEEL))
+		TabletopKit.cuff(root,hand+Vector3(0,0.05,0),STEEL if plate else dye,plate)
 		MiniaturePose.attach(root,forearm,first)
 	WizardTailoring.torso(root,chest,coat.lightened(0.13),2 if heavy else 0,false)
 	if plate or mail:

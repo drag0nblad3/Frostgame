@@ -13,17 +13,20 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 	model.set_meta("painted_miniature",true)
 	var color := faction
 	if CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
+		TabletopDetails.decorate(model,f)
 		MiniatureBatch.bake(model)
 		return model
 	if f.def.role in ["wizard", "apprentice"]:
 		var school := school_override if not school_override.is_empty() else SchoolArt.of_figure(f)
 		WizardSculpt.create(model,f,school,faction)
 		weapon(model,f,school)
+		TabletopDetails.decorate(model,f)
 		MiniatureBatch.bake(model)
 		return model
 	if f.def.role=="soldier" or f.def.id=="vampire":
 		SoldierSculpt.create(model,f,faction)
 		weapon(model,f)
+		TabletopDetails.decorate(model,f)
 		MiniatureBatch.bake(model)
 		return model
 	if f.def.traits.has("construct"):
@@ -71,6 +74,7 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 			model.scale = Vector3(1.23, 1.35, 1.23)
 		if f.def.traits.has("ethereal"):
 			model.position.y += 0.15
+	TabletopDetails.decorate(model,f)
 	MiniatureBatch.bake(model)
 	return model
 

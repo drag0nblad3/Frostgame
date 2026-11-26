@@ -60,7 +60,7 @@ static func _append(group: Dictionary, arrays: Array, at: Transform3D, color: Co
 		normals.append(normal)
 		# Gentle hand-painted edge lighting and recess tone; no texture lookups.
 		var tone := clampf(normal.y,-1.0,1.0)
-		colors.append((color.lightened(0.07*tone) if tone>0 else color.darkened(-0.06*tone)) if painted else color)
+		colors.append((color.lightened(0.12*tone) if tone>0 else color.darkened(-0.12*tone)) if painted else color)
 	if arrays[Mesh.ARRAY_INDEX] == null or arrays[Mesh.ARRAY_INDEX].is_empty():
 		for i in source.size():
 			indices.append(offset + i)

@@ -17,5 +17,16 @@ static func create(root: Node3D,id: int) -> void:
 		stone.rotation.y=a
 		if posmod(id+i,3)!=0:
 			MiniatureFactory.sphere(top,at+Vector3(0,0.015,0),Vector3(0.13,0.023,0.105),SNOW)
+	var variant := posmod(id,3)
+	var at := Vector3(0.23,0.135,0.21)
+	if variant==0:
+		var slab := MiniatureFactory.box(top,at,Vector3(0.18,0.065,0.12),STONE.darkened(0.16))
+		slab.rotation.y=0.55
+		MiniatureFactory.sphere(top,at+Vector3(0,0.037,0),Vector3(0.14,0.025,0.10),SNOW)
+	elif variant==1:
+		for i in 2:
+			CreatureSculpt.limb(top,at+Vector3(i*0.055,0,0),at+Vector3(i*0.055-0.04,0.13,0.015),0.033,Color("a9c6d2"),0.02)
+	else:
+		CreatureSculpt.limb(top,at-Vector3(0.12,0,0),at+Vector3(0.09,0.035,0.04),0.035,Color("6e5845"),0.5)
 	# The top stays inside the colored rim and clear of the health bar.
 	MiniatureBatch.bake(top)
