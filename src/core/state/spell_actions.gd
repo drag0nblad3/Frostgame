@@ -458,7 +458,7 @@ func _finish_one(health: int) -> bool:
 					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
-				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
+				if other != f and other.in_play() and other.ring_side==f.ring_side and Shooting.distance(f, other) <= 3:
 					_direct_attack(f, other, 5)
 		"plane_walk":
 			c._loot.drop_on_death(f)

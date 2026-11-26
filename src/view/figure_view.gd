@@ -100,7 +100,7 @@ func refresh(f: Figure) -> void:
 	_ranged=f.ranged.id if f.ranged!=null else ""
 	var phantom := IllusionRules.phantom(f)
 	var transparent := f.spell_effects.has("invisibility") or phantom
-	var key := "%d:%s:%s:%s:%s" % [f.side, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", transparent,SchoolArt.of_figure(f)]
+	var key := "%s:%d:%s:%s:%s:%s" % [f.def.id, f.side, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", transparent,SchoolArt.of_figure(f)]
 	if key != _model_key or _model == null:
 		if _model != null:
 			remove_child(_model)

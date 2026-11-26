@@ -9,7 +9,12 @@ func _init() -> void:
 	var args := OS.get_cmdline_user_args()
 	var id := args[0] if args.size() > 0 else "treasure_skirmish"
 	var seed_value := int(args[1]) if args.size() > 1 else 17
-	var db := FigureDb.load_files()
+	var profile := ContentProfile.new()
+	if id.begins_with("red_king_"):
+		var packs := ContentProfile.registered().duplicate(true)
+		packs["red_king"]["status"]="ready"
+		profile=ContentProfile.new(["red_king"],packs)
+	var db := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
 	var terrain := TerrainDb.load_file()
 	var layered := id in ["stacked_gatehouse","layered_silent_tower"]
 	var c: GameController
@@ -71,7 +76,7 @@ func _validate(s: GameState, where: String) -> void:
 		for j in range(i + 1, live.size()):
 			var a := live[i]
 			var b := live[j]
-			if absf(a.elevation - b.elevation) < 0.5 and a.pos.distance_to(b.pos) < Contact.OVERLAP - 0.01:
+			if a.ring_side==b.ring_side and absf(a.elevation - b.elevation) < 0.5 and a.pos.distance_to(b.pos) < Contact.OVERLAP - 0.01:
 				errors.append("%s: figures %d and %d overlap" % [where, a.id, b.id])
 	for t in s.treasures:
 		if layout!=null and t.on_ground():
