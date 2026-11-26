@@ -25,7 +25,15 @@ jobs:
       - name: Unit tests
         run: |
           set -o pipefail
-          godot --headless -s tests/run_tests.gd 2>&1 | tee unit-tests.log
+          set +e
+          timeout 240s godot --headless -s tests/run_tests.gd >unit-tests.log 2>&1
+          result=$?
+          set -e
+          # Keep repeated engine errors from flooding the GitHub log.
+          head -c 24000 unit-tests.log
+          printf '\n--- final diagnostics ---\n'
+          tail -c 24000 unit-tests.log
+          test "$result" -eq 0
           ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script" unit-tests.log
       - name: Player interaction smoke test
         run: |

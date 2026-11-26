@@ -36,7 +36,9 @@ static func destinations(board: Board,node: Vector2i) -> Array[Vector2i]:
 
 
 static func sources(board: Board,node: Vector2i) -> Array[Vector2i]:
-	var out: Array[Vector2i]=destinations(board,node) if board.wrap_short_edges else []
+	var out: Array[Vector2i]=[]
+	if board.wrap_short_edges:
+		out.append_array(destinations(board,node))
 	if board.edge_links.is_empty():
 		return out
 	for link in board.edge_links:

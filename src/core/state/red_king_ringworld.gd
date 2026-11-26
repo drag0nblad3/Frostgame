@@ -170,6 +170,8 @@ static func check_end(c: GameController) -> bool:
 	var s := c.state
 	if not active(s):
 		return false
+	if s.scenario_data.has("ring_success"):
+		return true
 	var success := remaining(s)==0
 	if not success:
 		for f in s.figures:

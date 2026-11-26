@@ -114,7 +114,7 @@ func _settle() -> void:
 			RedKingTethers.end_turn(_c)
 			RedKingBridge.end_turn(_c)
 			RedKingRingworld.end_turn(_c)
-			if (RedKingMind.active(s) or RedKingHerded.active(s)) and _check_victory():
+			if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
 				return
 			_c._encounters.on_end_turn()
 			start_turn()
