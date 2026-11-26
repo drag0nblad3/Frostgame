@@ -13,6 +13,7 @@ var _loot: TreasureActions
 var _displacement: CombatDisplacement
 var _encounters: EncounterActions
 var _magic: SpellActions
+var _potions: PotionActions
 
 
 func _init(s: GameState, d: Dice) -> void:
@@ -23,6 +24,7 @@ func _init(s: GameState, d: Dice) -> void:
 	_displacement = CombatDisplacement.new(self)
 	_encounters = EncounterActions.new(self)
 	_magic = SpellActions.new(self)
+	_potions = PotionActions.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:

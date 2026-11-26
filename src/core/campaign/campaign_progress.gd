@@ -21,6 +21,7 @@ func deployment() -> Dictionary:
 			entry["stat_bonus"] = data.get("advances", {}).duplicate()
 		elif data.get("base", "") == "brewery":
 			entry["stat_bonus"] = {"will": 1}
+		entry["items"] = CampaignInventory.loadout(data, int(unit["id"]))
 		units.append(entry)
 	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units}
 
@@ -35,6 +36,7 @@ func can_deploy() -> bool:
 func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	if data.is_empty() or not c.state.over:
 		return false
+	CampaignInventory.settle(data, c, side)
 	var report: Array[String] = []
 	var xp := 0
 	var kills := 0
@@ -93,8 +95,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		data["gold"] = int(data["gold"]) + int(loot["gold"])
 		if loot["kind"] == "grimoire":
 			loot["spell"] = random_spell(dice)
-		if loot["kind"] != "":
-			data["loot"].append(loot)
+		CampaignInventory.identify(data, loot, dice)
 		report.append("Treasure %d: %d gc%s." % [i + 1, loot["gold"], ", " + str(loot["kind"]) if loot["kind"] != "" else ""])
 	match str(data.get("base", "")):
 		"laboratory":
@@ -110,8 +111,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				data["gold"] = int(data["gold"]) + int(bonus["gold"])
 				if bonus["kind"] == "grimoire":
 					bonus["spell"] = random_spell(dice)
-				if bonus["kind"] != "":
-					data["loot"].append(bonus)
+				CampaignInventory.identify(data, bonus, dice)
 				report.append("Treasury: extra treasure, %d gc." % bonus["gold"])
 			elif roll >= 2:
 				var gold := roll + (100 if roll >= 17 else 0)
@@ -256,6 +256,9 @@ func dismiss(index: int) -> bool:
 	if unit["dead"] or unit["type"] == "wizard" or unit.get("dismissed", false):
 		return false
 	unit["dismissed"] = true
+	for item: Dictionary in data["loot"]:
+		if int(item.get("owner", -1)) == index:
+			item["owner"] = -1
 	return true
 
 

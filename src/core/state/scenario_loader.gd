@@ -31,6 +31,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if entry.has("stat_bonus"):
 				def = def.with_bonuses(entry["stat_bonus"])
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
+			for item: Dictionary in entry.get("items", []):
+				unit.items.append(item.duplicate(true))
 			unit.campaign_id = int(entry.get("campaign_id", -1))
 			unit.elevation = s.board.height_at(unit.pos)
 			s.figures.append(unit)

@@ -22,6 +22,7 @@ var base_button: Button
 var grimoire: OptionButton
 var learn_button: Button
 var controls: Array[Control] = []
+var inventory: InventoryPanel
 
 
 func setup(progress: CampaignProgress, figures: FigureDb) -> void:
@@ -86,6 +87,10 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		if grimoire.item_count > 0 and campaign.learn_grimoire(int(grimoire.get_selected_metadata()), db):
 			changed())
 	controls.assign([stat, upgrade, recruit, hire_button, members, dismiss_button, treat_button, base_choice, base_button, grimoire, learn_button])
+	inventory = InventoryPanel.new()
+	col.add_child(inventory)
+	inventory.setup(campaign, db, changed)
+	controls.append(inventory)
 	start = Button.new()
 	start.text = "Start campaign with current drafted warband"
 	col.add_child(start)
@@ -107,6 +112,7 @@ func refresh(in_battle: bool) -> void:
 	if d.is_empty():
 		summary.text = "Create a warband first, or start with a basic default draft. Campaign progress is saved between battles."
 		return
+	inventory.refresh()
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
 	for unit: Dictionary in d["units"]:
 		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — resting" if int(unit["miss"]) > 0 else ""), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])

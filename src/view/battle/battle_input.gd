@@ -73,6 +73,11 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	for item in f.items:
+		if c._potions.can_drink(item["potion"]):
+			var key := "potion_" + str(item["potion"])
+			if not available.has(key):
+				available.append(key)
 	if c.can_use_stored_action():
 		available.append("use_stored_action")
 	if c.can_move():
@@ -245,6 +250,8 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key.begins_with("potion_"):
+		return c._potions.drink(key.trim_prefix("potion_"))
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false

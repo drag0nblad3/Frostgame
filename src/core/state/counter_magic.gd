@@ -15,8 +15,8 @@ func options(f: Figure) -> Array[Dictionary]:
 		if not t.in_play() or Shooting.distance(f, t) > 24.0 or (t != f and not LineOfSight.check(s.board, f.pos, t.pos).clear):
 			continue
 		for id: String in t.spell_effects:
-			if s.spell_catalog.has(id):
-				result.append({"kind": "effect", "target": t.id, "spell": id, "label": "%s #%d — %s" % [t.label(), t.id, s.spell_catalog[id]["name"]]})
+			if s.spell_catalog.has(id) or id.begins_with("potion_"):
+				result.append({"kind": "effect", "target": t.id, "spell": id, "label": "%s #%d — %s" % [t.label(), t.id, s.spell_catalog.get(id, {"name": id.trim_prefix("potion_").capitalize()})["name"]]})
 		if t.elemental_shield > 0:
 			result.append({"kind": "shield", "target": t.id, "spell": "elemental_shield", "label": "%s #%d — Elemental Shield" % [t.label(), t.id]})
 		if t.controller_id >= 0:

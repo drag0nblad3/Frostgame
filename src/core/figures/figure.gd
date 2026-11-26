@@ -23,6 +23,7 @@ var exited := false
 var treasure_id := -1
 var disengaged := {}
 var spell_effects := {}
+var items: Array[Dictionary] = []
 var elemental_shield := 0
 var poisoned := false
 var petrified_skip := false
@@ -51,6 +52,8 @@ func _init(fig_id: int = 0, d: FigureDef = null, fig_side: int = 0, at: Vector2 
 	pos = at
 	if d != null:
 		health = d.health
+		if d.id == "apothecary":
+			items.append({"potion": "healing", "campaign_item": false})
 		melee = unarmed
 		for w in d.weapons:
 			if w.melee:
@@ -71,6 +74,7 @@ func effective_fight() -> int:
 	if spell_effects.has("blinding_light"):
 		return 0
 	var value := def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
+	value += 1 if spell_effects.has("potion_strength") else 0
 	if spell_effects.has("petrify"):
 		value = maxi(0, value - 3)
 	return value
@@ -78,17 +82,21 @@ func effective_fight() -> int:
 
 func effective_armour() -> int:
 	var total := def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0) + (1 if spell_effects.has("enchant_armour") else 0)
+	total += 1 if spell_effects.has("potion_toughness") else 0
 	return total if def.role == "creature" else mini(total, 15)
 
 
 func effective_move() -> int:
 	if spell_effects.has("blinding_light"):
 		return 1
-	return maxi(1, def.move + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0))
+	var speed := def.move + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0)
+	if spell_effects.has("potion_speed"):
+		speed = mini(9, speed + 2)
+	return maxi(1, speed)
 
 
 func effective_will() -> int:
-	return def.will + (2 if spell_effects.has("mind_lock") else 0)
+	return def.will + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0)
 
 
 func action_limit() -> int:
