@@ -40,5 +40,13 @@
     "move_mult": 1,
     "height": 4,
     "walkable_top": true
+  },
+  "museum_statue": {
+    "name": "Dormant statue",
+    "blocks_move": true,
+    "blocks_los": false,
+    "cover": 1,
+    "move_mult": 1,
+    "height": 1.7
   }
 }

@@ -51,6 +51,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	var report: Array[String] = []
 	var xp := 0
 	var kills := 0
+	var scenario_xp := 0
 	for f in c.state.figures:
 		if f.side == side and f.def.role == "wizard":
 			xp += 40
@@ -67,9 +68,12 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			var victim := c.state.figure(e["id"])
 			var attacker := c.state.figure(e["by"])
 			if victim.side < 0 and attacker.side == side:
-				kills += 1
+				if c.state.museum and victim.def.id == "medium_construct":
+					scenario_xp += 10
+				else:
+					kills += 1
 	var secured := c.state.secured_count(side)
-	xp = mini(300, xp + secured * 40 + mini(kills * 5, 50))
+	xp = mini(300, xp + secured * 40 + mini(kills * 5, 50) + scenario_xp)
 	data["xp"] = int(data["xp"]) + xp
 	data["games"] = int(data["games"]) + 1
 	data["spell_improved"] = false

@@ -181,3 +181,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Additional attack and word magic
 
 - pp. 120, 124, 128, 132: Grenade targets a point within 14 inches, making separate +3 magical shooting attacks against nearby figures, including allies and connected combats. Strike Dead costs one Health on attempt, ignores undead/constructs, and allows even non-casters to empower resistance. Power Word/Draining Word select a spell and apply global +3/-3 casting modifiers, once per caster and target spell per word type. Words can be dispelled; the selector currently includes implemented battle spells only. 
+
+## The Living Museum
+
+- p.145: five dormant statues in an X inside four broken walls, five adjacent treasures, TN8 Will test on each collection attempt (failure spends action); successful pickup animates a random remaining statue as a medium construct. Constructs award 10 XP instead of normal creature XP. The statues are temporary terrain blockers, replaced by creature figures on activation. Optional random pickup encounters disabled to focus on scenario behavior. Fixed placement and placeholder statue geometry; voluntary resistance empowerment for collection tests not implemented.

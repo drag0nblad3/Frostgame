@@ -76,3 +76,25 @@ func _spawn_at(type: String, at: Vector2, side: int = -1) -> Figure:
 	s.figures.append(creature)
 	c.emit("creature_spawn", {"id": id})
 	return creature
+
+
+## The Living Museum: failed Will tests spend the collection action; success animates one statue.
+func museum_pickup(f: Figure) -> bool:
+	var raw := c.dice.d20()
+	var success := StatRoll.succeeds(raw, f.effective_will() + f.roll_penalty(), 8)
+	c.emit("museum_test", {"id": f.id, "roll": raw, "success": success})
+	if not success:
+		return false
+	var statues: Array[TerrainPiece] = []
+	for p in c.state.board.pieces:
+		if p.kind.id == "museum_statue":
+			statues.append(p)
+	if statues.is_empty():
+		return true
+	var statue := statues[c.dice.pick(statues.size())]
+	var at := statue.rect.get_center()
+	c.state.board.pieces.erase(statue)
+	c.state.board.invalidate_terrain()
+	c.emit("terrain_changed", {"spell": "museum_statue", "created": false})
+	_spawn_at("medium_construct", at)
+	return true

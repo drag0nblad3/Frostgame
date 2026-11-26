@@ -58,6 +58,8 @@ func _ready() -> void:
 	scenarios.set_item_metadata(0, "treasure_skirmish")
 	scenarios.add_item("Mausoleum")
 	scenarios.set_item_metadata(1, "mausoleum")
+	scenarios.add_item("Living Museum")
+	scenarios.set_item_metadata(2, "living_museum")
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
 	top.add_child(scenarios)
 	top.add_child(_button("New game", func() -> void: new_game_pressed.emit()))

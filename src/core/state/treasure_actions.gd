@@ -19,6 +19,8 @@ func pick_up(id: int) -> bool:
 	var f := _c.state.active()
 	var token := _c.state.treasure(id)
 	_c._spend(f)
+	if _c.state.museum and not _c._encounters.museum_pickup(f):
+		return true
 	_c._magic.illusions.reveal(f)
 	f.treasure_id = id
 	token.carrier_id = f.id
