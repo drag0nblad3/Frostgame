@@ -83,7 +83,7 @@ func test_hut_interrupts_stale_path_without_overlapping() -> void:
 	# A valid path into the hut may become obstructed by its hidden occupant.
 	var path := PackedVector2Array([Vector2(18, 8), Vector2(18, 8.5), Vector2(18, 9), Vector2(18, 9.5), Vector2(18, 10), Vector2(18, 10.5), Vector2(18, 11), Vector2(18, 11.5), Vector2(18, 12), Vector2(18, 12.5), Vector2(18, 13)])
 	c._magic.terrain.travel(f, path, 5.0)
-	var occupant := s.figures.back()
+	var occupant: Figure = s.figures.back()
 	check_eq(occupant.def.id, "ghoul")
 	check(f.pos.distance_to(occupant.pos) >= Contact.OVERLAP)
 	check(Contact.in_combat(s.figures, f))

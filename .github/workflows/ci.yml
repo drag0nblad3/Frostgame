@@ -23,7 +23,10 @@ jobs:
           godot --headless --import 2>&1 | tee import.log
           ! grep -E "SCRIPT ERROR|Parse Error" import.log
       - name: Unit tests
-        run: godot --headless -s tests/run_tests.gd
+        run: |
+          set -o pipefail
+          godot --headless -s tests/run_tests.gd 2>&1 | tee unit-tests.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script" unit-tests.log
       - name: Player interaction smoke test
         run: |
           set -o pipefail
