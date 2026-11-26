@@ -83,7 +83,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 			changed())
 	base_choice = OptionButton.new()
 	for id in CampaignProgress.BASES:
-		base_choice.add_item(id.capitalize())
+		base_choice.add_item(id.capitalize() + " · " + str(BaseRules.BENEFITS.get(id, "")))
 		base_choice.set_item_metadata(base_choice.item_count - 1, id)
 	col.add_child(base_choice)
 	base_button = _command(col, "Choose base (free after first battle)", func() -> void:

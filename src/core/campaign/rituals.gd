@@ -99,6 +99,7 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 		mod = -4
 	if id == "miraculous_cure" and d["units"][int(option)]["dead"]:
 		mod = -4
+	mod += BaseRules.casting_bonus(str(d.get("base", "")), id)
 	var attempts: Dictionary = d.get("ritual_attempts", {})
 	attempts["%d:%s" % [caster, id]] = true
 	d["ritual_attempts"] = attempts

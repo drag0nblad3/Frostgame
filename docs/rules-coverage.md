@@ -197,3 +197,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Possession and mobile insect clouds
 
 - pp.127–128: Possess adds +2 Fight/+1 Armour/-2 Will, counts the subject as a demon for Banish, Control Demon and Planar Tear, and prevents group activation. One living possessed subject per caster; targets already declared in a group are excluded to avoid altering its staged action order. Plague of Insects is a moving radius effect, recalculated directly from current figure positions; nonimmune figures suffer -4 Fight/Shoot (minimum 0), -2 casting, without stacking. Large, undead and construct figures are immune; the original host rolls to end the effect after activation. The radius is measured using exposed-surface distances and the base radius; cloud graphics and optional interactive repeat resistance remain pending.
+
+## Additional bases
+
+- p.106: Temple (+3 Miraculous Cure and 16+ healing potion), Crypt (+2 Raise Zombie/Animate Skull including battle casts), Tower (+2 Awareness, future Reveal Secret) and Library (15–18 scroll, 19–20 grimoire) join the existing Brewery, Treasury and Laboratory. The base selector describes each benefit. Inn reserves, purchased resources, and the Reveal Secret ritual remain pending. 

@@ -42,6 +42,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
 						unit.summoned_by = caster.id
 						break
+			unit.campaign_base = str(entry.get("campaign_base", ""))
 			unit.familiar = entry.get("familiar", false)
 			if entry.get("awareness", false):
 				unit.spell_effects["awareness"] = true

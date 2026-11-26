@@ -24,6 +24,7 @@ func deployment() -> Dictionary:
 		var bonuses := InjuryRules.bonuses(unit, entry.get("stat_bonus", {}))
 		entry["injury_types"] = unit.get("injury_types", {}).duplicate(true)
 		entry["starting_loss"] = InjuryRules.starting_loss(unit)
+		entry["campaign_base"] = data.get("base", "")
 		entry["familiar"] = unit.get("familiar", false)
 		entry["awareness"] = unit.get("awareness", false)
 		if unit.get("familiar", false):
@@ -134,6 +135,20 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		CampaignInventory.identify(data, loot, dice)
 		report.append("Treasure %d: %d gc%s." % [i + 1, loot["gold"], ", " + str(loot["kind"]) if loot["kind"] != "" else ""])
 	match str(data.get("base", "")):
+		"temple":
+			if dice.d20() >= 16:
+				data["loot"].append({"kind": "potion", "potion": "healing", "owner": -1})
+				report.append("Temple: free Potion of Healing.")
+		"library":
+			var roll := dice.d20()
+			if roll >= 15:
+				var spell := random_spell(dice)
+				if roll >= 19:
+					data["loot"].append({"kind": "grimoire", "spell": spell})
+					report.append("Library: discovered a grimoire of " + spell.replace("_", " ").capitalize() + ".")
+				else:
+					data["loot"].append({"kind": "scroll", "scroll": spell, "owner": -1})
+					report.append("Library: discovered a scroll of " + spell.replace("_", " ").capitalize() + ".")
 		"laboratory":
 			data["xp"] = int(data["xp"]) + 20
 			report.append("Laboratory: +20 XP.")
@@ -202,7 +217,7 @@ func load_save(path: String = PATH) -> bool:
 
 
 const RANDOM_SPELLS := [["animate_skull","bones_of_the_earth","strike_dead","control_undead"],["curse","poison_dart","animal_companion","familiar"],["fleet_feet","slow","crumble","fast_act"],["leap","imp","plane_walk","control_demon"],["wall","call_storm","scatter_shot","destructive_sphere"],["push","draining_word","explosive_rune","write_scroll"],["teleport","invisibility","beauty","transpose"],["strength","telekinesis","enchant_armour","control_construct"],["awareness","true_sight","mind_lock","mind_control"],["shield","banish","blinding_light","miraculous_cure"],["bone_dart","spell_eater","steal_health","raise_zombie"],["mud","fog","control_animal","brew_potion"],["decay","time_store","petrify","time_walk"],["plague_of_insects","planar_tear","possess","summon_demon"],["elemental_bolt","elemental_ball","elemental_hammer","elemental_shield"],["furious_quill","absorb_knowledge","power_word","bridge"],["blink","fools_gold","glow","illusionary_soldier"],["enchant_weapon","grenade","embed_enchantment","animate_construct"],["combat_awareness","wizard_eye","suggestion","reveal_secret"],["circle_of_protection","heal","dispel","destroy_undead"]]
-const BASES := ["brewery", "laboratory", "treasury"]
+const BASES := ["brewery", "laboratory", "treasury", "temple", "crypt", "tower", "library"]
 const STAT_CAPS := {"fight": 5, "shoot": 5, "will": 8, "health": 20}
 
 
