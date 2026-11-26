@@ -52,6 +52,8 @@ static func treatment_price(d: Dictionary, unit: Dictionary) -> int:
 	for other: Dictionary in d["units"]:
 		if other["type"] == "apothecary" and not other["dead"] and not other.get("dismissed", false):
 			price -= 10
+	if unit["type"] == "wizard" and BaseResources.owns(d, "sarcophagus_of_healing"):
+		price -= 10
 	return maxi(0, price)
 
 

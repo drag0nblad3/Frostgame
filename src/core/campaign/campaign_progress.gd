@@ -13,8 +13,9 @@ func start(roster: Dictionary) -> void:
 
 func deployment() -> Dictionary:
 	var units: Array = []
+	var reserve := BaseResources.reserve_id(data, FigureDb.load_files())
 	for unit: Dictionary in data["units"]:
-		if unit["dead"] or unit.get("dismissed", false) or int(unit["miss"]) > 0 or InjuryRules.blind(unit):
+		if unit["dead"] or unit.get("dismissed", false) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
 			continue
 		var entry := {"type": unit["type"], "campaign_id": unit["id"], "at": [4.5 + 3.0 * units.size(), 3.0]}
 		if unit["type"] in ["wizard", "apprentice"]:
@@ -79,7 +80,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		elif event.type == "out_of_action":
 			var victim := c.state.figure(e["id"])
 			var attacker := c.state.figure(e["by"])
-			if victim.side < 0 and attacker.side == side:
+			if victim != null and attacker != null and victim.side < 0 and attacker.side == side:
 				if c.state.museum and victim.def.id == "medium_construct":
 					scenario_xp += 10
 				else:
@@ -125,8 +126,11 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			elif caster and roll <= 4:
 				outcome = "permanent injury: " + InjuryRules.roll(unit, dice)
 			elif roll <= (6 if caster else 8):
-				unit["miss"] = 1
-				outcome = "misses next battle"
+				if f.def.role == "wizard" and BaseResources.owns(data, "sarcophagus_of_healing"):
+					outcome = "recovered using the sarcophagus"
+				else:
+					unit["miss"] = 1
+					outcome = "misses next battle"
 			elif caster and roll <= 8:
 				CampaignInventory.lose_owned(data, f.campaign_id)
 				outcome = "close call; carried items lost"
@@ -239,7 +243,7 @@ func load_save(path: String = PATH) -> bool:
 
 
 const RANDOM_SPELLS := [["animate_skull","bones_of_the_earth","strike_dead","control_undead"],["curse","poison_dart","animal_companion","familiar"],["fleet_feet","slow","crumble","fast_act"],["leap","imp","plane_walk","control_demon"],["wall","call_storm","scatter_shot","destructive_sphere"],["push","draining_word","explosive_rune","write_scroll"],["teleport","invisibility","beauty","transpose"],["strength","telekinesis","enchant_armour","control_construct"],["awareness","true_sight","mind_lock","mind_control"],["shield","banish","blinding_light","miraculous_cure"],["bone_dart","spell_eater","steal_health","raise_zombie"],["mud","fog","control_animal","brew_potion"],["decay","time_store","petrify","time_walk"],["plague_of_insects","planar_tear","possess","summon_demon"],["elemental_bolt","elemental_ball","elemental_hammer","elemental_shield"],["furious_quill","absorb_knowledge","power_word","bridge"],["blink","fools_gold","glow","illusionary_soldier"],["enchant_weapon","grenade","embed_enchantment","animate_construct"],["combat_awareness","wizard_eye","suggestion","reveal_secret"],["circle_of_protection","heal","dispel","destroy_undead"]]
-const BASES := ["brewery", "laboratory", "treasury", "temple", "crypt", "tower", "library"]
+const BASES := ["brewery", "laboratory", "treasury", "temple", "crypt", "tower", "library", "inn"]
 const STAT_CAPS := {"fight": 5, "shoot": 5, "will": 8, "health": 20}
 
 
@@ -251,7 +255,16 @@ static func random_spell(dice: Dice) -> String:
 func choose_base(id: String) -> bool:
 	if data.is_empty() or int(data["games"]) == 0 or not BASES.has(id):
 		return false
+	if id == data.get("base", ""):
+		return true
+	var proposed := data.duplicate(true)
+	proposed["base"] = id
+	proposed["resources"] = []
+	if not BaseResources.fits(proposed, FigureDb.load_files()):
+		return false
 	data["base"] = id
+	data["resources"] = []
+	data.erase("reserve_id")
 	return true
 
 
@@ -292,15 +305,16 @@ func learn_grimoire(index: int, db: FigureDb) -> bool:
 
 
 func recruitment_cost(id: String, db: FigureDb) -> int:
-	return 100 + 10 * int(data["level"]) if id == "apprentice" else db.get_def(id).cost
+	if id == "apprentice":
+		return 100 + 10 * int(data["level"])
+	var discount := 10 if BaseResources.owns(data, "carrier_pigeons") else 0
+	return maxi(0, db.get_def(id).cost - discount)
 
 
 func can_hire(id: String, db: FigureDb) -> bool:
 	if data.is_empty() or not db.figures.has(id) or int(data["gold"]) < recruitment_cost(id, db):
 		return false
 	var d := db.get_def(id)
-	var soldiers := 0
-	var specialists := 0
 	for unit: Dictionary in data["units"]:
 		if id == "apprentice" and unit["type"] == "apprentice" and CampaignPotions.preserved(data, unit):
 			return false
@@ -309,11 +323,7 @@ func can_hire(id: String, db: FigureDb) -> bool:
 		var other := db.get_def(unit["type"])
 		if id == "apprentice" and other.role == "apprentice":
 			return false
-		if other.role == "soldier" or unit.get("permanent_summon", false):
-			soldiers += 1
-			if other.specialist or unit["type"] == "large_construct":
-				specialists += 1
-	return d.role == "apprentice" or (d.role == "soldier" and soldiers < 8 and (not d.specialist or specialists < 4))
+	return d.role == "apprentice" or (d.role == "soldier" and BaseResources.fits(data, db, id))
 
 
 func hire(id: String, db: FigureDb) -> bool:
@@ -348,6 +358,8 @@ func treat(index: int) -> bool:
 		if other["type"] == "apothecary" and not other["dead"] and not other.get("dismissed", false):
 			cost = 50
 			break
+	if unit["type"] == "wizard" and BaseResources.owns(data, "sarcophagus_of_healing"):
+		cost = 0
 	data["gold"] = int(data["gold"]) - cost
 	unit["miss"] = 0
 	return true

@@ -8,7 +8,8 @@ const BENEFITS := {
 	"temple": "+3 Miraculous Cure; chance of healing potion",
 	"crypt": "+2 Raise Zombie and Animate Skull",
 	"tower": "+2 Awareness and Reveal Secret",
-	"library": "Chance of a scroll or grimoire after battle"
+	"library": "Chance of a scroll or grimoire after battle",
+	"inn": "One reserve soldier; choose who stays behind"
 }
 
 

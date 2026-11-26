@@ -1,0 +1,68 @@
+{
+  "kennel": {
+    "name": "Kennel",
+    "cost": 400,
+    "benefit": "One extra war hound or companion wolf",
+    "live": true
+  },
+  "giant_cauldron": {
+    "name": "Giant Cauldron",
+    "cost": 250,
+    "benefit": "+1 Brew Potion",
+    "live": true
+  },
+  "enchanters_workshop": {
+    "name": "Enchanter's Workshop",
+    "cost": 400,
+    "benefit": "+1 Animate Construct and Embed Enchantment",
+    "live": true
+  },
+  "crystal_ball": {
+    "name": "Crystal Ball",
+    "cost": 250,
+    "benefit": "+1 Reveal Secret",
+    "live": true
+  },
+  "scriptorium": {
+    "name": "Scriptorium",
+    "cost": 200,
+    "benefit": "+1 Write Scroll",
+    "live": true
+  },
+  "celestial_telescope": {
+    "name": "Celestial Telescope",
+    "cost": 250,
+    "benefit": "One +5 initiative bonus per battle",
+    "live": false
+  },
+  "summoning_circle": {
+    "name": "Summoning Circle",
+    "cost": 300,
+    "benefit": "Prepare a temporary controlled demon",
+    "live": false
+  },
+  "carrier_pigeons": {
+    "name": "Carrier Pigeons",
+    "cost": 50,
+    "benefit": "Soldier recruitment costs 10gc less",
+    "live": true
+  },
+  "arcane_candle": {
+    "name": "Arcane Candle",
+    "cost": 100,
+    "benefit": "+1 prebattle Control Demon",
+    "live": false
+  },
+  "summoning_candle": {
+    "name": "Summoning Candle",
+    "cost": 100,
+    "benefit": "+1 prebattle Summon Demon",
+    "live": false
+  },
+  "sarcophagus_of_healing": {
+    "name": "Sarcophagus of Healing",
+    "cost": 300,
+    "benefit": "Wizard avoids badly wounded downtime; 10gc off niggling injury care",
+    "live": true
+  }
+}

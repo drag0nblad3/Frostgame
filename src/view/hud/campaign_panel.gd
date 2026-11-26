@@ -24,6 +24,7 @@ var learn_button: Button
 var controls: Array[Control] = []
 var inventory: InventoryPanel
 var rituals: RitualPanel
+var base_upgrades: BaseUpgradePanel
 var niggle: OptionButton
 var niggle_button: Button
 var treasure_choice: Label
@@ -99,7 +100,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		base_choice.add_item(id.capitalize() + " · " + str(BaseRules.BENEFITS.get(id, "")))
 		base_choice.set_item_metadata(base_choice.item_count - 1, id)
 	col.add_child(base_choice)
-	base_button = _command(col, "Choose base (free after first battle)", func() -> void:
+	base_button = _command(col, "Choose base (changing discards upgrades)", func() -> void:
 		if campaign.choose_base(str(base_choice.get_selected_metadata())):
 			changed())
 	grimoire = OptionButton.new()
@@ -116,6 +117,10 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	col.add_child(rituals)
 	rituals.setup(campaign, changed)
 	controls.append(rituals)
+	base_upgrades = BaseUpgradePanel.new()
+	col.add_child(base_upgrades)
+	base_upgrades.setup(campaign, db, changed)
+	controls.append(base_upgrades)
 	start = Button.new()
 	start.text = "Start campaign with current drafted warband"
 	col.add_child(start)
@@ -151,6 +156,7 @@ func refresh(in_battle: bool) -> void:
 		return
 	inventory.refresh()
 	rituals.refresh()
+	base_upgrades.refresh()
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
 	for unit: Dictionary in d["units"]:
 		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — resting" if int(unit["miss"]) > 0 else ""), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])
@@ -166,6 +172,9 @@ func refresh(in_battle: bool) -> void:
 			niggle.add_item("%s #%d · %d gc" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, price])
 			niggle.set_item_metadata(niggle.item_count - 1, int(unit["id"]))
 	niggle_button.disabled = niggle.item_count == 0
+	var reserve := BaseResources.reserve_id(d, db)
+	if reserve >= 0:
+		lines.append("Inn reserve: %s #%d" % [db.get_def(d["units"][reserve]["type"]).name, reserve + 1])
 	lines.append("Base: %s | Stored loot: %d" % [str(d.get("base", "")).capitalize(), d["loot"].size()])
 	lines.append("Stat advances: %s" % str(d.get("advances", {})))
 	members.clear()
@@ -183,6 +192,13 @@ func refresh(in_battle: bool) -> void:
 			grimoire.set_item_metadata(grimoire.item_count - 1, i)
 	upgrade.disabled = bool(d.get("stat_improved", false)) or int(d["xp"]) < 100
 	base_button.disabled = int(d["games"]) == 0
+	for i in base_choice.item_count:
+		var id := str(base_choice.get_item_metadata(i))
+		var proposed := d.duplicate(true)
+		if id != d.get("base", ""):
+			proposed["base"] = id
+			proposed["resources"] = []
+		base_choice.set_item_disabled(i, not BaseResources.fits(proposed, db))
 	dismiss_button.disabled = members.item_count == 0
 	treat_button.disabled = members.item_count == 0
 	learn_button.disabled = grimoire.item_count == 0 or int(d["xp"]) < 100
