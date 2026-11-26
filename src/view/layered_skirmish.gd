@@ -117,6 +117,8 @@ func refresh() -> void:
 	var active := s.active()
 	if all and active!=null:
 		chosen=active.surface_id
+		if controls.mode=="leap_land" and s.figure(controls.leap_target)!=null:
+			chosen=s.figure(controls.leap_target).surface_id
 	for n: Vector3i in controls.destinations:
 		if layout.surface_id(n)==chosen:
 			targets[n]=true

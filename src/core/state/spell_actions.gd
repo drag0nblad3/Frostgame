@@ -397,7 +397,10 @@ func _finish_one(health: int) -> bool:
 			illusions.sweep()
 		"teleport", "leap":
 			if p.get("effect",{}).has("floor_destination"):
-				LayeredMagic.apply_teleport(c,t,p["effect"])
+				if id=="leap":
+					LayeredLeap.apply(c,t,p["effect"])
+				else:
+					LayeredMagic.apply_teleport(c,t,p["effect"])
 			else:
 				movement.move(t, p["at"], true)
 		"suggestion":

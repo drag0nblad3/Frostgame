@@ -45,7 +45,11 @@ jumps require a straight run-up of at least the gap distance in the same action,
 maximum four inches, and sufficient remaining Move; a descending jump may deal
 fall damage. The skirmish exposes valid jump destinations when a map authors them.
 No automatic gap discovery, partial-climb combat refinements or general AI jump
-planning is implemented yet.
+planning is implemented yet. Leap now uses the ordinary casting pipeline and
+a friendly target selected in the skirmish. It requires an unobstructed straight
+or bounded vertical arc to an explicit landing surface, with a 10-inch path
+budget (5 inches with treasure). Only supported landings are offered; free-air
+Leap endpoints and dynamic Bridge spells are still pending.
 
 ## Current boundary
 

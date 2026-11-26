@@ -108,6 +108,10 @@ func jump_on_floor(node: Vector3i) -> bool:
 	return LayeredJump.move(self,node)
 
 
+func leap_on_floor(target_id: int,node: Vector3i) -> bool:
+	return LayeredLeap.start(self,state.figure(target_id),node)
+
+
 func reach() -> MoveReach:
 	if not state.board.floor_layout.is_empty():
 		return MoveReach.new()
