@@ -29,19 +29,20 @@ static func marker(b: Board, f: Figure) -> TerrainPiece:
 	return null
 
 
-static func origin(b: Board, f: Figure, at: Vector2) -> Vector2:
-	if LineOfSight.check(b, f.pos, at).clear:
+static func origin(b: Board, f: Figure, at: Vector2, max_range: float = 24.0) -> Vector2:
+	if Vector2(f.pos.distance_to(at), f.elevation - b.height_at(at)).length() <= max_range and LineOfSight.check(b, f.pos, at).clear:
 		return f.pos
 	var eye := marker(b, f)
 	if eye != null:
 		var pos := eye.rect.get_center()
-		if eye.eye_direction.dot(at - pos) >= -0.001 and LineOfSight.check(b, pos, at).clear:
+		if eye.eye_direction.dot(at - pos) >= -0.001 and Vector2(pos.distance_to(at), b.height_at(pos) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, pos, at).clear:
 			return pos
 	return f.pos
 
 
-static func visible(b: Board, f: Figure, at: Vector2) -> bool:
-	return LineOfSight.check(b, origin(b, f, at), at).clear
+static func visible(b: Board, f: Figure, at: Vector2, max_range: float = 24.0) -> bool:
+	var start := origin(b, f, at, max_range)
+	return Vector2(start.distance_to(at), b.height_at(start) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, start, at).clear
 
 
 func create(f: Figure, option: Dictionary) -> void:

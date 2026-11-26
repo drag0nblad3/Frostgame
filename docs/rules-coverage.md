@@ -269,3 +269,7 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ## Ring of Transference and errata
 
 - Official Second Edition errata (https://www.ospreypublishing.com/media/sygpbj4n/fgv-errata-and-faq-v2.pdf, p.1): the missing Ring of Transference description limits it to spellcasters and permits once-per-game, one-action Health transfer up to five points to a visible ally, without exceeding recipient starting Health. UI selects ally and exact amount; self-knockout is permitted and warned. Shooting now reveals an invisible shooter. Ordinary soldiers may carry power items (inert unless a caster). Other errata, including control replacement and Wizard Eye origin restrictions, require additional audit. All 40 standard magic equipment identities have initial implementations; Fate Stone remains partial.
+
+## Official errata follow-up
+
+- Control spells can replace existing control; successfully reclaiming a permanent member restores its original allegiance, while controlling a temporary summon detaches its temporary origin. Wizard Eye now measures direct target range from the chosen sight origin and applies the original caster origin to area attacks (Elemental Ball, Banish, Scatter Shot, Grenade, Planar Tear). Some placement spells and special multi-target/terrain interactions still need a category-by-category review; selection of sight origin remains automatic. Source: official Second Edition errata, p.1, linked above.

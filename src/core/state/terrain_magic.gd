@@ -40,7 +40,7 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 	if id == "mud":
 		return f.pos.distance_to(at) <= 24 and WizardEye.visible(b, f, at)
 	if id == "grenade":
-		return f.pos.distance_to(at) <= 14.0 and WizardEye.visible(b, f, at)
+		return f.pos.distance_to(at) <= 14.0 and LineOfSight.check(b, f.pos, at).clear
 	if id in ["explosive_rune", "planar_tear"]:
 		if id == "explosive_rune":
 			var count := 0
@@ -49,7 +49,7 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 					count += 1
 			if count >= 3:
 				return false
-		return f.pos.distance_to(at) <= (4.0 if id == "explosive_rune" else 24.0) and WizardEye.visible(b, f, at)
+		return f.pos.distance_to(at) <= (4.0 if id == "explosive_rune" else 24.0) and (WizardEye.visible(b, f, at, 4.0) if id == "explosive_rune" else LineOfSight.check(b, f.pos, at).clear)
 	var seen := false
 	for i in range(-6, 7):
 		var p := at + (Vector2.DOWN if rotated else Vector2.RIGHT) * i * 0.5

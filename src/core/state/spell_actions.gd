@@ -68,12 +68,13 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	if f.spell_effects.has("blinding_light") and kind != "touch":
 		return false
-	if kind == "touch" and t != f and Shooting.distance(f, t) > 1.0:
-		return false
-	if not WizardEye.visible(s.board, f, t.pos) and t != f:
-		return false
-	if spell.has("range") and Shooting.distance(f, t) > float(spell["range"]):
-		return false
+	var limit := 1.0 if kind == "touch" else float(spell.get("range", 24.0))
+	if t != f:
+		if kind == "area_shot":
+			if Shooting.distance(f, t) > limit or not LineOfSight.check(s.board, f.pos, t.pos).clear:
+				return false
+		elif not WizardEye.visible(s.board, f, t.pos, limit):
+			return false
 	if kind == "shot":
 		return t != f
 	if kind == "area_shot":
@@ -412,7 +413,7 @@ func _finish_one(health: int) -> bool:
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
 			var old_health := t.health
-			_shot(f, t, int(s.spell_catalog[id]["power"]), null, id == "elemental_bolt", id == "elemental_bolt")
+			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt")
 			if id == "poison_dart" and t.health < old_health:
 				c.poison(t)
 		"call_storm":
@@ -423,12 +424,12 @@ func _finish_one(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.is_demon() and WizardEye.visible(s.board, f, other.pos):
+				if other.in_play() and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
 					_banish(f, other, int(result["roll"]), 4)
 		"scatter_shot":
 			for other in s.figures:
-				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and WizardEye.visible(s.board, f, other.pos):
-					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0)
+				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos)
 		"destructive_sphere":
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
@@ -455,7 +456,7 @@ func _finish_one(health: int) -> bool:
 						if not affected.has(member):
 							affected.append(member)
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else WizardEye.origin(s.board, f, t.pos), true)
+				_shot(f, other, 5, t.pos if other != t else f.pos, true)
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty()
