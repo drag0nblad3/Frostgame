@@ -5,7 +5,7 @@ extends RefCounted
 
 ## Can a mundane/magical attack actually damage this target?
 static func can_harm(f: Figure, t: Figure, weapon: WeaponDef) -> bool:
-	if weapon == null:
+	if weapon == null or (RedKingMadMan.is_ryce(t) and (RedKingMadMan.hunter(f) or weapon.is_ranged())):
 		return false
 	if t.def.traits.has("immune_normal") or t.spell_effects.has("potion_invulnerability"):
 		return not ScenarioNull.muted(t) and WeaponActions.magic_attack(f, weapon)
@@ -16,6 +16,8 @@ static func can_harm(f: Figure, t: Figure, weapon: WeaponDef) -> bool:
 static func weakest_contact(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	for e in Contact.enemies_of(s.figures, f):
+		if RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(e):
+			continue
 		var score := float(e.health) / MagicTactics.importance(e) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
 		var previous := INF if best == null else float(best.health) / MagicTactics.importance(best) + (0.0 if can_harm(f, best, f.melee) else 1000.0)
 		if score < previous:

@@ -103,7 +103,11 @@ static func deploy_hunters(c: GameController) -> void:
 	s.scenario_data["hunters_deployed"]=true
 	var corners := [Vector2(0.5,0.5),Vector2(s.board.size.x-0.5,0.5),Vector2(0.5,s.board.size.y-0.5),s.board.size-Vector2.ONE*0.5]
 	var available := corners.duplicate()
-	for side: int in s.order:
+	var priority: Array[int]=s.order.duplicate()
+	if priority.is_empty():
+		for side in s.side_count():
+			priority.append(side)
+	for side: int in priority:
 		if available.is_empty():
 			break
 		var enemy_center := s.board.size*0.5

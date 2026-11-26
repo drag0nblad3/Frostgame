@@ -77,6 +77,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	var report: Array[String] = []
 	var xp := 0
 	var kills := 0
+	var hrut_xp := 0
 	var scenario_xp := 0
 	var worm_hurt := false
 	for f in c.state.figures:
@@ -91,7 +92,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
-		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp"] and int(e["side"]) == side:
+		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp", "mad_man_xp"] and int(e["side"]) == side:
 			scenario_xp += int(e["xp"])
 		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
 			var victim := c.state.figure(e["id"])
@@ -102,7 +103,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		elif event.type == "out_of_action":
 			var victim := c.state.figure(e["id"])
 			var attacker := c.state.figure(e["by"])
-			if victim != null and attacker != null and victim.side < 0 and attacker.side == side:
+			if RedKingMadMan.active(c.state) and victim!=null and attacker!=null and victim.original_side!=side and attacker.side==side and victim.def.id.begins_with("hrut_"):
+				hrut_xp=mini(50,hrut_xp+10)
+				continue
+			if victim != null and attacker != null and victim.side < 0 and attacker.side == side and not RedKingMadMan.is_ryce(victim):
 				var bounty := 20 if victim.def.traits.has("bounty_20") else (10 if victim.def.traits.has("bounty_10") else 0)
 				if bounty > 0:
 					data["gold"] = int(data["gold"]) + bounty
@@ -119,7 +123,13 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					scenario_xp+=5
 				elif not (RedKingInvestigations.active(c.state) and victim.def.id=="blood_marked_berserker"):
 					kills += 1
+	scenario_xp+=hrut_xp
 	var secured := c.state.secured_count(side)
+	if RedKingMadMan.active(c.state):
+		var rescue := c.state.treasure(int(c.state.scenario_data.get("ryce_token",-1)))
+		data["red_king_secured_kalamon"]=rescue!=null and rescue.secured_by==side
+		if data["red_king_secured_kalamon"]:
+			secured-=1
 	var treasure_xp := secured*40
 	if RedKingFire.active(c.state):
 		treasure_xp=0
@@ -195,6 +205,11 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		if token.secured_by == side and not token.central:
 			recovered.append(token)
 	for token in recovered:
+		if RedKingMadMan.rescue(c.state,token):
+			report.append("Kalamon Ryce rescued: eligible for the optional solo encounter.")
+			continue
+		if RedKingFire.active(c.state) and token.central:
+			data["red_king_artefact_recovered"]=true
 		if token.bonus_gold>0:
 			data["gold"]=int(data["gold"])+token.bonus_gold
 			report.append("Recovered offering: +%d gc."%token.bonus_gold)

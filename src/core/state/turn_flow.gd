@@ -131,6 +131,17 @@ func _check_victory() -> bool:
 			standing.append(side)
 	var s := _c.state
 	if RedKingMadMan.active(s):
+		var living_warband := false
+		for f in s.figures:
+			if f.side>=0 and f.in_play() and not RedKingMadMan.hunter(f):
+				living_warband=true
+				break
+		if not living_warband:
+			for token in s.treasures:
+				if token.unresolved():
+					_c._loot.lose(token)
+			_finish(TreasureRules.winner(s))
+			return true
 		if RedKingMadMan.unresolved(s):
 			return false
 		for token in s.treasures:
