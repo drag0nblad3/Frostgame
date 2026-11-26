@@ -22,8 +22,8 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 	return true
 
 
-static func reach(c: GameController,cape: bool=false) -> LayeredReach:
-	if not eligible(c,cape):
+static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool=false) -> LayeredReach:
+	if not eligible(c,cape) or (run and not RunForIt.ready(c,boost)):
 		return LayeredReach.new()
 	var s := c.state
 	var f := s.active()
@@ -33,14 +33,18 @@ static func reach(c: GameController,cape: bool=false) -> LayeredReach:
 	var start := layout.node(f.surface_id,f.pos)
 	if not layout.standable(start) or not layout.point(start).is_equal_approx(f.pos) or not is_equal_approx(layout.height(start),f.elevation):
 		return LayeredReach.new()
-	return LayeredReach.search(LayeredGrid.new(layout,f,s.figures),start,MoveRules.allowance(f),cape)
+	var grid := LayeredGrid.new(layout,f,s.figures)
+	grid.running=run
+	return LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape)
 
 
-static func move(c: GameController,node: Vector3i,cape: bool=false) -> bool:
-	var reachable := reach(c,cape)
+static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=false,boost: bool=false) -> bool:
+	var reachable := reach(c,cape,run,boost)
 	if node==reachable.start or not reachable.can_reach(node):
 		return false
 	var f := c.state.active()
+	if run and boost and not ActiveGear.spend(f,RunForIt.TALISMAN):
+		return false
 	if cape and not GearActions.use_cape(c,f):
 		return false
 	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
@@ -67,4 +71,8 @@ static func move(c: GameController,node: Vector3i,cape: bool=false) -> bool:
 			if not f.in_play():
 				break
 	ScenarioNull.enter(c,f)
+	if run:
+		f.actions_left=0
+		c.emit("run_for_it",{"id":f.id,"boost":boost})
+		c.end_activation()
 	return true

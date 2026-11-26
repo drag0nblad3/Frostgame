@@ -15,6 +15,7 @@ var mover: Figure
 var others: Array[Figure] = []
 var cols := 0
 var rows := 0
+var running := false
 
 
 func _init(b: Board, f: Figure = null, figures: Array[Figure] = []) -> void:
@@ -46,7 +47,7 @@ func open(n: Vector2i) -> bool:
 	for o in others:
 		if absf(o.elevation - height) < 0.5:
 			var distance := o.pos.distance_to(p)
-			if distance < Contact.OVERLAP:
+			if distance < Contact.OVERLAP or (running and mover!=null and o.side!=mover.side and distance<1.001):
 				return false
 			if mover != null and o.side != mover.side and distance <= Contact.CONTACT and ((not IllusionRules.visible_to(others, mover, o) and not CreatureSenses.may_contact(mover,o)) or (mover.battle_ref != null and mover.battle_ref.get_ref() != null and BeautyActions.blocked(mover.battle_ref.get_ref(), mover, o))):
 				return false
@@ -85,6 +86,15 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	var mid := (pa + pb) * 0.5
 	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
+	if running:
+		for o in others:
+			if mover!=null and o.side!=mover.side and absf(o.elevation-board.height_at(mid))<0.5 and Geometry2D.get_closest_point_to_segment(o.pos,pa,pb).distance_to(o.pos)<1.001:
+				return INF
+		if ScenarioColumns.contact(board,mid)!=null:
+			return INF
+		if board.has_ground_profiles or board.has_ramps:
+			return TerrainTravel.cost(board,pa,pb,mover,true)
+		return pa.distance_to(pb)+absf(board.height_at(pa)-board.height_at(pb))
 	if board.low_gravity:
 		return pa.distance_to(pb)
 	if board.has_ground_profiles or board.has_ramps:

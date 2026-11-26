@@ -164,3 +164,7 @@ Lifelong Plant presents a pre-survival casualty picker after ordinary campaign b
 ## Potion Drinker Staff and Golden Bottle
 
 The staff adds one weapon damage and accepts a sacrificed vault potion before battle. Its charge is consumed by the existing potion action paths and expires after the game, without consuming the staff or a separate equipment slot. The Golden Bottle can optionally receive a successful wizard Brew Potion ritual, generating two doses in one item; drinking tests Will TN4, with poison and no effect on failure. Doses persist through battle settlement. Both currently support battle-use potions only, not campaign-only doses, and follow the existing ordinary-board potion action restrictions.
+
+## Core Run For It / Talisman of Speed
+
+Adds the missing core first-action run: three inches regardless of movement penalties, avoiding enemy proximity and consuming the activation. Talisman optionally doubles the distance once per battle. Movement uses legal paths and ordinary terrain triggers, or the existing experimental floor graph. Deep-water swimming is not yet represented by terrain metadata; group activations, phasing, and unresolved layered scenario interactions are excluded. AI does not yet choose Run For It.

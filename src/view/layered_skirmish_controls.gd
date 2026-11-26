@@ -27,7 +27,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["run_for_it","Run 3″"],["run_talisman","Run 6″ (Talisman)"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -110,6 +110,10 @@ func refresh() -> void:
 		hint.text+=" • "+("GROUP MOVE" if s.group.movement_pass() else "GROUP SECOND")
 	_show("end",c.can_end_activation())
 	_show("move",c.can_move())
+	if RunForIt.ready(c):
+		_show("run_for_it",LayeredMovement.eligible(c))
+	if RunForIt.ready(c,true):
+		_show("run_talisman",LayeredMovement.eligible(c))
 	if GearActions.cape_ready(c):
 		_show("cape_move",LayeredMovement.eligible(c,true))
 	var jumps := LayeredJump.plans(c)
@@ -146,6 +150,12 @@ func refresh() -> void:
 		for n: Vector3i in reach.cost:
 			if n!=reach.start:
 				destinations[n]=true
+	elif mode in ["run_for_it","run_talisman"]:
+		var run_reach := LayeredMovement.reach(c,false,true,mode=="run_talisman")
+		for n: Vector3i in run_reach.cost:
+			if n!=run_reach.start:
+				destinations[n]=true
+		hint.text="Choose a run destination; ends activation."
 	elif mode=="cape_move" and LayeredMovement.eligible(c,true):
 		var cape_reach := LayeredMovement.reach(c,true)
 		for n: Vector3i in cape_reach.cost:
@@ -228,7 +238,7 @@ func command(key: String) -> void:
 			c.finish_early_phase()
 		"cast":
 			LayeredSpellPicker.choose(self,c,scene.refresh)
-		"move","cape_move","jump","fight","shoot","exit","teleport","leap","bridge":
+		"move","run_for_it","run_talisman","cape_move","jump","fight","shoot","exit","teleport","leap","bridge":
 			mode=key
 			bridge_start=null
 		"cancel_bridge":
@@ -307,6 +317,9 @@ func choose_destination(n: Vector3i) -> void:
 		return
 	match mode:
 		"move": c.move_on_floor(n)
+		"run_for_it","run_talisman":
+			LayeredMovement.move(c,n,false,true,mode=="run_talisman")
+			mode="move"
 		"cape_move":
 			LayeredMovement.move(c,n,true)
 			mode="move"

@@ -134,6 +134,10 @@ func refresh() -> void:
 			break
 	if c.can_use_stored_action():
 		available.append("use_stored_action")
+	if RunForIt.ready(c):
+		available.append("run_for_it")
+	if RunForIt.ready(c,true):
+		available.append("run_talisman")
 	if c.can_move():
 		reach = c.reach()
 		available.append("move")
@@ -226,6 +230,13 @@ func preview() -> void:
 			hint = "Transfer %d Health to %s (maximum %d)." % [transfer_amount, t.label(), GearActions.transfer_max(c, t)]
 			if transfer_amount == f.health:
 				hint += " Warning: caster will be knocked out."
+		"run_for_it","run_talisman":
+			reach=RunForIt.reach(c,mode=="run_talisman")
+			for n: Vector2i in reach.nodes():
+				if float(reach.cost[n])>0.001:
+					nodes.append(n)
+					points.append(MoveGrid.to_pos(n))
+			hint="Run %d″ ignoring movement penalties; ends activation."%(6 if mode=="run_talisman" else 3)
 		"gear_cape_move":
 			reach=GearActions.cape_reach(c)
 			for n: Vector2i in reach.nodes():
@@ -729,6 +740,9 @@ func tap(screen: Vector2) -> bool:
 		for p in drops:
 			if at.distance_to(p) <= 0.3:
 				return c._loot.drop(p, c.state.active().shrunk_treasure_id if mode == "drop_shrunk" else -1)
+	if mode in ["run_for_it","run_talisman"]:
+		var n := MovePlanner.node_at(at)
+		return nodes.has(n) and RunForIt.apply(c,n,mode=="run_talisman")
 	if mode=="gear_cape_move":
 		var n := MovePlanner.node_at(at)
 		return nodes.has(n) and c.move_to(n,true)
