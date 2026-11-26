@@ -16,6 +16,8 @@ var sell_button: Button
 var discard_button: Button
 var caster_equipment: OptionButton
 var caster_equipment_button: Button
+var book_spell: OptionButton
+var bind_book: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -49,6 +51,11 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if CampaignPotions.use(campaign.data, option["item"], option["unit"], db, campaign_dice):
 			changed.call())
 	add_child(use_button)
+	book_spell=OptionButton.new()
+	add_child(book_spell)
+	bind_book=_button("Permanently bind selected book to spell",func() -> void:
+		if loot.item_count>0 and book_spell.item_count>0 and CampaignInventory.bind_incunabula(campaign.data,int(loot.get_selected_metadata()),str(book_spell.get_selected_metadata())):
+			changed.call())
 	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
 	caster_equipment = OptionButton.new()
 	add_child(caster_equipment)
@@ -68,6 +75,9 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 func refresh() -> void:
 	var d := campaign.data
 	loot.clear()
+	book_spell.clear()
+	book_spell.hide()
+	bind_book.hide()
 	recipient_choice.clear()
 	shop.clear()
 	caster_equipment.clear()
@@ -99,6 +109,8 @@ func refresh() -> void:
 			suffix+=" · "+("Unlocked" if item.get("unlocked",false) else "Locked TN%d"%info["unlock_tn"])
 		if item["kind"] == "grimoire":
 			suffix = "Known spell; may sell" if d["spells"].has(item["spell"]) else "Unlearned; may learn in campaign"
+		if CampaignInventory.item_id(item) == "gear_rk_golden_incunabula":
+			suffix+=" · "+str(item.get("casting_spell","Choose spell")).replace("_"," ").capitalize()
 		if CampaignInventory.item_id(item) == "gear_staff_casting":
 			suffix += " · " + str(item.get("casting_spell", "unknown")).replace("_", " ").capitalize()
 		if CampaignInventory.item_id(item) == PowerPool.ORB:
@@ -148,12 +160,23 @@ func refresh() -> void:
 
 
 func _refresh_item_buttons() -> void:
+	book_spell.hide()
+	bind_book.hide()
+	book_spell.clear()
 	assign_button.disabled = loot.item_count == 0 or recipient_choice.item_count==0
 	sell_button.disabled = loot.item_count == 0
 	discard_button.disabled=true
 	if loot.item_count == 0:
 		return
 	var item: Dictionary = campaign.data["loot"][int(loot.get_selected_metadata())]
+	if item.get("gear","")=="gear_rk_golden_incunabula" and str(item.get("casting_spell","")).is_empty() and not item.get("ragged_sealed",false):
+		var spells := JsonFile.read("res://data/spells.json")
+		for id: String in spells:
+			if db.content_profile.allows("spells",id):
+				book_spell.add_item(str(spells[id]["name"]))
+				book_spell.set_item_metadata(book_spell.item_count-1,id)
+		book_spell.show()
+		bind_book.show()
 	assign_button.disabled = recipient_choice.item_count==0 or not CampaignInventory.is_item(item) or (RaggedWarbands.active(campaign.data) and (item.get("ragged_sealed",false) or RaggedWarbands.absent_owner(campaign.data,item)))
 	discard_button.disabled=not RaggedWarbands.active(campaign.data) or not CampaignInventory.is_item(item) or item.get("ragged_sealed",false) or RaggedWarbands.absent_owner(campaign.data,item)
 	sell_button.disabled = not CampaignInventory.can_sell(campaign.data, item)

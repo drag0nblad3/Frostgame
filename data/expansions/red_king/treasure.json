@@ -90,8 +90,9 @@
       "buy": 400,
       "sell": 150,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "apprentice_only": true
     },
     "gear_rk_the_feather_blade": {
       "name": "The Feather Blade",

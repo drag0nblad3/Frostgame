@@ -144,3 +144,15 @@ func test_charisma_specialist_cap() -> void:
 	check_eq(BaseResources.specialist_limit(d),5)
 	check(BaseResources.fits(d,db()))
 	check(not CampaignInventory.assign_item(d,0,-1,db()))
+
+
+func test_incunabula_permanent_binding() -> void:
+	var d := {"loot":[{"gear":"gear_rk_golden_incunabula","kind":"gear","owner":0}],"units":[{"type":"apprentice","id":0,"dead":false}]}
+	check(CampaignInventory.bind_incunabula(d,0,"heal"))
+	check(not CampaignInventory.bind_incunabula(d,0,"push"))
+	check_eq(CampaignInventory.incunabula_bonus(d,0,"heal"),1)
+	check_eq(CampaignInventory.incunabula_bonus(d,0,"push"),0)
+	var f := fig("apprentice",0,Vector2(10,10))
+	f.items.assign(CampaignInventory.loadout(d,0))
+	check_eq(ActiveGear.casting_bonus(f,"heal"),1)
+	check_eq(ActiveGear.casting_bonus(f,"push"),0)

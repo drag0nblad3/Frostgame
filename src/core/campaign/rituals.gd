@@ -108,7 +108,7 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 	attempts["%d:%s" % [caster, id]] = true
 	d["ritual_attempts"] = attempts
 	var raw := dice.d20()
-	var total := CastingRoll.modified(raw, mod, u["type"] == "apprentice")
+	var total := CastingRoll.modified(raw, mod + CampaignInventory.incunabula_bonus(d,caster,id), u["type"] == "apprentice")
 	var tn := int(d["spells"][id])
 	var success := total >= tn
 	d["last_report"].append("%s #%d: %s (%s) %d vs %d — %s." % [str(u["type"]).capitalize(), caster + 1, id.replace("_", " ").capitalize(), option, total, tn, "success" if success else "failed"])

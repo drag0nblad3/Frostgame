@@ -117,6 +117,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var info: Dictionary = catalog()[item_id(item)]
 	if info.get("expansion","")=="red_king" and (not info["live"] or not item.get("unlocked",true)):
 		return false
+	if info.get("apprentice_only",false) and (unit["type"]!="apprentice" or str(item.get("casting_spell","")).is_empty()):
+		return false
 	if info.get("vault_only",false):
 		return false
 	if info.get("wizard_only",false) and unit["type"]!="wizard":
@@ -212,7 +214,7 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 			items.append({"scroll": item["scroll"], "campaign_item": true})
 		elif item["kind"] == "gear":
 			var gear := {"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true}
-			if item["gear"] == "gear_staff_casting":
+			if item["gear"] in ["gear_staff_casting","gear_rk_golden_incunabula"]:
 				gear["casting_spell"] = item.get("casting_spell", "")
 			if item["gear"] == PowerPool.ORB:
 				gear["power_left"] = PowerPool.remaining(item)
@@ -249,3 +251,24 @@ static func lose_owned(d: Dictionary, owner: int) -> void:
 	for i in range(d["loot"].size() - 1, -1, -1):
 		if int(d["loot"][i].get("owner", -1)) == owner:
 			d["loot"].remove_at(i)
+
+
+static func bind_incunabula(d: Dictionary,index: int,spell: String) -> bool:
+	if index<0 or index>=d.get("loot",[]).size():
+		return false
+	var item: Dictionary=d["loot"][index]
+	if item.get("gear","")!="gear_rk_golden_incunabula" or not str(item.get("casting_spell","")).is_empty() or item.get("ragged_sealed",false):
+		return false
+	if not JsonFile.read("res://data/spells.json").has(spell) or not ContentProfile.from_campaign(d).allows("spells",spell):
+		return false
+	item["casting_spell"]=spell
+	return true
+
+
+static func incunabula_bonus(d: Dictionary,owner: int,spell: String) -> int:
+	if owner<0 or owner>=d.get("units",[]).size() or d["units"][owner]["type"]!="apprentice":
+		return 0
+	for item: Dictionary in d.get("loot",[]):
+		if item.get("gear","")=="gear_rk_golden_incunabula" and int(item.get("owner",-1))==owner and item.get("casting_spell","")==spell:
+			return 1
+	return 0

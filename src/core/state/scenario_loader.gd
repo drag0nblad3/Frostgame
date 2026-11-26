@@ -73,7 +73,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if entry.get("permanent_summon", false):
 				def = def.with_bonuses({})
 				def.role = "soldier"
-				def.specialist = def.id in ["large_construct","foulhorn","bear","snow_leopard"]
+				def.specialist = def.id in ["large_construct","foulhorn"]
 			if CasterLoadout.is_caster(def.role) and entry.has("weapons"):
 				def = CasterLoadout.definition(def, entry["weapons"], figures)
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())

@@ -51,7 +51,7 @@ static func soldier(unit: Dictionary, db: FigureDb) -> bool:
 
 
 static func specialist(unit: Dictionary, db: FigureDb) -> bool:
-	return db.get_def(unit["type"]).specialist or unit["type"] in ["large_construct","foulhorn","bear","snow_leopard"]
+	return db.get_def(unit["type"]).specialist or unit["type"] in ["large_construct","foulhorn"]
 
 
 static func wizard_item(d: Dictionary,id: String) -> bool:
