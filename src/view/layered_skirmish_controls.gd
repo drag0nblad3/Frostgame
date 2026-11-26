@@ -25,7 +25,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["move","Move"],["fight","Fight"],["shoot","Shoot"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["move","Move"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -96,6 +96,8 @@ func refresh() -> void:
 	hint.text="%s • %s • %.1f″ elevation • %d actions • %s" % [f.label(),f.surface_id.capitalize(),f.elevation,f.actions_left,mode.capitalize()]
 	_show("end",c.can_end_activation())
 	_show("move",c.can_move())
+	var jumps := LayeredJump.plans(c)
+	_show("jump",not jumps.is_empty())
 	_show("reload",c.can_reload())
 	var exits: Array[Vector3i] = []
 	if f.treasure_id>=0:
@@ -119,6 +121,8 @@ func refresh() -> void:
 		for n: Vector3i in reach.cost:
 			if n!=reach.start:
 				destinations[n]=true
+	elif mode=="jump":
+		destinations=jumps
 	elif mode=="exit":
 		for n in exits:
 			destinations[n]=true
@@ -155,7 +159,7 @@ func command(key: String) -> void:
 	if not scene.player.idle() or not _buttons.has(key) or _buttons[key].disabled or not _buttons[key].visible:
 		return
 	match key:
-		"move","fight","shoot","exit","teleport":
+		"move","jump","fight","shoot","exit","teleport":
 			mode=key
 		"collect":
 			for token in c.state.treasures:
@@ -219,6 +223,9 @@ func choose_destination(n: Vector3i) -> void:
 		return
 	match mode:
 		"move": c.move_on_floor(n)
+		"jump":
+			c.jump_on_floor(n)
+			mode="move"
 		"exit":
 			if c.exit_on_floor(n):
 				c.end_activation()

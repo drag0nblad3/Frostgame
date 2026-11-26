@@ -34,6 +34,19 @@ extraction, Teleport empowerment and stepwise rival activations. The original
 floor lab remains accessible from the skirmish toolbar. Campaign play remains
 separate.
 
+## Vertical movement extensions
+
+Authored climbs create stable one-inch hanging nodes, using ordinary climbing
+costs and preserving positions across checkpoints. The gatehouse has an east-wall
+climb. Same-floor melee displacement may now fall to the first unobstructed lower
+surface, applying the existing fall-damage rule. Occupied or blocked landings
+are rejected rather than allowing a figure to pass through them. Authored running
+jumps require a straight run-up of at least the gap distance in the same action,
+maximum four inches, and sufficient remaining Move; a descending jump may deal
+fall damage. The skirmish exposes valid jump destinations when a map authors them.
+No automatic gap discovery, partial-climb combat refinements or general AI jump
+planning is implemented yet.
+
 ## Current boundary
 
 A Board stores one exposed walking height at each horizontal coordinate. A bridge or

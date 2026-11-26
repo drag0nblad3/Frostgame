@@ -104,6 +104,10 @@ func teleport_on_floor(node: Vector3i) -> bool:
 	return LayeredMagic.start_teleport(self,node)
 
 
+func jump_on_floor(node: Vector3i) -> bool:
+	return LayeredJump.move(self,node)
+
+
 func reach() -> MoveReach:
 	if not state.board.floor_layout.is_empty():
 		return MoveReach.new()

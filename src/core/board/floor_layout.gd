@@ -22,6 +22,8 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 		layout.solids.append(AABB(Vector3(entry[0],entry[1],entry[2]),Vector3(entry[3],entry[4],entry[5])))
 	for entry: Dictionary in d.get("links",[]):
 		layout._add_link(entry)
+	for entry: Dictionary in d.get("climbs",[]):
+		FloorClimb.add(layout,entry)
 	return layout
 
 
