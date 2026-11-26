@@ -407,9 +407,7 @@ func finish_early_phase() -> bool:
 
 
 func can_begin_group() -> bool:
-	if not state.board.floor_layout.is_empty():
-		return false
-	return not state.over and state.active_id == -1 and state.group.can_begin(state, state.current_side())
+	return not state.over and not state.pending_initiative and state.active_id == -1 and state.group.can_begin(state, state.current_side())
 
 
 func begin_group(ids: Array[int]) -> bool:

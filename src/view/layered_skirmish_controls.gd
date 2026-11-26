@@ -27,7 +27,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["move","Move"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -93,9 +93,18 @@ func refresh() -> void:
 		hint.text="Advance the rival warband one activation."
 		return
 	if f==null:
-		hint.text="Tap an eligible friendly figure to activate. Select a floor to reveal hidden figures."
+		_show("group",c.can_begin_group())
+		_buttons["group"].visible=c.can_begin_group()
+		_show("finish_early",c.can_finish_early_phase())
+		_buttons["finish_early"].visible=c.can_finish_early_phase()
+		if s.group.in_progress():
+			hint.text=("Group movement pass" if s.group.movement_pass() else "Group second-action pass")+" • Tap a remaining member."
+		else:
+			hint.text="Tap an eligible friendly figure to activate. Select a floor to reveal hidden figures."
 		return
 	hint.text="%s • %s • %.1f″ elevation • %d actions • %s" % [f.label(),f.surface_id.capitalize(),f.elevation,f.actions_left,mode.capitalize()]
+	if s.group.in_progress():
+		hint.text+=" • "+("GROUP MOVE" if s.group.movement_pass() else "GROUP SECOND")
 	_show("end",c.can_end_activation())
 	_show("move",c.can_move())
 	var jumps := LayeredJump.plans(c)
@@ -118,7 +127,7 @@ func refresh() -> void:
 	_show("shoot",shoot)
 	if ScenarioNull.muted(f):
 		hint.text+=" • NULL FIELD"
-	var teleport := not ScenarioNull.muted(f) and CasterLoadout.is_caster(f.def.role) and c.can_act() and c._magic.available_spell(f,"teleport") and not Contact.in_combat(s.figures,f)
+	var teleport := not ScenarioNull.muted(f) and CasterLoadout.is_caster(f.def.role) and c.can_act() and c._magic.available_spell(f,"teleport") and not Contact.in_combat(s.figures,f) and not s.group.in_progress()
 	_show("teleport",teleport)
 	var leap := false
 	for t in s.figures:
@@ -199,6 +208,10 @@ func command(key: String) -> void:
 	if not scene.player.idle() or not _buttons.has(key) or _buttons[key].disabled or not _buttons[key].visible:
 		return
 	match key:
+		"group":
+			LayeredGroupPicker.choose(self,c,scene.refresh)
+		"finish_early":
+			c.finish_early_phase()
 		"move","jump","fight","shoot","exit","teleport","leap","bridge":
 			mode=key
 			bridge_start=null

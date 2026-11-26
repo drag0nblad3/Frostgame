@@ -311,3 +311,6 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 
 ### Uneven ground (p. 46)
 - Authored exposed profiles support negative and positive elevations. Ramps and designed stair routes use inclined distance; abrupt banks use ordinary climbing costs. Staircases are continuous slope approximations. Original optional Sunken Streets skirmish exercises these rules; existing scenarios are unchanged. Ray and movement lattice approximations remain. No swimming, running jumps, mid-wall standing, stacked floors, or general vertical anchors for terrain spells yet. See docs/uneven-terrain.md.
+
+
+- Layered group activation (pp. 40–43): command eligibility uses figure-to-figure 3D range and slab-aware LOS; the existing movement-first group sequence supports floor routes and jumps, explicit member selection and checkpoint restoration. Teleport/Leap in groups and layered campaign deployment remain restricted.

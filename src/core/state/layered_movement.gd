@@ -9,7 +9,7 @@ static func eligible(c: GameController) -> bool:
 	var f := s.active()
 	if s.board.floor_layout.is_empty() or not c.can_move() or f.surface_id.is_empty():
 		return false
-	if s.forced_combat or (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or s.group.in_progress() or FuryRules.target(s,f)!=null:
+	if s.forced_combat or (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or FuryRules.target(s,f)!=null:
 		return false
 	if f.spell_effects.has("plane_walk") or f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
 		return false

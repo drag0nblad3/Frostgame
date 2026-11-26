@@ -169,3 +169,17 @@ an accessible lower room, and one treasure on each level. Acceptance tests:
 Only after these tests pass should the full Silent Tower scenario use stacked
 interiors, or the main campaign receive bridges over traversable streets. The
 intermediate exposed-surface model remains supported for simple maps.
+
+
+## Floor-aware group activation
+
+Early-phase eligibility uses the actual figure elevations and solid-volume
+line of sight, so a nearby soldier on the other side of a floor slab cannot
+join a group. Layered battles use the existing two-pass group controller and
+allow ordinary floor routes and authored jumps during the movement pass.
+The skirmish offers explicit member selection and optional early-phase finish.
+Regression coverage checks slab-blocked eligibility, a staircase transition,
+half-rate second movement and snapshot restoration between passes. Teleport
+and Leap remain unavailable during groups; other unsupported effects remain
+restricted. The rival still chooses individual activations. Live campaign
+routing remains deliberately disabled.
