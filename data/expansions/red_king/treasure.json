@@ -468,7 +468,7 @@
       "buy": 0,
       "sell": 250,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 12,
       "expansion": "red_king"
@@ -577,8 +577,10 @@
       "type": "hand_weapon",
       "buy": 0,
       "sell": 300,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "fight": 2
+      },
+      "live": true,
       "artefact": true,
       "unlock_tn": 18,
       "expansion": "red_king"
@@ -644,7 +646,7 @@
       "buy": 0,
       "sell": 300,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 16,
       "expansion": "red_king"

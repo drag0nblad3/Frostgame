@@ -360,6 +360,7 @@ func _finish_one(health: int) -> bool:
 		return true
 	if not result["success"]:
 		return true
+	RedKingGear.charge(f,str(s.spell_catalog[id].get("school","")))
 	if id in ["dispel", "spell_eater"]:
 		counter.apply(p["effect"])
 		return true

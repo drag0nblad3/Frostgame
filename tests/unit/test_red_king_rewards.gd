@@ -60,3 +60,23 @@ func test_fixed_scenario_deployments() -> void:
 		var s := ScenarioLoader.load_id(id,defs,terrain())
 		for f in s.figures:
 			check(s.board.can_stand(f.pos,Figure.BASE_RADIUS),"%s: illegal deployment at %s"%[id,f.pos])
+
+
+func test_red_king_artefact_weapon_counters() -> void:
+	var catalog := RedKingRewards.catalog()
+	var f := fig("wizard",0,Vector2(10,10))
+	var t := fig("wizard",1,Vector2(11,10))
+	f.items.append({"gear":RedKingGear.FIRE,"gear_info":catalog[RedKingGear.FIRE]})
+	RedKingGear.charge(f,"necromancer")
+	check_eq(f.used_gear.get(RedKingGear.CHARGES,0),0)
+	for i in 8:
+		RedKingGear.charge(f,"elementalist")
+	check_eq(f.used_gear[RedKingGear.CHARGES],5)
+	f.items.clear()
+	f.items.append({"gear":RedKingGear.WOE,"gear_info":catalog[RedKingGear.WOE]})
+	check_eq(f.effective_will(),f.def.will+1)
+	f.used_gear["rk_soulchill_will"]=2
+	f.used_gear["rk_soulchill_fight"]=1
+	check_eq(f.effective_will(),f.def.will-1)
+	check_eq(f.effective_fight(),f.def.fight-1)
+	check_eq(RedKingGear.armour(f,t),t.effective_armour())
