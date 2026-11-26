@@ -50,8 +50,11 @@ jobs:
           unzip -q "$RUNNER_TEMP/godot.zip" -d "$RUNNER_TEMP"
           install -m 755 "$RUNNER_TEMP/Godot_v${tag}_linux.x86_64" /usr/local/bin/godot
           curl -fLsS --retry 3 "$url/Godot_v${tag}_export_templates.tpz" -o "$RUNNER_TEMP/templates.tpz"
-          mkdir -p "$HOME/.local/share/godot/export_templates/$tag"
-          unzip -j -q "$RUNNER_TEMP/templates.tpz" templates/android_debug.apk templates/version.txt -d "$HOME/.local/share/godot/export_templates/$tag"
+          template_dir="$HOME/.local/share/godot/export_templates/$GODOT_VERSION.stable"
+          mkdir -p "$template_dir"
+          unzip -j -q "$RUNNER_TEMP/templates.tpz" templates/android_debug.apk templates/android_release.apk templates/version.txt -d "$template_dir"
+          test -s "$template_dir/android_debug.apk"
+          test -s "$template_dir/android_release.apk"
       - name: Configure SDK and debug signing
         env:
           DEBUG_KEYSTORE_B64: ${{ secrets.FROSTGAME_DEBUG_KEYSTORE_B64 }}
