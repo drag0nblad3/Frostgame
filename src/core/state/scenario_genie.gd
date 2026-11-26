@@ -67,9 +67,10 @@ static func flee(c: GameController, f: Figure) -> bool:
 	if f.moves_taken == 0 and c.can_move():
 		var r := c.reach()
 		var best := Vector2i(-1, -1)
-		var distance := TreasureRules.edge_distance(s.board, f.pos)
+		var field := MovePlanner.exit_field(s)
+		var distance: float = field.get(MovePlanner.node_at(f.pos), INF)
 		for n in r.nodes():
-			var d := TreasureRules.edge_distance(s.board, MoveGrid.to_pos(n))
+			var d: float = field.get(n, INF)
 			if d < distance:
 				distance = d
 				best = n

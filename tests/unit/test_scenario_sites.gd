@@ -44,3 +44,32 @@ func test_disc_transport_no_chain_and_once_xp() -> void:
 	check(ScenarioSites.treasure_protected(s, s.treasure(1).pos))
 	check(not ScenarioSites.treasure_protected(s, s.treasure(0).pos))
 	check(not c._magic.treasure_magic.can_target(f, "telekinesis", s.treasure(1)))
+
+
+func test_disc_hook_on_real_move_and_magic() -> void:
+	var s := ScenarioLoader.load_id("the_keep", db(), terrain())
+	var c := GameController.new(s, LoadedDice.new([6, 6]))
+	var f := s.figure(1)
+	f.pos = Vector2(18, 9)
+	f.actions_left = 2
+	s.active_id = f.id
+	s.forced_combat = false
+	check(c.move_to(MovePlanner.node_at(Vector2(18, 12))))
+	check_eq(f.pos, Vector2(18, 24))
+	check_eq(f.moves_taken, 1)
+	check_eq(f.actions_left, 1)
+	c._magic.movement.move(f, Vector2(24, 18))
+	check_eq(f.pos, Vector2(12, 18))
+
+
+func test_hut_discovered_on_real_movement() -> void:
+	var s := ScenarioLoader.load_id("haunted_houses", db(), terrain())
+	var c := GameController.new(s, LoadedDice.new([1]))
+	var f := s.figure(1)
+	f.pos = Vector2(18, 8)
+	f.actions_left = 2
+	s.active_id = f.id
+	s.forced_combat = false
+	check(c.move_to(MovePlanner.node_at(Vector2(18, 11))))
+	check_eq(s.discovered_huts.size(), 1)
+	check_eq(f.pos, Vector2(18, 11))
