@@ -54,6 +54,18 @@ static func safe_rect(viewport: Viewport,pad: float=10.0) -> Rect2:
 
 
 static func popup_dialog(dialog: Window,desired: Vector2=Vector2.ZERO) -> void:
+	# Exclusive embedded window: Godot blocks interaction with the parent
+	# window only when transient is also set.
+	dialog.transient=true
+	dialog.exclusive=true
+	dialog.unresizable=true
+	if dialog.theme==null:
+		dialog.theme=BattleTheme.create()
+	if dialog is AcceptDialog:
+		dialog.get_ok_button().custom_minimum_size.y=56
+		if dialog is ConfirmationDialog:
+			dialog.get_cancel_button().custom_minimum_size.y=56
+	ModalInput.register(dialog)
 	var viewport := dialog.get_parent().get_viewport()
 	var bounds := safe_rect(viewport,14)
 	# Use the safe center even when a cutout is asymmetric. Contents use

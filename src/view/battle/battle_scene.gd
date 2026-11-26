@@ -212,7 +212,7 @@ func _open_guide() -> void:
 
 
 func _info_open() -> bool:
-	return (_graphics!=null and _graphics.visible) or (_picker != null and _picker.visible) or (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
+	return ModalInput.blocked() or (_graphics!=null and _graphics.visible) or (_picker != null and _picker.visible) or (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
 
 
 func _open_briefing(start: bool) -> void:
@@ -292,6 +292,8 @@ func _attach_battle(c: GameController, start: bool) -> void:
 
 ## Plays one bot activation for whichever side is to move.
 func step() -> void:
+	if ModalInput.blocked():
+		return
 	if controller.state.over or not player.idle() or controller.awaiting_reaction():
 		return
 	if controller.state.active() != null:
@@ -302,6 +304,8 @@ func step() -> void:
 
 
 func _process(delta: float) -> void:
+	if ModalInput.blocked():
+		_rig.cancel_gesture()
 	if _info_open() or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
 		return
@@ -541,8 +545,10 @@ func _open_map_picker() -> void:
 
 
 func _notification(what: int) -> void:
-	if what==NOTIFICATION_WM_GO_BACK_REQUEST and is_instance_valid(player):
-		if not _info_open() and (_setup==null or not _setup.visible) and (_campaign_dialog==null or not _campaign_dialog.visible):
+	if what==NOTIFICATION_WM_GO_BACK_REQUEST and is_inside_tree():
+		if ModalInput.close_top(get_tree().root):
+			return
+		if is_instance_valid(player):
 			_confirm_title()
 
 

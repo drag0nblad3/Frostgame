@@ -54,7 +54,19 @@ func _run() -> void:
 	if not scene._guide.visible or scene.controller!=before_guide or scene._guide._body.text.is_empty():
 		_fail("Field guide unavailable")
 		return
-	scene._guide.hide()
+	var old_pitch: float=scene._rig.pitch
+	var old_distance: float=scene._rig.distance
+	var wheel := InputEventMouseButton.new()
+	wheel.button_index=MOUSE_BUTTON_WHEEL_UP
+	wheel.pressed=true
+	scene._rig._unhandled_input(wheel)
+	if not ModalInput.blocked() or not is_equal_approx(scene._rig.distance,old_distance) or not is_equal_approx(scene._rig.pitch,old_pitch):
+		_fail("Camera received input behind guide")
+		return
+	scene._notification(NOTIFICATION_WM_GO_BACK_REQUEST)
+	if scene._guide.visible or ModalInput.blocked() or scene.controller!=before_guide:
+		_fail("Back did not dismiss guide safely")
+		return
 	scene._camera_preset(1)
 	if scene._rig.pitch < deg_to_rad(80.0):
 		_fail("Overhead preset did not change camera")

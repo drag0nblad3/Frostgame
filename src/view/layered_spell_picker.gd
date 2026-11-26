@@ -38,4 +38,4 @@ static func choose(parent: Control,c: GameController,refresh: Callable) -> void:
 		refresh.call()
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)
-	dialog.popup_centered()
+	PhoneSafeArea.popup_dialog(dialog)

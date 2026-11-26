@@ -10,7 +10,7 @@ func test_incremental_terrain_keeps_unaffected_meshes() -> void:
 	var node: Node3D=view._pieces[original]["node"]
 	var city := view._scenery
 	var decoration := view._decoration
-	var removed := board.pieces.pop_back()
+	var removed: TerrainPiece=board.pieces.pop_back()
 	board.invalidate_terrain()
 	view.sync_terrain(board)
 	check_eq(view._scenery,city)
