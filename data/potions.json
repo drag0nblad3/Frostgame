@@ -73,7 +73,7 @@
     "name": "Philtre of Fury",
     "buy": 300,
     "sell": 120,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "iron_mind": {

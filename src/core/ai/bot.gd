@@ -19,7 +19,9 @@ static func resume_activation(c: GameController) -> bool:
 		return false
 	if f.side >= 0 and f.def.health - f.health >= 4 and c._potions.can_drink("healing"):
 		c._potions.drink("healing")
-	if f.side < 0:
+	if FuryRules.target(c.state, f) != null:
+		FuryRules.play(c, f)
+	elif f.side < 0:
 		CreatureBot.play(c, f)
 	elif not MagicBot.play(c, f) and not TreasureBot.play(c, f):
 		if f.ranged != null:

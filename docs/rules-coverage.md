@@ -251,3 +251,7 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ## Shrinking Potion
 
 - p.93: shrinks the carried token, removes Move/Fight encumbrance for that token, permits a second normal token. Both tokens track the carrier, secure on exit, and drop on death. Normal or shrunk token may be dropped independently; a dropped shrunk token returns to normal. Counter-magic and Null cancel shrinking and automatically drop the normal token when two are carried (player choice on cancellation remains pending). Fool's Gold tracks the selected token, though overlapping markers currently favor the first token. 
+
+## Philtre of Fury
+
+- p.91: +1 Fight and +1 melee damage. While an eligible visible enemy is present, disables unrelated actions and exit, restricts movement destinations to contact with the nearest eligible enemy when reachable, otherwise to positions advancing along the movement distance field, and prevents ending the activation while legal movement/fighting remains. AI uses the same destinations. Already-engaged enemies are fought first; if blocked with no advancing route, ending is permitted. The shortest-path interpretation and tie breaking are digital approximations. 

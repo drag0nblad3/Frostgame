@@ -144,7 +144,11 @@ func refresh() -> void:
 		available.append("drop")
 		if f.second_treasure_id >= 0:
 			available.append("drop_shrunk")
-	available.append("end")
+	if c.can_end_activation():
+		available.append("end")
+	if available.is_empty():
+		preview()
+		return
 	if not available.has(mode) or mode in ["reload", "end"]:
 		mode = available[0] if available[0] not in ["reload", "end"] else ""
 	preview()
@@ -303,6 +307,8 @@ func preview() -> void:
 	if not selected.is_empty():
 		markers.show_points(selected, Color(1.0, 0.78, 0.15), 0.85, true)
 	if f != null:
+		if FuryRules.target(c.state, f) != null:
+			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
 		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", hint]
 	if c.state.group.in_progress():
 		hint = ("GROUP: Movement · " if c.state.group.movement_pass() else "GROUP: Second action · ") + hint

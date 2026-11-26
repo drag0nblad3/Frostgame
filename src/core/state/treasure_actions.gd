@@ -39,7 +39,7 @@ func can_drop(at: Vector2) -> bool:
 	var f := _c.state.active()
 	if f == null or not f.in_play() or f.treasure_id < 0 or f.actions_left <= 0:
 		return false
-	if Contact.in_combat(_c.state.figures, f):
+	if FuryRules.target(_c.state, f) != null or Contact.in_combat(_c.state.figures, f):
 		return false
 	if f.pos.distance_to(at) < 0.85 or f.pos.distance_to(at) > 1.25:
 		return false
@@ -95,7 +95,7 @@ func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if not _c.can_move():
 		return false
 	var f := _c.state.active()
-	if f.control_spell == "mind_control" or f.side < 0 or f.spell_effects.has("plane_walk"):
+	if f.control_spell == "mind_control" or f.side < 0 or f.spell_effects.has("plane_walk") or FuryRules.target(_c.state, f) != null:
 		return false
 	if r == null:
 		r = _c.reach()

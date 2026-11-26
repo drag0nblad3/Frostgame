@@ -89,6 +89,7 @@ func effective_fight() -> int:
 		return 0
 	var value := def.fight - (1 if carries_normal_treasure() and treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
 	value += 1 if spell_effects.has("potion_strength") else 0
+	value += 1 if spell_effects.has("potion_fury") else 0
 	value += 2 if spell_effects.has("possess") else 0
 	if affected_by_insects():
 		value = maxi(0, value - 4)

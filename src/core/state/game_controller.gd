@@ -86,7 +86,8 @@ func reach() -> MoveReach:
 	if f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
 		return PlaneWalk.reach(state, f, false)
 	var grid := MoveGrid.new(state.board, f, state.figures)
-	return MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
+	var r := MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
+	return FuryRules.restrict(state, f, r)
 
 
 func move_to(node: Vector2i) -> bool:
@@ -143,14 +144,16 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 
 
 ## One non-move action (fight, shoot, reload) per activation.
-func can_act() -> bool:
+func can_act(for_fight: bool = false) -> bool:
 	var f := state.active()
+	if not for_fight and FuryRules.target(state, f) != null:
+		return false
 	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:
 	var t := state.figure(target_id)
-	return can_act() and not state.active().spell_effects.has("blinding_light") and t != null and Contact.enemies_of(state.figures, state.active()).has(t)
+	return can_act(true) and not state.active().spell_effects.has("blinding_light") and t != null and Contact.enemies_of(state.figures, state.active()).has(t)
 
 
 func fight(target_id: int) -> bool:
@@ -216,7 +219,7 @@ func _shoot_authorized(f: Figure, t: Figure) -> void:
 ## Reload may replace the movement action (p. 34); never while engaged.
 func can_reload() -> bool:
 	var f := state.active()
-	return not awaiting_reaction() and state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
+	return not awaiting_reaction() and state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and FuryRules.target(state, f) == null and (f.moves_taken == 0 or can_act())
 
 
 func reload() -> bool:
@@ -232,8 +235,22 @@ func reload() -> bool:
 	return true
 
 
+func can_end_activation() -> bool:
+	var f := state.active()
+	if f == null or awaiting_reaction() or not state.pending_cast.is_empty():
+		return false
+	if FuryRules.target(state, f) == null or f.actions_left <= 0:
+		return true
+	for t in Contact.enemies_of(state.figures, f):
+		if can_fight(t.id):
+			return false
+	if can_move() and not reach().nodes().is_empty():
+		return false
+	return true
+
+
 func end_activation() -> void:
-	if not state.pending_cast.is_empty() or awaiting_reaction():
+	if not can_end_activation():
 		return
 	_displacement.clear()
 	var f := state.active()
@@ -425,7 +442,7 @@ func use_stored_action() -> bool:
 func can_fight_hand(id: int) -> bool:
 	var f := state.active()
 	var t := state.figure(id)
-	return can_act() and not f.spell_effects.has("blinding_light") and t != null and t.in_play() and t.spell_effects.has("bones_of_the_earth") and (f == t or Contact.figures_touch(f, t))
+	return can_act(true) and not f.spell_effects.has("blinding_light") and t != null and t.in_play() and t.spell_effects.has("bones_of_the_earth") and (f == t or Contact.figures_touch(f, t))
 
 
 func fight_hand(id: int) -> bool:

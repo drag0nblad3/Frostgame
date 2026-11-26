@@ -16,6 +16,8 @@ func can_drink(id: String, target: Figure = null) -> bool:
 	var f := c.state.active()
 	if f == null or not f.in_play() or f.spell_effects.has("plane_walk") or f.actions_left <= 0 or c.awaiting_reaction() or not c.state.pending_cast.is_empty() or c.state.group.movement_pass() or Contact.in_combat(c.state.figures, f):
 		return false
+	if FuryRules.target(c.state, f) != null:
+		return false
 	if f.moves_taken > 0 and not c.can_act():
 		return false
 	if not catalog.has(id) or not catalog[id]["live"] or id in CampaignPotions.VAULT_ONLY:
