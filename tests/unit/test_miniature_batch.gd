@@ -47,3 +47,24 @@ func test_refined_beasts_and_constructs_have_batched_meshes() -> void:
 		var model := MiniatureFactory.create(f,Color.RED)
 		check(not model.find_children("*","MeshInstance3D",true,false).is_empty())
 		model.free()
+
+
+func test_supernatural_models_keep_articulated_arms() -> void:
+	var defs := db()
+	for id: String in ["skeleton","armoured_skeleton","skeleton_archer","ghoul","zombie","wraith","genie","imp","minor_demon","major_demon","white_gorilla","werewolf","snow_troll","frost_giant"]:
+		var f := Figure.new(9,defs.get_def(id),-1,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.PURPLE)
+		check(model.has_node("RightArm") and model.has_node("LeftArm"))
+		check(not model.get_node("RightArm").get_children().is_empty())
+		check(not model.get_node("LeftArm").get_children().is_empty())
+		MiniaturePose.arms(model,-0.4,0.2)
+		model.free()
+
+
+func test_other_magical_creatures_bake() -> void:
+	var defs := db()
+	for id: String in ["ice_spider","ice_toad","giant_worm","animated_skull"]:
+		var f := Figure.new(10,defs.get_def(id),-1,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.PURPLE)
+		check(not model.find_children("*","MeshInstance3D",true,false).is_empty())
+		model.free()

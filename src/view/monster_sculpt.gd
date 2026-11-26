@@ -10,10 +10,15 @@ static func create(root: Node3D, f: Figure) -> bool:
 	match f.def.id:
 		"ghoul", "zombie":
 			undead(root, f.def.id == "ghoul")
+			InfernalDetails.undead(root,f.def.id=="ghoul")
 		"imp", "minor_demon", "major_demon":
 			demon(root, f.def.id)
+			InfernalDetails.decorate(root,f.def.id)
 		"animated_skull":
-			skull(root)
+			BoneSculpt.skull(root,Vector3(0,0.91,0),1.65)
+			for i in 3:
+				var angle := TAU*i/3.0
+				CreatureSculpt.limb(root,Vector3(cos(angle)*0.16,0.42,sin(angle)*0.16),Vector3(cos(angle)*0.29,0.68,sin(angle)*0.29),0.046,Color("72bcb5"),0.02)
 		"giant_worm":
 			worm(root)
 		_:
@@ -138,6 +143,12 @@ static func worm(root: Node3D) -> void:
 		band.inner_radius = radius * 0.90
 		band.outer_radius = radius * 1.03
 		MiniatureFactory.mesh(root, band, spine[i], hide.darkened(0.25)).scale.y = 0.45
+		for side: float in [-1.0,1.0]:
+			var at := spine[i]+Vector3(side*radius*0.77,0.025,0.03)
+			CreatureSculpt.limb(root,at,at+Vector3(side*0.10,0.07,0.07),0.055,hide.lightened(0.22),0.05)
+		for k in 4:
+			var angle := TAU*k/4.0+0.3
+			MiniatureFactory.sphere(root,spine[i]+Vector3(cos(angle)*radius*0.86,0.095,sin(angle)*radius*0.83),Vector3.ONE*0.075,hide.darkened(0.15))
 	var mouth := spine[-1] + Vector3(0, 0.04, -0.23)
 	MiniatureFactory.sphere(root, mouth, Vector3(0.47, 0.47, 0.14), SHADOW)
 	var rim := TorusMesh.new()

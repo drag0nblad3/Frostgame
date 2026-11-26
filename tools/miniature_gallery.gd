@@ -29,7 +29,10 @@ func _setup() -> void:
 		ids=["thug","thief","archer","crossbowman","infantryman","man_at_arms","treasure_hunter","knight","barbarian","ranger","marksman","tracker","templar","apothecary","war_hound"]
 	if beast_gallery:
 		ids=["wolf","bear","boar","snow_leopard","giant_rat","wild_dog","war_hound","small_construct","medium_construct","large_construct"]
-	var close_gallery := school_gallery or soldier_gallery or beast_gallery
+	var supernatural_gallery := args.size()>1 and args[1]=="supernatural"
+	if supernatural_gallery:
+		ids=["skeleton","armoured_skeleton","skeleton_archer","ghoul","zombie","animated_skull","wraith","genie","imp","minor_demon","major_demon","white_gorilla","werewolf","snow_troll","frost_giant","ice_spider","ice_toad","giant_worm","vampire"]
+	var close_gallery := school_gallery or soldier_gallery or beast_gallery or supernatural_gallery
 	for i in ids.size():
 		var def := db.get_def(ids[i])
 		var columns := 5 if close_gallery else 6
@@ -70,9 +73,9 @@ func _setup() -> void:
 	camera.position = Vector3(7, 18, -14)
 	camera.look_at(Vector3(7, 0, 6), Vector3.UP)
 	if close_gallery:
-		camera.size=12.1 if soldier_gallery else 9.2
+		camera.size=15.4 if supernatural_gallery else (12.1 if soldier_gallery else 9.2)
 		camera.position=Vector3(7,11,-12)
-		camera.look_at(Vector3(7,0.8,5.5 if soldier_gallery else 3.75),Vector3.UP)
+		camera.look_at(Vector3(7,0.8,7.25 if supernatural_gallery else (5.5 if soldier_gallery else 3.75)),Vector3.UP)
 	camera.make_current()
 	_ready_to_capture = true
 
