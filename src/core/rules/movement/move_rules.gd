@@ -7,9 +7,10 @@ extends RefCounted
 ## activation is at half Move.
 ## TODO(rules): confirm the half-Move second action and rounding in 2e.
 static func allowance(f: Figure) -> float:
-	if f.moves_taken == 0:
-		return float(f.def.move)
-	return f.def.move / 2.0
+	var speed := float(f.def.move)
+	if f.treasure_id >= 0:
+		speed *= 0.5
+	return speed if f.moves_taken == 0 else speed * 0.5
 
 
 ## Figures in combat can't simply walk away.

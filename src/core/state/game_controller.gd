@@ -9,12 +9,14 @@ var state: GameState
 var dice: Dice
 var history: Array[GameEvent] = []
 var _flow: TurnFlow
+var _loot: TreasureActions
 
 
 func _init(s: GameState, d: Dice) -> void:
 	state = s
 	dice = d
 	_flow = TurnFlow.new(self)
+	_loot = TreasureActions.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:
@@ -49,7 +51,7 @@ func activate(id: int) -> bool:
 
 func can_move() -> bool:
 	var f := state.active()
-	return f != null and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
+	return f != null and f.in_play() and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
 
 
 ## Where the active figure could go with its next movement action.
@@ -77,7 +79,7 @@ func move_to(node: Vector2i) -> bool:
 ## One non-move action (fight, shoot, reload) per activation.
 func can_act() -> bool:
 	var f := state.active()
-	return f != null and f.actions_left > 0 and not f.acted
+	return f != null and f.in_play() and f.actions_left > 0 and not f.acted
 
 
 func fight(target_id: int) -> bool:
@@ -155,4 +157,21 @@ func _hurt(f: Figure, dmg: int, by: Figure) -> void:
 	var out := Damage.apply(f, dmg)
 	emit("damage", {"id": f.id, "by": by.id, "amount": dmg, "health": f.health})
 	if out:
+		_loot.drop_on_death(f)
 		emit("out_of_action", {"id": f.id, "by": by.id})
+
+
+func can_pick_up(id: int) -> bool:
+	return _loot.can_pick_up(id)
+
+
+func pick_up(id: int) -> bool:
+	return _loot.pick_up(id)
+
+
+func drop_treasure(at: Vector2) -> bool:
+	return _loot.drop(at)
+
+
+func exit_table(node: Vector2i) -> bool:
+	return _loot.exit_table(node)

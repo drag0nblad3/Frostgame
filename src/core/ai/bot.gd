@@ -10,10 +10,11 @@ static func play_activation(c: GameController) -> bool:
 	var f := _pick(c)
 	if f == null or not c.activate(f.id):
 		return false
-	if f.ranged != null:
-		_play_shooter(c, f)
-	else:
-		_play_fighter(c, f)
+	if not TreasureBot.play(c, f):
+		if f.ranged != null:
+			_play_shooter(c, f)
+		else:
+			_play_fighter(c, f)
 	c.end_activation()
 	return true
 

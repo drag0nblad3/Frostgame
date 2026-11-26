@@ -11,6 +11,8 @@ var side := 0
 var pos := Vector2.ZERO
 var health := 0
 var out_of_action := false
+var exited := false
+var treasure_id := -1
 ## Turn bookkeeping, reset by the controller each turn.
 var activated := false
 var actions_left := 0
@@ -42,4 +44,8 @@ func label() -> String:
 
 
 func in_play() -> bool:
-	return not out_of_action
+	return not out_of_action and not exited
+
+
+func effective_fight() -> int:
+	return def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0)

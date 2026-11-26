@@ -2,7 +2,7 @@ extends Node3D
 ## Composition root for watching a game: loads the scenario, wires the
 ## controller to the views, and lets the bot play both warbands.
 
-const SCENARIO := "skirmish"
+const SCENARIO := "treasure_skirmish"
 ## Pause between bot activations in Auto mode (seconds).
 const AUTO_DELAY := 0.35
 
@@ -43,6 +43,7 @@ func new_game(seed_value: int) -> void:
 	player = EventPlayer.new()
 	player.state = state
 	add_child(player)
+	player.build_treasures()
 	for f in state.figures:
 		var v := FigureView.new()
 		player.add_child(v)
@@ -75,10 +76,13 @@ func _process(delta: float) -> void:
 
 func _update_status() -> void:
 	var s := controller.state
+	var score := ""
+	for side in s.side_count():
+		score += "  |  %s: %d" % [s.side_names[side], s.secured_count(side)]
 	if s.over:
-		hud.set_status("Turn %d — game over" % s.turn)
+		hud.set_status("Turn %d — game over%s" % [s.turn, score])
 		return
-	hud.set_status("Turn %d · %s phase · %s to act" % [s.turn, Phase.name_of(s.phase), s.side_names[s.current_side()]])
+	hud.set_status("Turn %d · %s · %s%s" % [s.turn, Phase.name_of(s.phase), s.side_names[s.current_side()], score])
 
 
 func _add_lighting() -> void:

@@ -45,3 +45,8 @@ Source: Joseph A. McCullough, Frostgrave Second Edition (2020), printed page num
 | Stat and casting rolls | Pure arithmetic and tests added; no live spell actions or spell effects yet | 29, 44, 62–65 |
 
 Next: treasure objective and extraction; selection of eligible early-phase soldiers and true group activation; push-back choices; player input; live spell effects and creature phase. Earlier table is the pre-audit baseline, superseded where this section differs.
+
+## Treasure skirmish (second development pass)
+
+- Pages 38–39, 49, 68, 71: fixed five-token scenario, pickup/contact/enemy exclusion, carrying penalties, drop, death drop, extraction as a movement action, secured/lost status, non-campaign scoring and remaining-warband recovery rolls implemented. Gold boxes, carrier attachment, score display and objective-first bot added. Original combat-only scenario remains for regression tests.
+- Digital approximations: fixed hand-authored token positions; base/token radii and half-inch grid; retreat requires enough movement to cross the edge; 12-turn safety limit retained (unresolved treasure is not scored at timeout). Bot exit heuristic may stall at terrain. No random encounter rolls, Run For It, forced combat, or vertical distance yet. No manual player input yet.

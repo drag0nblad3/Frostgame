@@ -1,0 +1,137 @@
+{
+  "id": "treasure_skirmish",
+  "name": "Treasure in the Frozen Ruins",
+  "board": "frozen_ruins",
+  "warbands": [
+    {
+      "name": "Elementalist",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            3
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            15,
+            3
+          ]
+        },
+        {
+          "type": "knight",
+          "at": [
+            20,
+            4.5
+          ]
+        },
+        {
+          "type": "man_at_arms",
+          "at": [
+            13,
+            4.5
+          ]
+        },
+        {
+          "type": "infantryman",
+          "at": [
+            22,
+            3
+          ]
+        },
+        {
+          "type": "archer",
+          "at": [
+            10,
+            3
+          ]
+        },
+        {
+          "type": "crossbowman",
+          "at": [
+            26,
+            3
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Necromancer",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            33
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            21,
+            33
+          ]
+        },
+        {
+          "type": "barbarian",
+          "at": [
+            16,
+            31.5
+          ]
+        },
+        {
+          "type": "treasure_hunter",
+          "at": [
+            23,
+            31.5
+          ]
+        },
+        {
+          "type": "thug",
+          "at": [
+            19,
+            31.5
+          ]
+        },
+        {
+          "type": "ranger",
+          "at": [
+            12,
+            33
+          ]
+        },
+        {
+          "type": "marksman",
+          "at": [
+            26,
+            33
+          ]
+        }
+      ]
+    }
+  ],
+  "treasures": [
+    [
+      18,
+      14
+    ],
+    [
+      12,
+      14
+    ],
+    [
+      24,
+      14
+    ],
+    [
+      12,
+      23
+    ],
+    [
+      24,
+      23
+    ]
+  ]
+}

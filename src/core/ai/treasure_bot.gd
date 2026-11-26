@@ -1,0 +1,75 @@
+class_name TreasureBot
+extends RefCounted
+## Objective-first bot policy. Combat remains the fallback if no route is usable.
+
+static func play(c: GameController, f: Figure) -> bool:
+	if c.state.treasures.is_empty() or Contact.in_combat(c.state.figures, f):
+		return false
+	if f.def.traits.has("animal"):
+		return false
+	var acted := false
+	for i in 2:
+		if not f.in_play() or f.actions_left == 0:
+			break
+		if f.treasure_id >= 0:
+			if not _escape(c, f):
+				break
+			acted = true
+			continue
+		var target := _nearest(c, f)
+		if target == null:
+			break
+		if c.pick_up(target.id):
+			acted = true
+			continue
+		if not c.can_move():
+			break
+		var r := c.reach()
+		var field := MovePlanner.distance_field(c.state.board, target.pos)
+		var best: Variant = null
+		var score: float = field.get(MovePlanner.node_at(f.pos), INF)
+		for n: Vector2i in r.nodes():
+			var value: float = field.get(n, INF)
+			if value < score - 0.05:
+				best = n
+				score = value
+		if best == null or not c.move_to(best):
+			break
+		acted = true
+	if Contact.in_combat(c.state.figures, f) and c.can_act():
+		var enemy := BotTargets.weakest_contact(c.state, f)
+		if enemy != null:
+			c.fight(enemy.id)
+			acted = true
+	return acted
+
+
+static func _nearest(c: GameController, f: Figure) -> TreasureToken:
+	var best: TreasureToken = null
+	var distance := INF
+	for token in c.state.treasures:
+		if not token.on_ground():
+			continue
+		var d := f.pos.distance_to(token.pos)
+		if d < distance:
+			distance = d
+			best = token
+	return best
+
+
+static func _escape(c: GameController, f: Figure) -> bool:
+	if not c.can_move():
+		return false
+	var r := c.reach()
+	var best: Variant = null
+	var score := TreasureRules.edge_distance(c.state.board, f.pos)
+	for n: Vector2i in r.nodes():
+		var at := MoveGrid.to_pos(n)
+		var d := TreasureRules.edge_distance(c.state.board, at)
+		if d <= Figure.BASE_RADIUS + 0.01 and r.cost[n] + Figure.BASE_RADIUS <= MoveRules.allowance(f) + 0.001:
+			if c.exit_table(n):
+				return true
+		if d < score - 0.05:
+			best = n
+			score = d
+	return best != null and c.move_to(best)

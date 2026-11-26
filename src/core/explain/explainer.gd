@@ -31,6 +31,16 @@ static func text(s: GameState, e: GameEvent) -> String:
 			var cover := "" if d["mod"] == 0 else " (+%d cover)" % d["mod"]
 			return "%s shoots %s: %d vs %d%s." % [
 				name_of(s, d["id"]), name_of(s, d["target"]), d["s_total"], d["t_total"], cover]
+		"treasure_pickup":
+			return "%s collects treasure %d." % [name_of(s, d["id"]), d["treasure"] + 1]
+		"treasure_drop":
+			return "%s drops treasure %d." % [name_of(s, d["id"]), d["treasure"] + 1]
+		"treasure_secured":
+			return "%s secure treasure %d." % [s.side_names[d["side"]], d["treasure"] + 1]
+		"treasure_lost":
+			return "Treasure %d is lost." % (d["treasure"] + 1)
+		"exit":
+			return "%s leaves the table safely." % name_of(s, d["id"])
 		"reload":
 			return "%s reloads." % name_of(s, d["id"])
 		"damage":

@@ -14,6 +14,7 @@ var will := 0
 var health := 10
 var cost := 0
 var specialist := false
+var shield := false
 var traits: Array[String] = []
 var weapons: Array[WeaponDef] = []
 ## True while the stat line is unchecked against the book.
@@ -33,6 +34,7 @@ static func from_dict(fig_id: String, d: Dictionary, weapon_db: Dictionary) -> F
 	f.health = int(d.get("health", 10))
 	f.cost = int(d.get("cost", 0))
 	f.specialist = d.get("specialist", false)
+	f.shield = d.get("shield", false)
 	for trait_id: String in d.get("traits", []):
 		f.traits.append(trait_id)
 	f.verify = d.get("verify", false)
@@ -58,3 +60,13 @@ func ranged_weapon() -> WeaponDef:
 		if w.is_ranged():
 			return w
 	return null
+
+
+## Equipment that interferes with carrying loot (p. 68).
+func treasure_encumbered() -> bool:
+	if shield:
+		return true
+	for w in weapons:
+		if w.is_ranged() or w.id in ["staff", "two_handed"]:
+			return true
+	return false

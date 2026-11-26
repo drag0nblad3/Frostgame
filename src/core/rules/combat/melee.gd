@@ -22,7 +22,7 @@ static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 
 static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 	var net := clampi(support(figures, f, enemy) - support(figures, enemy, f), 0, 6)
-	return mini(f.def.fight + f.melee.fight_mod + net, 10)
+	return mini(f.effective_fight() + f.melee.fight_mod + net, 10)
 
 
 ## Rolls the fight. Returns {a_roll, b_roll, a_total, b_total, a_dmg, b_dmg}:

@@ -18,7 +18,10 @@ func start_turn() -> void:
 		return
 	s.turn += 1
 	if s.turn > GameState.MAX_TURNS:
-		_finish(-1)
+		if s.treasures.is_empty():
+			_finish(-1)
+		else:
+			_finish(TreasureRules.winner(s))
 		return
 	for f in s.figures:
 		f.activated = false
@@ -58,6 +61,27 @@ func _check_victory() -> bool:
 	for side in _c.state.side_count():
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
+	var s := _c.state
+	if not s.treasures.is_empty():
+		if standing.size() <= 1:
+			var survivor := standing[0] if standing.size() == 1 else -1
+			for token in s.treasures:
+				if not token.unresolved():
+					continue
+				var secured := false
+				if survivor >= 0:
+					secured = token.carrier_id >= 0 or _c.dice.d20() >= 15
+				if secured:
+					_c._loot.secure(token, survivor)
+				else:
+					_c._loot.lose(token)
+			_finish(TreasureRules.winner(s))
+			return true
+		for token in s.treasures:
+			if token.unresolved():
+				return false
+		_finish(TreasureRules.winner(s))
+		return true
 	if standing.size() > 1:
 		return false
 	_finish(standing[0] if standing.size() == 1 else -1)

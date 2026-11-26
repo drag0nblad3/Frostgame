@@ -9,6 +9,7 @@ signal line_logged(text: String)
 var speed := 1.0
 var state: GameState
 var views := {}
+var treasure_views := {}
 var _queue: Array[GameEvent] = []
 var _busy := false
 
@@ -48,6 +49,19 @@ func _play(e: GameEvent) -> void:
 			_float_text(v, "-%d" % d["amount"])
 		"out_of_action":
 			_view(d["id"]).take_out()
+		"treasure_pickup":
+			var token: MeshInstance3D = treasure_views[d["treasure"]]
+			token.reparent(_view(d["id"]), false)
+			token.position = Vector3(0.48, 0.65, 0)
+		"treasure_drop":
+			var token: MeshInstance3D = treasure_views[d["treasure"]]
+			token.reparent(self, false)
+			token.position = TableSpace.to_world(d["at"], 0.25)
+		"treasure_secured", "treasure_lost":
+			var token: MeshInstance3D = treasure_views[d["treasure"]]
+			token.visible = false
+		"exit":
+			_view(d["id"]).visible = false
 
 
 func _view(id: int) -> FigureView:
@@ -109,3 +123,15 @@ func _float_text(v: FigureView, text: String) -> void:
 	t.parallel().tween_property(l, "modulate:a", 0.0, 0.7)
 	t.tween_callback(l.queue_free)
 	_wait_for(t)
+
+
+func build_treasures() -> void:
+	for token in state.treasures:
+		var marker := MeshInstance3D.new()
+		var box := BoxMesh.new()
+		box.size = Vector3(0.6, 0.5, 0.45)
+		marker.mesh = box
+		marker.material_override = BoardView._mat(Color(1.0, 0.73, 0.15), 0.3)
+		add_child(marker)
+		marker.position = TableSpace.to_world(token.pos, 0.25)
+		treasure_views[token.id] = marker

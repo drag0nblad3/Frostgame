@@ -23,4 +23,6 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			var def := figures.get_def(entry["type"])
 			s.figures.append(Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed()))
 			next_id += 1
+	for at: Array in d.get("treasures", []):
+		s.treasures.append(TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1])))
 	return s

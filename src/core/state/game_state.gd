@@ -17,6 +17,22 @@ var winner := -1
 var over := false
 ## Optional rule, disabled by default (Second Edition p. 55).
 var critical_hits := false
+var treasures: Array[TreasureToken] = []
+
+
+func treasure(id: int) -> TreasureToken:
+	for token in treasures:
+		if token.id == id:
+			return token
+	return null
+
+
+func secured_count(side: int) -> int:
+	var count := 0
+	for token in treasures:
+		if token.secured_by == side:
+			count += 1
+	return count
 
 
 func side_count() -> int:
