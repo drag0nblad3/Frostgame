@@ -2,7 +2,7 @@ class_name Rituals
 extends RefCounted
 ## Campaign-only spell attempts keyed by battle number, caster and spell.
 const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier"]
-const AFTER := ["absorb_knowledge", "write_scroll", "miraculous_cure"]
+const AFTER := ["absorb_knowledge", "write_scroll", "miraculous_cure", "embed_enchantment"]
 const ANIMALS := ["bear", "ice_toad", "snow_leopard", "wolf"]
 const CONSTRUCTS := ["small_construct", "medium_construct", "large_construct"]
 
@@ -42,6 +42,8 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 				for p: String in CampaignInventory.GREATER:
 					if int(d["gold"]) >= int(catalog[p]["ingredients"]):
 						out.append(p)
+		"embed_enchantment":
+			out.assign(EnchantmentRewards.choices(d))
 		"write_scroll":
 			for spell: String in d["spells"]:
 				out.append(spell)
@@ -119,6 +121,8 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 			d["prepared_illusion"] = option
 		"brew_potion":
 			d["loot"].append({"kind": "potion", "potion": option, "owner": -1})
+		"embed_enchantment":
+			EnchantmentRewards.embed(d, int(option))
 		"write_scroll":
 			d["loot"].append({"kind": "scroll", "scroll": option, "owner": -1})
 		"absorb_knowledge":

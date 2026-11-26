@@ -127,6 +127,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				outcome = "close call; carried items lost"
 			report.append("%s #%d: rolled %d, %s." % [f.label(), f.campaign_id + 1, raw, outcome])
 			break
+	EnchantmentRewards.capture(data, c, side)
 	for i in secured:
 		var loot := treasure(dice)
 		data["gold"] = int(data["gold"]) + int(loot["gold"])

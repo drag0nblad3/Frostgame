@@ -368,5 +368,15 @@
     "sell": 300,
     "bonus": {},
     "live": true
+  },
+  "gear_embedded_heavy_armour": {
+    "name": "Embedded Heavy Armour (+1 Armour)",
+    "type": "heavy_armour",
+    "buy": 0,
+    "sell": 200,
+    "bonus": {
+      "armour": 1
+    },
+    "live": true
   }
 }

@@ -39,7 +39,9 @@ func refresh() -> void:
 		for id: String in Rituals.AFTER + Rituals.BEFORE:
 			for option: String in Rituals.choices(d, i, id):
 				var text := "%s · %s: %s" % ["Before" if Rituals.BEFORE.has(id) else "After", str(u["type"]).capitalize(), id.replace("_", " ").capitalize()]
-				if option != "":
+				if id == "embed_enchantment":
+					text += " — " + EnchantmentRewards.label(d, int(option))
+				elif option != "":
 					text += " — " + option.replace("_", " ").capitalize()
 				choices.add_item(text)
 				choices.set_item_metadata(choices.item_count - 1, {"caster": i, "id": id, "option": option})
