@@ -13,11 +13,14 @@ var _name: LineEdit
 var _school: OptionButton
 var _apprentice: CheckBox
 var _hire: Button
+var _recruit_portrait: MiniaturePortrait
+var _recruit_info: Label
 
 
 func setup(db: FigureDb) -> void:
 	draft = WarbandDraft.new(db)
 	draft.choose_defaults()
+	theme = BattleTheme.create()
 	title = "Create a wizard and warband"
 	get_ok_button().text = "Begin skirmish"
 	dialog_hide_on_ok = false
@@ -71,6 +74,15 @@ func setup(db: FigureDb) -> void:
 	_hire.pressed.connect(func() -> void:
 		draft.hire(str(_recruits.get_selected_metadata()))
 		_update())
+	var recruit_card := HBoxContainer.new()
+	body.add_child(recruit_card)
+	_recruit_portrait = MiniaturePortrait.new()
+	_recruit_portrait.custom_minimum_size = Vector2(190, 165)
+	recruit_card.add_child(_recruit_portrait)
+	_recruit_info = Label.new()
+	_recruit_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_recruit_info.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	recruit_card.add_child(_recruit_info)
 	_roster = ItemList.new()
 	_roster.custom_minimum_size.y = 130
 	body.add_child(_roster)
@@ -135,7 +147,12 @@ func _update() -> void:
 		if draft.catalog[id]["kind"] != "unimplemented" or Rituals.BEFORE.has(id) or Rituals.AFTER.has(id):
 			live += 1
 	_summary.text = "%d gc left | %d/8 soldiers | %d/4 specialists | %d/8 implemented spells\n%s" % [WarbandDraft.BUDGET - draft.cost(), draft.soldiers.size(), draft.specialists(), live, "Campaign rituals are available between battles." if problems.is_empty() else "\n".join(problems)]
-	_hire.disabled = not draft.can_hire(str(_recruits.get_selected_metadata()))
+	var recruit_id := str(_recruits.get_selected_metadata())
+	_hire.disabled = not draft.can_hire(recruit_id)
+	var definition := draft.db.get_def(recruit_id)
+	if definition != null:
+		_recruit_portrait.set_figure(Figure.new(0, definition, 0, Vector2.ZERO, draft.db.unarmed()), FigureView.SIDE_COLORS[0])
+		_recruit_info.text = "%s · %d gc\nM %d″   F %+d   S %+d\nA %d   W %+d   H %d\n%s" % [definition.name, definition.cost, definition.move, definition.fight, definition.shoot, definition.armour, definition.will, definition.health, "Specialist" if definition.specialist else "Standard soldier"]
 	get_ok_button().disabled = not problems.is_empty()
 
 

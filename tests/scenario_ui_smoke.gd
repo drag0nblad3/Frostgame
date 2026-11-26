@@ -37,6 +37,9 @@ func _run() -> void:
 	if not scene._inspector.visible or not scene._inspector._body.text.contains("Health"):
 		_fail("Figure inspector unavailable")
 		return
+	if scene._inspector._portrait._model == null:
+		_fail("Inspector miniature preview missing")
+		return
 	scene._inspector.hide()
 	scene._open_guide()
 	if not scene._guide.visible:

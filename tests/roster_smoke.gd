@@ -23,6 +23,10 @@ func _process(_delta: float) -> bool:
 	if setup == null or not setup.draft.errors().is_empty():
 		quit(1)
 		return true
+	if setup._recruit_portrait._model == null or setup._recruit_info.text.is_empty():
+		printerr("Recruitment preview unavailable")
+		quit(1)
+		return true
 	setup.draft.wizard_name = "CI Wizard"
 	setup.draft.school = "witch"
 	setup.draft.choose_defaults()

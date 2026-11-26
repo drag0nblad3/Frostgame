@@ -5,6 +5,9 @@ extends AcceptDialog
 var _state: GameState
 var _picker: OptionButton
 var _body: RichTextLabel
+var _portrait: MiniaturePortrait
+var _content: HBoxContainer
+var _visual: VBoxContainer
 
 
 func _ready() -> void:
@@ -18,12 +21,28 @@ func _ready() -> void:
 	_picker.custom_minimum_size.y = 44
 	col.add_child(_picker)
 	_picker.item_selected.connect(func(index: int) -> void: _display(int(_picker.get_item_metadata(index))))
+	_content = HBoxContainer.new()
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	col.add_child(_content)
+	_visual = VBoxContainer.new()
+	_content.add_child(_visual)
+	_portrait = MiniaturePortrait.new()
+	_portrait.custom_minimum_size = Vector2(220, 220)
+	_visual.add_child(_portrait)
+	var instruction := Label.new()
+	instruction.text = "Drag to rotate miniature"
+	instruction.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	instruction.add_theme_font_size_override("font_size", 14)
+	_visual.add_child(instruction)
 	_body = RichTextLabel.new()
+	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_body.bbcode_enabled = false
 	_body.add_theme_font_size_override("normal_font_size", 20)
 	_body.fit_content = false
 	_body.scroll_active = true
-	col.add_child(_body)
+	_content.add_child(_body)
 
 
 func open(state: GameState, preferred: int = -1) -> void:
@@ -44,7 +63,9 @@ func open(state: GameState, preferred: int = -1) -> void:
 	else:
 		_body.text = "No figures remain on the table."
 	var viewport := get_parent().get_viewport().get_visible_rect().size
-	_body.custom_minimum_size = Vector2(minf(600, viewport.x * 0.78), minf(380, viewport.y * 0.60))
+	_visual.visible = viewport.x >= 650
+	_portrait.custom_minimum_size = Vector2.ONE * minf(255, viewport.x * 0.26)
+	_body.custom_minimum_size = Vector2(minf(570, viewport.x * (0.58 if _visual.visible else 0.78)), minf(380, viewport.y * 0.60))
 	popup_centered()
 
 
@@ -52,6 +73,8 @@ func _display(id: int) -> void:
 	var f := _state.figure(id)
 	if f != null:
 		_body.text = describe(_state, f)
+		var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else FigureView.SIDE_COLORS[f.side % FigureView.SIDE_COLORS.size()]
+		_portrait.set_figure(f, color)
 
 
 static func describe(s: GameState, f: Figure) -> String:
