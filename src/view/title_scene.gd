@@ -12,18 +12,23 @@ var _picker: SkirmishPicker
 var _editor: WarbandSetup
 var _notice: Label
 var _guide: FieldGuideDialog
+var _graphics: GraphicsDialog
+var _atmosphere: BattleAtmosphere
+var _title_board: Board
 
 
 func _ready() -> void:
+	GraphicsQuality.apply(get_viewport())
 	var board := BoardLoader.load_id("silent_tower",TerrainDb.load_file())
 	var scenery := BoardView.new()
 	add_child(scenery)
 	scenery.scenario_id = "silent_tower"
 	scenery.cinematic = true
 	scenery.build(board)
-	var atmosphere := BattleAtmosphere.new()
-	add_child(atmosphere)
-	atmosphere.configure(board,"silent_tower")
+	_title_board=board
+	_atmosphere=BattleAtmosphere.new()
+	add_child(_atmosphere)
+	_atmosphere.configure(board,"silent_tower")
 	_camera = Camera3D.new()
 	_camera.fov = 56.0
 	add_child(_camera)
@@ -79,6 +84,7 @@ func _ready() -> void:
 	_button("campaign","Campaign headquarters")
 	_button("training","Training yard")
 	_button("guide","Field guide")
+	_button("graphics","Graphics quality")
 	_notice=Label.new()
 	_notice.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	_menu.add_child(_notice)
@@ -122,6 +128,9 @@ func _launch(key: String) -> void:
 	if key=="guide":
 		_open_guide()
 		return
+	if key=="graphics":
+		_open_graphics()
+		return
 	_launching = true
 	get_tree().root.set_meta(LAUNCH_KEY,key)
 	if get_tree().change_scene_to_file(BATTLE) != OK:
@@ -130,6 +139,8 @@ func _launch(key: String) -> void:
 
 
 func _process(delta: float) -> void:
+	if GraphicsQuality.mode()==0 or (_editor!=null and _editor.visible) or (_guide!=null and _guide.visible) or (_picker!=null and _picker.visible) or (_graphics!=null and _graphics.visible):
+		return
 	_elapsed += delta
 	_frame()
 
@@ -202,3 +213,13 @@ func _open_guide() -> void:
 		_guide=FieldGuideDialog.new()
 		add_child(_guide)
 	_guide.open("Back to home")
+
+
+func _open_graphics() -> void:
+	if _graphics==null:
+		_graphics=GraphicsDialog.new()
+		add_child(_graphics)
+		_graphics.quality_changed.connect(func() -> void:
+			GraphicsQuality.apply(get_viewport())
+			_atmosphere.configure(_title_board,"silent_tower"))
+	_graphics.open()

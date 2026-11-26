@@ -52,6 +52,8 @@ func can_stand(p: Vector2, radius: float) -> bool:
 ## searches look) are cached. Off-lattice points are computed each time.
 var _stand_cache := {}
 var _mult_cache := {}
+var _height_cache := {}
+var static_step_cache := {}
 ## Bot distance fields by target node (see MovePlanner.distance_field).
 var field_cache := {}
 var has_ground_profiles := false
@@ -116,8 +118,14 @@ func surface_at(p: Vector2) -> TerrainPiece:
 
 
 func height_at(p: Vector2) -> float:
+	var key: Variant=_key(p)
+	if key!=null and _height_cache.has(key):
+		return _height_cache[key]
 	var piece := surface_at(p)
-	return piece.surface_height(p) if piece != null else 0.0
+	var height := piece.surface_height(p) if piece!=null else 0.0
+	if key!=null:
+		_height_cache[key]=height
+	return height
 
 
 func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
@@ -141,4 +149,6 @@ func invalidate_terrain() -> void:
 		has_ramps = has_ramps or piece.ramp
 	_stand_cache.clear()
 	_mult_cache.clear()
+	_height_cache.clear()
+	static_step_cache.clear()
 	field_cache.clear()

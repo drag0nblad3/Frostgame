@@ -42,8 +42,9 @@ func open(n: Vector2i) -> bool:
 	var p := to_pos(n)
 	if not board.can_stand(p, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, p):
 		return false
+	var height := board.height_at(p)
 	for o in others:
-		if absf(o.elevation - board.height_at(p)) < 0.5:
+		if absf(o.elevation - height) < 0.5:
 			var distance := o.pos.distance_to(p)
 			if distance < Contact.OVERLAP:
 				return false
@@ -59,17 +60,23 @@ func stops(n: Vector2i) -> bool:
 	var p := to_pos(n)
 	if mover.side >= 0 and not IllusionRules.phantom(mover) and ScenarioColumns.contact(board, p) != null:
 		return true
+	var height := board.height_at(p)
 	for o in others:
-		if o.side != mover.side and absf(o.elevation - board.height_at(p)) < 0.5 and Contact.touching(o.pos, p):
+		if o.side != mover.side and absf(o.elevation - height) < 0.5 and Contact.touching(o.pos, p):
 			return true
 	return false
 
 
 ## Cost in inches of stepping a→b: rough terrain counts double.
 func step_cost(a: Vector2i, b: Vector2i) -> float:
-	var pa := to_pos(a)
-	var pb := to_pos(b)
-	return segment_cost(pa, pb)
+	if mover==null and others.is_empty():
+		var key := Vector4i(a.x,a.y,b.x,b.y)
+		if board.static_step_cache.has(key):
+			return board.static_step_cache[key]
+		var cost := segment_cost(to_pos(a),to_pos(b))
+		board.static_step_cache[key]=cost
+		return cost
+	return segment_cost(to_pos(a),to_pos(b))
 
 
 func segment_cost(pa: Vector2, pb: Vector2) -> float:

@@ -19,10 +19,10 @@ static func build(board: Board, scenario: String, cinematic: bool = false) -> No
 		var district := Node3D.new()
 		district.name="District%d"%side
 		root.add_child(district)
-		for layer in 2:
+		for layer in GraphicsQuality.city_rings():
 			var distance := (8.0 if cinematic else 12.0)+layer*12.0
 			var length := board.size.x if side % 2 == 0 else board.size.y
-			var count := maxi(3, floori(length/5.5)+layer*2)
+			var count := maxi(3, floori(length/(7.5 if GraphicsQuality.mode()==0 else 5.5))+layer*2)
 			for i in count:
 				var seed := side*137+i*53+layer*211
 				var offset := (float(i)+0.5)*length/count
@@ -35,7 +35,8 @@ static func build(board: Board, scenario: String, cinematic: bool = false) -> No
 				var w := 2.5+float(posmod(seed,5))*0.30
 				var d := 2.8+float(posmod(seed,7))*0.21
 				_building(district,at,ground_y,h,w,d,tone,seed)
-				DistrictArchitecture.finish(district,at,ground_y,h,w,d,tone,seed)
+				if GraphicsQuality.mode()>0:
+					DistrictArchitecture.finish(district,at,ground_y,h,w,d,tone,seed)
 		EnvironmentDressing.outskirts_side(district,board,scenario,ground_y,side)
 		MiniatureBatch.bake(district)
 		for child in district.get_children():
