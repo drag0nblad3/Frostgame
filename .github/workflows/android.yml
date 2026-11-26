@@ -95,8 +95,11 @@ jobs:
           test -s build/Frostgame.apk
           ! grep -E "SCRIPT ERROR|Parse Error|Export failed" "$RUNNER_TEMP/export.log"
           "$ANDROID_HOME/build-tools/$BUILD_TOOLS/apksigner" verify --verbose build/Frostgame.apk
-          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/aapt" dump badging build/Frostgame.apk
+          # The legacy aapt badging parser rejects boolean manifest attributes in Godot 4.5.
+          "$ANDROID_HOME/build-tools/$BUILD_TOOLS/aapt" dump xmltree build/Frostgame.apk AndroidManifest.xml > "$RUNNER_TEMP/manifest.txt"
+          grep -F "io.github.drag0nblad3.frostgame" "$RUNNER_TEMP/manifest.txt"
           unzip -Z1 build/Frostgame.apk > "$RUNNER_TEMP/apk-files.txt"
+          grep -F "assets/data/" "$RUNNER_TEMP/apk-files.txt"
           grep -Fxq 'assets/data/figures.json' "$RUNNER_TEMP/apk-files.txt"
           grep -Fxq 'assets/data/scenarios/underground_library.json' "$RUNNER_TEMP/apk-files.txt"
       - uses: actions/upload-artifact@v4
