@@ -43,6 +43,14 @@ func _run() -> void:
 		_fail("Field guide unavailable")
 		return
 	scene._guide.hide()
+	scene._camera_preset(1)
+	if scene._rig.pitch < deg_to_rad(80.0):
+		_fail("Overhead preset did not change camera")
+		return
+	scene._camera_preset(0)
+	if scene._rig.pitch > deg_to_rad(60.0):
+		_fail("Tabletop preset did not restore camera")
+		return
 	scene.player_input.available.assign(["items"])
 	scene.player_input.item_options.assign(["weapon_staff"])
 	scene.player_input.action("items")

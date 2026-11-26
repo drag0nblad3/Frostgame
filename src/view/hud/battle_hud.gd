@@ -15,6 +15,7 @@ signal briefing_pressed
 signal inspect_pressed
 signal guide_pressed
 signal atmosphere_toggled
+signal camera_requested(mode: int)
 signal training_requested
 signal training_next
 signal training_retry
@@ -65,6 +66,7 @@ func _ready() -> void:
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(top)
 	_status = _label(20)
+	_status.modulate = Color(1.0, 0.94, 0.80)
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	top.add_child(_status)
@@ -80,7 +82,7 @@ func _ready() -> void:
 	_menu.text = "Menu"
 	_menu.custom_minimum_size = Vector2(90, 48)
 	var popup := _menu.get_popup()
-	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle", "Scenario briefing", "Combat log", "How to play", "Toggle extra tips", "Training battle", "Toggle snowfall"]:
+	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle", "Scenario briefing", "Combat log", "How to play", "Toggle extra tips", "Training battle", "Toggle snowfall", "Frame battlefield", "Overhead view", "Focus active figure"]:
 		popup.add_item(label_text)
 	popup.id_pressed.connect(_menu_action)
 	top.add_child(_menu)
@@ -102,6 +104,7 @@ func _ready() -> void:
 	top.add_child(inspect)
 	_blocks.append(top)
 	_objective = _label(16)
+	_objective.modulate = Color(0.85, 0.90, 0.94)
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_objective)
 	_toast = _label(17)
@@ -289,6 +292,9 @@ func _menu_action(id: int) -> void:
 			notify("Extra rules tips %s." % ("on" if _tips_enabled else "off"))
 		9: training_requested.emit()
 		10: atmosphere_toggled.emit()
+		11: camera_requested.emit(0)
+		12: camera_requested.emit(1)
+		13: camera_requested.emit(2)
 
 
 func select_scenario(id: String) -> void:

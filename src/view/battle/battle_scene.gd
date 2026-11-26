@@ -68,6 +68,7 @@ func _ready() -> void:
 	hud.atmosphere_toggled.connect(func() -> void:
 		_atmosphere.set_effects(not _atmosphere.enabled)
 		hud.notify("Snow effects %s." % ("on" if _atmosphere.enabled else "off")))
+	hud.camera_requested.connect(_camera_preset)
 	hud.training_requested.connect(_confirm_training)
 	hud.training_next.connect(_next_training)
 	hud.training_retry.connect(func() -> void:
@@ -131,6 +132,18 @@ func _leave_training() -> void:
 	_scenario_id = SCENARIO
 	hud.select_scenario(SCENARIO)
 	new_game(0)
+
+
+func _camera_preset(mode: int) -> void:
+	if controller == null:
+		return
+	var s := controller.state
+	if mode == 2:
+		var f := s.active()
+		if f != null:
+			_rig.focus_figure(TableSpace.to_world(f.pos, f.elevation + 0.7))
+			return
+	_rig.frame_board(s.board.size, mode == 1)
 
 
 func _open_inspector() -> void:
