@@ -24,8 +24,14 @@ func pick(n: int) -> int:
 
 ## Chance (0..1) that d20 + `mod` beats d20 + `opp_mod` outright (ties excluded).
 static func chance_win(mod: int, opp_mod: int) -> float:
-	# Count pairs where a - b > opp_mod - mod; a difference d occurs 20 - |d| ways.
-	var wins := 0
-	for d in range(maxi(opp_mod - mod + 1, -19), 20):
-		wins += 20 - absi(d)
-	return wins / 400.0
+	# Closed form of the same triangular d20 difference distribution.
+	var delta := mod-opp_mod
+	if delta>=20:
+		return 1.0
+	if delta<=-19:
+		return 0.0
+	if delta<=0:
+		var n := 19+delta
+		return float(n*(n+1))/800.0
+	var losses := 20-delta
+	return 1.0-float(losses*(losses+1))/800.0

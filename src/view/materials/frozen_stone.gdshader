@@ -8,6 +8,7 @@ uniform bool blind_arches = false;
 uniform vec2 footprint_origin = vec2(0.0);
 uniform vec2 footprint_size = vec2(36.0);
 uniform bool city_paving = false;
+uniform bool battle_boundary = false;
 uniform bool walkable_roof = false;
 uniform float building_height = 4.0;
 varying vec3 world_pos;
@@ -93,7 +94,18 @@ void fragment() {
 		float crack = (1.0-smoothstep(0.010,0.035,fracture))*smoothstep(0.54,0.72,noise2(vec2(u,world_pos.y)*0.54));
 		rock *= 1.0-crack*0.62;
 	}
-	ALBEDO = mix(rock, ice, snow * 0.90);
+	vec3 surface_color = mix(rock, ice, snow * 0.90);
+	if (ground && battle_boundary && top) {
+		// The playable extent is marked by a thin inlaid stone band, not a raised frame.
+		vec2 p_edge = min(horizontal, footprint_size-horizontal);
+		float boundary = min(p_edge.x,p_edge.y);
+		float band = 1.0-smoothstep(0.035,0.10,abs(boundary));
+		surface_color = mix(surface_color,vec3(0.37,0.40,0.43),band*0.78);
+		// Subtle distinction outside the combat area without an abrupt material seam.
+		float beyond = 1.0-smoothstep(-3.0,-0.15,boundary);
+		surface_color *= 1.0-beyond*0.12;
+	}
+	ALBEDO = surface_color;
 	ROUGHNESS = mix(0.93, 0.64, snow);
 	SPECULAR = mix(0.21, 0.33, snow);
 }

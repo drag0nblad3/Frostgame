@@ -13,8 +13,9 @@ var enabled := true
 func _ready() -> void:
 	_sun = DirectionalLight3D.new()
 	_sun.rotation_degrees = Vector3(-48, 37, 0)
-	_sun.shadow_enabled = true
-	_sun.directional_shadow_max_distance = 65.0
+	_sun.shadow_enabled = GraphicsQuality.mode()>0
+	_sun.directional_shadow_max_distance = maxf(1.0,GraphicsQuality.shadow_distance())
+	_sun.directional_shadow_mode=DirectionalLight3D.SHADOW_ORTHOGONAL if GraphicsQuality.mode()<2 else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	add_child(_sun)
 	_fill = DirectionalLight3D.new()
 	_fill.rotation_degrees = Vector3(-32, -142, 0)
@@ -55,7 +56,10 @@ func _ready() -> void:
 
 func configure(board: Board, scenario: String = "") -> void:
 	var palette := VisualPalette.for_scenario(board.id if scenario.is_empty() else scenario)
-	var count := int(palette.get("flakes", 96))
+	var count := GraphicsQuality.snow_count(int(palette.get("flakes",96)))
+	_sun.shadow_enabled=GraphicsQuality.mode()>0
+	_sun.directional_shadow_max_distance=maxf(1.0,GraphicsQuality.shadow_distance())
+	_sun.directional_shadow_mode=DirectionalLight3D.SHADOW_ORTHOGONAL if GraphicsQuality.mode()<2 else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
 	_outdoors = count > 0
 	_environment.background_color = Color(str(palette.get("sky", "233849")))
 	_fill.light_color = Color(str(palette.get("fill", "9dc7ec")))

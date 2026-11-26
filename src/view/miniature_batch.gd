@@ -50,6 +50,10 @@ static func _append(group: Dictionary, arrays: Array, at: Transform3D, color: Co
 	var normals: PackedVector3Array = group["normals"]
 	var colors: PackedColorArray = group["colors"]
 	var indices: PackedInt32Array = group["indices"]
+	# Release dictionary references during append so packed arrays do not
+	# detach/copy their entire accumulated contents for each small primitive.
+	for key in ["vertices","normals","colors","indices"]:
+		group.erase(key)
 	var source: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 	var source_normals: PackedVector3Array = arrays[Mesh.ARRAY_NORMAL]
 	var offset := vertices.size()

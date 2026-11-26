@@ -31,6 +31,8 @@ func setup(f: Figure, _side_name: String) -> void:
 	cyl.top_radius = Figure.BASE_RADIUS
 	cyl.bottom_radius = Figure.BASE_RADIUS
 	cyl.height = 0.12
+	cyl.radial_segments=24
+	cyl.rings=0
 	_base.mesh = cyl
 	_base.position.y = 0.06
 	add_child(_base)
@@ -39,6 +41,8 @@ func setup(f: Figure, _side_name: String) -> void:
 	var torus := TorusMesh.new()
 	torus.inner_radius = 0.55
 	torus.outer_radius = 0.7
+	torus.rings=24
+	torus.ring_segments=6
 	_ring.mesh = torus
 	_ring.material_override = BoardView._mat(Color(1, 0.95, 0.4), 0.3)
 	_ring.position.y = 0.08
@@ -50,16 +54,23 @@ func setup(f: Figure, _side_name: String) -> void:
 	_health_track.mesh = health_bar
 	_health_track.material_override = BoardView._mat(Color(0.09, 0.12, 0.16), 0.8)
 	_health_track.position = Vector3(0, 0.10, 0.46)
+	_health_track.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_ring.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_base.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_health_track)
 	_health_fill = MeshInstance3D.new()
 	_health_fill.mesh = health_bar
 	_health_fill.position = Vector3(0, 0.133, 0.46)
+	_health_fill.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(_health_fill)
 	_shield_ring = MeshInstance3D.new()
 	var ward := TorusMesh.new()
 	ward.inner_radius = 0.46
 	ward.outer_radius = 0.51
+	ward.rings=24
+	ward.ring_segments=6
 	_shield_ring.mesh = ward
+	_shield_ring.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	var ward_mat := BoardView._mat(Color(0.23, 0.72, 0.98), 0.35)
 	ward_mat.emission_enabled = true
 	ward_mat.emission = Color(0.15, 0.52, 0.86)
@@ -79,7 +90,9 @@ func setup(f: Figure, _side_name: String) -> void:
 
 func refresh(f: Figure) -> void:
 	var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
-	_base.material_override = BoardView._mat(color.darkened(0.12), 0.62)
+	var base_color := color.darkened(0.12)
+	if _base.material_override==null or _base.material_override.albedo_color!=base_color:
+		_base.material_override = BoardView._mat(base_color,0.62)
 	_profile=MiniatureMotion.profile(f)
 	_weapon=f.melee.id if f.melee!=null else ""
 	_ranged=f.ranged.id if f.ranged!=null else ""
@@ -111,7 +124,9 @@ func refresh(f: Figure) -> void:
 	var ratio := clampf(float(f.health) / maxf(1.0, float(f.def.health)), 0.0, 1.0)
 	_health_fill.scale.x = maxf(0.01, ratio)
 	_health_fill.position.x = -0.41 * (1.0 - ratio)
-	_health_fill.material_override = BoardView._mat(Color(0.31, 0.75, 0.47) if ratio > 0.5 else Color(0.95, 0.49, 0.23), 0.7)
+	var health_color := Color(0.31,0.75,0.47) if ratio>0.5 else Color(0.95,0.49,0.23)
+	if _health_fill.material_override==null or _health_fill.material_override.albedo_color!=health_color:
+		_health_fill.material_override=BoardView._mat(health_color,0.7)
 	_shield_ring.visible = f.elemental_shield > 0 or f.spell_effects.has("shield")
 	var suffix := " · Illusion" if phantom else (" · Invisible" if transparent else "")
 	var status := " · Loot" if f.treasure_id >= 0 else ""

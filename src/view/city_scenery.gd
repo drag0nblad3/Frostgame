@@ -1,7 +1,7 @@
 class_name CityScenery
 extends RefCounted
-## Noninteractive district beyond the battlefield. Roofs stay below table level
-## in battle so no decorative geometry can hide the playable area.
+## Noninteractive city on the same street level as the playable battlefield.
+## Foreground districts are hidden only during low-angle outside camera views.
 
 
 static func build(board: Board, scenario: String, cinematic: bool = false) -> Node3D:
@@ -11,17 +11,18 @@ static func build(board: Board, scenario: String, cinematic: bool = false) -> No
 		return root
 	var palette := VisualPalette.for_scenario(scenario)
 	var sky := Color(str(palette.get("sky","233849")))
-	var center := board.size * 0.5
-	var ground_y := -7.5
-	var floor_color := sky.lerp(Color(0.59,0.69,0.75),0.40)
-	MiniatureFactory.box(root,TableSpace.to_world(center,ground_y-0.15),Vector3(board.size.x+65,0.3,board.size.y+65),floor_color)
-	# Two irregular rings of miniature districts. A clear moat of space
-	# separates their roofs from the playable terrain border.
-	for layer in 2:
-		var distance := 7.0+layer*12.0
-		for side in 4:
+	var ground_y := 0.008
+	var floor_color := Color(str(palette.get("floor","687781"))).lerp(sky,0.18)
+	# Four batched districts. Wide streets and low near-edge props preserve
+	# battlefield sightlines without dropping the surrounding ground.
+	for side in 4:
+		var district := Node3D.new()
+		district.name="District%d"%side
+		root.add_child(district)
+		for layer in GraphicsQuality.city_rings():
+			var distance := (8.0 if cinematic else 12.0)+layer*12.0
 			var length := board.size.x if side % 2 == 0 else board.size.y
-			var count := maxi(3, floori(length/5.5)+layer*2)
+			var count := maxi(3, floori(length/(7.5 if GraphicsQuality.mode()==0 else 5.5))+layer*2)
 			for i in count:
 				var seed := side*137+i*53+layer*211
 				var offset := (float(i)+0.5)*length/count
@@ -33,13 +34,14 @@ static func build(board: Board, scenario: String, cinematic: bool = false) -> No
 					h += 2.0+float(posmod(seed,7))*0.35
 				var w := 2.5+float(posmod(seed,5))*0.30
 				var d := 2.8+float(posmod(seed,7))*0.21
-				_building(root,at,ground_y,h,w,d,tone,seed)
-				DistrictArchitecture.finish(root,at,ground_y,h,w,d,tone,seed)
-	EnvironmentDressing.outskirts(root,board,scenario,ground_y)
-	MiniatureBatch.bake(root)
-	for child in root.get_children():
-		if child is MeshInstance3D:
-			child.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				_building(district,at,ground_y,h,w,d,tone,seed)
+				if GraphicsQuality.mode()>0:
+					DistrictArchitecture.finish(district,at,ground_y,h,w,d,tone,seed)
+		EnvironmentDressing.outskirts_side(district,board,scenario,ground_y,side)
+		MiniatureBatch.bake(district)
+		for child in district.get_children():
+			if child is MeshInstance3D:
+				child.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return root
 
 
@@ -72,3 +74,15 @@ static func _building(root: Node3D, at: Vector2, ground: float, h: float, w: flo
 			for j in 2:
 				MiniatureFactory.box(root,Vector3(at.x+(j-0.5)*w*0.48,y,at.y+side*d*0.5),Vector3(0.30,0.61,0.035),stone.darkened(0.28))
 				MiniatureFactory.box(root,Vector3(at.x+side*w*0.5,y,at.y+(j-0.5)*d*0.48),Vector3(0.035,0.61,0.30),stone.darkened(0.28))
+
+
+static func update_foreground(root: Node3D,camera: Vector3,size: Vector2) -> void:
+	var center := Vector3(size.x*0.5,0,size.y*0.5)
+	var offset := camera-center
+	var low := camera.y < Vector2(offset.x,offset.z).length()*0.62
+	for side in 4:
+		var district := root.get_node_or_null("District%d"%side) as Node3D
+		if district==null:
+			continue
+		var near := (side==0 and camera.z<0) or (side==1 and camera.x>size.x) or (side==2 and camera.z>size.y) or (side==3 and camera.x<0)
+		district.visible=not (low and near)

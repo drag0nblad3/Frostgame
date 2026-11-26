@@ -29,6 +29,7 @@ static func floor_surface(board: Board, scenario: String = "") -> MeshInstance3D
 	var mat := material(Color(str(palette.get("floor", "687781"))), true)
 	mat.set_shader_parameter("snow_amount", float(palette.get("snow", 0.86)))
 	mat.set_shader_parameter("footprint_size",board.size)
+	mat.set_shader_parameter("battle_boundary",true)
 	mat.set_shader_parameter("city_paving",scenario not in ["underground_library","worm_hunts","training_yard"] and board.id not in ["underground_library","worm_hunts","training_yard"])
 	node.material_override = mat
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

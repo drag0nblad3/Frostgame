@@ -6,7 +6,7 @@ var _scenario_id := SCENARIO
 var _active_scenario_id := SCENARIO
 var _briefing: ScenarioDialog
 var _inspector: FigureInspector
-var _guide: AcceptDialog
+var _guide: FieldGuideDialog
 var _training := -1
 var _training_complete := false
 var _training_failed := false
@@ -24,6 +24,8 @@ var player_input: BattleInput
 var _markers: BattleMarkers
 var _sites: ScenarioMarkers
 var _dirty := true
+var _terrain_pending := false
+var _graphics: GraphicsDialog
 var _roster: Dictionary = {}
 var _setup: WarbandSetup
 var _campaign := CampaignProgress.new()
@@ -41,6 +43,7 @@ var _picker: SkirmishPicker
 
 
 func _ready() -> void:
+	GraphicsQuality.apply(get_viewport())
 	_figures = FigureDb.load_files()
 	_terrain = TerrainDb.load_file()
 	_atmosphere = BattleAtmosphere.new()
@@ -68,6 +71,7 @@ func _ready() -> void:
 	add_child(_inspector)
 	hud.inspect_pressed.connect(_open_inspector)
 	hud.guide_pressed.connect(_open_guide)
+	hud.graphics_requested.connect(_open_graphics)
 	hud.atmosphere_toggled.connect(func() -> void:
 		_atmosphere.set_effects(not _atmosphere.enabled)
 		hud.notify("Snow effects %s." % ("on" if _atmosphere.enabled else "off")))
@@ -201,25 +205,14 @@ func _open_inspector() -> void:
 
 
 func _open_guide() -> void:
-	if _guide == null:
-		_guide = AcceptDialog.new()
-		_guide.title = "Field guide"
-		_guide.exclusive = true
-		_guide.theme = BattleTheme.create()
-		var body := RichTextLabel.new()
-		body.text = FieldGuide.OVERVIEW
-		body.fit_content = false
-		body.scroll_active = true
-		body.add_theme_font_size_override("normal_font_size", 20)
-		var viewport := PhoneSafeArea.safe_rect(get_viewport(),14).size
-		body.custom_minimum_size = Vector2(minf(600, viewport.x * 0.78), minf(380, viewport.y * 0.60))
-		_guide.add_child(body)
+	if _guide==null:
+		_guide=FieldGuideDialog.new()
 		add_child(_guide)
-	PhoneSafeArea.popup_dialog(_guide)
+	_guide.open("Return to battle")
 
 
 func _info_open() -> bool:
-	return (_picker != null and _picker.visible) or (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
+	return (_graphics!=null and _graphics.visible) or (_picker != null and _picker.visible) or (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
 
 
 func _open_briefing(start: bool) -> void:
@@ -249,6 +242,7 @@ func new_game(seed_value: int) -> void:
 
 func _attach_battle(c: GameController, start: bool) -> void:
 	if player != null:
+		remove_child(player)
 		player.queue_free()
 	_markers.clear()
 	auto_play = false
@@ -357,8 +351,9 @@ func _human_turn() -> bool:
 
 
 func _on_event(event: GameEvent) -> void:
-	if event.type == "terrain_changed":
-		_board_view.build(controller.state.board)
+	if event.type == "terrain_changed" and not _terrain_pending:
+		_terrain_pending=true
+		call_deferred("_sync_terrain")
 	_dirty = true
 
 
@@ -549,3 +544,19 @@ func _notification(what: int) -> void:
 	if what==NOTIFICATION_WM_GO_BACK_REQUEST and is_instance_valid(player):
 		if not _info_open() and (_setup==null or not _setup.visible) and (_campaign_dialog==null or not _campaign_dialog.visible):
 			_confirm_title()
+
+
+func _sync_terrain() -> void:
+	_terrain_pending=false
+	if is_inside_tree() and controller!=null:
+		_board_view.sync_terrain(controller.state.board)
+
+
+func _open_graphics() -> void:
+	if _graphics==null:
+		_graphics=GraphicsDialog.new()
+		add_child(_graphics)
+		_graphics.quality_changed.connect(func() -> void:
+			GraphicsQuality.apply(get_viewport())
+			_atmosphere.configure(controller.state.board,_active_scenario_id))
+	_graphics.open()

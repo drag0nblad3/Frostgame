@@ -14,7 +14,10 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_studio = SubViewport.new()
 	_studio.own_world_3d = true
-	_studio.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+	_studio.render_target_update_mode = SubViewport.UPDATE_ONCE
+	stretch_shrink=2 if GraphicsQuality.mode()<2 else 1
+	visibility_changed.connect(_request_frame)
+	resized.connect(_request_frame)
 	_studio.size = Vector2i(300, 300)
 	add_child(_studio)
 	var room := Node3D.new()
@@ -73,6 +76,7 @@ func set_figure(f: Figure, color: Color, school: String = "") -> void:
 		_camera.size = maxf(2.10, maxf(height * 1.35, maxf(box.size.x, box.size.z) * 1.8))
 		var target := Vector3(0, maxf(0.38, center.y - 0.06), 0)
 		_camera.look_at_from_position(target + Vector3(2.5, 1.15, -4.4), target)
+	_request_frame()
 
 
 func _bounds(node: Node3D, transform: Transform3D) -> AABB:
@@ -93,7 +97,14 @@ func _bounds(node: Node3D, transform: Transform3D) -> AABB:
 func _drag(event: InputEvent) -> void:
 	if event is InputEventMouseMotion and event.button_mask & MOUSE_BUTTON_MASK_LEFT:
 		_turntable.rotation.y += event.relative.x * 0.012
+		_request_frame()
 		accept_event()
 	elif event is InputEventScreenDrag:
 		_turntable.rotation.y += event.relative.x * 0.012
+		_request_frame()
 		accept_event()
+
+
+func _request_frame() -> void:
+	if is_instance_valid(_studio) and is_visible_in_tree():
+		_studio.render_target_update_mode=SubViewport.UPDATE_ONCE

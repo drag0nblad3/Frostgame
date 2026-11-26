@@ -49,8 +49,9 @@ func _run() -> void:
 		_fail("Inspector miniature preview missing")
 		return
 	scene._inspector.hide()
+	var before_guide: GameController=scene.controller
 	scene._open_guide()
-	if not scene._guide.visible:
+	if not scene._guide.visible or scene.controller!=before_guide or scene._guide._body.text.is_empty():
 		_fail("Field guide unavailable")
 		return
 	scene._guide.hide()

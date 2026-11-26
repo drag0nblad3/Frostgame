@@ -172,4 +172,5 @@ static func cylinder(model: Node3D, pos: Vector3, top: float, bottom: float, hei
 	shape.bottom_radius = bottom
 	shape.height = height
 	shape.radial_segments = 10
+	shape.rings=0
 	return mesh(model, shape, pos, color)

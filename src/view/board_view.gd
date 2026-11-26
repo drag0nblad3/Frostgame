@@ -11,46 +11,126 @@ const COLORS := {
 
 var scenario_id := ""
 var cinematic := false
+var _scenery: Node3D
+var _board_size := Vector2.ZERO
+var _board: Board
+var _pieces := {}
+var _decoration: Node3D
+var _ground: Node3D
+var _floor: MeshInstance3D
+var _ground_key := ""
+var _decoration_key := ""
+var _camera_at := Vector3(INF,INF,INF)
+
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(_scenery):
+		return
+	var camera := get_viewport().get_camera_3d()
+	if camera!=null and camera.global_position!=_camera_at:
+		_camera_at=camera.global_position
+		CityScenery.update_foreground(_scenery,_camera_at,_board_size)
 
 
 func build(board: Board) -> void:
+	# New encounter only. In-battle terrain changes use sync_terrain().
 	for c in get_children():
 		remove_child(c)
 		c.queue_free()
-	var top := MeshInstance3D.new()
-	var slab := BoxMesh.new()
-	slab.size = Vector3(board.size.x, 0.5, board.size.y)
-	top.mesh = slab
-	top.material_override = _mat(Color(0.74, 0.79, 0.86), 0.9)
-	top.position = TableSpace.to_world(board.size * 0.5, GroundMesh.bottom(board)-0.25)
-	add_child(top)
-	add_child(StoneFinish.floor_surface(board, scenario_id))
-	TerrainDressing.slab_frame(self, board)
-	add_child(CityScenery.build(board,board.id if scenario_id.is_empty() else scenario_id,cinematic))
+	_pieces.clear()
+	_board=board
+	_ground=null
+	_floor=null
+	_decoration=null
+	_ground_key=""
+	_decoration_key=""
+	_camera_at=Vector3(INF,INF,INF)
+	var scenario := board.id if scenario_id.is_empty() else scenario_id
+	_scenery=CityScenery.build(board,scenario,cinematic)
+	add_child(_scenery)
+	_board_size=board.size
+	set_process(not cinematic)
+	sync_terrain(board)
+
+
+func sync_terrain(board: Board) -> void:
+	if board!=_board:
+		build(board)
+		return
+	var scenario := board.id if scenario_id.is_empty() else scenario_id
+	var ground_parts: Array[String]=[]
+	var static_parts: Array[String]=[]
+	var live := {}
 	for piece in board.pieces:
+		var key := _piece_key(piece)
 		if piece.kind.ground_surface:
-			continue
-		match piece.kind.id:
-			"rubble":
-				TerrainDressing.rubble(self, piece)
-			"museum_statue":
-				TerrainDressing.statue(self, piece)
-			"temple_column":
-				TerrainDressing.column(self, piece)
-			"library_shelf":
-				SiteArt.shelf(self, piece)
-			"arcane_disc", "dreams_well":
-				add_child(_piece(piece))
-				TabletopDetails.decorate(self, piece)
-				SiteArt.surface(self, piece, piece.kind.id == "dreams_well")
-			_:
-				add_child(_piece(piece))
-				TabletopDetails.decorate(self, piece)
-				if piece.kind.id in ["ruin", "tower", "wall", "platform", "hut_wall", "null_annex", "null_walk", "null_lower", "null_middle", "null_upper"]:
-					RuinSilhouette.decorate(self, piece)
-				if board.id == "mausoleum" and piece.kind.id == "ruin" and piece.rect.has_point(board.size * 0.5):
-					SiteArt.crypt(self, piece)
-	add_child(EnvironmentDressing.build(board,board.id if scenario_id.is_empty() else scenario_id))
+			ground_parts.append(key)
+		else:
+			live[piece]=key
+		if piece.cast_turn<0 and not piece.kind.id.begins_with("spell_"):
+			static_parts.append(key)
+	var ground_key := str(ground_parts)
+	if _floor==null or _ground_key!=ground_key:
+		_remove(_floor)
+		_remove(_ground)
+		_floor=StoneFinish.floor_surface(board,scenario)
+		_ground=DistrictGround.build(board,_floor.material_override)
+		add_child(_ground)
+		add_child(_floor)
+		_ground_key=ground_key
+	for piece in _pieces.keys():
+		if not live.has(piece) or _pieces[piece]["key"]!=live[piece]:
+			_remove(_pieces[piece]["node"])
+			_pieces.erase(piece)
+	for piece in live:
+		if not _pieces.has(piece):
+			var root := Node3D.new()
+			root.name="Terrain_"+piece.kind.id
+			_build_piece(root,board,piece)
+			_pieces[piece]={"node":root,"key":live[piece]}
+			add_child(root)
+	var deco_key := str(static_parts)
+	if _decoration==null or _decoration_key!=deco_key:
+		_remove(_decoration)
+		_decoration=EnvironmentDressing.build(board,scenario)
+		add_child(_decoration)
+		_decoration_key=deco_key
+
+
+func _remove(node: Node) -> void:
+	if is_instance_valid(node):
+		remove_child(node)
+		node.queue_free()
+
+
+static func _piece_key(p: TerrainPiece) -> String:
+	return str([p.kind.id,p.kind.height,p.rect,p.circular,p.ramp,p.ramp_rotated,p.ramp_start,p.ramp_end,p.level])
+
+
+func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
+	match piece.kind.id:
+		"rubble":
+			TerrainDressing.rubble(root,piece)
+		"museum_statue":
+			TerrainDressing.statue(root,piece)
+		"temple_column":
+			TerrainDressing.column(root,piece)
+		"library_shelf":
+			SiteArt.shelf(root,piece)
+		"arcane_disc","dreams_well":
+			root.add_child(_piece(piece))
+			TabletopDetails.decorate(root,piece)
+			SiteArt.surface(root,piece,piece.kind.id=="dreams_well")
+		_:
+			root.add_child(_piece(piece))
+			TabletopDetails.decorate(root,piece)
+			if piece.kind.id in ["ruin","tower","wall","platform","hut_wall","null_annex","null_walk","null_lower","null_middle","null_upper"]:
+				RuinSilhouette.decorate(root,piece)
+			if board.id=="mausoleum" and piece.kind.id=="ruin" and piece.rect.has_point(board.size*0.5):
+				SiteArt.crypt(root,piece)
+	# Rubble is otherwise dozens of individual shadow-casting meshes.
+	if piece.kind.id=="rubble":
+		MiniatureBatch.bake(root)
 
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:
