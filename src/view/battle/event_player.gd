@@ -52,6 +52,8 @@ func _play(e: GameEvent) -> void:
 			add_child(v)
 			v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 			views[f.id] = v
+		"layered_move":
+			_animate_layered_move(_view(d["id"]),d["path"])
 		"move", "push_back", "force_combat":
 			_animate_move(_view(d["id"]), d["path"])
 		"terrain_fall":
@@ -130,6 +132,20 @@ func _wait_for(t: Tween) -> void:
 	_busy = true
 	t.set_speed_scale(speed)
 	t.finished.connect(func() -> void: _busy = false)
+
+
+func _animate_layered_move(v: FigureView,path: PackedVector3Array) -> void:
+	if path.size()<2:
+		return
+	v.begin_move()
+	var t := create_tween()
+	for i in range(1,path.size()):
+		var destination := path[i]
+		var duration := maxf(0.01,path[i-1].distance_to(destination)*0.06)
+		t.tween_callback(v.face_toward.bind(destination))
+		t.tween_property(v,"position",destination,duration)
+	t.tween_callback(v.end_move)
+	_wait_for(t)
 
 
 func _animate_move(v: FigureView, path: PackedVector2Array) -> void:

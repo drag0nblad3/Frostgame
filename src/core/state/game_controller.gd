@@ -83,7 +83,18 @@ func can_move() -> bool:
 
 
 ## Where the active figure could go with its next movement action.
+## Explicit experimental API; do not allow legacy two-dimensional moves on layered maps.
+func layered_reach() -> LayeredReach:
+	return LayeredMovement.reach(self)
+
+
+func move_on_floor(node: Vector3i) -> bool:
+	return LayeredMovement.move(self,node)
+
+
 func reach() -> MoveReach:
+	if not state.board.floor_layout.is_empty():
+		return MoveReach.new()
 	var f := state.active()
 	if f.spell_effects.has("plane_walk"):
 		return PlaneWalk.reach(state, f)

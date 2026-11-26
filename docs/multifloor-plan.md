@@ -12,7 +12,10 @@ fixture, deliberately not selectable for campaign play yet.
 
 Current limitations: connections are atomic movement edges, not partial climbs;
 floor surfaces and solids are separately authored; no general floor-aware AI,
-magic, displacement, controller commit, input or rendering is wired yet.
+magic, displacement, input or rendering is wired yet. GameController exposes
+experimental layered_reach/move_on_floor methods which consume a normal move
+action, persist the selected surface and emit a 3D movement path. Unsupported
+reaction/magic cases are rejected, and legacy move_to cannot act on layered boards.
 
 ## Current boundary
 

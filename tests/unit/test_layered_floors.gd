@@ -79,6 +79,36 @@ func test_treasure_and_checkpoint_keep_surface() -> void:
 		check_eq(loaded.state.board.floor_layout,b.floor_layout)
 
 
+func test_controller_commits_floor_move_and_action_cost() -> void:
+	var b := _board()
+	var layout := FloorLayout.from_dict(b.floor_layout)
+	var f := fig("thug",0,Vector2(2.5,8))
+	_place(f,layout,"stairs",f.pos)
+	var c := make_game(b,[f],Dice.new(1))
+	c.state.active_id=1
+	f.actions_left=2
+	var target := layout.node("upper",Vector2(5.5,8))
+	check(c.layered_reach().can_reach(target))
+	check(c.move_on_floor(target))
+	check_eq(f.surface_id,"upper")
+	check_eq(f.elevation,3.0)
+	check_eq(f.pos,Vector2(5.5,8))
+	check_eq(f.actions_left,1)
+	check_eq(f.moves_taken,1)
+	check_eq(MoveRules.allowance(f),3.0)
+	check(not c.move_to(MovePlanner.node_at(Vector2(6,8))),"legacy moves blocked")
+	check(not c.move_on_floor(layout.node("street",Vector2(5.5,8))),"no implicit floor switch")
+	check_eq(f.actions_left,1)
+	var event := c.history.back()
+	check_eq(event.type,"layered_move")
+	check_eq(event.data["surfaces"].back(),"upper")
+	var loaded := BattleSnapshot.rebuild(BattleSnapshot.capture(c),db())
+	check(loaded!=null)
+	if loaded!=null:
+		check_eq(loaded.state.active().surface_id,"upper")
+		check_eq(loaded.state.active().elevation,3.0)
+
+
 func test_invalid_floor_links_are_rejected() -> void:
 	var d := _board().floor_layout
 	d["links"].append({"from":["unknown",1,1],"to":["upper",8,8]})
