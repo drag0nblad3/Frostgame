@@ -87,7 +87,7 @@
     "name": "Bottle of Burrowing",
     "buy": 200,
     "sell": 80,
-    "live": false,
+    "live": true,
     "greater": false
   },
   "fairy_dust": {
@@ -180,7 +180,7 @@
     "name": "Ethereal Vacuum",
     "buy": 2000,
     "sell": 200,
-    "live": false,
+    "live": true,
     "greater": true,
     "ingredients": 800
   },
@@ -196,7 +196,7 @@
     "name": "Bottle of Null",
     "buy": 0,
     "sell": 200,
-    "live": false,
+    "live": true,
     "greater": true,
     "ingredients": 1000
   },

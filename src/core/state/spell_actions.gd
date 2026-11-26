@@ -379,7 +379,7 @@ func finish(health: int) -> bool:
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
 			var old_health := t.health
-			_shot(f, t, int(s.spell_catalog[id]["power"]), null, id == "elemental_bolt")
+			_shot(f, t, int(s.spell_catalog[id]["power"]), null, id == "elemental_bolt", id == "elemental_bolt")
 			if id == "poison_dart" and t.health < old_health:
 				c.poison(t)
 		"call_storm":
@@ -448,7 +448,7 @@ func _heal(t: Figure, amount: int) -> void:
 	c.emit("heal", {"id": t.id, "amount": t.health - old})
 
 
-func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false) -> void:
+func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true) -> void:
 	if not t.in_play() or t.spell_effects.has("plane_walk"):
 		return
 	var s := c.state
@@ -464,6 +464,8 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)
 	var dmg := Damage.amount(a, 0, t.effective_armour(), ar, s.critical_hits) if won else 0
+	if not magical and t.def.traits.has("immune_normal"):
+		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
 	if elemental:
@@ -487,6 +489,7 @@ func on_activate(f: Figure) -> void:
 
 func on_end_activation(f: Figure) -> void:
 	f.spell_effects.erase("potion_fire_breath")
+	f.spell_effects.erase("potion_burrowing")
 	f.petrified_skip = false
 	_resist_effect(f, "slow")
 	_resist_effect(f, "plague_of_insects")

@@ -11,7 +11,7 @@ static func record(f: Figure, turn: int) -> void:
 	f.last_plane_attempt = turn
 
 
-static func reach(s: GameState, f: Figure) -> MoveReach:
+static func reach(s: GameState, f: Figure, phased: bool = true) -> MoveReach:
 	var result := MoveReach.new()
 	result.start = f.pos
 	var allowance := MoveRules.allowance(f)
@@ -29,6 +29,17 @@ static func reach(s: GameState, f: Figure) -> MoveReach:
 				if other != f and other.in_play() and absf(other.elevation - s.board.height_at(at)) < 0.5 and other.pos.distance_to(at) < Contact.OVERLAP:
 					clear = false
 					break
+			if clear and not phased:
+				var steps := maxi(1, ceili(f.pos.distance_to(at) / 0.25))
+				for i in range(1, steps + 1):
+					var sample := f.pos.lerp(at, float(i) / steps)
+					if TerrainMagic.ward_blocks(s.board, f, sample):
+						clear = false
+						break
+				for other in s.figures:
+					if other != f and other.in_play() and absf(other.elevation - s.board.height_at(at)) < 0.5 and other.side != f.side and Contact.touching(other.pos, at) and not IllusionRules.visible_to(s.figures, f, other):
+						clear = false
+						break
 			if clear:
 				result.cost[n] = cost
 				result.prev[n] = null

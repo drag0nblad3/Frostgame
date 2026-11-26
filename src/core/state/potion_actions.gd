@@ -26,9 +26,11 @@ func can_drink(id: String, target: Figure = null) -> bool:
 		return false
 	if Contact.in_combat(c.state.figures, target):
 		return false
-	if id in POINTS + COATINGS + ["fire_breath", "empowerment", "darkness"] and target != f:
+	if id in POINTS + COATINGS + ["fire_breath", "empowerment", "darkness", "burrowing", "null", "ethereal_vacuum"] and target != f:
 		return false
 	if id == "explosive_cocktail" and not c.can_act():
+		return false
+	if id == "burrowing" and (f.actions_left < 2 or f.moves_taken > 0 or not c.can_move()):
 		return false
 	if id == "fire_breath" and (f.actions_left < 2 or f.moves_taken > 0):
 		return false
@@ -55,6 +57,10 @@ func drink(id: String, target: Figure = null) -> bool:
 	_consume(f, id)
 	_spend_drink(f)
 	match id:
+		"null":
+			GlobalConsumables.nullify(c)
+		"ethereal_vacuum":
+			GlobalConsumables.vacuum(c, f)
 		"elemental_absorption":
 			target.spell_effects["potion_elemental_absorption"] = 5
 		"fire_breath":

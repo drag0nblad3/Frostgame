@@ -35,5 +35,6 @@
 	"zombie": {"name":"Zombie","role":"creature","move":4,"fight":1,"shoot":0,"armour":12,"will":0,"health":6,"cost":0,"weapons":["natural"],"traits":["undead"],"verify":false},
 	"minor_demon": {"name":"Minor Demon","role":"creature","move":6,"fight":3,"shoot":0,"armour":11,"will":4,"health":12,"cost":0,"weapons":["natural"],"traits":["demon"],"verify":false},
 	"major_demon": {"name":"Major Demon","role":"creature","move":6,"fight":5,"shoot":0,"armour":12,"will":6,"health":15,"cost":0,"weapons":["natural"],"traits":["demon","large","strong","true_sight"],"verify":false},
-	"bear": {"name":"Bear","role":"creature","move":6,"fight":4,"shoot":0,"armour":12,"will":0,"health":14,"cost":0,"weapons":["natural"],"traits":["animal","large","strong"],"verify":false}
+	"bear": {"name":"Bear","role":"creature","move":6,"fight":4,"shoot":0,"armour":12,"will":0,"health":14,"cost":0,"weapons":["natural"],"traits":["animal","large","strong"],"verify":false},
+	"wraith": {"name":"Wraith","role":"creature","move":6,"fight":2,"shoot":0,"armour":10,"will":3,"health":6,"cost":0,"weapons":["natural"],"traits":["energy_drain","ethereal","immune_normal","magic_attack","undead"],"verify":false}
 }

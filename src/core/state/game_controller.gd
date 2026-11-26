@@ -83,6 +83,8 @@ func reach() -> MoveReach:
 	var f := state.active()
 	if f.spell_effects.has("plane_walk"):
 		return PlaneWalk.reach(state, f)
+	if f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
+		return PlaneWalk.reach(state, f, false)
 	var grid := MoveGrid.new(state.board, f, state.figures)
 	return MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
 
