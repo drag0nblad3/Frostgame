@@ -14,6 +14,9 @@ var tokens: Array[TreasureToken] = []
 var nodes: Array[Vector2i] = []
 var drops: Array[Vector2] = []
 var group_selection: Array[int] = []
+var cast_options: Array[String] = []
+var selected_spell := ""
+var empower := 0
 
 
 func _init(controller: GameController, command_bar: BattleHud, cam: Camera3D, overlay: BattleMarkers) -> void:
@@ -38,6 +41,12 @@ func refresh() -> void:
 		if c.can_finish_early_phase():
 			available.append("pass_phase")
 		mode = "select"
+		preview()
+		return
+	if not c.state.pending_cast.is_empty():
+		empower = 0
+		mode = "empower"
+		_empower_buttons()
 		preview()
 		return
 	if c.state.push_winner >= 0 and c.state.figure(c.state.push_winner).side == f.side:
@@ -65,6 +74,14 @@ func refresh() -> void:
 		if c.can_pick_up(token.id):
 			available.append("collect")
 			break
+	cast_options.clear()
+	for id: String in c.state.spellbooks.get(f.side, {}):
+		for t in c.state.figures:
+			if c.can_cast(id, t.id):
+				cast_options.append(id)
+				break
+	if not cast_options.is_empty():
+		available.append("cast")
 	if c.can_reload():
 		available.append("reload")
 	drops.clear()
@@ -91,6 +108,17 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"spell_menu":
+			hint = "Choose a spell."
+		"spell_target":
+			for t in c.state.figures:
+				if c.can_cast(selected_spell, t.id):
+					targets.append(t)
+			radius = 0.65
+			hint = "Choose a target for %s." % c.state.spell_catalog[selected_spell]["name"]
+		"empower":
+			var p := c.state.pending_cast
+			hint = "%s: rolled %d (modified %d), needs %d. Spend %d HP → %d. Confirm to resolve." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], empower, int(p["total"]) + empower]
 		"push":
 			hint = "Won the fight. Stay engaged, move back, or push the opponent."
 		"group_select":
@@ -150,7 +178,31 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key.begins_with("spell_") and key != "spell_cancel":
+		selected_spell = key.trim_prefix("spell_")
+		mode = "spell_target"
+		available.assign(["spell_cancel"])
+		preview()
+		return false
 	match key:
+		"cast":
+			available.assign(["spell_cancel"])
+			for id in cast_options:
+				available.append("spell_" + id)
+			mode = "spell_menu"
+			preview()
+			return false
+		"spell_cancel":
+			mode = ""
+			refresh()
+			return false
+		"empower_plus", "empower_minus":
+			empower = clampi(empower + (1 if key == "empower_plus" else -1), 0, c.cast_max_empowerment())
+			_empower_buttons()
+			preview()
+			return false
+		"cast_confirm":
+			return c.finish_cast(empower)
 		"stay":
 			return c.stay_in_combat()
 		"push_self":
@@ -187,11 +239,13 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
+			"spell_target":
+				return c.start_cast(selected_spell, id)
 			"group_select":
 				if id == int(c.state.early.leaders[c.state.current_side()]):
 					return false
@@ -242,3 +296,11 @@ func _group_buttons() -> void:
 	available.assign(["group_cancel"])
 	if group_selection.size() >= 2:
 		available.append("group_begin")
+
+
+func _empower_buttons() -> void:
+	available.assign(["cast_confirm"])
+	if empower < c.cast_max_empowerment():
+		available.append("empower_plus")
+	if empower > 0:
+		available.append("empower_minus")

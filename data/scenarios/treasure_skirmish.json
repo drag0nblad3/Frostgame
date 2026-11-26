@@ -55,7 +55,15 @@
             3
           ]
         }
-      ]
+      ],
+      "spells": {
+        "elemental_bolt": 12,
+        "elemental_shield": 10,
+        "fleet_feet": 12,
+        "strength": 12,
+        "heal": 12,
+        "combat_awareness": 16
+      }
     },
     {
       "name": "Necromancer",
@@ -109,7 +117,15 @@
             33
           ]
         }
-      ]
+      ],
+      "spells": {
+        "bone_dart": 10,
+        "steal_health": 10,
+        "fleet_feet": 12,
+        "glow": 14,
+        "mind_lock": 16,
+        "strength": 14
+      }
     }
   ],
   "treasures": [

@@ -45,7 +45,9 @@ func _play(e: GameEvent) -> void:
 			views[f.id] = v
 		"move", "push_back", "force_combat":
 			_animate_move(_view(d["id"]), d["path"])
-		"shoot":
+		"heal":
+			_view(d["id"]).refresh(state.figure(d["id"]))
+		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]))
 		"fight":
 			_animate_lunge(_view(d["id"]), _view(d["target"]))

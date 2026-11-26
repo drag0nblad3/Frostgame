@@ -1,0 +1,73 @@
+{
+  "elemental_bolt": {
+    "name": "Elemental Bolt",
+    "school": "elementalist",
+    "number": 12,
+    "range": 16,
+    "kind": "shot",
+    "power": 7
+  },
+  "bone_dart": {
+    "name": "Bone Dart",
+    "school": "necromancer",
+    "number": 10,
+    "range": 12,
+    "kind": "shot",
+    "power": 5
+  },
+  "elemental_shield": {
+    "name": "Elemental Shield",
+    "school": "elementalist",
+    "number": 10,
+    "kind": "self"
+  },
+  "heal": {
+    "name": "Heal",
+    "school": "thaumaturge",
+    "number": 8,
+    "range": 6,
+    "kind": "heal"
+  },
+  "shield": {
+    "name": "Shield",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "buff"
+  },
+  "fleet_feet": {
+    "name": "Fleet Feet",
+    "school": "chronomancer",
+    "number": 10,
+    "kind": "buff"
+  },
+  "strength": {
+    "name": "Strength",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "buff"
+  },
+  "glow": {
+    "name": "Glow",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "buff"
+  },
+  "mind_lock": {
+    "name": "Mind Lock",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "buff"
+  },
+  "combat_awareness": {
+    "name": "Combat Awareness",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "touch"
+  },
+  "steal_health": {
+    "name": "Steal Health",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "resist"
+  }
+}

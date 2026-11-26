@@ -12,7 +12,7 @@ static func play_activation(c: GameController) -> bool:
 		return false
 	if f.side < 0:
 		CreatureBot.play(c, f)
-	elif not TreasureBot.play(c, f):
+	elif not MagicBot.play(c, f) and not TreasureBot.play(c, f):
 		if f.ranged != null:
 			_play_shooter(c, f)
 		else:

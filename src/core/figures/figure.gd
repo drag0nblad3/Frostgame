@@ -14,6 +14,8 @@ var out_of_action := false
 var exited := false
 var treasure_id := -1
 var disengaged := {}
+var spell_effects := {}
+var elemental_shield := 0
 ## Turn bookkeeping, reset by the controller each turn.
 var activated := false
 var actions_left := 0
@@ -49,4 +51,16 @@ func in_play() -> bool:
 
 
 func effective_fight() -> int:
-	return def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0)
+	return def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0)
+
+
+func effective_armour() -> int:
+	return mini(def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0), maxi(def.armour, 14))
+
+
+func effective_move() -> int:
+	return def.move + (2 if spell_effects.has("fleet_feet") else 0)
+
+
+func effective_will() -> int:
+	return def.will + (2 if spell_effects.has("mind_lock") else 0)

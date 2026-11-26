@@ -12,6 +12,7 @@ var _flow: TurnFlow
 var _loot: TreasureActions
 var _displacement: CombatDisplacement
 var _encounters: EncounterActions
+var _magic: SpellActions
 
 
 func _init(s: GameState, d: Dice) -> void:
@@ -21,6 +22,7 @@ func _init(s: GameState, d: Dice) -> void:
 	_loot = TreasureActions.new(self)
 	_displacement = CombatDisplacement.new(self)
 	_encounters = EncounterActions.new(self)
+	_magic = SpellActions.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:
@@ -59,7 +61,7 @@ func activate(id: int) -> bool:
 
 func can_move() -> bool:
 	var f := state.active()
-	return f != null and f.in_play() and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
+	return state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
 
 
 ## Where the active figure could go with its next movement action.
@@ -92,7 +94,7 @@ func move_to(node: Vector2i) -> bool:
 ## One non-move action (fight, shoot, reload) per activation.
 func can_act() -> bool:
 	var f := state.active()
-	return f != null and f.in_play() and f.actions_left > 0 and not f.acted and not state.group.movement_pass()
+	return state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.acted and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:
@@ -144,7 +146,7 @@ func shoot(target_id: int) -> bool:
 ## Reload may replace the movement action (p. 34); never while engaged.
 func can_reload() -> bool:
 	var f := state.active()
-	return not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
+	return state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
 
 
 func reload() -> bool:
@@ -161,6 +163,8 @@ func reload() -> bool:
 
 
 func end_activation() -> void:
+	if not state.pending_cast.is_empty():
+		return
 	_displacement.clear()
 	var f := state.active()
 	if f == null:
@@ -187,9 +191,16 @@ func _spend(f: Figure) -> void:
 	f.acted = true
 
 
-func _hurt(f: Figure, dmg: int, by: Figure) -> void:
+func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 	if dmg <= 0 or not f.in_play():
 		return
+	if combat and f.elemental_shield > 0:
+		var absorbed := mini(dmg, f.elemental_shield)
+		f.elemental_shield -= absorbed
+		dmg -= absorbed
+		emit("shield_absorb", {"id": f.id, "amount": absorbed})
+		if dmg == 0:
+			return
 	var out := Damage.apply(f, dmg)
 	emit("damage", {"id": f.id, "by": by.id, "amount": dmg, "health": f.health})
 	if out:
@@ -260,3 +271,19 @@ func stay_in_combat() -> bool:
 	_displacement.clear()
 	emit("stay_in_combat")
 	return true
+
+
+func can_cast(spell: String, target: int) -> bool:
+	return _magic.can_cast(spell, target)
+
+
+func start_cast(spell: String, target: int) -> bool:
+	return _magic.start(spell, target)
+
+
+func finish_cast(health: int) -> bool:
+	return _magic.finish(health)
+
+
+func cast_max_empowerment() -> int:
+	return _magic.max_empowerment()

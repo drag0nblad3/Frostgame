@@ -16,6 +16,9 @@ var push_loser := -1
 var forced_combat := false
 var random_encounters := false
 var creature_db: FigureDb
+var spellbooks := {}
+var spell_catalog := {}
+var pending_cast := {}
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var order: Array[int] = []
 var order_index := 0

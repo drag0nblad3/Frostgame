@@ -58,11 +58,13 @@ static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, c
 	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
 	if target.def.traits.has("large"):
 		mod -= 2
+	if target.spell_effects.has("glow"):
+		mod -= 3
 	var sr := dice.d20()
 	var tr := dice.d20()
 	var st := sr + mini(shooter.def.shoot, 10)
 	var tt := tr + mini(target.effective_fight() + mod, 10)
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
-		dmg = Damage.amount(st, shooter.ranged.damage_mod, target.def.armour, sr, critical_hits)
+		dmg = Damage.amount(st, shooter.ranged.damage_mod, target.effective_armour(), sr, critical_hits)
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}

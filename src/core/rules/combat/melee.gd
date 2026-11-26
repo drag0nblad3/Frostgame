@@ -37,8 +37,8 @@ static func resolve(dice: Dice, figures: Array[Figure], a: Figure, b: Figure, cr
 	var ac := critical_hits and ar == 20
 	var bc := critical_hits and br == 20
 	if ac or (not bc and at >= bt):
-		out["b_dmg"] = Damage.amount(at, a.melee.damage_mod + b.melee.enemy_damage_mod, b.def.armour, ar, critical_hits)
+		out["b_dmg"] = Damage.amount(at, a.melee.damage_mod + b.melee.enemy_damage_mod, b.effective_armour(), ar, critical_hits)
 	if bc or (not ac and bt >= at):
-		out["a_dmg"] = Damage.amount(bt, b.melee.damage_mod + a.melee.enemy_damage_mod, a.def.armour, br, critical_hits)
+		out["a_dmg"] = Damage.amount(bt, b.melee.damage_mod + a.melee.enemy_damage_mod, a.effective_armour(), br, critical_hits)
 	out["winner"] = a.id if (ac and not bc) or (not ac and not bc and at > bt) else (b.id if (bc and not ac) or (not ac and not bc and bt > at) else -1)
 	return out

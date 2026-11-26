@@ -49,6 +49,14 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Treasure %d is lost." % (d["treasure"] + 1)
 		"exit":
 			return "%s leaves the table safely." % name_of(s, d["id"])
+		"cast_roll":
+			return "Casting %s: %d against %d." % [d["id"], d["total"], d["tn"]]
+		"cast_result":
+			return "%s %s %s (roll %d, %d HP spent)." % [name_of(s, d["id"]), "casts" if d["success"] else "fails", d["spell"], d["roll"], d["spent"]]
+		"heal":
+			return "%s regains %d Health." % [name_of(s, d["id"]), d["amount"]]
+		"shield_absorb":
+			return "%s's shield absorbs %d." % [name_of(s, d["id"]), d["amount"]]
 		"creature_spawn":
 			return "%s enters the ruins." % name_of(s, d["id"])
 		"push_back":

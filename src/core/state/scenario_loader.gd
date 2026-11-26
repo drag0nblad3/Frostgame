@@ -16,11 +16,13 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	s.random_encounters = d.get("random_encounters", false)
 	s.forced_combat = d.get("forced_combat", false)
 	s.creature_db = figures
+	s.spell_catalog = JsonFile.read("res://data/spells.json")
 	var next_id := 1
 	var warbands: Array = d.get("warbands", [])
 	for side in warbands.size():
 		var wb: Dictionary = warbands[side]
 		s.side_names.append(wb.get("name", "Warband %d" % (side + 1)))
+		s.spellbooks[side] = wb.get("spells", {})
 		for entry: Dictionary in wb.get("figures", []):
 			var at: Array = entry["at"]
 			var def := figures.get_def(entry["type"])
