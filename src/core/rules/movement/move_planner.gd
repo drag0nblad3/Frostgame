@@ -15,7 +15,7 @@ static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 			if not grid.open(n):
 				continue
 			var p := MoveGrid.to_pos(n)
-			var c := from.distance_to(p) * grid.board.move_mult_at((from + p) * 0.5)
+			var c := grid.segment_cost(from, p)
 			if c <= allowance and c < r.cost.get(n, INF):
 				r.cost[n] = c
 				r.prev[n] = null

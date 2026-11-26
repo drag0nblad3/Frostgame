@@ -10,7 +10,7 @@ const INTERVENING := 1
 
 ## Range is measured base edge to base edge.
 static func distance(a: Figure, b: Figure) -> float:
-	return maxf(a.pos.distance_to(b.pos) - 2.0 * Figure.BASE_RADIUS, 0.0)
+	return maxf(Vector3(a.pos.x, a.elevation, a.pos.y).distance_to(Vector3(b.pos.x, b.elevation, b.pos.y)) - 2.0 * Figure.BASE_RADIUS, 0.0)
 
 
 ## Why `shooter` can't shoot `target`, or "" if the shot is allowed.

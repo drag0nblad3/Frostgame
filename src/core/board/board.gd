@@ -64,6 +64,28 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 	if not contains(p, radius):
 		return false
 	for piece in pieces:
-		if piece.kind.blocks_move and piece.rect.grow(radius).has_point(p):
+		if piece.kind.blocks_move and not piece.kind.walkable_top and piece.rect.grow(radius).has_point(p):
 			return false
 	return true
+
+
+## One exposed standing surface at each XY. Overlapping indoor floors are future work.
+func height_at(p: Vector2) -> float:
+	var height := 0.0
+	for piece in pieces_at(p):
+		if piece.kind.walkable_top:
+			height = maxf(height, piece.kind.height)
+	return height
+
+
+func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
+	var delta := absf(height_at(a) - height_at(b))
+	if delta < 0.001:
+		return 0.0
+	var multiplier := 2.0
+	if climber != null and (climber.def.traits.has("expert_climber") or climber.def.traits.has("levitate")):
+		multiplier = 1.0
+	for p in pieces_at(a) + pieces_at(b):
+		if p.kind.stairs:
+			multiplier = 1.0
+	return ceilf(delta) * multiplier

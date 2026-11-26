@@ -95,3 +95,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Campaign prototype
 
 - pp. 73–75, 82–85: explicit campaign mode, local versioned save, persistent warband roster with stable member IDs, soldier/caster survival outcomes and missed games, treasure gold and unresolved loot categories, experience from participation/spellcasts/creatures/treasure, 300 XP cap, one known-spell improvement per game (100 XP, minimum TN5). Report and next skirmish UI. Wizard survival +1 automatically applied; permanent injury rolls, medical treatment, loot identification, central treasure reroll, recruitment/level-stat advancement, wizard succession and active battle saves are pending. A dead wizard ends this prototype campaign.
+
+## Elevation foundation
+
+- pp. 46, 50, 57: optional walkable platform and tower surfaces; movement planner charges vertical climbing distance, rejects cross-height base contacts, and shooting uses 3D range and a height-sensitive ray. Combat push down a ledge causes falling damage. This is a single exposed-surface heightfield, not a multilayer navigation mesh. Partial climbs, run-up jumps, deliberate falls and floor interiors remain pending.

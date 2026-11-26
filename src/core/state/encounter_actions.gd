@@ -50,5 +50,6 @@ func _spawn(type: String, edge: int) -> void:
 	for f in s.figures:
 		id = maxi(id, f.id + 1)
 	var creature := Figure.new(id, s.creature_db.get_def(type), -1, at, s.creature_db.unarmed())
+	creature.elevation = s.board.height_at(at)
 	s.figures.append(creature)
 	c.emit("creature_spawn", {"id": id})

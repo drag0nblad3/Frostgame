@@ -43,7 +43,7 @@ func open(n: Vector2i) -> bool:
 	if not board.can_stand(p, Figure.BASE_RADIUS):
 		return false
 	for o in others:
-		if o.pos.distance_to(p) < Contact.OVERLAP:
+		if absf(o.elevation - board.height_at(p)) < 0.5 and o.pos.distance_to(p) < Contact.OVERLAP:
 			return false
 	return true
 
@@ -54,7 +54,7 @@ func stops(n: Vector2i) -> bool:
 		return false
 	var p := to_pos(n)
 	for o in others:
-		if o.side != mover.side and Contact.touching(o.pos, p):
+		if o.side != mover.side and absf(o.elevation - board.height_at(p)) < 0.5 and Contact.touching(o.pos, p):
 			return true
 	return false
 
@@ -63,7 +63,11 @@ func stops(n: Vector2i) -> bool:
 func step_cost(a: Vector2i, b: Vector2i) -> float:
 	var pa := to_pos(a)
 	var pb := to_pos(b)
+	return segment_cost(pa, pb)
+
+
+func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	var mid := (pa + pb) * 0.5
 	if not board.can_stand(mid, Figure.BASE_RADIUS):
 		return INF
-	return pa.distance_to(pb) * board.move_mult_at(mid)
+	return pa.distance_to(pb) * board.move_mult_at(mid) + board.climb_cost(pa, pb, mover)

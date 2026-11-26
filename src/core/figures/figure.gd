@@ -10,6 +10,7 @@ var campaign_id := -1
 var def: FigureDef
 var side := 0
 var pos := Vector2.ZERO
+var elevation := 0.0
 var health := 0
 var out_of_action := false
 var exited := false

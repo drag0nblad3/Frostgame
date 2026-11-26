@@ -97,6 +97,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 	if not intercept.is_empty():
 		path.resize(int(intercept["index"]) + 1)
 	f.pos = path[path.size() - 1]
+	f.elevation = state.board.height_at(f.pos)
 	f.actions_left -= 1
 	f.moves_taken += 1
 	emit("move", {"id": f.id, "path": path, "cost": cost})

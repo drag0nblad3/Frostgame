@@ -28,11 +28,14 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			var def := figures.get_def(entry["type"])
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
 			unit.campaign_id = int(entry.get("campaign_id", -1))
+			unit.elevation = s.board.height_at(unit.pos)
 			s.figures.append(unit)
 			next_id += 1
 	for entry: Dictionary in d.get("creatures", []):
 		var at: Array = entry["at"]
-		s.figures.append(Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed()))
+		var creature := Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed())
+		creature.elevation = s.board.height_at(creature.pos)
+		s.figures.append(creature)
 		next_id += 1
 	for at: Array in d.get("treasures", []):
 		s.treasures.append(TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1])))

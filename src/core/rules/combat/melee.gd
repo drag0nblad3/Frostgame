@@ -13,7 +13,7 @@ static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 	for o in figures:
 		if o == f or not o.in_play() or o.side != f.side:
 			continue
-		if not Contact.touching(o.pos, enemy.pos):
+		if not Contact.figures_touch(o, enemy):
 			continue
 		if Contact.enemies_of(figures, o).size() == 1:
 			bonus += SUPPORT
