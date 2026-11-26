@@ -30,7 +30,17 @@ func _run() -> void:
 	if not scene.hud._objective.text.contains("Guardians 6"):
 		_fail("Scenario progress not visible")
 		return
-	print("Scenario UI smoke passed: selection, briefing, confirmation and objectives")
+	scene._open_inspector()
+	if not scene._inspector.visible or not scene._inspector._body.text.contains("Health"):
+		_fail("Figure inspector unavailable")
+		return
+	scene._inspector.hide()
+	scene._open_guide()
+	if not scene._guide.visible:
+		_fail("Field guide unavailable")
+		return
+	scene._guide.hide()
+	print("Scenario UI smoke passed: selection, briefing, confirmation, objectives, inspector, guide")
 	quit(0)
 
 

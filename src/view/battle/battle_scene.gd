@@ -5,6 +5,8 @@ const SCENARIO := "treasure_skirmish"
 var _scenario_id := SCENARIO
 var _active_scenario_id := SCENARIO
 var _briefing: ScenarioDialog
+var _inspector: FigureInspector
+var _guide: AcceptDialog
 ## Pause between bot activations in Auto mode (seconds).
 const AUTO_DELAY := 0.35
 
@@ -53,6 +55,10 @@ func _ready() -> void:
 		new_game(0))
 	hud.new_game_pressed.connect(func() -> void: _open_briefing(true))
 	hud.briefing_pressed.connect(func() -> void: _open_briefing(false))
+	_inspector = FigureInspector.new()
+	add_child(_inspector)
+	hud.inspect_pressed.connect(_open_inspector)
+	hud.guide_pressed.connect(_open_guide)
 	hud.roster_pressed.connect(_open_roster)
 	hud.campaign_pressed.connect(_open_campaign)
 	hud.save_battle_pressed.connect(_save_battle)
@@ -67,6 +73,34 @@ func _ready() -> void:
 	_sites = ScenarioMarkers.new()
 	add_child(_sites)
 	new_game(0)
+
+
+func _open_inspector() -> void:
+	if controller == null or not player.idle():
+		return
+	_inspector.open(controller.state, controller.state.active_id)
+
+
+func _open_guide() -> void:
+	if _guide == null:
+		_guide = AcceptDialog.new()
+		_guide.title = "Field guide"
+		_guide.exclusive = true
+		_guide.theme = BattleTheme.create()
+		var body := RichTextLabel.new()
+		body.text = FieldGuide.OVERVIEW
+		body.fit_content = false
+		body.scroll_active = true
+		body.add_theme_font_size_override("normal_font_size", 20)
+		var viewport := get_viewport().get_visible_rect().size
+		body.custom_minimum_size = Vector2(minf(600, viewport.x * 0.78), minf(380, viewport.y * 0.60))
+		_guide.add_child(body)
+		add_child(_guide)
+	_guide.popup_centered()
+
+
+func _info_open() -> bool:
+	return (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
 
 
 func _open_briefing(start: bool) -> void:
@@ -142,7 +176,7 @@ func step() -> void:
 
 
 func _process(delta: float) -> void:
-	if (_briefing != null and _briefing.visible) or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
+	if _info_open() or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
 		return
 	if _dirty:
@@ -177,7 +211,7 @@ func set_watch_mode(on: bool) -> void:
 
 
 func _human_turn() -> bool:
-	return (_briefing == null or not _briefing.visible) and (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
+	return not _info_open() and (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
 
 
 func _on_event(event: GameEvent) -> void:

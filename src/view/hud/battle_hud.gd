@@ -12,6 +12,8 @@ signal save_battle_pressed
 signal resume_battle_pressed
 signal scenario_selected(id: String)
 signal briefing_pressed
+signal inspect_pressed
+signal guide_pressed
 signal action_pressed(action: String)
 
 const LOG_LINES := 4
@@ -33,6 +35,8 @@ var _scenarios: OptionButton
 var _objective: Label
 var _toast: Label
 var _toast_timer: Timer
+var _context_tip: Label
+var _tips_enabled := true
 
 
 func _ready() -> void:
@@ -65,7 +69,7 @@ func _ready() -> void:
 	_menu.text = "Menu"
 	_menu.custom_minimum_size = Vector2(90, 48)
 	var popup := _menu.get_popup()
-	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle"]:
+	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle", "Scenario briefing", "Combat log", "How to play", "Toggle extra tips"]:
 		popup.add_item(label_text)
 	popup.id_pressed.connect(_menu_action)
 	top.add_child(_menu)
@@ -83,10 +87,8 @@ func _ready() -> void:
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
 	scenarios.tooltip_text = "Choose the next battle scenario; current battle stays unchanged."
 	top.add_child(scenarios)
-	var info := _button("Briefing", func() -> void: briefing_pressed.emit())
-	top.add_child(info)
-	var log_toggle := _button("Log", func() -> void: _log_panel.visible = not _log_panel.visible)
-	top.add_child(log_toggle)
+	var inspect := _button("Inspect", func() -> void: inspect_pressed.emit())
+	top.add_child(inspect)
 	_blocks.append(top)
 	_objective = _label(16)
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -119,6 +121,11 @@ func _ready() -> void:
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_hint)
 	_blocks.append(_hint)
+	_context_tip = _label(15)
+	_context_tip.modulate = Color(0.72, 0.87, 0.94)
+	_context_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_context_tip.hide()
+	col.add_child(_context_tip)
 	_action_row = HFlowContainer.new()
 	_action_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(_action_row)
@@ -161,6 +168,8 @@ func set_auto(on: bool) -> void:
 
 func set_actions(available: Array[String], mode: String, hint: String) -> void:
 	_hint.text = hint
+	_context_tip.text = FieldGuide.tip(mode)
+	_context_tip.visible = _tips_enabled and not _context_tip.text.is_empty()
 	for key: String in _buttons:
 		var b: Button = _buttons[key]
 		b.disabled = not available.has(key)
@@ -213,6 +222,13 @@ func _menu_action(id: int) -> void:
 		2: new_game_pressed.emit()
 		3: save_battle_pressed.emit()
 		4: resume_battle_pressed.emit()
+		5: briefing_pressed.emit()
+		6: _log_panel.visible = not _log_panel.visible
+		7: guide_pressed.emit()
+		8:
+			_tips_enabled = not _tips_enabled
+			_context_tip.visible = _tips_enabled and not _context_tip.text.is_empty()
+			notify("Extra rules tips %s." % ("on" if _tips_enabled else "off"))
 
 
 func select_scenario(id: String) -> void:
