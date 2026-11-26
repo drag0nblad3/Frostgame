@@ -18,9 +18,8 @@ func _run() -> void:
 		printerr("Standard scenario catalog incomplete")
 		quit(1)
 		return
-	title_scene._picker.open(true,true)
-	if title_scene._picker._list.get_child_count()!=2:
-		printerr("Layered scenario catalog incomplete")
+	if title_scene._buttons.has("gatehouse") or title_scene._buttons.has("resume_layered"):
+		printerr("Experimental maps exposed in player menu")
 		quit(1)
 		return
 	title_scene._picker.hide()

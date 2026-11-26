@@ -33,7 +33,7 @@ func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	_summary.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	frame.add_child(_summary)
 	var tabs := TabContainer.new()
-	var viewport := get_parent().get_viewport().get_visible_rect().size
+	var viewport := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
 	tabs.custom_minimum_size=Vector2(minf(740,viewport.x*0.83),minf(440,viewport.y*0.62))
 	frame.add_child(tabs)
 	var body := _tab(tabs,"1 · Wizard")
@@ -56,7 +56,7 @@ func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	_school.add_theme_constant_override("icon_max_width",32)
 	_school.item_selected.connect(_change_school)
 	_wizard_portrait = MiniaturePortrait.new()
-	_wizard_portrait.custom_minimum_size = Vector2(260, 190)
+	_wizard_portrait.custom_minimum_size = Vector2(minf(260,viewport.x*0.40),minf(190,viewport.y*0.28))
 	body.add_child(_wizard_portrait)
 	_spell_rows = VBoxContainer.new()
 	spells_body.add_child(_spell_rows)
@@ -96,7 +96,7 @@ func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	var recruit_card := HBoxContainer.new()
 	recruits_body.add_child(recruit_card)
 	_recruit_portrait = MiniaturePortrait.new()
-	_recruit_portrait.custom_minimum_size = Vector2(190, 165)
+	_recruit_portrait.custom_minimum_size = Vector2(minf(190,viewport.x*0.30),minf(165,viewport.y*0.24))
 	recruit_card.add_child(_recruit_portrait)
 	_recruit_info = Label.new()
 	_recruit_info.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -202,7 +202,7 @@ func _update() -> void:
 	var definition := draft.db.get_def(recruit_id)
 	if definition != null:
 		_recruit_portrait.set_figure(Figure.new(0, definition, 0, Vector2.ZERO, draft.db.unarmed()), FigureView.SIDE_COLORS[0])
-		_recruit_info.text = "%s · %d gc\nM %d″   F %+d   S %+d\nA %d   W %+d   H %d\n%s" % [definition.name, definition.cost, definition.move, definition.fight, definition.shoot, definition.armour, definition.will, definition.health, "Specialist" if definition.specialist else "Standard soldier"]
+		_recruit_info.text = "%s · %d gc\nMove %d″ · Fight %+d · Shoot %+d\nArmour %d · Will %+d · Health %d\n%s" % [definition.name, definition.cost, definition.move, definition.fight, definition.shoot, definition.armour, definition.will, definition.health, "Specialist" if definition.specialist else "Standard soldier"]
 	get_ok_button().disabled = not problems.is_empty()
 
 

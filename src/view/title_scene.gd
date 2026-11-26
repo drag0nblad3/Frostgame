@@ -39,16 +39,16 @@ func _ready() -> void:
 	shade.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	shade.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	screen.add_child(shade)
-	var margin := MarginContainer.new()
+	var margin := PhoneSafeArea.new()
+	margin.padding=14
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	for edge: String in ["top","bottom","left","right"]:
-		margin.add_theme_constant_override("margin_"+edge,28)
 	screen.add_child(margin)
 	var row := HBoxContainer.new()
 	margin.add_child(row)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel",BattleTheme.panel(Color(0.035,0.065,0.095,0.95),Color(0.61,0.51,0.31),4))
-	panel.custom_minimum_size.x = minf(420,get_viewport().get_visible_rect().size.x-56)
+	panel.custom_minimum_size.x = minf(430,PhoneSafeArea.safe_rect(get_viewport(),14).size.x)
+	panel.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	row.add_child(panel)
 	var wrap := MarginContainer.new()
 	for edge: String in ["top","bottom","left","right"]:
@@ -77,8 +77,6 @@ func _ready() -> void:
 	_button("warband","Create / edit warband")
 	_button("campaign","Campaign headquarters")
 	_button("training","Training yard")
-	_button("gatehouse","Experimental 3D skirmish")
-	_button("resume_layered","Resume 3D battle")
 	_button("guide","Field guide")
 	_notice=Label.new()
 	_notice.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
@@ -114,21 +112,14 @@ func _button(key: String, value: String, primary: bool = false) -> void:
 func _launch(key: String) -> void:
 	if _launching:
 		return
-	if key=="skirmish" or key=="gatehouse":
-		_choose_scenario(key=="gatehouse")
+	if key=="skirmish":
+		_choose_scenario()
 		return
 	if key=="warband":
 		_edit_warband()
 		return
 	_launching = true
 	get_tree().root.set_meta(LAUNCH_KEY,key)
-	if key in ["gatehouse","resume_layered"]:
-		get_tree().root.remove_meta(LAUNCH_KEY)
-		if key=="resume_layered":
-			get_tree().root.set_meta("layered_resume",true)
-		if get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")!=OK:
-			_launching=false
-		return
 	if get_tree().change_scene_to_file(BATTLE) != OK:
 		get_tree().root.remove_meta(LAUNCH_KEY)
 		_launching = false
@@ -157,7 +148,6 @@ func _refresh_slots() -> void:
 	if meta.get("campaign",false):
 		compatible=compatible and FileAccess.file_exists(path) and FileAccess.get_sha256(path)==meta.get("campaign_hash","")
 	_buttons["resume"].visible=compatible
-	_buttons["resume_layered"].visible=not LayeredCheckpoint.read().is_empty()
 	_buttons["warband"].text="Create warband" if WarbandSlots.roster().is_empty() else "Edit saved warband"
 	var roster := WarbandSlots.roster()
 	_notice.text="Starting roster: %s. Each slot has separate saves."%roster.get("name","default expedition")
@@ -173,20 +163,17 @@ func _select_slot(index: int) -> void:
 		_slots.select(WarbandSlots.active())
 
 
-func _choose_scenario(experimental: bool) -> void:
+func _choose_scenario() -> void:
 	if _picker==null:
 		_picker=SkirmishPicker.new()
 		add_child(_picker)
-		_picker.selected.connect(func(id: String,layered: bool) -> void:
+		_picker.selected.connect(func(id: String) -> void:
 			_launching=true
-			if layered:
-				get_tree().root.set_meta("layered_board",id)
-				get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")
-			else:
-				get_tree().root.set_meta("frostgame_scenario",id)
-				get_tree().root.set_meta(LAUNCH_KEY,"selected_skirmish")
-				get_tree().change_scene_to_file(BATTLE))
-	_picker.open(experimental,true)
+			get_tree().root.set_meta("frostgame_scenario",id)
+			get_tree().root.set_meta(LAUNCH_KEY,"selected_skirmish")
+			if get_tree().change_scene_to_file(BATTLE)!=OK:
+				_launching=false)
+	_picker.open(true)
 
 
 func _edit_warband() -> void:
@@ -203,4 +190,4 @@ func _edit_warband() -> void:
 			_notice.text="Warband saved to slot %d."%(WarbandSlots.active()+1)
 		else:
 			_notice.text="Could not save warband. Reopen the editor and try again.")
-	_editor.popup_centered_ratio(0.94)
+	PhoneSafeArea.popup_dialog(_editor,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.96)

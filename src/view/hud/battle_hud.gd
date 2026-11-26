@@ -36,6 +36,8 @@ var _watch: Button
 var _buttons := {}
 var _blocks: Array[Control] = []
 var _action_row: HFlowContainer
+var _action_scroll: ScrollContainer
+var _safe: PhoneSafeArea
 var _log_panel: PanelContainer
 var _menu: MenuButton
 var _scenarios: OptionButton
@@ -55,10 +57,10 @@ var _spell_catalog: Dictionary
 
 func _ready() -> void:
 	_spell_catalog = JsonFile.read("res://data/spells.json")
-	var root := MarginContainer.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	for side in ["left", "right", "top", "bottom"]:
-		root.add_theme_constant_override("margin_" + side, 12)
+	var root := PhoneSafeArea.new()
+	_safe=root
+	root.padding=10
+	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.theme = BattleTheme.create()
 	add_child(root)
@@ -72,7 +74,8 @@ func _ready() -> void:
 	_status.modulate = Color(1.0, 0.94, 0.80)
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	top.add_child(_status)
+	col.move_child(top,0)
+	col.add_child(_status)
 	_watch = _button("Watch", func() -> void: watch_toggled.emit(_watch.button_pressed))
 	_watch.toggle_mode = true
 	top.add_child(_watch)
@@ -93,6 +96,9 @@ func _ready() -> void:
 	top.add_child(home)
 	var scenarios := OptionButton.new()
 	_scenarios = scenarios
+	scenarios.fit_to_longest_item=false
+	scenarios.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	scenarios.custom_minimum_size=Vector2(160,48)
 	for id: String in ScenarioBriefing.ENTRIES:
 		scenarios.add_item(ScenarioBriefing.title(id))
 		scenarios.set_item_metadata(scenarios.item_count-1,id)
@@ -100,6 +106,10 @@ func _ready() -> void:
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
 	scenarios.tooltip_text = "Choose the next battle scenario; current battle stays unchanged."
 	top.add_child(scenarios)
+	# New skirmish uses the visible map browser; retain this selector for campaign choice.
+	scenarios.hide()
+	var map := _button("Maps",func() -> void:new_game_pressed.emit())
+	top.add_child(map)
 	var inspect := _button("Inspect", func() -> void: inspect_pressed.emit())
 	ActionArt.apply(inspect,"inspect",_spell_catalog)
 	top.add_child(inspect)
@@ -169,10 +179,17 @@ func _ready() -> void:
 	_context_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_context_tip.hide()
 	col.add_child(_context_tip)
+	_action_scroll=ScrollContainer.new()
+	_action_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	_action_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO
+	col.add_child(_action_scroll)
 	_action_row = HFlowContainer.new()
+	_action_row.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_action_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(_action_row)
-	_blocks.append(_action_row)
+	_action_scroll.add_child(_action_row)
+	_blocks.append(_action_scroll)
+	get_viewport().size_changed.connect(_fit_actions)
+	call_deferred("_fit_actions")
 	for key: String in ACTIONS:
 		var button := _button(ACTIONS[key], func() -> void: action_pressed.emit(key))
 		ActionArt.apply(button,key,_spell_catalog)
@@ -220,7 +237,7 @@ func set_watch(on: bool, can_change: bool, idle: bool) -> void:
 	_auto.visible = on
 	_step.disabled = not idle
 	_auto.disabled = not on
-	_action_row.visible = not on
+	_action_scroll.visible = not on
 
 
 func set_auto(on: bool) -> void:
@@ -236,6 +253,8 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 		b.disabled = not available.has(key)
 		b.visible = available.has(key)
 		b.set_pressed_no_signal(key == mode and b.toggle_mode)
+	_action_scroll.scroll_vertical=0
+	call_deferred("_fit_actions")
 
 
 func blocks_tap(at: Vector2) -> bool:
@@ -305,3 +324,15 @@ func select_scenario(id: String) -> void:
 		if _scenarios.get_item_metadata(i) == id:
 			_scenarios.select(i)
 			return
+
+
+func _fit_actions() -> void:
+	var bounds := PhoneSafeArea.safe_rect(get_viewport(),10)
+	# Constrain long spell/item lists to a scrollable dock rather than letting
+	# them occupy the entire battlefield. Short lists use one row.
+	var visible_count := 0
+	for button in _action_row.get_children():
+		if button.visible:
+			visible_count+=1
+	var rows := maxi(1,ceili(float(visible_count)/maxf(1.0,floorf(bounds.size.x/150.0))))
+	_action_scroll.custom_minimum_size.y=minf(float(rows)*54.0,bounds.size.y*0.26)

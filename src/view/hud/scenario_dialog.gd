@@ -35,6 +35,6 @@ func show_briefing(id: String, state: GameState, start: bool) -> void:
 		_body.text += "\n\nStarting a skirmish replaces the current battle. Use Menu → Save battle first if you want to return to it."
 	elif state != null:
 		_body.text += "\n\nCURRENT PROGRESS\n" + ScenarioBriefing.progress(state)
-	var viewport := get_parent().get_viewport().get_visible_rect().size
+	var viewport := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
 	_body.custom_minimum_size = Vector2(minf(540, viewport.x * 0.78), minf(310, viewport.y * 0.55))
-	popup_centered()
+	PhoneSafeArea.popup_dialog(self)

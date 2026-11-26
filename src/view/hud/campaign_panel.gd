@@ -4,6 +4,9 @@ extends AcceptDialog
 signal start_requested
 signal begin_requested
 signal restart_requested
+signal scenario_selected(id: String)
+var _scroll: ScrollContainer
+var _scenario: OptionButton
 var campaign: CampaignProgress
 var summary: Label
 var base_banner: BaseBanner
@@ -45,7 +48,9 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	title = "Campaign headquarters"
 	get_ok_button().text = "Close"
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(650, 400)
+	_scroll=scroll
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	fit_phone()
 	add_child(scroll)
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -137,6 +142,16 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	start.text = "Start campaign with current drafted warband"
 	col.add_child(start)
 	start.pressed.connect(func() -> void: start_requested.emit())
+	_scenario=OptionButton.new()
+	_scenario.fit_to_longest_item=false
+	_scenario.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	for id: String in ScenarioBriefing.ENTRIES:
+		_scenario.add_item(ScenarioBriefing.title(id))
+		_scenario.set_item_metadata(_scenario.item_count-1,id)
+		if id=="treasure_skirmish":
+			_scenario.select(_scenario.item_count-1)
+	_scenario.item_selected.connect(func(i: int) -> void:scenario_selected.emit(str(_scenario.get_item_metadata(i))))
+	col.add_child(_scenario)
 	begin = Button.new()
 	begin.text = "Play next campaign skirmish"
 	col.add_child(begin)
@@ -148,6 +163,7 @@ func refresh(in_battle: bool) -> void:
 	base_banner.refresh(d)
 	start.visible = d.is_empty()
 	begin.visible = not d.is_empty()
+	_scenario.visible=not d.is_empty() and not in_battle
 	spells.visible = not d.is_empty()
 	improve.visible = not d.is_empty()
 	var pending: Array = d.get("pending_treasure", [])
@@ -247,3 +263,15 @@ func _command(parent: Control, label: String, callback: Callable) -> Button:
 	parent.add_child(b)
 	b.pressed.connect(callback)
 	return b
+
+
+func fit_phone() -> void:
+	var bounds := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
+	_scroll.custom_minimum_size=Vector2(minf(720,bounds.x*0.86),minf(490,bounds.y*0.76))
+
+
+func select_scenario(id: String) -> void:
+	for i in _scenario.item_count:
+		if _scenario.get_item_metadata(i)==id:
+			_scenario.select(i)
+			return

@@ -9,6 +9,9 @@ func _run() -> void:
 	root.add_child(scene)
 	await process_frame
 	var original: GameController = scene.controller
+	scene.player.speed=30.0
+	while not scene.player.idle():
+		await process_frame
 	scene._open_map_picker()
 	if scene._picker==null or scene._picker._list.get_child_count()!=12:
 		_fail("Battle map catalog missing")

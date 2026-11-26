@@ -136,7 +136,7 @@ func _confirm_title() -> void:
 				get_tree().change_scene_to_file("res://scenes/title.tscn"))
 		_title_prompt.confirmed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/title.tscn"))
 		add_child(_title_prompt)
-	_title_prompt.popup_centered(Vector2i(500,220))
+	PhoneSafeArea.popup_dialog(_title_prompt,Vector2(500,220))
 
 
 func _confirm_training() -> void:
@@ -148,7 +148,7 @@ func _confirm_training() -> void:
 		_training_prompt.get_ok_button().text = "Start training"
 		_training_prompt.confirmed.connect(func() -> void: _start_training(0))
 		add_child(_training_prompt)
-	_training_prompt.popup_centered(Vector2i(500, 240))
+	PhoneSafeArea.popup_dialog(_training_prompt,Vector2(500,240))
 
 
 func _start_training(index: int) -> void:
@@ -211,11 +211,11 @@ func _open_guide() -> void:
 		body.fit_content = false
 		body.scroll_active = true
 		body.add_theme_font_size_override("normal_font_size", 20)
-		var viewport := get_viewport().get_visible_rect().size
+		var viewport := PhoneSafeArea.safe_rect(get_viewport(),14).size
 		body.custom_minimum_size = Vector2(minf(600, viewport.x * 0.78), minf(380, viewport.y * 0.60))
 		_guide.add_child(body)
 		add_child(_guide)
-	_guide.popup_centered()
+	PhoneSafeArea.popup_dialog(_guide)
 
 
 func _info_open() -> bool:
@@ -423,7 +423,7 @@ func _open_roster() -> void:
 			_campaign_battle = false
 			watch_mode = false
 			new_game(0))
-	_setup.popup_centered_ratio(0.9)
+	PhoneSafeArea.popup_dialog(_setup,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.94)
 
 
 func _open_campaign() -> void:
@@ -434,8 +434,13 @@ func _open_campaign() -> void:
 		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
 		_campaign_dialog.start_requested.connect(_create_campaign)
 		_campaign_dialog.restart_requested.connect(_restart_campaign)
+		_campaign_dialog.scenario_selected.connect(func(id: String) -> void:
+			_scenario_id=id
+			hud.select_scenario(id))
+	_campaign_dialog.select_scenario(_scenario_id)
 	_campaign_dialog.refresh(_campaign_battle)
-	_campaign_dialog.popup_centered_ratio(0.85)
+	_campaign_dialog.fit_phone()
+	PhoneSafeArea.popup_dialog(_campaign_dialog,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.92)
 
 
 func _create_campaign() -> void:
@@ -533,12 +538,14 @@ func _open_map_picker() -> void:
 	if _picker==null:
 		_picker=SkirmishPicker.new()
 		add_child(_picker)
-		_picker.selected.connect(func(id: String,layered: bool) -> void:
-			if layered:
-				get_tree().root.set_meta("layered_board",id)
-				get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")
-			else:
-				_scenario_id=id
-				hud.select_scenario(id)
-				_open_briefing(true))
+		_picker.selected.connect(func(id: String) -> void:
+			_scenario_id=id
+			hud.select_scenario(id)
+			_open_briefing(true))
 	_picker.open(false)
+
+
+func _notification(what: int) -> void:
+	if what==NOTIFICATION_WM_GO_BACK_REQUEST and is_instance_valid(player):
+		if not _info_open() and (_setup==null or not _setup.visible) and (_campaign_dialog==null or not _campaign_dialog.visible):
+			_confirm_title()

@@ -62,11 +62,11 @@ func open(state: GameState, preferred: int = -1) -> void:
 		_display(int(_picker.get_item_metadata(index)))
 	else:
 		_body.text = "No figures remain on the table."
-	var viewport := get_parent().get_viewport().get_visible_rect().size
+	var viewport := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
 	_visual.visible = viewport.x >= 650
 	_portrait.custom_minimum_size = Vector2.ONE * minf(255, viewport.x * 0.26)
 	_body.custom_minimum_size = Vector2(minf(570, viewport.x * (0.58 if _visual.visible else 0.78)), minf(380, viewport.y * 0.60))
-	popup_centered()
+	PhoneSafeArea.popup_dialog(self)
 
 
 func _display(id: int) -> void:
