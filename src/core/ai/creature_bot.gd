@@ -27,6 +27,9 @@ static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 
 
 static func play(c: GameController, f: Figure) -> void:
+	if RedKingHill.is_herald(c.state,f):
+		RedKingHill.play_herald(c,f)
+		return
 	if RedKingInvestigations.dormant(c.state,f):
 		return
 	if RedKingSquatter.dormant(c,f):

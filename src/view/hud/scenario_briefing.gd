@@ -49,6 +49,10 @@ static func progress(s: GameState) -> String:
 			text+=" | Ryce fleeing"
 		elif rescue!=null:
 			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
+	if RedKingHill.active(s):
+		text+=" | "+("Pyramid formed · Balance TN16" if RedKingHill.cracked(s) else "Reality unstable")
+		if RedKingHill.guarded(s,s.treasure(0)):
+			text+=" · Central treasure guarded"
 	if RedKingSinkhole.active(s):
 		text+=" | Gravity: 1″/turn · Casting −1/−2/−4"
 	if RedKingHerded.active(s):

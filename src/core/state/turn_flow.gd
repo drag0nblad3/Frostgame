@@ -86,6 +86,7 @@ func _roll_initiative(use: bool) -> void:
 	s.phase = Phase.WIZARD
 	s.early.capture(s)
 	_c.emit("turn_start", {"turn": s.turn, "order": s.order, "rolls": ini["rolls"]})
+	RedKingHill.priority(_c,ini["rolls"])
 	_c.emit("phase", {"phase": s.phase})
 	_settle()
 
@@ -193,7 +194,7 @@ func _check_victory() -> bool:
 					continue
 				var secured := false
 				if survivor >= 0:
-					secured = not token.frozen and (token.carrier_id >= 0 or _c.dice.d20() >= 15)
+					secured = not token.frozen and not RedKingHill.guarded(s,token) and (token.carrier_id >= 0 or _c.dice.d20() >= 15)
 				if secured:
 					_c._loot.secure(token, survivor)
 				else:

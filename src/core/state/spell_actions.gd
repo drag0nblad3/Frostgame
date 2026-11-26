@@ -508,7 +508,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
 	var los := LineOfSight.check(s.board, from, t.pos) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
-	if not los.clear and not s.board.floor_layout.is_empty():
+	if not los.clear and (not s.board.floor_layout.is_empty() or RedKingHill.cracked(s)):
 		return
 	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
@@ -528,7 +528,10 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	if elemental:
 		dmg = PotionActions.absorb(t, dmg)
 	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from if s.board.floor_layout.is_empty() else null})
+	var old_health := t.health
 	c._hurt(t, dmg, f)
+	if t.health<old_health:
+		RedKingHill.balance(c,t)
 
 
 func _resist_effect(f: Figure, id: String) -> void:

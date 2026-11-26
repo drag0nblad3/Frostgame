@@ -21,6 +21,8 @@ static func blocks_segment(lines: Array[Dictionary],a: Vector2,b: Vector2,kind: 
 	for line in lines:
 		if not line.get(kind,false) or _exempt(line,figure):
 			continue
+		if kind=="sight" and line.has("sight_exempt_center") and a.distance_to(line["sight_exempt_center"])<=float(line.get("sight_exempt_radius",0.0))+EPS:
+			continue
 		var start: Vector2=line["a"]
 		var end: Vector2=line["b"]
 		if Geometry2D.segment_intersects_segment(a,b,start,end)!=null:

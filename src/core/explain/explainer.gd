@@ -21,6 +21,10 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Hrut hunting parties arrive."
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
+		"hill_crack":
+			return "Reality cracks: the battlefield becomes four planar slopes."
+		"hill_balance":
+			return "%s attempts to keep balance: %s."%[name_of(s,d["id"]),"passed" if d["success"] else "fell downhill"]
 		"sinkhole_contact":
 			return "%s touches the anti-magic orb: %d damage."%[name_of(s,d["id"]),d["amount"]]
 		"sinkhole_resist":

@@ -87,6 +87,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	var hrut_xp := 0
 	var scenario_xp := 0
 	var worm_hurt := false
+	var xp_cap := 300
 	for f in c.state.figures:
 		if f.side == side and f.def.role == "wizard":
 			xp += 40
@@ -99,7 +100,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
-		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp", "mad_man_xp", "sinkhole_xp"] and int(e["side"]) == side:
+		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp", "mad_man_xp", "sinkhole_xp", "hill_xp"] and int(e["side"]) == side:
 			scenario_xp += int(e["xp"])
 		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
 			var victim := c.state.figure(e["id"])
@@ -118,7 +119,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				if bounty > 0:
 					data["gold"] = int(data["gold"]) + bounty
 					report.append("%s bounty: %d gc." % [victim.label(), bounty])
-				if c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
+				if RedKingHill.is_herald(c.state,victim):
+					scenario_xp+=50
+					xp_cap=325
+				elif c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
 					scenario_xp += 50
 				elif c.state.scenario_special == "genie_in_the_bottle" and victim.def.id == "genie":
 					scenario_xp += 50
@@ -146,7 +150,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		for f in c.state.figures:
 			if f.original_side==side and not f.out_of_action:
 				scenario_xp+=5
-	xp = maxi(0, mini(300, xp + treasure_xp + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
+	xp = maxi(0, mini(xp_cap, xp + treasure_xp + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
 	if RedKingVeil.active(c.state):
 		xp=RedKingVeil.xp(c,side)
 	if RedKingHerded.active(c.state):

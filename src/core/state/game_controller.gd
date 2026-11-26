@@ -157,6 +157,8 @@ func move_to(node: Vector2i) -> bool:
 		return false
 	var f := state.active()
 	var path := r.path_to(node)
+	if not RedKingHill.before_move(self,f):
+		return true
 	if f.spell_effects.has("plane_walk"):
 		if state.scenario_special == "silent_tower":
 			for i in range(1, path.size()):
@@ -266,9 +268,11 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 		t.spell_effects.erase("elemental_hammer")
 	if f.in_play() and t.in_play() and Contact.figures_touch(f,t) and int(res["winner"]) >= 0:
 		var winner := state.figure(res["winner"])
-		if winner.side >= 0:
+		if winner.side >= 0 or RedKingHill.is_herald(state,winner):
 			state.push_winner = winner.id
 			state.push_loser = t.id if winner == f else f.id
+			if RedKingHill.is_herald(state,winner):
+				_displacement.push(false)
 
 
 func can_shoot(target_id: int) -> bool:
@@ -582,6 +586,8 @@ func fight_hand(id: int) -> bool:
 func _weapon_damage(t: Figure, dmg: int, f: Figure, w: WeaponDef) -> void:
 	var old := t.health
 	_hurt(t, dmg, f)
+	if t.health<old:
+		RedKingHill.balance(self,t)
 	if t.health < old and f.poison_weapon == w.id:
 		f.poison_weapon = ""
 		poison(t)

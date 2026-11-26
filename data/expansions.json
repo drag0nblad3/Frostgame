@@ -91,6 +91,11 @@
           "Planar Sinkhole",
           "Recover treasure surrounding a pocket of anti-magic while Nullmen emerge from its darkness.",
           "The orb draws figures and loose treasure inward each turn. Contact strips active spells and deals damage; casting becomes harder closer to the orb."
+        ],
+        "red_king_hill": [
+          "King of the Hill",
+          "Challenge the Herald and its winged Hrut guards before a reality crack folds the battlefield.",
+          "The Herald protects the central treasure. A reality crack divides the table into four slopes: sight cannot cross their seams unless the observer is near the summit. Second moves and attack damage require balance tests; failed tests send figures downhill."
         ]
       }
     }
