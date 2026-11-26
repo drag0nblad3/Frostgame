@@ -32,19 +32,27 @@ static func create(f: Figure, faction: Color) -> Node3D:
 		var coat := Color(0.29, 0.38, 0.45) if undead else faction.darkened(0.30)
 		var metal := f.def.armour >= 11 and not caster
 		for x: float in [-0.13, 0.13]:
-			box(model, Vector3(x, 0.25, 0), Vector3(0.19, 0.35, 0.22), LEATHER)
-			box(model, Vector3(x, 0.10, -0.045), Vector3(0.21, 0.17, 0.30), LEATHER.darkened(0.25))
-		cylinder(model, Vector3(0, 0.57, 0), 0.22, 0.34 if caster else 0.25, 0.55, coat)
-		box(model, Vector3(0, 0.93, 0), Vector3(0.48, 0.46, 0.32), IRON if metal else coat)
+			CreatureSculpt.limb(model, Vector3(x * 0.86, 0.58, 0), Vector3(x * 1.14, 0.17, 0.035), 0.105, LEATHER, 0.81)
+			sphere(model, Vector3(x * 1.14, 0.10, -0.06), Vector3(0.21, 0.19, 0.33), LEATHER.darkened(0.25))
+		if caster:
+			ClothSculpt.robe(model, coat)
+		else:
+			cylinder(model, Vector3(0, 0.57, 0), 0.22, 0.25, 0.55, coat).scale.z = 0.78
+		sphere(model, Vector3(0, 0.93, 0), Vector3(0.53, 0.54, 0.37), IRON if metal else coat)
 		box(model, Vector3(0, 0.72, -0.18), Vector3(0.50, 0.085, 0.09), LEATHER)
 		for x: float in [-0.30, 0.30]:
-			box(model, Vector3(x, 0.92, 0), Vector3(0.16, 0.36, 0.18), IRON if metal else coat)
-			sphere(model, Vector3(x, 0.75, -0.07), Vector3.ONE * 0.14, skin)
+			CreatureSculpt.limb(model, Vector3(x * 0.86, 1.12, 0), Vector3(x * 1.14, 0.94, 0.015), 0.105, IRON if metal else coat)
+			CreatureSculpt.limb(model, Vector3(x * 1.14, 0.94, 0.015), Vector3(x * 1.20, 0.77, -0.09), 0.09, IRON if metal else coat)
+			sphere(model, Vector3(x * 1.20, 0.75, -0.09), Vector3.ONE * 0.15, skin)
 		sphere(model, Vector3(0, 1.30, -0.015), Vector3(0.32, 0.38, 0.31), skin)
 		if caster:
-			cylinder(model, Vector3(0, 1.50, 0), 0.10, 0.24, 0.26, faction.darkened(0.40))
-			cylinder(model, Vector3(0, 1.42, 0), 0.31, 0.31, 0.055, faction.darkened(0.35))
-			box(model, Vector3(0, 0.80, 0.19), Vector3(0.55, 0.90, 0.09), faction)
+			if f.def.role == "wizard":
+				cylinder(model, Vector3(0, 1.59, 0), 0.065, 0.24, 0.37, faction.darkened(0.40)).rotation.z = 0.12
+				cylinder(model, Vector3(0, 1.45, 0), 0.32, 0.32, 0.055, faction.darkened(0.35))
+				cylinder(model, Vector3(0, 1.51, 0), 0.20, 0.21, 0.06, Color(0.76, 0.59, 0.27))
+			else:
+				ClothSculpt.hood(model, faction.darkened(0.45))
+			ClothSculpt.cape(model, faction.darkened(0.12), 0.90 if f.def.role == "wizard" else 0.67)
 		elif metal:
 			sphere(model, Vector3(0, 1.36, 0.015), Vector3(0.38, 0.34, 0.35), IRON)
 			box(model, Vector3(0, 1.31, -0.18), Vector3(0.28, 0.075, 0.07), Color(0.08, 0.12, 0.16))
@@ -54,6 +62,10 @@ static func create(f: Figure, faction: Color) -> Node3D:
 		if demon:
 			for x: float in [-0.14, 0.14]:
 				cylinder(model, Vector3(x, 1.53, 0), 0.015, 0.08, 0.28, BONE.darkened(0.35))
+		if not metal and not undead:
+			for x: float in [-0.07, 0.07]:
+				sphere(model, Vector3(x, 1.33, -0.155), Vector3(0.041, 0.037, 0.026), Color(0.13, 0.12, 0.12))
+			sphere(model, Vector3(0, 1.28, -0.174), Vector3(0.066, 0.083, 0.081), skin.lightened(0.1))
 		WarbandSculpt.decorate(model, f, faction)
 		weapon(model, f)
 		if large:
@@ -67,12 +79,10 @@ static func weapon(model: Node3D, f: Figure) -> void:
 	var id := f.melee.id if f.melee != null else ""
 	match id:
 		"staff":
-			cylinder(model, Vector3(0.39, 0.92, -0.06), 0.045, 0.045, 1.70, LEATHER.lightened(0.15))
-			sphere(model, Vector3(0.39, 1.79, -0.06), Vector3.ONE * 0.17, Color(0.40, 0.83, 0.94))
+			WeaponSculpt.staff(model)
 		"hand_weapon", "two_handed", "dagger":
 			var length := 1.1 if id == "two_handed" else (0.35 if id == "dagger" else 0.76)
-			box(model, Vector3(0.39, 0.77 + length * 0.5, -0.07), Vector3(0.095, length, 0.045), IRON.lightened(0.35))
-			box(model, Vector3(0.39, 0.82, -0.07), Vector3(0.23, 0.065, 0.09), LEATHER)
+			WeaponSculpt.sword(model, length, id == "two_handed")
 	if f.ranged != null:
 		if f.ranged.id == "bow":
 			var points := [Vector3(-0.39, 0.37, -0.18), Vector3(-0.53, 0.58, -0.18), Vector3(-0.58, 0.91, -0.18), Vector3(-0.53, 1.24, -0.18), Vector3(-0.39, 1.45, -0.18)]
@@ -83,7 +93,7 @@ static func weapon(model: Node3D, f: Figure) -> void:
 			box(model, Vector3(-0.38, 0.85, -0.19), Vector3(0.11, 0.10, 0.60), LEATHER)
 			box(model, Vector3(-0.38, 0.88, -0.37), Vector3(0.65, 0.06, 0.10), IRON)
 	if f.def.shield:
-		cylinder(model, Vector3(-0.31, 0.84, -0.22), 0.24, 0.24, 0.085, IRON).rotation.x = PI * 0.5
+		WeaponSculpt.shield(model, f.def.id in ["knight", "templar"])
 
 
 static func construct(model: Node3D, faction: Color, size: float) -> void:

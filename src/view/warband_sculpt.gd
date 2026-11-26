@@ -24,8 +24,8 @@ static func decorate(root: Node3D, f: Figure, color: Color) -> void:
 		if id == "knight":
 			MiniatureFactory.box(root, Vector3(0, 1.58, 0), Vector3(0.09, 0.18, 0.32), color.lightened(0.18))
 	elif id in ["ranger", "tracker", "thief", "treasure_hunter", "archer"]:
-		MiniatureFactory.sphere(root, Vector3(0, 1.36, 0.04), Vector3(0.44, 0.44, 0.38), color.darkened(0.55))
-		MiniatureFactory.box(root, Vector3(0, 0.82, 0.22), Vector3(0.47, 0.72, 0.10), color.darkened(0.45))
+		ClothSculpt.hood(root, color.darkened(0.55))
+		ClothSculpt.cape(root, color.darkened(0.45), 0.72, 0.27)
 		MiniatureFactory.box(root, Vector3(0.18, 0.66, -0.16), Vector3(0.18, 0.20, 0.13), HIDE)
 		if f.ranged != null:
 			CreatureSculpt.limb(root, Vector3(0.23, 0.68, 0.20), Vector3(0.12, 1.36, 0.26), 0.10, HIDE, 1.0)
@@ -39,5 +39,5 @@ static func decorate(root: Node3D, f: Figure, color: Color) -> void:
 			MiniatureFactory.sphere(root, Vector3(x, 0.72, -0.22), Vector3(0.12, 0.17, 0.12), Color(0.40, 0.83, 0.55) if i % 2 == 0 else Color(0.54, 0.69, 0.95))
 			MiniatureFactory.cylinder(root, Vector3(x, 0.82, -0.22), 0.035, 0.035, 0.05, HIDE)
 	elif id == "vampire":
-		MiniatureFactory.box(root, Vector3(0, 0.92, 0.23), Vector3(0.60, 1.11, 0.11), Color(0.25, 0.06, 0.10))
+		ClothSculpt.cape(root, Color(0.25, 0.06, 0.10), 1.03, 0.37)
 		MiniatureFactory.box(root, Vector3(0, 1.32, 0.20), Vector3(0.57, 0.23, 0.09), Color(0.11, 0.10, 0.15))
