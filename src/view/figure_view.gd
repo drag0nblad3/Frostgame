@@ -7,6 +7,7 @@ const SIDE_COLORS := [Color(0.25, 0.5, 0.95), Color(0.9, 0.3, 0.25), Color(0.3, 
 var figure_id := 0
 var _plate: Label3D
 var _body: MeshInstance3D
+var _base: MeshInstance3D
 var _ring: MeshInstance3D
 
 
@@ -14,6 +15,7 @@ func setup(f: Figure, side_name: String) -> void:
 	figure_id = f.id
 	var col: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	var base := MeshInstance3D.new()
+	_base = base
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = Figure.BASE_RADIUS
 	cyl.bottom_radius = Figure.BASE_RADIUS
@@ -53,6 +55,9 @@ func setup(f: Figure, side_name: String) -> void:
 
 
 func refresh(f: Figure) -> void:
+	var col: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
+	_base.material_override = BoardView._mat(col.darkened(0.3), 0.6)
+	_body.material_override = BoardView._mat(col, 0.7)
 	_plate.text = "%s\n%d/%d" % [f.label(), f.health, f.def.health]
 	_plate.modulate = Color(1, 1, 1) if f.health * 2 > f.def.health else Color(1, 0.6, 0.4)
 

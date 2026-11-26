@@ -108,7 +108,7 @@
     "name": "Control Construct",
     "school": "enchanter",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "control"
   },
   "embed_enchantment": {
     "name": "Embed Enchantment",
@@ -198,7 +198,7 @@
     "name": "Animate Skull",
     "school": "necromancer",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "bone_dart": {
     "name": "Bone Dart",
@@ -218,13 +218,13 @@
     "name": "Control Undead",
     "school": "necromancer",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "control"
   },
   "raise_zombie": {
     "name": "Raise Zombie",
     "school": "necromancer",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "spell_eater": {
     "name": "Spell Eater",
@@ -308,7 +308,7 @@
     "name": "Mind Control",
     "school": "soothsayer",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "control"
   },
   "mind_lock": {
     "name": "Mind Lock",
@@ -344,13 +344,13 @@
     "name": "Control Demon",
     "school": "summoner",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "control"
   },
   "imp": {
     "name": "Imp",
     "school": "summoner",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "leap": {
     "name": "Leap",
@@ -386,7 +386,7 @@
     "name": "Summon Demon",
     "school": "summoner",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "banish": {
     "name": "Banish",
@@ -453,7 +453,7 @@
     "name": "Control Animal",
     "school": "witch",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "control"
   },
   "curse": {
     "name": "Curse",

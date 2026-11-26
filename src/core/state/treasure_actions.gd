@@ -75,6 +75,8 @@ func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if not _c.can_move():
 		return false
 	var f := _c.state.active()
+	if f.control_spell == "mind_control" or f.side < 0:
+		return false
 	if r == null:
 		r = _c.reach()
 	var at := MoveGrid.to_pos(node)

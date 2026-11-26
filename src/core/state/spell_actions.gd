@@ -3,10 +3,12 @@ extends RefCounted
 ## Two-stage spellcasting: announce target, roll, choose Health, then resolve.
 
 var c: GameController
+var summons: SummonActions
 
 
 func _init(controller: GameController) -> void:
 	c = controller
+	summons = SummonActions.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -21,7 +23,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
-	if kind == "unimplemented":
+	if kind in ["unimplemented", "placement"]:
 		return false
 	if kind == "self":
 		return t == f and f.elemental_shield == 0
@@ -41,6 +43,8 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t.side != f.side
 	if id == "enchant_armour":
 		return t.def.role == "soldier" and t.def.armour >= 11 and not t.spell_effects.has(id)
+	if SummonActions.CONTROL.has(id):
+		return summons.can_control(f, t, id)
 	if id == "destroy_undead":
 		return t.def.traits.has("undead")
 	if kind in ["heal", "resist"] and (t.def.traits.has("undead") or t.def.traits.has("construct")):
@@ -55,12 +59,36 @@ func can_cast(id: String, target_id: int) -> bool:
 func start(id: String, target_id: int) -> bool:
 	if not can_cast(id, target_id):
 		return false
+	return _roll(id, target_id)
+
+
+func placement_points(id: String, first_only: bool = false) -> Array[Vector2]:
+	var f := c.state.active()
+	var empty: Array[Vector2] = []
+	if not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f):
+		return empty
+	if not c.state.spellbooks.get(f.side, {}).has(id) or not SummonActions.PLACEMENT.has(id):
+		return empty
+	if f.spell_effects.has("blinding_light") and id in ["animate_skull", "imp"]:
+		return empty
+	return summons.points(f, id, first_only)
+
+
+func start_at(id: String, at: Vector2) -> bool:
+	if placement_points(id, true).is_empty() or not summons.can_place(c.state.active(), id, at):
+		return false
+	return _roll(id, c.state.active_id, at)
+
+
+func _roll(id: String, target_id: int, at: Variant = null) -> bool:
 	var f := c.state.active()
 	var raw := c.dice.d20()
 	var total := CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks[f.side][id])
 	c._spend(f)
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn}
+	if at != null:
+		c.state.pending_cast["at"] = at
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
 	return true
 
@@ -69,6 +97,8 @@ func max_empowerment() -> int:
 	var p := c.state.pending_cast
 	if p.is_empty():
 		return 0
+	if p["id"] == "summon_demon":
+		return 0 if int(p["raw"]) == 1 else c.state.figure(p["caster"]).health
 	return CastingRoll.max_empowerment(p["total"], c.state.figure(p["caster"]).health)
 
 
@@ -80,11 +110,24 @@ func finish(health: int) -> bool:
 	var f := s.figure(p["caster"])
 	var t := s.figure(p["target"])
 	var id: String = p["id"]
-	var result := CastingRoll.resolve(p["total"], p["tn"], health, f.health)
+	var result := CastingRoll.resolve(p["total"], p["tn"], health, f.health, false, 100 if id == "summon_demon" else 18)
+	if id == "summon_demon" and int(p["raw"]) == 1:
+		result["success"] = false
 	s.pending_cast = {}
 	c._hurt(f, int(result["health_spent"]) + int(result["failure_damage"]), f, false)
 	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": health, "tn": p["tn"], "failure_damage": result["failure_damage"]})
-	if not result["success"] or not t.in_play():
+	if id == "summon_demon" and int(p["raw"]) == 1:
+		summons.miscast_demon(f)
+		return true
+	if not result["success"]:
+		return true
+	if SummonActions.PLACEMENT.has(id):
+		summons.spawn(f, id, p["at"], int(p["total"]) + health, int(p["tn"]))
+		return true
+	if not t.in_play():
+		return true
+	if SummonActions.CONTROL.has(id):
+		summons.apply_control(f, t, id, int(result["roll"]))
 		return true
 	match id:
 		"heal":
@@ -187,6 +230,8 @@ func on_activate(f: Figure) -> void:
 func on_end_activation(f: Figure) -> void:
 	f.petrified_skip = false
 	_resist_effect(f, "slow")
+	if f.in_play() and f.control_spell == "mind_control" and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty(), f.control_roll):
+		summons.release(f)
 
 
 func on_end_turn() -> void:
@@ -207,3 +252,18 @@ func _direct_attack(f: Figure, t: Figure, power: int) -> void:
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
 	if a > d:
 		c._hurt(t, maxi(0, a - t.effective_armour()), f, false)
+
+
+func can_cancel(target: int) -> bool:
+	var f := c.state.active()
+	var t := c.state.figure(target)
+	return c.can_act() and f != null and t != null and summons.cancelable(f, t)
+
+
+func cancel(target: int) -> bool:
+	if not can_cancel(target):
+		return false
+	var f := c.state.active()
+	c._spend(f)
+	summons.cancel(f, c.state.figure(target))
+	return true

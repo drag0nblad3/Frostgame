@@ -66,12 +66,13 @@ func on_end_turn() -> void:
 			return
 
 
-func _spawn_at(type: String, at: Vector2) -> void:
+func _spawn_at(type: String, at: Vector2, side: int = -1) -> Figure:
 	var s := c.state
 	var id := 1
 	for f in s.figures:
 		id = maxi(id, f.id + 1)
-	var creature := Figure.new(id, s.creature_db.get_def(type), -1, at, s.creature_db.unarmed())
+	var creature := Figure.new(id, s.creature_db.get_def(type), side, at, s.creature_db.unarmed())
 	creature.elevation = s.board.height_at(at)
 	s.figures.append(creature)
 	c.emit("creature_spawn", {"id": id})
+	return creature

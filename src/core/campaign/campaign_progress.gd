@@ -66,7 +66,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	for unit: Dictionary in data["units"]:
 		unit["miss"] = maxi(0, int(unit["miss"]) - 1)
 	for f in c.state.figures:
-		if f.side != side or f.campaign_id < 0 or not f.out_of_action:
+		if f.original_side != side or f.campaign_id < 0 or not f.out_of_action:
 			continue
 		for unit: Dictionary in data["units"]:
 			if int(unit["id"]) != f.campaign_id:

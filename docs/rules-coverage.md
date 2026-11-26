@@ -113,3 +113,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## First named scenario
 
 - The Mausoleum (p. 142): selectable in the battle toolbar for the next skirmish or campaign battle, six initial skeletons and six treasure tokens without a central treasure, one additional skeleton at a randomly selected door after every Creature phase. Fixed token/deployment locations and solid central building approximate the tabletop setup. If the doorway is occupied, spawn on the nearest free node within 1.5 inches; optional pickup encounters disabled. 
+
+## Summoning and temporary allegiance
+
+- pp. 32, 69, 112, 116, 125, 130, 133: four point-target summons and five control spells implemented; creature placement, per-caster/warband limits, demon tiers and natural-one miscast, release actions, Mind Control resistance after activation, temporary soldier-phase allegiance and color changes. Four new bestiary records. Deployment uses existing half-inch lattice; Will resistance and release timing are simplified (Mind Control end-turn voluntary cancellation and empowerment pending). Campaign survival follows original allegiance. Before-battle Raise Zombie remains pending; no creature item slots. 

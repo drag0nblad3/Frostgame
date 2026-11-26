@@ -81,12 +81,19 @@ func refresh() -> void:
 			break
 	cast_options.clear()
 	for id: String in c.state.spellbooks.get(f.side, {}):
+		if not c._magic.placement_points(id, true).is_empty():
+			cast_options.append(id)
+			continue
 		for t in c.state.figures:
 			if c.can_cast(id, t.id):
 				cast_options.append(id)
 				break
 	if not cast_options.is_empty():
 		available.append("cast")
+	for t in c.state.figures:
+		if c._magic.can_cancel(t.id):
+			available.append("cancel_control")
+			break
 	if c.can_reload():
 		available.append("reload")
 	drops.clear()
@@ -115,6 +122,15 @@ func preview() -> void:
 	match mode:
 		"spell_menu":
 			hint = "Choose a spell."
+		"spell_point":
+			points.assign(c._magic.placement_points(selected_spell))
+			hint = "Choose a marked summoning location."
+		"cancel_control":
+			for t in c.state.figures:
+				if c._magic.can_cancel(t.id):
+					targets.append(t)
+			radius = 0.65
+			hint = "Choose a summoned or controlled creature to release."
 		"spell_target":
 			for t in c.state.figures:
 				if c.can_cast(selected_spell, t.id):
@@ -191,7 +207,7 @@ func action(key: String) -> bool:
 		return false
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
-		mode = "spell_target"
+		mode = "spell_point" if SummonActions.PLACEMENT.has(selected_spell) else "spell_target"
 		available.assign(["spell_cancel"])
 		preview()
 		return false
@@ -252,13 +268,15 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
 			"spell_target":
 				return c.start_cast(selected_spell, id)
+			"cancel_control":
+				return c._magic.cancel(id)
 			"group_select":
 				if id == int(c.state.early.leaders[c.state.current_side()]):
 					return false
@@ -276,6 +294,8 @@ func tap(screen: Vector2) -> bool:
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode == "spell_point":
+		return c._magic.start_at(selected_spell, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "collect":
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:

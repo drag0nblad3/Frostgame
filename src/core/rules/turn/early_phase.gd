@@ -53,7 +53,7 @@ func waiting(s: GameState, side: int) -> Array[Figure]:
 		return out
 	for id: int in eligible[side]:
 		var f := s.figure(id)
-		if f.in_play() and not f.activated:
+		if f.in_play() and f.side == side and not f.activated:
 			out.append(f)
 	return out
 

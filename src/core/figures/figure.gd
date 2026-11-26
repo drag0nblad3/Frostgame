@@ -7,6 +7,12 @@ const BASE_RADIUS := 0.5
 
 var id := 0
 var campaign_id := -1
+var original_side := 0
+var controller_id := -1
+var control_spell := ""
+var control_roll := 0
+var summoned_by := -1
+var summon_spell := ""
 var def: FigureDef
 var side := 0
 var pos := Vector2.ZERO
@@ -35,6 +41,7 @@ func _init(fig_id: int = 0, d: FigureDef = null, fig_side: int = 0, at: Vector2 
 	id = fig_id
 	def = d
 	side = fig_side
+	original_side = fig_side
 	pos = at
 	if d != null:
 		health = d.health

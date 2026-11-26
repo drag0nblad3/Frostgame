@@ -41,11 +41,11 @@ func _play(e: GameEvent) -> void:
 			var f := state.figure(d["id"])
 			var v := FigureView.new()
 			add_child(v)
-			v.setup(f, "Creature")
+			v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 			views[f.id] = v
 		"move", "push_back", "force_combat":
 			_animate_move(_view(d["id"]), d["path"])
-		"heal":
+		"allegiance", "heal":
 			_view(d["id"]).refresh(state.figure(d["id"]))
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]))
