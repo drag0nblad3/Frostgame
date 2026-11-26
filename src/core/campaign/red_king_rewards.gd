@@ -20,6 +20,8 @@ static func eligible(s: GameState) -> bool:
 
 
 static func offer(d: Dictionary,entry: Dictionary) -> String:
+	if d.get("red_king_exchange_used",false) or entry.has("rk_roll"):
+		return ""
 	if entry.get("rk_artefact",false):
 		return "artefact"
 	if entry.get("rk_exchange",false) and not d.get("red_king_exchange_used",false):
@@ -56,6 +58,10 @@ static func award(d: Dictionary,id: String,dice: Dice) -> bool:
 	if not catalog().has(chosen):
 		return false
 	var info: Dictionary=catalog()[chosen]
+	if not d.has("loot"):
+		d["loot"]=[]
+	if not d.has("last_report"):
+		d["last_report"]=[]
 	d["loot"].append({"kind":"gear","gear":chosen,"owner":-1,"unlocked":not info.get("artefact",false)})
 	d["last_report"].append("Red King reward: "+str(info["name"])+(" (locked)" if info.get("artefact",false) else ""))
 	return true

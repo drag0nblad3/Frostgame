@@ -53,6 +53,8 @@ static func fill(d: Dictionary,db: FigureDb,dice: Dice) -> int:
 		var definition := db.get_def(id)
 		d["units"].append({"type":id,"id":d["units"].size(),"miss":0,"injuries":0,"dead":false,"ragged_recruit":true,"permanent_summon":definition.role=="creature"})
 		d["last_report"].append("Random recruit: "+definition.name)
+		if d.get("red_king_recruit_status",false):
+			status(d,d["units"].back(),db,dice,dice.d20())
 		count+=1
 	return count
 
@@ -84,3 +86,64 @@ static func discard(d: Dictionary,index: int) -> bool:
 		return false
 	d["loot"].remove_at(index)
 	return true
+
+
+## Optional status roll, permanently recorded on the recruit.
+static func status(d: Dictionary,u: Dictionary,db: FigureDb,dice: Dice,roll: int) -> void:
+	u["ragged_status_roll"]=roll
+	var definition := db.get_def(u["type"])
+	var slots := CampaignInventory.slots(u,db)
+	var changes: Dictionary=u.get("ragged_bonuses",{})
+	if roll<=4:
+		if definition.role=="soldier" and not definition.traits.has("animal"):
+			InjuryRules.roll(u,dice)
+	elif roll<=6:
+		changes["fight"]=-1
+	elif roll<=8:
+		changes["health"]=-2
+	elif roll<=10 and slots>0:
+		var raw := dice.d20()
+		var id: String=CampaignInventory.LESSER[raw-1] if raw<=18 else CampaignInventory.GREATER[dice.pick(CampaignInventory.GREATER.size())]
+		if id not in CampaignPotions.VAULT_ONLY:
+			d["loot"].append({"kind":"potion","potion":id,"owner":u["id"]})
+	elif roll<=14 and slots>0:
+		for w in definition.weapons:
+			if not w.melee or w.id in ["unarmed","natural"]:
+				continue
+			var id: String="gear_rk_recruit_"+w.id
+			if CampaignInventory.catalog().has(id):
+				d["loot"].append({"kind":"gear","gear":id,"owner":u["id"]})
+				break
+	elif roll<=16 and slots>0:
+		var item := {"kind":"gear","gear":MagicEquipment.ITEM_TABLE[dice.pick(MagicEquipment.ITEM_TABLE.size())],"owner":-1}
+		d["loot"].append(item)
+		if not CampaignInventory.assign_item(d,d["loot"].size()-1,int(u["id"]),db):
+			d["loot"].pop_back()
+	elif roll<=18 and roll>=17:
+		changes["will"]=1
+	elif roll>=19:
+		changes["health"]=1
+	u["ragged_bonuses"]=changes
+	d["last_report"].append("Recruit status: %s rolled %d."%[definition.name,roll])
+
+
+static func restore(d: Dictionary,db: FigureDb) -> void:
+	if not active(d):
+		return
+	d.erase("red_king_ragged")
+	for u: Dictionary in d["units"]:
+		u.erase("ragged_absent")
+		if not u.get("ragged_recruit",false) or not BaseResources.alive(u):
+			continue
+		# Core permits permanent constructs and the normal soldier roster.
+		# Other recruited bestiary creatures need a supported permission rule.
+		var definition := db.get_def(u["type"])
+		if definition.role=="creature" and not Rituals.CONSTRUCTS.has(u["type"]):
+			u["dismissed"]=true
+			d["last_report"].append(definition.name+" leaves after the campaign.")
+			for item: Dictionary in d["loot"]:
+				if int(item.get("owner",-1))==int(u["id"]):
+					item["owner"]=-1
+	for item: Dictionary in d["loot"]:
+		item.erase("ragged_sealed")
+	d["red_king_reconcile_pending"]=true

@@ -73,5 +73,7 @@ func test_bonus_round_no_injury_or_normal_rewards() -> void:
 	check(not data["units"][0]["dead"])
 	check(data["red_king_secret_hrut"])
 	check(data["red_king_survival_reroll"])
-	check_eq(data["red_king_pending_rewards"],["treasure","artefact"])
+	check(not data.has("red_king_pending_rewards"))
+	check_eq(data["loot"].size(),2)
+	check(RedKingRewards.catalog()[data["loot"][1]["gear"]]["artefact"])
 	check(not RedKingMindRewards.settle(data,c,0))

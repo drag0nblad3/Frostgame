@@ -17,6 +17,9 @@ var improve: Button
 var start: Button
 var story_start: Button
 var story_veil: CheckBox
+var recruit_status: CheckBox
+var reconcile_button: Button
+var continue_skirmishes: Button
 var begin: Button
 var db: FigureDb
 var stat: OptionButton
@@ -163,6 +166,18 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	story_veil.button_pressed=true
 	col.add_child(story_veil)
 	story_start=_command(col,"Start The Red King storyline",func() -> void: story_requested.emit(story_veil.button_pressed))
+	recruit_status=CheckBox.new()
+	recruit_status.text="Roll optional status for random recruits"
+	recruit_status.toggled.connect(func(on: bool) -> void:
+		campaign.data["red_king_recruit_status"]=on
+		campaign.save())
+	col.add_child(recruit_status)
+	reconcile_button=_command(col,"Reconcile warband after The Red King",func() -> void:
+		if RedKingCampaign.reconcile(campaign.data,db):
+			changed())
+	continue_skirmishes=_command(col,"Return to ordinary campaign",func() -> void:
+		if RedKingCampaign.return_to_skirmishes(campaign.data,db):
+			changed())
 	_scenario=OptionButton.new()
 	_scenario.fit_to_longest_item=false
 	_scenario.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -188,6 +203,12 @@ func refresh(in_battle: bool) -> void:
 	begin.visible = not d.is_empty()
 	_scenario.visible=not d.is_empty() and not in_battle and not RedKingCampaign.active(d)
 	var stage := RedKingCampaign.next_stage(d)
+	recruit_status.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty()
+	recruit_status.set_pressed_no_signal(bool(d.get("red_king_recruit_status",false)))
+	reconcile_button.visible=RedKingCampaign.active(d) and stage.is_empty() and RaggedWarbands.active(d) and not in_battle
+	reconcile_button.disabled=not d.get("pending_treasure",[]).is_empty()
+	continue_skirmishes.visible=bool(d.get("red_king_reconcile_pending",false)) and not in_battle
+	continue_skirmishes.disabled=not BaseResources.fits(d,db)
 	begin.text=("Play "+str(stage.get("title","")) if not stage.is_empty() else "Story concluded") if RedKingCampaign.active(d) else "Play next campaign skirmish"
 	spells.visible = not d.is_empty()
 	improve.visible = not d.is_empty()

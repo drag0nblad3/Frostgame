@@ -197,7 +197,7 @@
       "bonus": {
         "resistance": 4
       },
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_icon_of_the_sun": {
@@ -636,6 +636,50 @@
       "live": false,
       "artefact": true,
       "unlock_tn": 16,
+      "expansion": "red_king"
+    },
+    "gear_rk_recruit_staff": {
+      "name": "Recruit's magical staff",
+      "type": "staff",
+      "buy": 0,
+      "sell": 0,
+      "bonus": {
+        "fight": 1
+      },
+      "live": true,
+      "expansion": "red_king"
+    },
+    "gear_rk_recruit_hand_weapon": {
+      "name": "Recruit's magical hand weapon",
+      "type": "hand_weapon",
+      "buy": 0,
+      "sell": 0,
+      "bonus": {
+        "fight": 1
+      },
+      "live": true,
+      "expansion": "red_king"
+    },
+    "gear_rk_recruit_two_handed": {
+      "name": "Recruit's magical two handed",
+      "type": "two_handed",
+      "buy": 0,
+      "sell": 0,
+      "bonus": {
+        "fight": 1
+      },
+      "live": true,
+      "expansion": "red_king"
+    },
+    "gear_rk_recruit_dagger": {
+      "name": "Recruit's magical dagger",
+      "type": "dagger",
+      "buy": 0,
+      "sell": 0,
+      "bonus": {
+        "fight": 1
+      },
+      "live": true,
       "expansion": "red_king"
     }
   }

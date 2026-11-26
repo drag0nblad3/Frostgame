@@ -67,3 +67,19 @@ static func advance(d: Dictionary,id: String) -> bool:
 	if i<all.size() and all[i].get("campaign_mode","")=="ragged_warbands":
 		RaggedWarbands.enter(d)
 	return true
+
+
+static func reconcile(d: Dictionary,db: FigureDb) -> bool:
+	if not active(d) or not next_id(d).is_empty() or not d.get("pending_treasure",[]).is_empty() or not RaggedWarbands.active(d):
+		return false
+	RaggedWarbands.restore(d,db)
+	d["last_report"].append("Restore the warband: dismiss surplus members until normal roster limits are met.")
+	return true
+
+
+static func return_to_skirmishes(d: Dictionary,db: FigureDb) -> bool:
+	if not active(d) or not d.get("red_king_reconcile_pending",false) or not BaseResources.fits(d,db):
+		return false
+	d.erase("red_king_reconcile_pending")
+	d.erase("campaign_story")
+	return true
