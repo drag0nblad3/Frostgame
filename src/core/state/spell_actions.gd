@@ -391,6 +391,8 @@ func _finish_one(health: int) -> bool:
 		return true
 	if not t.in_play():
 		return true
+	if id in ["heal","mind_lock","elemental_shield","blinding_light","petrify","bones_of_the_earth","slow","curse","furious_quill","plague_of_insects","strike_dead","steal_health","suggestion","blink"]:
+		t=CreatureEffects.reflection_target(c,f,t,id)
 	if SummonActions.CONTROL.has(id):
 		summons.apply_control(f, t, id, int(result["roll"]))
 		return true
@@ -438,6 +440,7 @@ func _finish_one(health: int) -> bool:
 			t.elemental_shield = 3
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
+			t=CreatureEffects.reflection_target(c,f,t,id)
 			var old_health := t.health
 			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt", id)
 			if id == "poison_dart" and t.health < old_health:
@@ -455,11 +458,11 @@ func _finish_one(health: int) -> bool:
 		"scatter_shot":
 			for other in s.figures:
 				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
-					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos, false, true, id)
+					_shot(f, CreatureEffects.reflection_target(c,f,ShotTarget.randomize(c.dice,s.figures,other),id), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
 				if other != f and other.in_play() and other.ring_side==f.ring_side and Shooting.distance(f, other) <= 3:
-					_direct_attack(f, other, 5)
+					_direct_attack(f, CreatureEffects.reflection_target(c,f,other,id), 5)
 		"plane_walk":
 			c._loot.drop_on_death(f)
 			f.spell_effects[id] = true
@@ -482,7 +485,8 @@ func _finish_one(health: int) -> bool:
 						if not affected.has(member):
 							affected.append(member)
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else f.pos, true, true, id)
+				var recipient := CreatureEffects.reflection_target(c,f,other,id)
+				_shot(f, recipient, 5, f.pos if recipient==f or other==t else t.pos, true, true, id)
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty()
@@ -578,6 +582,7 @@ func on_end_turn() -> void:
 
 
 func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
+	t=CreatureEffects.reflection_target(c,f,t,"banish")
 	var raw := c.dice.d20()
 	var will := t.effective_will() + t.roll_penalty()
 	if not StatRoll.succeeds(raw, will, roll):

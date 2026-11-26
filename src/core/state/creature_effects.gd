@@ -77,3 +77,13 @@ static func after_fight(c: GameController,a: Figure,b: Figure,res: Dictionary,a_
 static func _melt(c: GameController,attacker: Figure,target: Figure,roll: int,weapon: WeaponDef) -> void:
 	if roll==1 and target.def.traits.has("melt_weapon") and not weapon.id in ["unarmed","natural"] and not WeaponActions.magical(attacker,weapon):
 		WeaponActions.new(c).destroy(attacker,weapon.id)
+
+
+## Only successfully cast spells call this hook; innate creature attacks do not.
+static func reflection_target(c: GameController,caster: Figure,target: Figure,spell: String,roll: int = -1) -> Figure:
+	if caster==target or not target.in_play() or not target.def.traits.has("spell_reflection"):
+		return target
+	var raw := c.dice.d20() if roll<0 else roll
+	var reflected := raw>=16
+	c.emit("spell_reflection",{"id":target.id,"caster":caster.id,"spell":spell,"roll":raw,"success":reflected})
+	return caster if reflected else target

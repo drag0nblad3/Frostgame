@@ -31,3 +31,13 @@ func test_combustion_replaces_definition_and_preserves_identity() -> void:
 	check_eq(f.id,1)
 	check_eq(f.pos,Vector2(10,10))
 	check_eq(CreatureEffects.elemental_resistance(f),5)
+
+
+func test_spell_reflection_threshold() -> void:
+	var defs := _db_preview()
+	var herald := Figure.new(1,defs.get_def("red_king_herald"),-1,Vector2(10,10),defs.unarmed())
+	var caster := fig("wizard",0,Vector2(20,20))
+	var c := make_game(make_board(),[herald,caster],Dice.new(17))
+	check_eq(CreatureEffects.reflection_target(c,caster,herald,"curse",15),herald)
+	check_eq(CreatureEffects.reflection_target(c,caster,herald,"curse",16),caster)
+	check_eq(CreatureEffects.reflection_target(c,caster,caster,"curse",20),caster)

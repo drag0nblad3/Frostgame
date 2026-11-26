@@ -260,9 +260,14 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 		if int(res["b_dmg"])>0:
 			RedKingMadMan.knock_out(self,t,f)
 		return
+	var before_a := f.health
+	var before_b := t.health
 	_weapon_damage(t, res["b_dmg"], f, a_weapon)
 	_weapon_damage(f, res["a_dmg"], t, b_weapon)
-	CreatureEffects.after_fight(self,f,t,res,a_weapon,b_weapon)
+	var actual := res.duplicate()
+	actual["a_dmg"]=maxi(0,before_a-f.health)
+	actual["b_dmg"]=maxi(0,before_b-t.health)
+	CreatureEffects.after_fight(self,f,t,actual,a_weapon,b_weapon)
 	if int(res["b_dmg"]) > 0:
 		f.spell_effects.erase("elemental_hammer")
 	if int(res["a_dmg"]) > 0:
