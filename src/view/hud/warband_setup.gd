@@ -40,11 +40,12 @@ func setup(db: FigureDb) -> void:
 		_update())
 	_school = OptionButton.new()
 	for id: String in draft.schools:
-		_school.add_item(id.capitalize())
+		_school.add_icon_item(ActionArt.school(id),id.capitalize())
 		_school.set_item_metadata(_school.item_count - 1, id)
 		if id == draft.school:
 			_school.select(_school.item_count - 1)
 	body.add_child(_school)
+	_school.add_theme_constant_override("icon_max_width",32)
 	_school.item_selected.connect(_change_school)
 	_wizard_portrait = MiniaturePortrait.new()
 	_wizard_portrait.custom_minimum_size = Vector2(260, 190)
@@ -119,8 +120,10 @@ func _rebuild_spells() -> void:
 		child.queue_free()
 	for slot in 8:
 		var choice := OptionButton.new()
+		choice.add_theme_constant_override("icon_max_width",28)
 		var label := Label.new()
 		label.text = "Home school %d" % (slot + 1) if slot < 3 else ("Aligned: " + str(draft.schools[draft.school]["aligned"][slot - 3]).capitalize() if slot < 6 else "Neutral school")
+		label.modulate = Color(0.93,0.84,0.61)
 		_spell_rows.add_child(label)
 		for id in draft.candidates(slot):
 			var info: Dictionary = draft.catalog[id]
@@ -128,13 +131,23 @@ func _rebuild_spells() -> void:
 			var suffix := "" if live else " · NOT PLAYABLE YET"
 			if Rituals.BEFORE.has(id) or Rituals.AFTER.has(id):
 				suffix = " · Campaign ritual" if info["kind"] == "ritual" else " · Battle / preparation"
-			choice.add_item("%s · %s · TN%d%s" % [info["name"], str(info["school"]).capitalize(), draft.casting_number(id), suffix])
+			choice.add_icon_item(ActionArt.school(str(info["school"])),"%s · %s · TN%d%s" % [info["name"], str(info["school"]).capitalize(), draft.casting_number(id), suffix])
 			choice.set_item_metadata(choice.item_count - 1, id)
 			if draft.spells[slot] == id:
 				choice.select(choice.item_count - 1)
 		_spell_rows.add_child(choice)
+		var detail := Label.new()
+		detail.add_theme_font_size_override("font_size",15)
+		detail.modulate = Color(0.72,0.82,0.87)
+		detail.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		if slot < draft.spells.size():
+			var chosen := draft.spells[slot]
+			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
+		_spell_rows.add_child(detail)
 		choice.item_selected.connect(func(index: int) -> void:
 			draft.spells[slot] = str(choice.get_item_metadata(index))
+			var chosen := draft.spells[slot]
+			detail.text = ActionArt.spell_details(draft.catalog[chosen],draft.casting_number(chosen))
 			_update())
 
 

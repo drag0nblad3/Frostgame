@@ -50,9 +50,11 @@ var _training_next_button: Button
 var _roll_panel: PanelContainer
 var _roll_label: Label
 var _roll_timer: Timer
+var _spell_catalog: Dictionary
 
 
 func _ready() -> void:
+	_spell_catalog = JsonFile.read("res://data/spells.json")
 	var root := MarginContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
 	for side in ["left", "right", "top", "bottom"]:
@@ -102,6 +104,7 @@ func _ready() -> void:
 	scenarios.tooltip_text = "Choose the next battle scenario; current battle stays unchanged."
 	top.add_child(scenarios)
 	var inspect := _button("Inspect", func() -> void: inspect_pressed.emit())
+	ActionArt.apply(inspect,"inspect",_spell_catalog)
 	top.add_child(inspect)
 	_blocks.append(top)
 	_objective = _label(16)
@@ -175,6 +178,7 @@ func _ready() -> void:
 	_blocks.append(_action_row)
 	for key: String in ACTIONS:
 		var button := _button(ACTIONS[key], func() -> void: action_pressed.emit(key))
+		ActionArt.apply(button,key,_spell_catalog)
 		button.toggle_mode = key not in ["reload", "end", "pass_phase", "group", "group_begin", "group_cancel", "items", "items_back"]
 		_action_row.add_child(button)
 		_buttons[key] = button

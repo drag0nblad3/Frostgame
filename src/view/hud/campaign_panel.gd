@@ -7,6 +7,7 @@ signal restart_requested
 var campaign: CampaignProgress
 var summary: Label
 var base_banner: BaseBanner
+var _spell_catalog: Dictionary
 var spells: OptionButton
 var improve: Button
 var start: Button
@@ -39,6 +40,7 @@ var treasure_dice := Dice.new(0)
 func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	campaign = progress
 	db = figures
+	_spell_catalog = JsonFile.read("res://data/spells.json")
 	theme = BattleTheme.create()
 	title = "Campaign headquarters"
 	get_ok_button().text = "Close"
@@ -63,6 +65,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		if campaign.resolve_treasure(true, treasure_dice):
 			changed())
 	spells = OptionButton.new()
+	spells.add_theme_constant_override("icon_max_width",28)
 	col.add_child(spells)
 	improve = Button.new()
 	improve.text = "Improve spell (100 XP)"
@@ -226,7 +229,8 @@ func refresh(in_battle: bool) -> void:
 	for id: String in d["spells"]:
 		if int(d["spells"][id]) <= 5:
 			continue
-		spells.add_item("%s · TN%d" % [id.capitalize(), d["spells"][id]])
+		var info: Dictionary = _spell_catalog.get(id,{})
+		spells.add_icon_item(ActionArt.school(str(info.get("school",""))),"%s · TN%d" % [str(info.get("name",id.capitalize())), d["spells"][id]])
 		spells.set_item_metadata(spells.item_count - 1, id)
 	improve.disabled = deciding or in_battle or not CampaignSuccession.living_wizard(d) or bool(d["spell_improved"]) or int(d["xp"]) < 100 or spells.item_count == 0
 	begin.disabled = in_battle or not campaign.can_deploy()

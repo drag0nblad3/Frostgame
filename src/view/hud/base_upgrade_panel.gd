@@ -21,6 +21,7 @@ func setup(p: CampaignProgress, figures: FigureDb, changed: Callable) -> void:
 	owned.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	add_child(owned)
 	resources = OptionButton.new()
+	resources.add_theme_constant_override("icon_max_width",28)
 	add_child(resources)
 	buy_button = Button.new()
 	buy_button.text = "Purchase base resource"
@@ -49,7 +50,7 @@ func refresh() -> void:
 		if BaseResources.owns(d, id):
 			names.append(info["name"])
 			continue
-		resources.add_item("%s · %d gc · %s%s" % [info["name"], info["cost"], info["benefit"], "" if info["live"] else " (pending)"])
+		resources.add_icon_item(ResourceArt.icon(id),"%s · %d gc · %s%s" % [info["name"], info["cost"], info["benefit"], "" if info["live"] else " (pending)"])
 		var i := resources.item_count - 1
 		resources.set_item_metadata(i, id)
 		var available: bool = info["live"] and str(d.get("base", "")) != "" and int(d["gold"]) >= int(info["cost"])
