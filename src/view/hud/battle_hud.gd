@@ -8,6 +8,8 @@ signal watch_toggled(on: bool)
 signal new_game_pressed
 signal roster_pressed
 signal campaign_pressed
+signal save_battle_pressed
+signal resume_battle_pressed
 signal scenario_selected(id: String)
 signal action_pressed(action: String)
 
@@ -36,7 +38,7 @@ func _ready() -> void:
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(col)
-	var top := HBoxContainer.new()
+	var top := HFlowContainer.new()
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(top)
 	_status = _label(20)
@@ -63,6 +65,8 @@ func _ready() -> void:
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
 	top.add_child(scenarios)
 	top.add_child(_button("New game", func() -> void: new_game_pressed.emit()))
+	top.add_child(_button("Save battle", func() -> void: save_battle_pressed.emit()))
+	top.add_child(_button("Resume battle", func() -> void: resume_battle_pressed.emit()))
 	_blocks.append(top)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL

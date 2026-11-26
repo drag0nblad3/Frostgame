@@ -151,3 +151,9 @@ func build_treasures() -> void:
 		add_child(marker)
 		marker.position = TableSpace.to_world(token.pos, 0.25 + state.board.height_at(token.pos))
 		treasure_views[token.id] = marker
+		if not token.unresolved():
+			marker.visible = false
+		elif token.carrier_id >= 0 and views.has(token.carrier_id):
+			var carrier := state.figure(token.carrier_id)
+			marker.reparent(views[token.carrier_id], false)
+			marker.position = Vector3(-0.48 if carrier.second_treasure_id == token.id else 0.48, 0.65, 0)

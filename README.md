@@ -29,3 +29,6 @@ still needs checking against the book, and `docs/PLANNING.md` for the roadmap.
 
 ## Wizard and magic prototype
 Open **Warband** to name a wizard, select a school and eight spells, hire soldiers and start a new skirmish. The budget and specialist cap are validated. Unimplemented spell effects are explicitly marked in the editor. During a caster activation, **Cast** lists usable known spells; choose a target, then choose Health empowerment and resolve the roll. The creature phase and optional treasure encounters are enabled in the default scenario.
+
+## Battle checkpoints
+Use **Save battle** and **Resume battle** after animations and unresolved rolls finish. The local checkpoint retains active battle state and random generator state; campaign checkpoints cannot be resumed after the campaign save changes. Saving replaces the previous battle checkpoint.
