@@ -14,6 +14,8 @@ var player_side := 0
 var player_input: BattleInput
 var _markers: BattleMarkers
 var _dirty := true
+var _roster: Dictionary = {}
+var _setup: WarbandSetup
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
@@ -38,6 +40,7 @@ func _ready() -> void:
 	hud.watch_toggled.connect(set_watch_mode)
 	hud.action_pressed.connect(_on_action)
 	hud.new_game_pressed.connect(func() -> void: new_game(0))
+	hud.roster_pressed.connect(_open_roster)
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
 	add_child(_markers)
@@ -51,7 +54,10 @@ func new_game(seed_value: int) -> void:
 	auto_play = false
 	hud.set_auto(false)
 	_wait = 0.0
-	var state := ScenarioLoader.load_id(SCENARIO, _figures, _terrain)
+	var data := JsonFile.read(ScenarioLoader.DIR + SCENARIO + ".json")
+	if not _roster.is_empty():
+		data["warbands"][0] = _roster.duplicate(true)
+	var state := ScenarioLoader.from_dict(data, _figures, _terrain)
 	controller = GameController.new(state, Dice.new(seed_value))
 	_board_view.build(state.board)
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
@@ -83,7 +89,7 @@ func step() -> void:
 
 
 func _process(delta: float) -> void:
-	if controller == null or not player.idle():
+	if (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
 		return
 	if _dirty:
@@ -109,7 +115,7 @@ func set_watch_mode(on: bool) -> void:
 
 
 func _human_turn() -> bool:
-	return not watch_mode and not controller.state.over and controller.state.current_side() == player_side
+	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and controller.state.current_side() == player_side
 
 
 func _on_event(_event: GameEvent) -> void:
@@ -172,3 +178,15 @@ func _add_lighting() -> void:
 	e.ambient_light_energy = 0.35
 	env.environment = e
 	add_child(env)
+
+
+func _open_roster() -> void:
+	if _setup == null:
+		_setup = WarbandSetup.new()
+		add_child(_setup)
+		_setup.setup(_figures)
+		_setup.drafted.connect(func(roster: Dictionary) -> void:
+			_roster = roster
+			watch_mode = false
+			new_game(0))
+	_setup.popup_centered_ratio(0.9)

@@ -26,3 +26,6 @@ godot --headless -s tests/run_tests.gd
 
 See `CLAUDE.md` for the file map, `docs/rules-coverage.md` for what's implemented and what
 still needs checking against the book, and `docs/PLANNING.md` for the roadmap.
+
+## Wizard and magic prototype
+Open **Warband** to name a wizard, select a school and eight spells, hire soldiers and start a new skirmish. The budget and specialist cap are validated. Unimplemented spell effects are explicitly marked in the editor. During a caster activation, **Cast** lists usable known spells; choose a target, then choose Health empowerment and resolve the roll. The creature phase and optional treasure encounters are enabled in the default scenario.

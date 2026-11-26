@@ -21,6 +21,8 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
+	if kind == "unimplemented":
+		return false
 	if kind == "self":
 		return t == f and f.elemental_shield == 0
 	if kind == "touch" and t != f and not Contact.touching(f.pos, t.pos):

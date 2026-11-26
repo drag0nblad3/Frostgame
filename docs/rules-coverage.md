@@ -75,3 +75,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Live magic — initial spell set
 
 - pp. 62–65, 114–132: declare spell/target, roll, choose Health empowerment, resolve damage/success. Eleven live effects: Elemental Bolt, Bone Dart, Elemental Shield, Heal, Shield, Fleet Feet, Strength, Glow, Mind Lock, Combat Awareness, Steal Health. Scenario uses provisional known spell lists and adjusted casting numbers; wizard/apprentice share list. Human empowerment UI and basic heal/attack AI. Shot spells currently exclude combat targets; spell resistance empowerment, allegiance change from allied Steal Health, spell cancellation, terrain and summoning effects are not yet implemented. Armour/Move/Fight and shield effects are live.
+
+## Starting warband creation
+
+- pp. 17–32: school relationship table (all ten), eight starting spell slots with home/aligned/neutral constraints, casting-number adjustments, wizard name, optional apprentice, 400gc budget, eight soldier/four specialist limits. Warband editor deploys the custom blue warband in a fresh battle. Catalog contains thirty initial spell records (three per school, eleven functional; pending entries visibly marked and excluded from casting). This is not yet a complete spell catalog, and no campaign persistence or starting equipment customization is implemented.

@@ -69,5 +69,119 @@
     "school": "necromancer",
     "number": 10,
     "kind": "resist"
+  },
+  "elemental_ball": {
+    "name": "Elemental Ball",
+    "school": "elementalist",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "raise_zombie": {
+    "name": "Raise Zombie",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "slow": {
+    "name": "Slow",
+    "school": "chronomancer",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "fast_act": {
+    "name": "Fast Act",
+    "school": "chronomancer",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "enchant_armour": {
+    "name": "Enchant Armour",
+    "school": "enchanter",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "enchant_weapon": {
+    "name": "Enchant Weapon",
+    "school": "enchanter",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "invisibility": {
+    "name": "Invisibility",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "fools_gold": {
+    "name": "Fool's Gold",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "push": {
+    "name": "Push",
+    "school": "sigilist",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "explosive_rune": {
+    "name": "Explosive Rune",
+    "school": "sigilist",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "furious_quill": {
+    "name": "Furious Quill",
+    "school": "sigilist",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "mind_control": {
+    "name": "Mind Control",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "imp": {
+    "name": "Imp",
+    "school": "summoner",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "leap": {
+    "name": "Leap",
+    "school": "summoner",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "plane_walk": {
+    "name": "Plane Walk",
+    "school": "summoner",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "banish": {
+    "name": "Banish",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "curse": {
+    "name": "Curse",
+    "school": "witch",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "fog": {
+    "name": "Fog",
+    "school": "witch",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "mud": {
+    "name": "Mud",
+    "school": "witch",
+    "number": 10,
+    "kind": "unimplemented"
   }
 }
