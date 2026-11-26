@@ -29,7 +29,7 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "in combat"
 	if distance(shooter, target) > shooter.ranged.range_in:
 		return "out of range"
-	if not LineOfSight.check(board, shooter.pos, target.pos).clear:
+	if not LineOfSight.check_figures(board, shooter, target).clear:
 		return "no line of sight"
 	return ""
 
@@ -59,7 +59,7 @@ static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, c
 
 
 static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
-	var los := LineOfSight.check(board, shooter.pos, target.pos)
+	var los := LineOfSight.check_figures(board, shooter, target)
 	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
 	if target.def.traits.has("large"):
 		mod -= 2

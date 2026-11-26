@@ -1,5 +1,19 @@
 # Multi-floor battlefields: implementation plan
 
+## Implemented foundation
+
+The opt-in `stacked_gatehouse` board defines three named surfaces, four solid
+volumes and explicit staircase links. FloorLayout validates endpoints; LayeredGrid
+and LayeredReach search layered nodes; LayeredSight tests vertical slab occlusion.
+Figures and treasures have optional stable surface IDs in checkpoints. Figure-target
+shooting and treasure pickup recognize explicitly assigned floors. Existing battles
+still use their original exposed-surface movement. The gatehouse is a unit-test
+fixture, deliberately not selectable for campaign play yet.
+
+Current limitations: connections are atomic movement edges, not partial climbs;
+floor surfaces and solids are separately authored; no general floor-aware AI,
+magic, displacement, controller commit, input or rendering is wired yet.
+
 ## Current boundary
 
 A Board stores one exposed walking height at each horizontal coordinate. A bridge or

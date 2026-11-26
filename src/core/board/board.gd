@@ -7,6 +7,8 @@ var name := ""
 var darkness := false
 var size := Vector2(36, 36)
 var pieces: Array[TerrainPiece] = []
+## Authored experimental floor data. Legacy maps leave this empty.
+var floor_layout := {}
 
 
 func contains(p: Vector2, margin: float = 0.0) -> bool:

@@ -100,6 +100,7 @@ func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
 	_c._magic.illusions.reveal(f)
 	_clear_carrier(token)
 	token.pos = at
+	token.surface_id = f.surface_id
 	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at})
 
 

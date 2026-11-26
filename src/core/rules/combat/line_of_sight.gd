@@ -17,6 +17,18 @@ class Result:
 	var intervening := 0
 
 
+## The layered fixture uses physical floor volumes instead of a highest-surface ray.
+static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
+	if board.floor_layout.is_empty():
+		return check(board,from.pos,to.pos)
+	var result := Result.new()
+	var layout := FloorLayout.from_dict(board.floor_layout)
+	result.clear = layout.errors.is_empty() and LayeredSight.figures_clear(layout,from,to)
+	if board.darkness and Shooting.distance(from,to)>12.0:
+		result.clear=false
+	return result
+
+
 static func check(board: Board, from: Vector2, to: Vector2) -> Result:
 	var r := Result.new()
 	if board.darkness and Vector2(from.distance_to(to), board.height_at(from) - board.height_at(to)).length() > 12.0:

@@ -1,0 +1,107 @@
+{
+  "id": "stacked_gatehouse",
+  "name": "Stacked Gatehouse (experimental)",
+  "size": [
+    18,
+    16
+  ],
+  "pieces": [],
+  "floor_layout": {
+    "surfaces": [
+      {
+        "id": "street",
+        "rect": [
+          0,
+          0,
+          18,
+          16
+        ],
+        "level": 0
+      },
+      {
+        "id": "upper",
+        "rect": [
+          5,
+          5,
+          8,
+          6
+        ],
+        "level": 3
+      },
+      {
+        "id": "stairs",
+        "rect": [
+          2,
+          6,
+          3,
+          4
+        ],
+        "level": 0,
+        "end_level": 3,
+        "axis": "x"
+      }
+    ],
+    "solids": [
+      [
+        5,
+        2.6,
+        5,
+        8,
+        0.4,
+        6
+      ],
+      [
+        5,
+        0,
+        5,
+        0.4,
+        2.6,
+        1
+      ],
+      [
+        12.6,
+        0,
+        5,
+        0.4,
+        2.6,
+        6
+      ],
+      [
+        5,
+        0,
+        10.6,
+        8,
+        2.6,
+        0.4
+      ]
+    ],
+    "links": [
+      {
+        "from": [
+          "street",
+          1.5,
+          8
+        ],
+        "to": [
+          "stairs",
+          2.5,
+          8
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stairs",
+          4.5,
+          8
+        ],
+        "to": [
+          "upper",
+          5.5,
+          8
+        ],
+        "kind": "stairs"
+      }
+    ]
+  }
+}
