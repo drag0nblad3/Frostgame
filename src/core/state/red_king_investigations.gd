@@ -65,7 +65,7 @@ static func dormant(s: GameState,f: Figure) -> bool:
 
 static func can_investigate(c: GameController,token: TreasureToken) -> bool:
 	var f := c.state.active()
-	if not active(c.state) or not c.can_act() or f==null or f.side<0 or not token.investigation or not token.on_ground() or IllusionRules.phantom(f):
+	if not active(c.state) or not c.can_act() or f==null or f.side<0 or not token.investigation or not token.on_ground() or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false
 	if absf(f.elevation-c.state.board.height_at(token.pos))>=0.5 or f.pos.distance_to(token.pos)>Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01:
 		return false

@@ -42,6 +42,15 @@ static func progress(s: GameState) -> String:
 		else:
 			ground += 1
 	var text := "%d secured · %d carried · %d unclaimed" % [secured, carrying, ground]
+	if RedKingInvestigations.active(s):
+		var stands := 0
+		for token in s.treasures:
+			if token.investigation and token.unresolved():
+				stands+=1
+		text="%d secured · %d carried · %d stands · %s"%[secured,carrying,stands,"ALARM" if s.scenario_data.get("alarm",false) else "Undetected"]
+		var edges: Dictionary=s.scenario_data.get("exit_edges",{})
+		if edges.has(s.reaction_side):
+			text+=" | Exit: "+", ".join(edges[s.reaction_side])
 	if lost > 0:
 		text += " · %d lost" % lost
 	match s.scenario_special:

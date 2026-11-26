@@ -13,6 +13,23 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"investigation_alarm":
+			return "The camp is alerted: %s!"%d["reason"]
+		"investigation_routes":
+			var routes: Array[String]=[]
+			for side in d["edges"]:
+				routes.append("%s: %s"%[s.side_names[side],", ".join(d["edges"][side])])
+			return "Reality shifts. Escape edges — "+"; ".join(routes)
+		"stand_investigated":
+			return "%s searches an offering: %s."%[name_of(s,d["id"]),("+%d gc if recovered"%d["gold"]) if int(d["gold"])>0 else "a cursed offering"]
+		"stand_will":
+			return "Offering Will test: %s."%("passed" if d["success"] else "failed")
+		"investigation_skip":
+			return "%s loses this activation."%name_of(s,d["id"])
+		"troll_awake":
+			return "The snow troll awakens!"
+		"squatter_will":
+			return "Central room Will test: %s."%("passed" if d["success"] else "failed")
 		"pack_start":
 			return "%s leads a pack of %d creatures." % [name_of(s, d["id"]), d["members"].size()]
 		"null_field":

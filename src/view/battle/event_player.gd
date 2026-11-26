@@ -104,6 +104,20 @@ func _play(e: GameEvent) -> void:
 			_float_text(v, "-%d" % d["amount"])
 		"out_of_action":
 			_view(d["id"]).take_out()
+		"stand_investigated":
+			var marker: MeshInstance3D=treasure_views[d["treasure"]]
+			if int(d["gold"])==0:
+				marker.hide()
+			else:
+				# Retain the node identity: later pickup events reparent it.
+				for child in marker.get_children():
+					marker.remove_child(child)
+					child.queue_free()
+				var chest := BoxMesh.new()
+				chest.size=Vector3(0.6,0.5,0.45)
+				marker.mesh=chest
+				marker.material_override=BoardView._mat(Color(1.0,0.73,0.15),0.3)
+				TerrainDressing.chest(marker)
 		"treasure_pickup":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(_view(d["id"]), false)
@@ -246,7 +260,10 @@ func build_treasures() -> void:
 		marker.mesh = box
 		marker.material_override = BoardView._mat(Color(0.42, 0.83, 1.0) if token.frozen else Color(1.0, 0.73, 0.15), 0.3)
 		add_child(marker)
-		TerrainDressing.chest(marker)
+		if token.investigation:
+			_build_stand(marker)
+		else:
+			TerrainDressing.chest(marker)
 		var height := state.board.height_at(token.pos)
 		if not token.surface_id.is_empty():
 			var layout := FloorLayout.from_dict(state.board.floor_layout)
@@ -261,3 +278,35 @@ func build_treasures() -> void:
 			var carrier := state.figure(token.carrier_id)
 			marker.reparent(views[token.carrier_id], false)
 			marker.position = Vector3(-0.48 if carrier.second_treasure_id == token.id else 0.48, 0.65, 0)
+
+
+func _build_stand(marker: MeshInstance3D) -> void:
+	# Three timber legs and a crimson hanging offering; same pick radius as a token.
+	var base := CylinderMesh.new()
+	base.top_radius=0.26
+	base.bottom_radius=0.32
+	base.height=0.12
+	base.radial_segments=12
+	marker.mesh=base
+	marker.material_override=BoardView._mat(Color(0.44,0.25,0.15),0.9)
+	for i in 3:
+		var leg := MeshInstance3D.new()
+		var shaft := CylinderMesh.new()
+		shaft.top_radius=0.045
+		shaft.bottom_radius=0.065
+		shaft.height=0.95
+		shaft.radial_segments=6
+		leg.mesh=shaft
+		var direction := Vector3.RIGHT.rotated(Vector3.UP,TAU*i/3.0)
+		leg.position=direction*0.14+Vector3.UP*0.32
+		leg.quaternion=Quaternion(Vector3.UP,(Vector3.UP*0.9-direction*0.28).normalized())
+		leg.material_override=marker.material_override
+		marker.add_child(leg)
+	var bundle := MeshInstance3D.new()
+	var bag := BoxMesh.new()
+	bag.size=Vector3(0.27,0.32,0.23)
+	bundle.mesh=bag
+	bundle.position.y=0.32
+	bundle.rotation.z=0.14
+	bundle.material_override=BoardView._mat(Color(0.64,0.14,0.09),0.9)
+	marker.add_child(bundle)

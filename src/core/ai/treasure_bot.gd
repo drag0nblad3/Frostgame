@@ -3,7 +3,7 @@ extends RefCounted
 ## Objective-first bot policy. Combat remains the fallback if no route is usable.
 
 static func play(c: GameController, f: Figure) -> bool:
-	if RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state):
+	if RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state) and not Contact.in_combat(c.state.figures,f):
 		return _escape(c,f)
 	if c.state.treasures.is_empty() or Contact.in_combat(c.state.figures, f):
 		return false

@@ -352,7 +352,7 @@ func preview() -> void:
 					points.append(token.pos)
 			radius = 0.5
 			color = Color(1.0, 0.78, 0.15)
-			hint = "Tap a marked treasure."
+			hint = "Tap a marked offering to investigate or collect." if RedKingInvestigations.active(c.state) else "Tap a marked treasure."
 		"drop", "drop_shrunk":
 			points.assign(drops)
 			hint = "Tap a marked place to drop " + ("shrunk treasure." if mode == "drop_shrunk" else "treasure.")
