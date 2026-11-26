@@ -35,6 +35,6 @@ func test_bot_avoids_treasure_guarded_by_immune_creature() -> void:
 
 
 func test_distance_field_does_not_shortcut_a_wall() -> void:
-	var b := make_board([["wall", 10, 3, 0.5, 30]])
-	var field := MovePlanner.distance_field(b, Vector2(9.5, 18))
+	var b := make_board([["hut_wall", 10, 3, 0.5, 30]])
+	var field := MovePlanner.distance_field(b, Vector2(9, 18))
 	check(float(field.get(MovePlanner.node_at(Vector2(11, 18)), INF)) > 20.0)

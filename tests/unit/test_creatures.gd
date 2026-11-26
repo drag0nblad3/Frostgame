@@ -56,3 +56,25 @@ func test_creature_attacks_lowest_health_not_highest_value() -> void:
 	c.state.figure(1).health = 5
 	c.state.figure(2).health = 4
 	check_eq(CreatureBot.weakest(c.state, c.state.figure(3)).id, 2)
+
+
+func test_pack_checkpoint_preserves_remaining_members() -> void:
+	var s := ScenarioLoader.load_id("treasure_skirmish", db(), terrain())
+	var c := GameController.new(s, Dice.new(9))
+	var a := c._encounters._spawn_at("giant_rat", Vector2(0.5, 17))
+	var b := c._encounters._spawn_at("giant_rat", Vector2(0.5, 18))
+	var third := c._encounters._spawn_at("giant_rat", Vector2(0.5, 19))
+	s.phase = Phase.CREATURE
+	check(c.activate(a.id))
+	var leader := s.active()
+	PackRules.remember(s, leader, s.figure(1))
+	var direction := PackRules.heading(c, leader)
+	c.end_activation()
+	var restored := BattleSnapshot.rebuild(BattleSnapshot.capture(c), db())
+	check(restored != null)
+	check_eq(restored.state.pack_leader, leader.id)
+	check_eq(restored.state.pack_queue, s.pack_queue)
+	check_eq(restored.state.pack_heading, direction)
+	check_eq(restored.state.pack_target, 1)
+	var next := restored.activatable()[0]
+	check(next.id in [a.id, b.id, third.id] and next.id != leader.id)
