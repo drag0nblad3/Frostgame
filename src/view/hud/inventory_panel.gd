@@ -80,7 +80,7 @@ func refresh() -> void:
 	recipient_choice.set_item_metadata(0, -1)
 	for unit: Dictionary in d["units"]:
 		var capacity := CampaignInventory.slots(unit, db)
-		if unit["dead"] or unit.get("dismissed", false) or capacity == 0:
+		if unit["dead"] or unit.get("dismissed", false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"]):
 			continue
 		var items := CampaignInventory.loadout(d, int(unit["id"]))
 		var used := items.size()
@@ -91,7 +91,10 @@ func refresh() -> void:
 					staff = true
 			if not staff:
 				used += 1
-		recipient_choice.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
+		if capacity == 0:
+			recipient_choice.add_item("%s #%d · Hammer graft only" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1])
+		else:
+			recipient_choice.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
 		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))
 	for id: String in catalog:
 		var info: Dictionary = catalog[id]

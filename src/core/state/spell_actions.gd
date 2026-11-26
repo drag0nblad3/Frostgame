@@ -606,3 +606,18 @@ func _suggestion_result(success: bool, t: Figure, at: Vector2) -> void:
 	c._loot.drop_on_death(t)
 	if at != t.pos:
 		movement.move(t, at)
+
+
+func reroll_fate() -> bool:
+	var p := c.state.pending_cast
+	if p.is_empty() or p.get("scroll", false):
+		return false
+	var f := c.state.figure(p["caster"])
+	if not ActiveGear.spend(f, "gear_fate_stone"):
+		return false
+	var old := int(p["raw"])
+	var raw := c.dice.d20()
+	p["raw"] = raw
+	p["total"] = int(p["total"]) + raw - old
+	c.emit("fate_reroll", {"id": f.id, "first": old, "second": raw})
+	return true

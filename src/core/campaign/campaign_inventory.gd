@@ -57,6 +57,17 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var item: Dictionary = d["loot"][index]
 	if not is_item(item):
 		return false
+	if item.get("gear", "") == "gear_construct_hammer":
+		if int(item.get("owner", -1)) >= 0 or owner < 0 or owner >= d["units"].size():
+			return false
+		var construct: Dictionary = d["units"][owner]
+		if construct["dead"] or construct.get("dismissed", false) or construct["type"] not in ["medium_construct", "large_construct"]:
+			return false
+		for other: Dictionary in d["loot"]:
+			if other.get("gear", "") == "gear_construct_hammer" and int(other.get("owner", -1)) == owner:
+				return false
+		item["owner"] = owner
+		return true
 	if owner == -1:
 		item["owner"] = -1
 		return true

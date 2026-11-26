@@ -411,6 +411,18 @@ func action(key: String) -> bool:
 			_resist_buttons()
 			preview()
 			return false
+		"resist_fate":
+			c._magic.resistance.reroll_fate()
+			empower = 0
+			_resist_buttons()
+			preview()
+			return false
+		"cast_fate":
+			c._magic.reroll_fate()
+			empower = 0
+			_empower_buttons()
+			preview()
+			return false
 		"resist_amulet":
 			c._magic.resistance.use_amulet()
 			_resist_buttons()
@@ -583,6 +595,9 @@ func _group_buttons() -> void:
 
 func _empower_buttons() -> void:
 	available.assign(["cast_confirm"])
+	var p := c.state.pending_cast
+	if not p.get("scroll", false) and ActiveGear.ready(c.state.figure(p["caster"]), "gear_fate_stone"):
+		available.append("cast_fate")
 	if c._magic.can_insure():
 		available.append("cast_scroll")
 	if empower < c.cast_max_empowerment():
@@ -619,6 +634,8 @@ func _surface_at(screen: Vector2) -> Variant:
 func _resist_buttons() -> void:
 	available.assign(["resist_confirm"])
 	var p := c.state.pending_resistance
+	if ActiveGear.ready(c.state.figure(p["id"]), "gear_fate_stone"):
+		available.append("resist_fate")
 	if int(p["raw"]) != 1 and ActiveGear.ready(c.state.figure(p["id"]), "gear_amulet_resistance"):
 		available.append("resist_amulet")
 	if empower < int(c.state.pending_resistance["max"]):

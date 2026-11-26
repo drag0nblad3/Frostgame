@@ -17,13 +17,15 @@ func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0, anyone: bool = 
 	var max_health := t.health + PowerPool.available(t) if (caster or anyone) and raw != 1 and raw != 20 and t.in_play() else 0
 	var needed := maxi(0, tn - raw - mini(mod, 10))
 	var data := {"id": t.id, "raw": raw, "mod": mini(mod, 10), "tn": tn, "max": max_health}
+	data["resources"] = t.health + PowerPool.available(t) if caster or anyone else 0
 	var amulet := not success and raw != 1 and ActiveGear.ready(t, "gear_amulet_resistance")
-	if not success and (max_health > 0 or amulet) and t.side == c.state.reaction_side:
+	var fate := not success and ActiveGear.ready(t, "gear_fate_stone")
+	if not success and (max_health > 0 or amulet or fate) and t.side == c.state.reaction_side:
 		c.state.pending_resistance = data
 		continuation = done
 		c.emit("resistance_offer", data.duplicate())
 		return
-	if amulet and needed <= 4:
+	if amulet and needed <= mini(4, 10 - int(data["mod"])):
 		ActiveGear.spend(t, "gear_amulet_resistance")
 		data["mod"] = int(data["mod"]) + 4
 		needed = maxi(0, needed - 4)
@@ -52,7 +54,22 @@ func use_amulet() -> bool:
 	var t := c.state.figure(p["id"])
 	if not ActiveGear.spend(t, "gear_amulet_resistance"):
 		return false
-	p["mod"] = int(p["mod"]) + 4
+	p["mod"] = mini(10, int(p["mod"]) + 4)
+	return true
+
+
+func reroll_fate() -> bool:
+	var p := c.state.pending_resistance
+	if p.is_empty():
+		return false
+	var t := c.state.figure(p["id"])
+	if not ActiveGear.spend(t, "gear_fate_stone"):
+		return false
+	var old := int(p["raw"])
+	var raw := c.dice.d20()
+	p["raw"] = raw
+	p["max"] = 0 if raw in [1, 20] else int(p.get("resources", 0))
+	c.emit("fate_reroll", {"id": t.id, "first": old, "second": raw})
 	return true
 
 

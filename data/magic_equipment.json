@@ -318,8 +318,10 @@
     "type": "construct_hammer",
     "buy": 300,
     "sell": 100,
-    "bonus": {},
-    "live": false
+    "bonus": {
+      "melee_damage": 1
+    },
+    "live": true
   },
   "gear_gloves_casting": {
     "name": "Gloves of Casting",
@@ -351,7 +353,8 @@
     "buy": 500,
     "sell": 200,
     "bonus": {},
-    "live": false
+    "live": true,
+    "partial": true
   },
   "gear_wand_power1": {
     "name": "Wand of Power (1)",

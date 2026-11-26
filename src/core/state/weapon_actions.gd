@@ -52,4 +52,4 @@ func destroy(t: Figure, id: String) -> void:
 
 
 static func magic_attack(f: Figure, w: WeaponDef) -> bool:
-	return f.is_demon() or f.def.traits.has("magic_attack") or magical(f, w) or f.spell_effects.get("potion_fairy_dust", "") == w.id or (f.spell_effects.has("elemental_hammer") and (w == f.ranged or f.ranged == null))
+	return (w == f.melee and ActiveGear.has(f, "gear_construct_hammer")) or f.is_demon() or f.def.traits.has("magic_attack") or magical(f, w) or f.spell_effects.get("potion_fairy_dust", "") == w.id or (f.spell_effects.has("elemental_hammer") and (w == f.ranged or f.ranged == null))
