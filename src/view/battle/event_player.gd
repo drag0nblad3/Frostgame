@@ -137,7 +137,10 @@ func _wait_for(t: Tween) -> void:
 func _animate_layered_move(v: FigureView,path: PackedVector3Array) -> void:
 	if path.size()<2:
 		return
-	v.begin_move()
+	var distance := 0.0
+	for i in range(1,path.size()):
+		distance+=path[i-1].distance_to(path[i])
+	v.begin_move(distance)
 	var t := create_tween()
 	for i in range(1,path.size()):
 		var destination := path[i]
@@ -151,7 +154,10 @@ func _animate_layered_move(v: FigureView,path: PackedVector3Array) -> void:
 func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 	if path.size() < 2:
 		return
-	v.begin_move()
+	var distance := 0.0
+	for i in range(1,path.size()):
+		distance+=path[i-1].distance_to(path[i])
+	v.begin_move(distance)
 	var t := create_tween()
 	for i in range(1, path.size()):
 		var destination := TableSpace.to_world(path[i], state.board.height_at(path[i]))

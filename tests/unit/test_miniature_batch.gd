@@ -88,3 +88,16 @@ func test_motion_profiles_and_leg_pivots() -> void:
 		if model.has_node("Leg0"):
 			check(is_zero_approx((model.get_node("Leg0") as Node3D).rotation.x))
 		model.free()
+
+
+func test_windup_and_running_keep_motion_visual_only() -> void:
+	var defs := db()
+	var f := Figure.new(2,defs.get_def("knight"),0,Vector2.ZERO,defs.unarmed())
+	var model := MiniatureFactory.create(f,Color.BLUE)
+	MiniatureMotion.action(model,"walk","attack",-0.45,0.12,"hand_weapon")
+	check(model.rotation.x>0.0)
+	MiniatureMotion.travel(model,"walk",1.0,0.12,false)
+	var walk := absf((model.get_node("Leg0") as Node3D).rotation.x)
+	MiniatureMotion.travel(model,"walk",1.0,0.12,true)
+	check(absf((model.get_node("Leg0") as Node3D).rotation.x)>walk)
+	model.free()

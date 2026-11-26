@@ -6,7 +6,7 @@ const STRING := Color("c7bca0")
 
 
 static func bow(root: Node3D) -> void:
-	var points: Array[Vector3]=[Vector3(-0.37,0.29,-0.18),Vector3(-0.52,0.44,-0.18),Vector3(-0.57,0.65,-0.18),Vector3(-0.38,0.76,-0.09),Vector3(-0.55,1.13,-0.18),Vector3(-0.49,1.36,-0.18),Vector3(-0.37,1.49,-0.18)]
+	var points: Array[Vector3]=[Vector3(-0.17,0.21,-0.09),Vector3(-0.30,0.37,-0.09),Vector3(-0.39,0.57,-0.09),Vector3(-0.38,0.76,-0.09),Vector3(-0.39,0.96,-0.09),Vector3(-0.30,1.16,-0.09),Vector3(-0.17,1.32,-0.09)]
 	for i in range(1,points.size()):
 		CreatureSculpt.limb(root,points[i-1],points[i],0.032 if i in [1,6] else 0.044,WOOD,0.83)
 	CreatureSculpt.limb(root,points[0],points[-1],0.009,STRING,1.0)

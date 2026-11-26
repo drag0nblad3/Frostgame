@@ -14,9 +14,12 @@ static func create(root: Node3D, id: String, faction: Color) -> void:
 		light=Color("8fd6c9")
 	for side: float in [-1.0, 1.0]:
 		var shin := Vector3(side * 0.18, 0.29, 0)
+		var leg := MiniaturePose.leg(root,1 if side>0 else 0,shin+Vector3.UP*0.27)
+		var leg_first := root.get_child_count()
 		MiniatureFactory.cylinder(root, shin, 0.15, 0.17, 0.40, stone).rotation.z = side * 0.10
 		MiniatureFactory.box(root, shin + Vector3(0, -0.20, -0.06), Vector3(0.29, 0.17, 0.36), trim)
 		MiniatureFactory.sphere(root, shin + Vector3(0, 0.22, 0), Vector3.ONE * 0.26, trim)
+		MiniaturePose.attach(root,leg,leg_first)
 		var pivot := MiniaturePose.arm(root, side > 0)
 		var first := root.get_child_count()
 		var shoulder := Vector3(side * 0.31, 1.10, 0)

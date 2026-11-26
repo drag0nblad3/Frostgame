@@ -20,6 +20,7 @@ var _stride := 0.0
 var _profile := "walk"
 var _weapon := ""
 var _ranged := ""
+var _running := false
 
 
 func setup(f: Figure, _side_name: String) -> void:
@@ -133,7 +134,8 @@ func face_toward(at: Vector3) -> void:
 		_model.rotation.y = _facing
 
 
-func begin_move() -> void:
+func begin_move(distance: float=0.0) -> void:
+	_running=distance>=4.0
 	_moving = true
 	_stride = 0.0
 	set_process(true)
@@ -152,8 +154,8 @@ func end_move() -> void:
 func _process(delta: float) -> void:
 	if not _moving or _model == null:
 		return
-	_stride += delta * MiniatureMotion.frequency(_profile)
-	MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y)
+	_stride += delta * MiniatureMotion.frequency(_profile)*(1.25 if _running else 1.0)
+	MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y,_running)
 
 
 func attack_pose(amount: float) -> void:

@@ -41,7 +41,7 @@ static func reset(root: Node3D) -> void:
 			arm.rotation=Vector3.ZERO
 
 
-static func travel(root: Node3D,kind: String,phase: float,rest: float) -> void:
+static func travel(root: Node3D,kind: String,phase: float,rest: float,running: bool=false) -> void:
 	var wave := sin(phase)
 	var opposite := cos(phase)
 	root.position.y=rest
@@ -63,11 +63,11 @@ static func travel(root: Node3D,kind: String,phase: float,rest: float) -> void:
 			for i in 8:
 				var leg := root.get_node_or_null("Leg%d"%i) as Node3D
 				if leg!=null:
-					var swing := sin(phase+PI*((i+i/4)%2))
+					var swing := sin(phase+PI*((i+floori(float(i)/4.0))%2))
 					leg.rotation.x=0.21*swing
 					leg.rotation.z=0.10*maxf(0.0,swing)*(-1.0 if i<4 else 1.0)
 		"trot","heavy":
-			var amp := 0.22 if kind=="heavy" else 0.42
+			var amp := (0.22 if kind=="heavy" else 0.42)*(1.20 if running else 1.0)
 			root.position.y=rest+0.035*absf(wave)
 			root.rotation.x=0.04*opposite
 			root.rotation.z=0.035*wave
@@ -77,15 +77,16 @@ static func travel(root: Node3D,kind: String,phase: float,rest: float) -> void:
 				MiniaturePose.legs(root,[amp*wave,-amp*wave])
 				MiniaturePose.arms(root,-0.16*wave,0.16*wave)
 		_:
-			root.position.y=rest+0.045*absf(wave)
-			root.rotation.x=-0.055
+			var amp := 0.43 if running else 0.30
+			root.position.y=rest+(0.065 if running else 0.045)*absf(wave)
+			root.rotation.x=-0.12 if running else -0.055
 			root.rotation.z=0.028*wave
-			MiniaturePose.legs(root,[0.30*wave,-0.30*wave])
-			MiniaturePose.arms(root,-0.28*wave,0.28*wave)
+			MiniaturePose.legs(root,[amp*wave,-amp*wave])
+			MiniaturePose.arms(root,-amp*0.92*wave,amp*0.92*wave)
 
 
 static func action(root: Node3D,kind: String,act: String,amount: float,rest: float,weapon: String) -> void:
-	var t := clampf(amount,0.0,1.0)
+	var t := clampf(amount,-0.45 if act=="attack" else 0.0,1.0)
 	reset(root)
 	root.position.y=rest
 	root.rotation.x=0
@@ -94,7 +95,7 @@ static func action(root: Node3D,kind: String,act: String,amount: float,rest: flo
 		"attack":
 			root.rotation.x=-0.22*t
 			if kind in ["trot","spider","hop","slither"]:
-				root.position.y=rest+0.08*t
+				root.position.y=rest+0.08*maxf(0.0,t)
 				root.rotation.x=-0.32*t
 				MiniaturePose.legs(root,[-0.25*t,0.15*t,-0.25*t,0.15*t])
 			else:
