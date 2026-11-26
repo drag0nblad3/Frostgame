@@ -98,6 +98,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 		path.resize(int(intercept["index"]) + 1)
 	f.pos = path[path.size() - 1]
 	f.elevation = state.board.height_at(f.pos)
+	f.spell_effects.erase("petrify")
 	f.actions_left -= 1
 	f.moves_taken += 1
 	emit("move", {"id": f.id, "path": path, "cost": cost})
@@ -114,7 +115,7 @@ func can_act() -> bool:
 
 func can_fight(target_id: int) -> bool:
 	var t := state.figure(target_id)
-	return can_act() and t != null and Contact.enemies_of(state.figures, state.active()).has(t)
+	return can_act() and not state.active().spell_effects.has("blinding_light") and t != null and Contact.enemies_of(state.figures, state.active()).has(t)
 
 
 func fight(target_id: int) -> bool:
@@ -129,6 +130,10 @@ func fight(target_id: int) -> bool:
 	emit("fight", res)
 	_hurt(t, res["b_dmg"], f)
 	_hurt(f, res["a_dmg"], t)
+	if int(res["b_dmg"]) > 0:
+		f.spell_effects.erase("elemental_hammer")
+	if int(res["a_dmg"]) > 0:
+		t.spell_effects.erase("elemental_hammer")
 	if f.in_play() and t.in_play() and int(res["winner"]) >= 0:
 		var winner := state.figure(res["winner"])
 		if winner.side >= 0:
@@ -149,7 +154,7 @@ func shoot(target_id: int) -> bool:
 	var t := state.figure(target_id)
 	var declared := t.id
 	t = ShotTarget.randomize(dice, state.figures, t)
-	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits)
+	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits, state.storm_penalty)
 	res["declared"] = declared
 	_spend(f)
 	if f.ranged.needs_reload:
@@ -158,6 +163,8 @@ func shoot(target_id: int) -> bool:
 	res["target"] = t.id
 	emit("shoot", res)
 	_hurt(t, res["dmg"], f)
+	if f.ranged != null:
+		f.spell_effects.erase("elemental_hammer")
 	return true
 
 
@@ -223,11 +230,8 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		if dmg == 0:
 			return
 	var out := Damage.apply(f, dmg)
-	if combat and not out and by != f and by.def.traits.has("poison") and not f.immune_to_poison() and not f.poisoned:
-		f.poisoned = true
-		if state.active() == f:
-			f.actions_left = mini(f.actions_left, 0 if f.acted or f.moves_taken > 0 else 1)
-		emit("poison", {"id": f.id})
+	if combat and not out and by != f and by.def.traits.has("poison"):
+		poison(f)
 	emit("damage", {"id": f.id, "by": by.id, "amount": dmg, "health": f.health})
 	if out:
 		_loot.drop_on_death(f)
@@ -338,3 +342,12 @@ func answer_intercept(accept: bool) -> bool:
 	ignored.assign(p["ignored"])
 	ignored.append(choice["guard"].id)
 	return _commit_move(mover, path, float(p["cost"]), ignored)
+
+
+func poison(f: Figure) -> void:
+	if not f.in_play() or f.immune_to_poison() or f.poisoned:
+		return
+	f.poisoned = true
+	if state.active() == f:
+		f.actions_left = mini(f.actions_left, 0 if f.acted or f.moves_taken > 0 else 1)
+	emit("poison", {"id": f.id})

@@ -19,6 +19,7 @@ var disengaged := {}
 var spell_effects := {}
 var elemental_shield := 0
 var poisoned := false
+var petrified_skip := false
 ## Turn bookkeeping, reset by the controller each turn.
 var activated := false
 var actions_left := 0
@@ -54,7 +55,12 @@ func in_play() -> bool:
 
 
 func effective_fight() -> int:
-	return def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
+	if spell_effects.has("blinding_light"):
+		return 0
+	var value := def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
+	if spell_effects.has("petrify"):
+		value = maxi(0, value - 3)
+	return value
 
 
 func effective_armour() -> int:
@@ -63,6 +69,8 @@ func effective_armour() -> int:
 
 
 func effective_move() -> int:
+	if spell_effects.has("blinding_light"):
+		return 1
 	return maxi(1, def.move + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0))
 
 
@@ -71,6 +79,8 @@ func effective_will() -> int:
 
 
 func action_limit() -> int:
+	if petrified_skip:
+		return 0
 	return 1 if poisoned or spell_effects.has("slow") else 2
 
 

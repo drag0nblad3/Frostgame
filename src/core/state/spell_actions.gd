@@ -25,6 +25,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	if kind == "self":
 		return t == f and f.elemental_shield == 0
+	if kind == "self_area":
+		return t == f
+	if f.spell_effects.has("blinding_light") and kind != "touch":
+		return false
 	if kind == "touch" and t != f and not Contact.figures_touch(f, t):
 		return false
 	if not LineOfSight.check(s.board, f.pos, t.pos).clear and t != f:
@@ -87,9 +91,32 @@ func finish(health: int) -> bool:
 			_heal(t, 5)
 		"elemental_shield":
 			t.elemental_shield = 3
-		"elemental_bolt", "bone_dart":
+		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
+			var old_health := t.health
 			_shot(f, t, int(s.spell_catalog[id]["power"]))
+			if id == "poison_dart" and t.health < old_health:
+				c.poison(t)
+		"call_storm":
+			s.storm_penalty = mini(5, s.storm_penalty + 1)
+		"blinding_light", "petrify":
+			var bonus := 8 if id == "petrify" and t.def.traits.has("large") else 0
+			if not StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty() + bonus, result["roll"]):
+				t.spell_effects[id] = int(result["roll"])
+				if id == "petrify":
+					t.petrified_skip = true
+		"banish":
+			for other in s.figures:
+				if other.in_play() and other.def.traits.has("demon") and LineOfSight.check(s.board, f.pos, other.pos).clear:
+					_banish(f, other, int(result["roll"]), 4)
+		"scatter_shot":
+			for other in s.figures:
+				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0)
+		"destructive_sphere":
+			for other in s.figures:
+				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
+					_direct_attack(f, other, 5)
 		"slow", "curse", "furious_quill":
 			t.spell_effects[id] = int(result["roll"])
 			if id == "slow" and t == s.active():
@@ -158,9 +185,25 @@ func on_activate(f: Figure) -> void:
 
 
 func on_end_activation(f: Figure) -> void:
+	f.petrified_skip = false
 	_resist_effect(f, "slow")
 
 
 func on_end_turn() -> void:
 	for f in c.state.figures:
 		_resist_effect(f, "curse")
+		_resist_effect(f, "blinding_light")
+
+
+func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
+	var raw := c.dice.d20()
+	var will := t.effective_will() + t.roll_penalty()
+	if not StatRoll.succeeds(raw, will, roll):
+		c._hurt(t, t.health if t.effective_will() <= threshold else maxi(0, roll - raw - will) * 3, f, false)
+
+
+func _direct_attack(f: Figure, t: Figure, power: int) -> void:
+	var a := c.dice.d20() + power
+	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
+	if a > d:
+		c._hurt(t, maxi(0, a - t.effective_armour()), f, false)

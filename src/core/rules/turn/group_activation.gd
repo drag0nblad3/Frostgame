@@ -53,7 +53,7 @@ func waiting(s: GameState) -> Array[Figure]:
 
 
 func start_member(s: GameState, f: Figure) -> void:
-	f.actions_left = 0 if stage == SECOND and f.action_limit() == 1 and f.moves_taken > 0 else 1
+	f.actions_left = 0 if f.action_limit() == 0 or (stage == SECOND and f.action_limit() == 1 and f.moves_taken > 0) else 1
 	if movement_pass():
 		s.early.record_activation(s, f)
 		f.moves_taken = 0

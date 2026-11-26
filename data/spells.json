@@ -1,38 +1,21 @@
 {
-  "elemental_bolt": {
-    "name": "Elemental Bolt",
-    "school": "elementalist",
+  "crumble": {
+    "name": "Crumble",
+    "school": "chronomancer",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "decay": {
+    "name": "Decay",
+    "school": "chronomancer",
     "number": 12,
-    "range": 16,
-    "kind": "shot",
-    "power": 7
+    "kind": "unimplemented"
   },
-  "bone_dart": {
-    "name": "Bone Dart",
-    "school": "necromancer",
-    "number": 10,
-    "range": 12,
-    "kind": "shot",
-    "power": 5
-  },
-  "elemental_shield": {
-    "name": "Elemental Shield",
-    "school": "elementalist",
-    "number": 10,
-    "kind": "self"
-  },
-  "heal": {
-    "name": "Heal",
-    "school": "thaumaturge",
+  "fast_act": {
+    "name": "Fast Act",
+    "school": "chronomancer",
     "number": 8,
-    "range": 6,
-    "kind": "heal"
-  },
-  "shield": {
-    "name": "Shield",
-    "school": "thaumaturge",
-    "number": 10,
-    "kind": "buff"
+    "kind": "unimplemented"
   },
   "fleet_feet": {
     "name": "Fleet Feet",
@@ -40,35 +23,41 @@
     "number": 10,
     "kind": "buff"
   },
-  "strength": {
-    "name": "Strength",
-    "school": "enchanter",
+  "petrify": {
+    "name": "Petrify",
+    "school": "chronomancer",
     "number": 10,
     "kind": "buff"
   },
-  "glow": {
-    "name": "Glow",
-    "school": "illusionist",
+  "slow": {
+    "name": "Slow",
+    "school": "chronomancer",
     "number": 10,
     "kind": "buff"
   },
-  "mind_lock": {
-    "name": "Mind Lock",
-    "school": "soothsayer",
+  "time_store": {
+    "name": "Time Store",
+    "school": "chronomancer",
+    "number": 14,
+    "kind": "unimplemented"
+  },
+  "time_walk": {
+    "name": "Time Walk",
+    "school": "chronomancer",
+    "number": 14,
+    "kind": "unimplemented"
+  },
+  "call_storm": {
+    "name": "Call Storm",
+    "school": "elementalist",
     "number": 12,
-    "kind": "buff"
+    "kind": "self_area"
   },
-  "combat_awareness": {
-    "name": "Combat Awareness",
-    "school": "soothsayer",
+  "destructive_sphere": {
+    "name": "Destructive Sphere",
+    "school": "elementalist",
     "number": 12,
-    "kind": "touch"
-  },
-  "steal_health": {
-    "name": "Steal Health",
-    "school": "necromancer",
-    "number": 10,
-    "kind": "resist"
+    "kind": "self_area"
   },
   "elemental_ball": {
     "name": "Elemental Ball",
@@ -77,22 +66,54 @@
     "kind": "area_shot",
     "range": 16
   },
-  "raise_zombie": {
-    "name": "Raise Zombie",
-    "school": "necromancer",
-    "number": 10,
-    "kind": "unimplemented"
+  "elemental_bolt": {
+    "name": "Elemental Bolt",
+    "school": "elementalist",
+    "number": 12,
+    "range": 16,
+    "kind": "shot",
+    "power": 7
   },
-  "slow": {
-    "name": "Slow",
-    "school": "chronomancer",
+  "elemental_hammer": {
+    "name": "Elemental Hammer",
+    "school": "elementalist",
     "number": 10,
     "kind": "buff"
   },
-  "fast_act": {
-    "name": "Fast Act",
-    "school": "chronomancer",
-    "number": 8,
+  "elemental_shield": {
+    "name": "Elemental Shield",
+    "school": "elementalist",
+    "number": 10,
+    "kind": "self"
+  },
+  "scatter_shot": {
+    "name": "Scatter Shot",
+    "school": "elementalist",
+    "number": 12,
+    "kind": "self_area"
+  },
+  "wall": {
+    "name": "Wall",
+    "school": "elementalist",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "animate_construct": {
+    "name": "Animate Construct",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "control_construct": {
+    "name": "Control Construct",
+    "school": "enchanter",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "embed_enchantment": {
+    "name": "Embed Enchantment",
+    "school": "enchanter",
+    "number": 14,
     "kind": "unimplemented"
   },
   "enchant_armour": {
@@ -105,10 +126,34 @@
     "name": "Enchant Weapon",
     "school": "enchanter",
     "number": 8,
+    "kind": "buff"
+  },
+  "grenade": {
+    "name": "Grenade",
+    "school": "enchanter",
+    "number": 10,
     "kind": "unimplemented"
   },
-  "invisibility": {
-    "name": "Invisibility",
+  "strength": {
+    "name": "Strength",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "buff"
+  },
+  "telekinesis": {
+    "name": "Telekinesis",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "beauty": {
+    "name": "Beauty",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "blink": {
+    "name": "Blink",
     "school": "illusionist",
     "number": 12,
     "kind": "unimplemented"
@@ -119,10 +164,102 @@
     "number": 10,
     "kind": "unimplemented"
   },
-  "push": {
-    "name": "Push",
-    "school": "sigilist",
+  "glow": {
+    "name": "Glow",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "buff"
+  },
+  "illusionary_soldier": {
+    "name": "Illusionary Soldier",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "invisibility": {
+    "name": "Invisibility",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "teleport": {
+    "name": "Teleport",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "transpose": {
+    "name": "Transpose",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "animate_skull": {
+    "name": "Animate Skull",
+    "school": "necromancer",
     "number": 8,
+    "kind": "unimplemented"
+  },
+  "bone_dart": {
+    "name": "Bone Dart",
+    "school": "necromancer",
+    "number": 10,
+    "range": 12,
+    "kind": "shot",
+    "power": 5
+  },
+  "bones_of_the_earth": {
+    "name": "Bones of the Earth",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "control_undead": {
+    "name": "Control Undead",
+    "school": "necromancer",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "raise_zombie": {
+    "name": "Raise Zombie",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "spell_eater": {
+    "name": "Spell Eater",
+    "school": "necromancer",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "steal_health": {
+    "name": "Steal Health",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "resist"
+  },
+  "strike_dead": {
+    "name": "Strike Dead",
+    "school": "necromancer",
+    "number": 18,
+    "kind": "unimplemented"
+  },
+  "absorb_knowledge": {
+    "name": "Absorb Knowledge",
+    "school": "sigilist",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "bridge": {
+    "name": "Bridge",
+    "school": "sigilist",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "draining_word": {
+    "name": "Draining Word",
+    "school": "sigilist",
+    "number": 14,
     "kind": "unimplemented"
   },
   "explosive_rune": {
@@ -137,10 +274,76 @@
     "number": 10,
     "kind": "buff"
   },
+  "power_word": {
+    "name": "Power Word",
+    "school": "sigilist",
+    "number": 14,
+    "kind": "unimplemented"
+  },
+  "push": {
+    "name": "Push",
+    "school": "sigilist",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "write_scroll": {
+    "name": "Write Scroll",
+    "school": "sigilist",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "awareness": {
+    "name": "Awareness",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "combat_awareness": {
+    "name": "Combat Awareness",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "touch"
+  },
   "mind_control": {
     "name": "Mind Control",
     "school": "soothsayer",
     "number": 12,
+    "kind": "unimplemented"
+  },
+  "mind_lock": {
+    "name": "Mind Lock",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "buff"
+  },
+  "reveal_secret": {
+    "name": "Reveal Secret",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "suggestion": {
+    "name": "Suggestion",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "true_sight": {
+    "name": "True Sight",
+    "school": "soothsayer",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "wizard_eye": {
+    "name": "Wizard Eye",
+    "school": "soothsayer",
+    "number": 8,
+    "kind": "unimplemented"
+  },
+  "control_demon": {
+    "name": "Control Demon",
+    "school": "summoner",
+    "number": 10,
     "kind": "unimplemented"
   },
   "imp": {
@@ -155,16 +358,101 @@
     "number": 8,
     "kind": "unimplemented"
   },
+  "plague_of_insects": {
+    "name": "Plague of Insects",
+    "school": "summoner",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "planar_tear": {
+    "name": "Planar Tear",
+    "school": "summoner",
+    "number": 12,
+    "kind": "unimplemented"
+  },
   "plane_walk": {
     "name": "Plane Walk",
     "school": "summoner",
     "number": 10,
     "kind": "unimplemented"
   },
+  "possess": {
+    "name": "Possess",
+    "school": "summoner",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "summon_demon": {
+    "name": "Summon Demon",
+    "school": "summoner",
+    "number": 12,
+    "kind": "unimplemented"
+  },
   "banish": {
     "name": "Banish",
     "school": "thaumaturge",
     "number": 10,
+    "kind": "self_area"
+  },
+  "blinding_light": {
+    "name": "Blinding Light",
+    "school": "thaumaturge",
+    "number": 8,
+    "kind": "buff"
+  },
+  "circle_of_protection": {
+    "name": "Circle of Protection",
+    "school": "thaumaturge",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "destroy_undead": {
+    "name": "Destroy Undead",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "special"
+  },
+  "dispel": {
+    "name": "Dispel",
+    "school": "thaumaturge",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "heal": {
+    "name": "Heal",
+    "school": "thaumaturge",
+    "number": 8,
+    "range": 6,
+    "kind": "heal"
+  },
+  "miraculous_cure": {
+    "name": "Miraculous Cure",
+    "school": "thaumaturge",
+    "number": 16,
+    "kind": "unimplemented"
+  },
+  "shield": {
+    "name": "Shield",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "buff"
+  },
+  "animal_companion": {
+    "name": "Animal Companion",
+    "school": "witch",
+    "number": 10,
+    "kind": "unimplemented"
+  },
+  "brew_potion": {
+    "name": "Brew Potion",
+    "school": "witch",
+    "number": 12,
+    "kind": "unimplemented"
+  },
+  "control_animal": {
+    "name": "Control Animal",
+    "school": "witch",
+    "number": 12,
     "kind": "unimplemented"
   },
   "curse": {
@@ -172,6 +460,12 @@
     "school": "witch",
     "number": 8,
     "kind": "buff"
+  },
+  "familiar": {
+    "name": "Familiar",
+    "school": "witch",
+    "number": 10,
+    "kind": "unimplemented"
   },
   "fog": {
     "name": "Fog",
@@ -185,10 +479,11 @@
     "number": 10,
     "kind": "unimplemented"
   },
-  "destroy_undead": {
-    "name": "Destroy Undead",
-    "school": "thaumaturge",
+  "poison_dart": {
+    "name": "Poison Dart",
+    "school": "witch",
     "number": 10,
-    "kind": "special"
+    "kind": "shot",
+    "power": 3
   }
 }

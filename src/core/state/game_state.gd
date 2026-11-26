@@ -22,6 +22,7 @@ var creature_db: FigureDb
 var spellbooks := {}
 var spell_catalog := {}
 var pending_cast := {}
+var storm_penalty := 0
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var order: Array[int] = []
 var order_index := 0

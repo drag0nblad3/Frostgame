@@ -15,6 +15,8 @@ static func distance(a: Figure, b: Figure) -> float:
 
 ## Why `shooter` can't shoot `target`, or "" if the shot is allowed.
 static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure, target: Figure) -> String:
+	if shooter.spell_effects.has("blinding_light"):
+		return "blinded"
 	if shooter.ranged == null:
 		return "no missile weapon"
 	if shooter.ranged.needs_reload and not shooter.loaded:
@@ -52,16 +54,18 @@ static func target_mod(los: LineOfSight.Result) -> int:
 
 
 ## Rolls the shot. Returns {s_roll, t_roll, s_total, t_total, mod, dmg}.
-static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, critical_hits: bool = false) -> Dictionary:
+static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
 	var los := LineOfSight.check(board, shooter.pos, target.pos)
 	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
 	if target.def.traits.has("large"):
 		mod -= 2
 	var sr := dice.d20()
 	var tr := dice.d20()
-	var st := sr + mini(shooter.effective_shoot() + (3 if target.spell_effects.has("glow") else 0), 10) + shooter.roll_penalty()
+	var st := sr + mini(shooter.effective_shoot() - storm_penalty + (1 if shooter.spell_effects.has("enchant_weapon") else 0) + (3 if target.spell_effects.has("glow") else 0), 10) + shooter.roll_penalty()
 	var tt := tr + mini(target.effective_fight() + mod, 10) + target.roll_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
 		dmg = Damage.amount(st, shooter.ranged.damage_mod, target.effective_armour(), sr, critical_hits)
+		if dmg > 0 and shooter.spell_effects.has("elemental_hammer"):
+			dmg += 5
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}

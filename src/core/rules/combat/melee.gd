@@ -22,7 +22,7 @@ static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 
 static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 	var net := clampi(support(figures, f, enemy) - support(figures, enemy, f), 0, 6)
-	return mini(f.effective_fight() + f.melee.fight_mod + net, 10)
+	return mini(f.effective_fight() + f.melee.fight_mod + net + (1 if f.spell_effects.has("enchant_weapon") and f.ranged == null else 0), 10)
 
 
 ## Rolls the fight. Returns {a_roll, b_roll, a_total, b_total, a_dmg, b_dmg}:
@@ -50,5 +50,7 @@ static func _damage(total: int, winner: Figure, loser: Figure, natural: int, cri
 	if winner.def.traits.has("powerful"):
 		dmg *= 2
 	if critical_hits and natural == 20:
+		dmg += 5
+	if dmg > 0 and winner.ranged == null and winner.spell_effects.has("elemental_hammer"):
 		dmg += 5
 	return dmg
