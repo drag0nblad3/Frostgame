@@ -1,7 +1,7 @@
 class_name Rituals
 extends RefCounted
 ## Campaign-only spell attempts keyed by battle number, caster and spell.
-const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier", "reveal_secret"]
+const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier", "reveal_secret", "summon_demon"]
 const AFTER := ["absorb_knowledge", "write_scroll", "miraculous_cure", "embed_enchantment"]
 const ANIMALS := ["bear", "ice_toad", "snow_leopard", "wolf"]
 const CONSTRUCTS := ["small_construct", "medium_construct", "large_construct"]
@@ -27,6 +27,9 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 				out.append("")
 		"familiar", "awareness", "reveal_secret":
 			out.append("")
+		"summon_demon":
+			if BaseDemonRitual.available(d, caster):
+				out.append("")
 		"illusionary_soldier":
 			if not d.has("prepared_illusion") or d["prepared_illusion"] == "":
 				var db := FigureDb.load_files()
@@ -51,27 +54,21 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 				if item["kind"] == "grimoire" and item.has("spell") and not out.has(item["spell"]):
 					out.append(item["spell"])
 		"animal_companion", "animate_construct":
-			var soldiers := 0
-			var specialists := 0
 			var companion := false
 			var db := FigureDb.load_files()
 			for member: Dictionary in d["units"]:
 				if member["dead"] or member.get("dismissed", false):
 					continue
-				var def := db.get_def(member["type"])
-				if member.get("permanent_summon", false) or def.role == "soldier":
-					soldiers += 1
-					if def.specialist or member["type"] == "large_construct":
-						specialists += 1
 				if member.get("companion_of", -1) == caster:
 					companion = true
-			if soldiers < 8:
-				if id == "animal_companion" and not companion:
-					out.assign(ANIMALS)
-				elif id == "animate_construct":
-					out.assign(CONSTRUCTS)
-					if specialists >= 4:
-						out.erase("large_construct")
+			if id == "animal_companion" and not companion:
+				for type: String in ANIMALS:
+					if BaseResources.fits(d, db, type):
+						out.append(type)
+			elif id == "animate_construct":
+				for type: String in CONSTRUCTS:
+					if BaseResources.fits(d, db, type):
+						out.append(type)
 		"raise_zombie":
 			if not d.get("prepared_zombie", false):
 				out.append("")
@@ -81,7 +78,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 					var member: Dictionary = d["units"][i]
 					if member.get("dismissed", false):
 						continue
-					if CampaignPotions.recently_dead(d, member) or (not member["dead"] and (int(member["injuries"]) > 0 or int(member["miss"]) > 0)):
+					if CampaignPotions.can_revive(d, member, FigureDb.load_files()) or (not member["dead"] and (int(member["injuries"]) > 0 or int(member["miss"]) > 0)):
 						out.append(str(i))
 	return out
 
@@ -89,6 +86,8 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice) -> bool:
 	if not choices(d, caster, id).has(option):
 		return false
+	if id == "summon_demon":
+		return BaseDemonRitual.attempt(d, caster, dice)
 	var u: Dictionary = d["units"][caster]
 	var mod := 0
 	if BEFORE.has(id):
@@ -101,7 +100,7 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 		mod = -4
 	if id == "miraculous_cure" and d["units"][int(option)]["dead"]:
 		mod = -4
-	mod += BaseRules.casting_bonus(str(d.get("base", "")), id)
+	mod += BaseRules.casting_bonus(str(d.get("base", "")), id) + BaseResources.casting_bonus(d, id)
 	var attempts: Dictionary = d.get("ritual_attempts", {})
 	attempts["%d:%s" % [caster, id]] = true
 	d["ritual_attempts"] = attempts

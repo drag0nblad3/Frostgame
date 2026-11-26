@@ -29,8 +29,10 @@ static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 ## damage each side takes (a_dmg is dealt to `a`).
 ## TODO(rules): the winner's option to push the loser back is not modelled.
 static func resolve(dice: Dice, figures: Array[Figure], a: Figure, b: Figure, critical_hits: bool = false) -> Dictionary:
-	var ar := dice.d20()
-	var br := dice.d20()
+	return resolve_rolls(figures, a, b, dice.d20(), dice.d20(), critical_hits)
+
+
+static func resolve_rolls(figures: Array[Figure], a: Figure, b: Figure, ar: int, br: int, critical_hits: bool = false) -> Dictionary:
 	var at := ar + fight_mod(figures, a, b) + a.roll_penalty()
 	var bt := br + fight_mod(figures, b, a) + b.roll_penalty()
 	var out := {"a_roll": ar, "b_roll": br, "a_total": at, "b_total": bt, "a_dmg": 0, "b_dmg": 0}

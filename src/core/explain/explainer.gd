@@ -13,6 +13,16 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"well_drink":
+			return "%s drinks from the well (+%d campaign XP)." % [name_of(s, d["id"]), d["xp"]]
+		"break_ice":
+			return "%s tries to free the frozen treasure: %s." % [name_of(s, d["id"]), "success" if d["success"] else "failed"]
+		"worm_emerges":
+			return "A giant worm erupts beside treasure %d!" % (int(d["treasure"]) + 1)
+		"weapon_selected":
+			return "%s draws %s." % [name_of(s, d["id"]), str(d["weapon"]).replace("_", " ")]
+		"telescope_used":
+			return "%s use their telescope: +5 initiative." % s.side_names[d["side"]]
 		"turn_start":
 			var rolls: Array = d["rolls"]
 			var parts: Array[String] = []

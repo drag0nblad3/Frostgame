@@ -48,7 +48,7 @@ func _play(e: GameEvent) -> void:
 		"terrain_fall":
 			var f := state.figure(d["id"])
 			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
-		"allegiance", "heal", "spell_effect", "spell_expired":
+		"allegiance", "heal", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison":
 			_view(d["id"]).refresh(state.figure(d["id"]))
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]))
@@ -64,13 +64,18 @@ func _play(e: GameEvent) -> void:
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(_view(d["id"]), false)
 			token.position = Vector3(-0.48 if state.figure(d["id"]).second_treasure_id >= 0 else 0.48, 0.65, 0)
+			_view(d["id"]).refresh(state.figure(d["id"]))
 		"treasure_drop":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(self, false)
 			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))
+			_view(d["id"]).refresh(state.figure(d["id"]))
 		"treasure_moved":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))
+		"break_ice":
+			if d["success"] and treasure_views.has(0):
+				treasure_views[0].material_override = BoardView._mat(Color(1.0, 0.73, 0.15), 0.3)
 		"treasure_secured", "treasure_lost":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.visible = false
@@ -147,7 +152,13 @@ func build_treasures() -> void:
 		var box := BoxMesh.new()
 		box.size = Vector3(0.6, 0.5, 0.45)
 		marker.mesh = box
-		marker.material_override = BoardView._mat(Color(1.0, 0.73, 0.15), 0.3)
+		marker.material_override = BoardView._mat(Color(0.42, 0.83, 1.0) if token.frozen else Color(1.0, 0.73, 0.15), 0.3)
 		add_child(marker)
 		marker.position = TableSpace.to_world(token.pos, 0.25 + state.board.height_at(token.pos))
 		treasure_views[token.id] = marker
+		if not token.unresolved():
+			marker.visible = false
+		elif token.carrier_id >= 0 and views.has(token.carrier_id):
+			var carrier := state.figure(token.carrier_id)
+			marker.reparent(views[token.carrier_id], false)
+			marker.position = Vector3(-0.48 if carrier.second_treasure_id == token.id else 0.48, 0.65, 0)

@@ -29,7 +29,8 @@ func summoned(f: Figure, id: String, whole_side: bool = false) -> Figure:
 
 
 func can_control(f: Figure, t: Figure, id: String) -> bool:
-	if t.side == f.side or t.controller_id >= 0 or controlled(f, id) != null:
+	var existing := controlled(f, id)
+	if (t.side == f.side and t.controller_id < 0 and t.summon_spell == "") or (existing != null and existing != t):
 		return false
 	if id == "mind_control":
 		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless") and not t.spell_effects.has("mind_lock")
@@ -87,6 +88,14 @@ func apply_control(f: Figure, t: Figure, id: String, roll: int) -> void:
 
 func _control_result(success: bool, f: Figure, t: Figure, id: String, roll: int) -> void:
 	if success or not t.in_play():
+		return
+	# Errata: temporary figures lose their original warband link, permanent figures retain it.
+	if t.summoned_by >= 0 or t.summon_spell != "":
+		t.original_side = -1
+		t.summoned_by = -1
+		t.summon_spell = ""
+	if t.original_side == f.side:
+		release(t)
 		return
 	t.controller_id = f.id
 	t.control_spell = id

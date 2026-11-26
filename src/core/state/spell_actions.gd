@@ -3,6 +3,7 @@ extends RefCounted
 ## Two-stage spellcasting: announce target, roll, choose Health, then resolve.
 
 var c: GameController
+var shatter := Shatterstar.new()
 var summons: SummonActions
 var terrain: TerrainMagic
 var movement: MagicMovement
@@ -67,12 +68,13 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	if f.spell_effects.has("blinding_light") and kind != "touch":
 		return false
-	if kind == "touch" and t != f and Shooting.distance(f, t) > 1.0:
-		return false
-	if not WizardEye.visible(s.board, f, t.pos) and t != f:
-		return false
-	if spell.has("range") and Shooting.distance(f, t) > float(spell["range"]):
-		return false
+	var limit := 1.0 if kind == "touch" else float(spell.get("range", 24.0))
+	if t != f:
+		if kind == "area_shot":
+			if Shooting.distance(f, t) > limit or not LineOfSight.check(s.board, f.pos, t.pos).clear:
+				return false
+		elif not WizardEye.visible(s.board, f, t.pos, limit):
+			return false
 	if kind == "shot":
 		return t != f
 	if kind == "area_shot":
@@ -239,6 +241,18 @@ func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
 	var f := c.state.active()
+	if shatter.eligible(f, c.state, id):
+		var declared := shatter.declare(f, id, target_id, at, rotated, second, effect)
+		if declared.is_empty():
+			return false
+		_dispatch_shatter(declared)
+		advance_shatter()
+		return true
+	return _authorize_roll(id, target_id, at, rotated, second, effect)
+
+
+func _authorize_roll(id: String, target_id: int, at: Variant, rotated: bool, second: int, effect: Dictionary) -> bool:
+	var f := c.state.active()
 	var targets: Array[Figure] = [c.state.figure(target_id)]
 	if second >= 0:
 		targets.append(c.state.figure(second))
@@ -256,13 +270,24 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll := not known and ScrollActions.consume(f, id)
 	var raw := 14 if scroll else c.dice.d20()
+	var gear_bonus := ActiveGear.casting_bonus(f, id)
+	if not scroll and f.next_cast_gear == "gear_gloves_casting" and ActiveGear.spend(f, f.next_cast_gear):
+		gear_bonus += 5
+	elif not scroll and f.next_cast_gear == "gear_wand_light" and ActiveGear.spend(f, f.next_cast_gear):
+		var alternate := c.dice.d20()
+		c.emit("wand_roll", {"id": f.id, "first": raw, "second": alternate})
+		raw = maxi(raw, alternate)
+	f.next_cast_gear = ""
 	var plane_penalty := PlaneWalk.penalty(f, c.state.turn) if id == "plane_walk" else 0
 	if id == "plane_walk":
 		PlaneWalk.record(f, c.state.turn)
 	var empowered := not scroll and f.spell_effects.erase("potion_empowerment")
-	var total := 14 if scroll else CastingRoll.modified(raw, (4 if empowered else 0) + plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
+	var total := 14 if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
-	c._spend(f)
+	if not shatter.spent:
+		c._spend(f)
+		if not shatter.next.is_empty() or shatter.resolving:
+			shatter.spent = true
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll, "cordial": empowered}
 	if at != null:
 		c.state.pending_cast["at"] = at
@@ -287,6 +312,15 @@ func max_empowerment() -> int:
 
 
 func finish(health: int) -> bool:
+	shatter.resolving = true
+	var ok := _finish_one(health)
+	shatter.resolving = false
+	if ok:
+		advance_shatter()
+	return ok
+
+
+func _finish_one(health: int) -> bool:
 	var s := c.state
 	var p := s.pending_cast
 	if p.is_empty() or health < 0 or health > max_empowerment():
@@ -379,7 +413,7 @@ func finish(health: int) -> bool:
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
 			var old_health := t.health
-			_shot(f, t, int(s.spell_catalog[id]["power"]), null, id == "elemental_bolt", id == "elemental_bolt")
+			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt")
 			if id == "poison_dart" and t.health < old_health:
 				c.poison(t)
 		"call_storm":
@@ -390,12 +424,12 @@ func finish(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.is_demon() and WizardEye.visible(s.board, f, other.pos):
+				if other.in_play() and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
 					_banish(f, other, int(result["roll"]), 4)
 		"scatter_shot":
 			for other in s.figures:
-				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and WizardEye.visible(s.board, f, other.pos):
-					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0)
+				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos)
 		"destructive_sphere":
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
@@ -422,7 +456,7 @@ func finish(health: int) -> bool:
 						if not affected.has(member):
 							affected.append(member)
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else WizardEye.origin(s.board, f, t.pos), true)
+				_shot(f, other, 5, t.pos if other != t else f.pos, true)
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty()
@@ -488,6 +522,9 @@ func on_activate(f: Figure) -> void:
 
 
 func on_end_activation(f: Figure) -> void:
+	shatter.clear()
+	f.spell_effects.erase("potion_shatterstar")
+	f.next_cast_gear = ""
 	f.spell_effects.erase("potion_fire_breath")
 	f.spell_effects.erase("potion_burrowing")
 	f.petrified_skip = false
@@ -554,6 +591,10 @@ func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
 
 
 func available_spell(f: Figure, id: String) -> bool:
+	if id in ["summon_demon", "control_demon"]:
+		for t in c.state.figures:
+			if t.in_play() and t.prepared_demon_caster == f.id:
+				return false
 	return c.state.spellbooks.get(f.side, {}).has(id) or ScrollActions.has_scroll(f, id)
 
 
@@ -597,3 +638,56 @@ func _suggestion_result(success: bool, t: Figure, at: Vector2) -> void:
 	c._loot.drop_on_death(t)
 	if at != t.pos:
 		movement.move(t, at)
+
+
+func reroll_fate() -> bool:
+	var p := c.state.pending_cast
+	if p.is_empty() or p.get("scroll", false):
+		return false
+	var f := c.state.figure(p["caster"])
+	if not ActiveGear.spend(f, "gear_fate_stone"):
+		return false
+	var old := int(p["raw"])
+	var raw := c.dice.d20()
+	p["raw"] = raw
+	p["total"] = int(p["total"]) + raw - old
+	c.emit("fate_reroll", {"id": f.id, "first": old, "second": raw})
+	return true
+
+
+func _dispatch_shatter(entry: Dictionary) -> void:
+	var f := c.state.active()
+	if f == null or not f.in_play() or f.id != int(entry["caster"]):
+		return
+	var t := c.state.figure(entry["target"])
+	if t == null or not t.in_play():
+		return
+	if entry["second"] >= 0 and not c.state.figure(entry["second"]).in_play():
+		return
+	_authorize_roll(entry["id"], entry["target"], entry["at"], entry["rotated"], entry["second"], entry["effect"])
+
+
+func advance_shatter() -> void:
+	if shatter.resolving or not c.state.pending_cast.is_empty() or c.awaiting_reaction():
+		return
+	if not shatter.next.is_empty():
+		var entry := shatter.next
+		shatter.next = {}
+		shatter.resolving = true
+		_dispatch_shatter(entry)
+		shatter.resolving = false
+	if c.state.pending_cast.is_empty() and not c.awaiting_reaction():
+		shatter.spent = false
+
+
+func single_shatter() -> bool:
+	if shatter.first.is_empty():
+		return false
+	var entry := shatter.first
+	shatter.first = {}
+	var f := c.state.active()
+	if f == null or not f.in_play() or f.id != int(entry["caster"]):
+		return false
+	f.spell_effects.erase("potion_shatterstar")
+	_dispatch_shatter(entry)
+	return true

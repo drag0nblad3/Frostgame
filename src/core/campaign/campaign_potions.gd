@@ -33,23 +33,7 @@ static func choices(d: Dictionary, index: int, db: FigureDb) -> Array[int]:
 			"preservation":
 				eligible = u["type"] != "wizard" and u["dead"] and int(u.get("death_game", -1)) == int(d["games"]) and not preserved(d, u)
 			"life":
-				eligible = recently_dead(d, u)
-				if eligible and u["type"] == "apprentice":
-					for other: Dictionary in d["units"]:
-						if other != u and other["type"] == "apprentice" and not other["dead"] and not other.get("dismissed", false):
-							eligible = false
-				if eligible and u["type"] not in ["wizard", "apprentice"]:
-					var soldiers := 0
-					var specialists := 0
-					for other: Dictionary in d["units"]:
-						if other["dead"] or other.get("dismissed", false):
-							continue
-						var def := db.get_def(other["type"])
-						if def.role == "soldier" or other.get("permanent_summon", false):
-							soldiers += 1
-							if def.specialist or other["type"] == "large_construct":
-								specialists += 1
-					eligible = soldiers < 8 and (not db.get_def(u["type"]).specialist and u["type"] != "large_construct" or specialists < 4)
+				eligible = can_revive(d, u, db)
 			"restoration":
 				eligible = not u["dead"] and int(u["injuries"]) > 0
 			"dreams":
@@ -81,6 +65,17 @@ static func use(d: Dictionary, index: int, unit_id: int, db: FigureDb, dice: Dic
 			d["dreams_xp"] = 50 if StatRoll.succeeds(dice.d20(), will, 12) else -30
 	d["last_report"].append("%s used on %s #%d." % [CampaignInventory.catalog()[id]["name"], str(u["type"]).capitalize(), unit_id + 1])
 	return true
+
+
+static func can_revive(d: Dictionary, u: Dictionary, db: FigureDb) -> bool:
+	if not recently_dead(d, u) or u.get("dismissed", false):
+		return false
+	if u["type"] in ["wizard", "apprentice"]:
+		for other: Dictionary in d["units"]:
+			if other != u and other["type"] == u["type"] and BaseResources.alive(other):
+				return false
+		return true
+	return BaseResources.fits(d, db, str(u["type"]))
 
 
 static func revive(u: Dictionary) -> void:

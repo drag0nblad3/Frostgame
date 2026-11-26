@@ -78,3 +78,38 @@ static func distance_field(board: Board, target: Vector2) -> Dictionary:
 ## Nearest grid node to a point.
 static func node_at(p: Vector2) -> Vector2i:
 	return Vector2i(roundi(p.x / MoveGrid.STEP), roundi(p.y / MoveGrid.STEP))
+
+
+
+## Multi-source exit field avoids getting trapped against a wall near the table edge.
+static func exit_field(s: GameState) -> Dictionary:
+	var key := "exit:" + s.scenario_special
+	if s.board.field_cache.has(key):
+		return s.board.field_cache[key]
+	var grid := MoveGrid.new(s.board)
+	var heap := MinHeap.new()
+	var field := {}
+	s.board.field_cache[key] = field
+	for x in grid.cols:
+		for y in grid.rows:
+			var node := Vector2i(x, y)
+			var at := MoveGrid.to_pos(node)
+			if TreasureRules.edge_distance(s.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(s, at) or not grid.open(node):
+				continue
+			field[node] = 0.0
+			heap.push(0.0, node)
+	while not heap.is_empty():
+		var top := heap.pop()
+		var cost: float = top[0]
+		var node: Vector2i = top[1]
+		if cost > field.get(node, INF):
+			continue
+		for direction: Vector2i in MoveGrid.NEIGHBORS:
+			var next := node + direction
+			if not grid.open(next):
+				continue
+			var distance := cost + grid.step_cost(next, node)
+			if distance < field.get(next, INF):
+				field[next] = distance
+				heap.push(distance, next)
+	return field

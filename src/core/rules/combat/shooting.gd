@@ -55,12 +55,14 @@ static func target_mod(los: LineOfSight.Result) -> int:
 
 ## Rolls the shot. Returns {s_roll, t_roll, s_total, t_total, mod, dmg}.
 static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
+	return resolve_rolls(board, shooter, target, dice.d20(), dice.d20(), critical_hits, storm_penalty)
+
+
+static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
 	var los := LineOfSight.check(board, shooter.pos, target.pos)
 	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
 	if target.def.traits.has("large"):
 		mod -= 2
-	var sr := dice.d20()
-	var tr := dice.d20()
 	var st := sr + mini(shooter.effective_shoot() + MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id) - storm_penalty + (1 if shooter.spell_effects.has("enchant_weapon") else 0) + (3 if target.spell_effects.has("glow") else 0), 10) + shooter.roll_penalty()
 	var tt := tr + mini(target.effective_fight() + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0

@@ -11,6 +11,10 @@ var changed: Callable
 var campaign_dice := Dice.new(0)
 var campaign_uses: OptionButton
 var use_button: Button
+var assign_button: Button
+var sell_button: Button
+var caster_equipment: OptionButton
+var caster_equipment_button: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -24,10 +28,10 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	add_child(loot)
 	recipient_choice = OptionButton.new()
 	add_child(recipient_choice)
-	_button("Assign selected item", func() -> void:
+	assign_button = _button("Assign selected item", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.assign_item(campaign.data, int(loot.get_selected_metadata()), int(recipient_choice.get_selected_metadata()), db):
 			changed.call())
-	_button("Sell selected unassigned item", func() -> void:
+	sell_button = _button("Sell selected unassigned item / known grimoire", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.sell(campaign.data, int(loot.get_selected_metadata())):
 			changed.call())
 	campaign_uses = OptionButton.new()
@@ -41,10 +45,19 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if CampaignPotions.use(campaign.data, option["item"], option["unit"], db, campaign_dice):
 			changed.call())
 	add_child(use_button)
+	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
+	caster_equipment = OptionButton.new()
+	add_child(caster_equipment)
+	caster_equipment_button = _button("Set spellcaster weapons", func() -> void:
+		if caster_equipment.item_count == 0:
+			return
+		var option: Dictionary = caster_equipment.get_selected_metadata()
+		if CasterLoadout.set_weapons(campaign.data, option["owner"], CasterLoadout.PRESETS[option["preset"]]):
+			changed.call())
 	shop = OptionButton.new()
 	add_child(shop)
 	_button("Buy item", func() -> void:
-		if shop.item_count > 0 and CampaignInventory.buy(campaign.data, str(shop.get_selected_metadata())):
+		if shop.item_count > 0 and CampaignInventory.buy(campaign.data, str(shop.get_selected_metadata()), campaign_dice):
 			changed.call())
 
 
@@ -53,6 +66,8 @@ func refresh() -> void:
 	loot.clear()
 	recipient_choice.clear()
 	shop.clear()
+	caster_equipment.clear()
+	caster_equipment_button.disabled = true
 	campaign_uses.clear()
 	use_button.disabled = true
 	if d.is_empty():
@@ -60,11 +75,17 @@ func refresh() -> void:
 	var catalog := CampaignInventory.catalog()
 	for i in d["loot"].size():
 		var item: Dictionary = d["loot"][i]
-		if not CampaignInventory.is_item(item):
+		if not CampaignInventory.is_item(item) and item["kind"] != "grimoire":
+			continue
+		if not catalog.has(CampaignInventory.item_id(item)):
 			continue
 		var info: Dictionary = catalog[CampaignInventory.item_id(item)]
 		var assigned := int(item.get("owner", -1))
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
+		if item["kind"] == "grimoire":
+			suffix = "Known spell; may sell" if d["spells"].has(item["spell"]) else "Unlearned; may learn in campaign"
+		if CampaignInventory.item_id(item) == "gear_staff_casting":
+			suffix += " · " + str(item.get("casting_spell", "unknown")).replace("_", " ").capitalize()
 		if CampaignInventory.item_id(item) == PowerPool.ORB:
 			suffix += " · %d power" % PowerPool.remaining(item)
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
@@ -78,18 +99,23 @@ func refresh() -> void:
 	recipient_choice.set_item_metadata(0, -1)
 	for unit: Dictionary in d["units"]:
 		var capacity := CampaignInventory.slots(unit, db)
-		if unit["dead"] or unit.get("dismissed", false) or capacity == 0:
+		if unit["dead"] or unit.get("dismissed", false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"]):
 			continue
 		var items := CampaignInventory.loadout(d, int(unit["id"]))
 		var used := items.size()
-		if unit["type"] in ["wizard", "apprentice"]:
-			var staff := false
-			for item: Dictionary in items:
-				if item.get("gear_info", {}).get("type", "") == "staff":
-					staff = true
-			if not staff:
-				used += 1
-		recipient_choice.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
+		if CasterLoadout.is_caster(unit["type"]):
+			used = int(CasterLoadout.carried(d, unit)["slots"])
+			for preset: String in CasterLoadout.PRESETS:
+				var proposed := unit.duplicate()
+				proposed["weapons"] = CasterLoadout.PRESETS[preset]
+				if not CasterLoadout.fits(d, proposed):
+					continue
+				caster_equipment.add_item("%s #%d · %s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, preset])
+				caster_equipment.set_item_metadata(caster_equipment.item_count - 1, {"owner": int(unit["id"]), "preset": preset})
+		if capacity == 0:
+			recipient_choice.add_item("%s #%d · Hammer graft only" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1])
+		else:
+			recipient_choice.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
 		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))
 	for id: String in catalog:
 		var info: Dictionary = catalog[id]
@@ -100,8 +126,24 @@ func refresh() -> void:
 		shop.set_item_disabled(shop.item_count - 1, int(d["gold"]) < int(info["buy"]))
 
 
-func _button(label: String, action: Callable) -> void:
+	caster_equipment_button.disabled = caster_equipment.item_count == 0
+	_refresh_item_buttons()
+
+
+func _refresh_item_buttons() -> void:
+	assign_button.disabled = loot.item_count == 0
+	sell_button.disabled = loot.item_count == 0
+	if loot.item_count == 0:
+		return
+	var item: Dictionary = campaign.data["loot"][int(loot.get_selected_metadata())]
+	assign_button.disabled = not CampaignInventory.is_item(item)
+	sell_button.disabled = not CampaignInventory.can_sell(campaign.data, item)
+
+
+func _button(label: String, action: Callable) -> Button:
 	var b := Button.new()
 	b.text = label
 	b.pressed.connect(action)
 	add_child(b)
+
+	return b

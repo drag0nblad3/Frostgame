@@ -164,7 +164,7 @@
     "name": "Shatterstar Draught",
     "buy": 1500,
     "sell": 200,
-    "live": false,
+    "live": true,
     "greater": true,
     "ingredients": 600
   },

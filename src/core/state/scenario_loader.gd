@@ -15,6 +15,11 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	s.board = BoardLoader.load_id(d["board"], terrain)
 	s.random_encounters = d.get("random_encounters", false)
 	s.museum = d.get("museum", false)
+	s.scenario_special = str(d.get("special", ""))
+	if s.scenario_special == "dreams_well":
+		for piece in s.board.pieces:
+			if piece.kind.id == "dreams_well":
+				piece.circular = true
 	for at: Array in d.get("reinforcements", []):
 		s.reinforcement_points.append(Vector2(at[0], at[1]))
 	s.forced_combat = d.get("forced_combat", false)
@@ -26,8 +31,17 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		var wb: Dictionary = warbands[side]
 		s.side_names.append(wb.get("name", "Warband %d" % (side + 1)))
 		s.spellbooks[side] = wb.get("spells", {})
+		if wb.get("telescope", false):
+			s.telescope_ready[side] = true
+		var deploy_index := 0
 		for entry: Dictionary in wb.get("figures", []):
 			var at: Array = entry["at"]
+			if s.scenario_special == "underground_library":
+				var position := Vector2(15.0 + float(deploy_index % 5) * 1.5, 1.5 + floori(deploy_index / 5.0) * 1.5)
+				if side == 1:
+					position.y = s.board.size.y - position.y
+				at = [position.x, position.y]
+			deploy_index += 1
 			var def := figures.get_def(entry["type"])
 			if entry.has("stat_bonus"):
 				def = def.with_bonuses(entry["stat_bonus"])
@@ -35,12 +49,26 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				def = def.with_bonuses({})
 				def.role = "soldier"
 				def.specialist = def.id == "large_construct"
+			if CasterLoadout.is_caster(def.role) and entry.has("weapons"):
+				def = CasterLoadout.definition(def, entry["weapons"], figures)
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
 			if entry.get("prepared_zombie", false) or entry.get("prepared_illusion", false):
 				unit.summon_spell = "raise_zombie" if entry.get("prepared_zombie", false) else "illusionary_soldier"
 				for caster in s.figures:
 					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
 						unit.summoned_by = caster.id
+						break
+			if entry.has("prepared_demon"):
+				var demon: Dictionary = entry["prepared_demon"]
+				for caster in s.figures:
+					if caster.side == side and caster.campaign_id == int(demon["caster"]):
+						unit.prepared_demon_caster = caster.id
+						unit.original_side = -1
+						unit.controller_id = caster.id
+						unit.summoned_by = caster.id
+						unit.control_spell = "control_demon"
+						unit.summon_spell = "summon_demon"
+						unit.control_roll = int(demon["control_roll"])
 						break
 			unit.campaign_base = str(entry.get("campaign_base", ""))
 			unit.familiar = entry.get("familiar", false)
@@ -63,5 +91,6 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for at: Array in d.get("treasures", []):
 		var token := TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1]))
 		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
+		token.frozen = s.scenario_special == "underground_library" and token.central
 		s.treasures.append(token)
 	return s

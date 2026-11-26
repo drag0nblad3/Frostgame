@@ -100,7 +100,7 @@ func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if r == null:
 		r = _c.reach()
 	var at := MoveGrid.to_pos(node)
-	if not r.can_reach(node) or TreasureRules.edge_distance(_c.state.board, at) > Figure.BASE_RADIUS + 0.01:
+	if not r.can_reach(node) or TreasureRules.edge_distance(_c.state.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(_c.state, at):
 		return false
 	# The lattice keeps the base on the table; budget one more half inch to cross the edge.
 	if r.cost[node] + Figure.BASE_RADIUS > MoveRules.allowance(f) + 0.001:

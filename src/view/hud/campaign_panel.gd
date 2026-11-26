@@ -3,6 +3,7 @@ extends AcceptDialog
 ## Between-battle campaign overview. Starting a campaign is an explicit action.
 signal start_requested
 signal begin_requested
+signal restart_requested
 var campaign: CampaignProgress
 var summary: Label
 var spells: OptionButton
@@ -24,6 +25,8 @@ var learn_button: Button
 var controls: Array[Control] = []
 var inventory: InventoryPanel
 var rituals: RitualPanel
+var base_upgrades: BaseUpgradePanel
+var succession: SuccessionPanel
 var niggle: OptionButton
 var niggle_button: Button
 var treasure_choice: Label
@@ -99,7 +102,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		base_choice.add_item(id.capitalize() + " · " + str(BaseRules.BENEFITS.get(id, "")))
 		base_choice.set_item_metadata(base_choice.item_count - 1, id)
 	col.add_child(base_choice)
-	base_button = _command(col, "Choose base (free after first battle)", func() -> void:
+	base_button = _command(col, "Choose base (changing discards upgrades)", func() -> void:
 		if campaign.choose_base(str(base_choice.get_selected_metadata())):
 			changed())
 	grimoire = OptionButton.new()
@@ -116,6 +119,13 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	col.add_child(rituals)
 	rituals.setup(campaign, changed)
 	controls.append(rituals)
+	base_upgrades = BaseUpgradePanel.new()
+	col.add_child(base_upgrades)
+	base_upgrades.setup(campaign, db, changed)
+	controls.append(base_upgrades)
+	succession = SuccessionPanel.new()
+	col.add_child(succession)
+	succession.setup(campaign, changed, func() -> void: restart_requested.emit())
 	start = Button.new()
 	start.text = "Start campaign with current drafted warband"
 	col.add_child(start)
@@ -134,6 +144,7 @@ func refresh(in_battle: bool) -> void:
 	improve.visible = not d.is_empty()
 	var pending: Array = d.get("pending_treasure", [])
 	var deciding := not pending.is_empty() and not in_battle
+	succession.refresh(in_battle, deciding)
 	treasure_choice.visible = deciding
 	keep_treasure.visible = deciding
 	alternate_treasure.visible = deciding
@@ -151,6 +162,7 @@ func refresh(in_battle: bool) -> void:
 		return
 	inventory.refresh()
 	rituals.refresh()
+	base_upgrades.refresh()
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
 	for unit: Dictionary in d["units"]:
 		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — resting" if int(unit["miss"]) > 0 else ""), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])
@@ -166,6 +178,9 @@ func refresh(in_battle: bool) -> void:
 			niggle.add_item("%s #%d · %d gc" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, price])
 			niggle.set_item_metadata(niggle.item_count - 1, int(unit["id"]))
 	niggle_button.disabled = niggle.item_count == 0
+	var reserve := BaseResources.reserve_id(d, db)
+	if reserve >= 0:
+		lines.append("Inn reserve: %s #%d" % [db.get_def(d["units"][reserve]["type"]).name, reserve + 1])
 	lines.append("Base: %s | Stored loot: %d" % [str(d.get("base", "")).capitalize(), d["loot"].size()])
 	lines.append("Stat advances: %s" % str(d.get("advances", {})))
 	members.clear()
@@ -181,11 +196,18 @@ func refresh(in_battle: bool) -> void:
 		if item["kind"] == "grimoire" and item.has("spell") and not d["spells"].has(item["spell"]):
 			grimoire.add_item(str(item["spell"]).capitalize())
 			grimoire.set_item_metadata(grimoire.item_count - 1, i)
-	upgrade.disabled = bool(d.get("stat_improved", false)) or int(d["xp"]) < 100
+	upgrade.disabled = not CampaignSuccession.living_wizard(d) or bool(d.get("stat_improved", false)) or int(d["xp"]) < 100
 	base_button.disabled = int(d["games"]) == 0
+	for i in base_choice.item_count:
+		var id := str(base_choice.get_item_metadata(i))
+		var proposed := d.duplicate(true)
+		if id != d.get("base", ""):
+			proposed["base"] = id
+			proposed["resources"] = []
+		base_choice.set_item_disabled(i, not BaseResources.fits(proposed, db))
 	dismiss_button.disabled = members.item_count == 0
 	treat_button.disabled = members.item_count == 0
-	learn_button.disabled = grimoire.item_count == 0 or int(d["xp"]) < 100
+	learn_button.disabled = not CampaignSuccession.living_wizard(d) or grimoire.item_count == 0 or int(d["xp"]) < 100
 	for i in recruit.item_count:
 		var id := str(recruit.get_item_metadata(i))
 		recruit.set_item_text(i, "%s · %d gc" % [db.get_def(id).name, campaign.recruitment_cost(id, db)])
@@ -201,7 +223,7 @@ func refresh(in_battle: bool) -> void:
 			continue
 		spells.add_item("%s · TN%d" % [id.capitalize(), d["spells"][id]])
 		spells.set_item_metadata(spells.item_count - 1, id)
-	improve.disabled = deciding or in_battle or bool(d["spell_improved"]) or int(d["xp"]) < 100 or spells.item_count == 0
+	improve.disabled = deciding or in_battle or not CampaignSuccession.living_wizard(d) or bool(d["spell_improved"]) or int(d["xp"]) < 100 or spells.item_count == 0
 	begin.disabled = in_battle or not campaign.can_deploy()
 
 

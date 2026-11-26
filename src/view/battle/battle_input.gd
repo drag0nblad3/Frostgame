@@ -23,6 +23,8 @@ var spell_first := -1
 var counter_index := 0
 var counter_choices: Array[Dictionary] = []
 var empower := 0
+var transfer_target := -1
+var transfer_amount := 1
 
 
 func _init(controller: GameController, command_bar: BattleHud, cam: Camera3D, overlay: BattleMarkers) -> void:
@@ -41,6 +43,16 @@ func refresh() -> void:
 	available.clear()
 	reach = null
 	var f := c.state.active()
+	if c.state.pending_initiative:
+		available.assign(["telescope_use", "telescope_save"])
+		mode = "initiative_choice"
+		preview()
+		return
+	if not c.state.pending_combat.is_empty():
+		available.assign(["fate_combat_yes", "fate_combat_no"])
+		mode = "fate_combat"
+		preview()
+		return
 	if not c.state.pending_resistance.is_empty():
 		empower = 0
 		mode = "resist"
@@ -75,6 +87,19 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	if c.can_drink_well():
+		available.append("drink_well")
+	if c.can_break_ice():
+		available.append("break_ice")
+	for weapon in c.selectable_melee():
+		available.append("weapon_" + weapon.id)
+	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
+		if GearActions.can_use(c, id):
+			available.append(id)
+	for t in c.state.figures:
+		if GearActions.transfer_max(c, t) > 0:
+			available.append("gear_ring_transference")
+			break
 	for item in f.items:
 		var id := str(item.get("potion", ""))
 		for t in c.state.figures:
@@ -164,6 +189,22 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"gear_transfer_target":
+			for t in c.state.figures:
+				if GearActions.transfer_max(c, t) > 0:
+					targets.append(t)
+			radius = 0.65
+			hint = "Choose a wounded ally in sight."
+		"gear_transfer_amount":
+			var t := c.state.figure(transfer_target)
+			points.append(t.pos)
+			radius = 0.65
+			hint = "Transfer %d Health to %s (maximum %d)." % [transfer_amount, t.label(), GearActions.transfer_max(c, t)]
+			if transfer_amount == f.health:
+				hint += " Warning: caster will be knocked out."
+		"gear_teleport":
+			points.assign(GearActions.teleport_points(c))
+			hint = "Choose a destination within 8 inches."
 		"potion_point":
 			points.assign(c._potions.points(selected_potion))
 			hint = "Choose the potion destination."
@@ -245,6 +286,14 @@ func preview() -> void:
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
+		"fate_combat":
+			var p := c.state.pending_combat
+			var roller := c.state.figure(p["roller"])
+			points.append(roller.pos)
+			radius = 0.65
+			hint = "%s rolled %d. Opposed totals: %d vs %d. Use Fate Stone? New roll is binding." % [roller.label(), p["roll"], p["own_total"], p["opposing_total"]]
+		"initiative_choice":
+			hint = "Before initiative is rolled: use the telescope for +5, or save it for a later turn?"
 		"intercept":
 			var choice: Dictionary = c.state.pending_intercept["choice"]
 			var guard: Figure = choice["guard"]
@@ -306,9 +355,13 @@ func preview() -> void:
 	markers.show_points(points, color, radius)
 	if not selected.is_empty():
 		markers.show_points(selected, Color(1.0, 0.78, 0.15), 0.85, true)
+	if not c._magic.shatter.first.is_empty():
+		hint = "Shatterstar: first attempt declared. Choose the second target before rolling. " + hint
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
+		if f.next_cast_gear != "":
+			hint = "Armed: %s. " % f.next_cast_gear.trim_prefix("gear_").replace("_", " ").capitalize() + hint
 		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", hint]
 	if c.state.group.in_progress():
 		hint = ("GROUP: Movement · " if c.state.group.movement_pass() else "GROUP: Second action · ") + hint
@@ -318,12 +371,49 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key == "drink_well":
+		return c.drink_well()
+	if key == "break_ice":
+		return c.break_ice()
+	if key.begins_with("weapon_"):
+		return c.select_melee(key.trim_prefix("weapon_"))
+	if key in ["fate_combat_yes", "fate_combat_no"]:
+		return c.answer_fate_combat(key == "fate_combat_yes")
+	if key in ["telescope_use", "telescope_save"]:
+		return c.answer_initiative(key == "telescope_use")
 	if key == "potion_cancel":
 		mode = ""
 		refresh()
 		return false
 	if key in ["coat_melee", "coat_ranged"]:
 		return c._potions.coat(selected_potion, key == "coat_ranged")
+	if key in ["gear_gloves_casting", "gear_wand_light"]:
+		GearActions.arm(c, key)
+		preview()
+		return false
+	if key == "gear_ring_transference":
+		mode = "gear_transfer_target"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key == "gear_ring_teleportation":
+		mode = "gear_teleport"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key == "gear_horn_destruction":
+		counter_choices = c._magic.crumble.options(c.state.active())
+		if counter_choices.is_empty():
+			return false
+		selected_spell = "horn"
+		counter_index = 0
+		mode = "counter_select"
+		available.assign(["spell_cancel", "counter_confirm"])
+		if counter_choices.size() > 1:
+			available.append("counter_previous")
+			available.append("counter_next")
+		preview()
+		return false
 	if key.begins_with("potion_"):
 		selected_potion = key.trim_prefix("potion_")
 		if selected_potion in PotionActions.POINTS:
@@ -347,6 +437,8 @@ func action(key: String) -> bool:
 			preview()
 			return false
 		return c._potions.drink(selected_potion)
+	if key == "shatter_single":
+		return c._magic.single_shatter()
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false
@@ -358,6 +450,8 @@ func action(key: String) -> bool:
 			counter_index = 0
 			mode = "counter_select"
 			available.assign(["spell_cancel", "counter_confirm"])
+			if not c._magic.shatter.first.is_empty():
+				available.append("shatter_single")
 			if counter_choices.size() > 1:
 				available.append("counter_previous")
 				available.append("counter_next")
@@ -367,17 +461,43 @@ func action(key: String) -> bool:
 		if selected_spell in ["telekinesis", "fools_gold"]:
 			mode = "treasure_spell"
 		available.assign(["spell_cancel"])
+		if not c._magic.shatter.first.is_empty():
+			available.append("shatter_single")
 		if selected_spell in ["fog", "wall", "bridge"]:
 			available.append("rotate_spell")
 		preview()
 		return false
 	match key:
+		"transfer_plus", "transfer_minus":
+			transfer_amount = clampi(transfer_amount + (1 if key == "transfer_plus" else -1), 1, GearActions.transfer_max(c, c.state.figure(transfer_target)))
+			_transfer_buttons()
+			preview()
+			return false
+		"transfer_confirm":
+			return GearActions.transfer(c, c.state.figure(transfer_target), transfer_amount)
 		"cancel_bridge":
 			return c._magic.terrain.cancel_bridge(c.state.active())
 		"use_stored_action":
 			return c.use_stored_action()
 		"resist_plus", "resist_minus":
 			empower = clampi(empower + (1 if key == "resist_plus" else -1), 0, int(c.state.pending_resistance["max"]))
+			_resist_buttons()
+			preview()
+			return false
+		"resist_fate":
+			c._magic.resistance.reroll_fate()
+			empower = 0
+			_resist_buttons()
+			preview()
+			return false
+		"cast_fate":
+			c._magic.reroll_fate()
+			empower = 0
+			_empower_buttons()
+			preview()
+			return false
+		"resist_amulet":
+			c._magic.resistance.use_amulet()
 			_resist_buttons()
 			preview()
 			return false
@@ -388,7 +508,9 @@ func action(key: String) -> bool:
 			preview()
 			return false
 		"counter_confirm":
-			return c._magic.start_counter(selected_spell, counter_index)
+			if selected_spell == "horn":
+				return GearActions.horn(c, counter_choices[counter_index]["piece"])
+			return _declared(c._magic.start_counter(selected_spell, counter_index))
 		"rotate_spell":
 			spell_rotated = not spell_rotated
 			preview()
@@ -403,6 +525,7 @@ func action(key: String) -> bool:
 			preview()
 			return false
 		"spell_cancel":
+			c._magic.shatter.first.clear()
 			mode = ""
 			refresh()
 			return false
@@ -451,24 +574,31 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
+			"gear_transfer_target":
+				transfer_target = id
+				transfer_amount = 1
+				mode = "gear_transfer_amount"
+				_transfer_buttons()
+				preview()
+				return false
 			"breathe_fire":
 				return c._potions.breathe(c.state.figure(id))
 			"potion_target":
 				return c._potions.drink(selected_potion, c.state.figure(id))
 			"swap_second":
-				return c._magic.start_swap(spell_first, id)
+				return _declared(c._magic.start_swap(spell_first, id))
 			"spell_target":
 				if selected_spell in ["leap", "transpose", "suggestion"]:
 					spell_first = id
 					mode = "swap_second" if selected_spell == "transpose" else "leap_destination"
 					preview()
 					return false
-				return c.start_cast(selected_spell, id)
+				return _declared(c.start_cast(selected_spell, id))
 			"cancel_control":
 				return c._magic.cancel(id)
 			"group_select":
@@ -497,16 +627,18 @@ func tap(screen: Vector2) -> bool:
 				preview()
 				return false
 	if mode == "treasure_destination":
-		return c._magic.start_treasure(selected_spell, spell_first, MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return _declared(c._magic.start_treasure(selected_spell, spell_first, MoveGrid.to_pos(MovePlanner.node_at(at))))
 	if mode == "leap_destination":
 		var t := c.state.figure(spell_first)
 		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return c._magic.start_move(selected_spell, spell_first, destination)
+		return _declared(c._magic.start_move(selected_spell, spell_first, destination))
+	if mode == "gear_teleport":
+		return GearActions.teleport(c, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "potion_point":
 		return c._potions.use_at(selected_potion, at.round() if selected_potion == "explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return c._magic.start_at(selected_spell, destination, spell_rotated)
+		return _declared(c._magic.start_at(selected_spell, destination, spell_rotated))
 	if mode == "collect":
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:
@@ -544,6 +676,9 @@ func _group_buttons() -> void:
 
 func _empower_buttons() -> void:
 	available.assign(["cast_confirm"])
+	var p := c.state.pending_cast
+	if not p.get("scroll", false) and ActiveGear.ready(c.state.figure(p["caster"]), "gear_fate_stone"):
+		available.append("cast_fate")
 	if c._magic.can_insure():
 		available.append("cast_scroll")
 	if empower < c.cast_max_empowerment():
@@ -579,7 +714,28 @@ func _surface_at(screen: Vector2) -> Variant:
 
 func _resist_buttons() -> void:
 	available.assign(["resist_confirm"])
+	var p := c.state.pending_resistance
+	if ActiveGear.ready(c.state.figure(p["id"]), "gear_fate_stone"):
+		available.append("resist_fate")
+	if int(p["raw"]) != 1 and ActiveGear.ready(c.state.figure(p["id"]), "gear_amulet_resistance"):
+		available.append("resist_amulet")
 	if empower < int(c.state.pending_resistance["max"]):
 		available.append("resist_plus")
 	if empower > 0:
 		available.append("resist_minus")
+
+
+func _declared(ok: bool) -> bool:
+	if not ok and not c._magic.shatter.first.is_empty():
+		var key := "spell_" + str(c._magic.shatter.first["id"])
+		available.assign([key])
+		action(key)
+	return ok
+
+
+func _transfer_buttons() -> void:
+	available.assign(["potion_cancel", "transfer_confirm"])
+	if transfer_amount > 1:
+		available.append("transfer_minus")
+	if transfer_amount < GearActions.transfer_max(c, c.state.figure(transfer_target)):
+		available.append("transfer_plus")

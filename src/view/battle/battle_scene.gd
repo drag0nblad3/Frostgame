@@ -48,6 +48,8 @@ func _ready() -> void:
 		new_game(0))
 	hud.roster_pressed.connect(_open_roster)
 	hud.campaign_pressed.connect(_open_campaign)
+	hud.save_battle_pressed.connect(_save_battle)
+	hud.resume_battle_pressed.connect(_resume_battle)
 	hud.scenario_selected.connect(func(id: String) -> void: _scenario_id = id)
 	_campaign.load_save()
 	_rig.tapped.connect(_on_tap)
@@ -57,12 +59,6 @@ func _ready() -> void:
 
 
 func new_game(seed_value: int) -> void:
-	if player != null:
-		player.queue_free()
-	_markers.clear()
-	auto_play = false
-	hud.set_auto(false)
-	_wait = 0.0
 	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
 	if _campaign_battle:
 		data["warbands"][0] = _campaign.deployment()
@@ -70,25 +66,47 @@ func new_game(seed_value: int) -> void:
 		data["warbands"][0] = _roster.duplicate(true)
 	var state := ScenarioLoader.from_dict(data, _figures, _terrain)
 	state.reaction_side = -2 if watch_mode else player_side
-	controller = GameController.new(state, Dice.new(seed_value))
+	_attach_battle(GameController.new(state, Dice.new(seed_value)), true)
+
+
+func _attach_battle(c: GameController, start: bool) -> void:
+	if player != null:
+		player.queue_free()
+	_markers.clear()
+	auto_play = false
+	hud.set_auto(false)
+	_wait = 0.0
+	controller = c
+	var state := c.state
 	_board_view.build(state.board)
 	_markers.board = state.board
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
 	player = EventPlayer.new()
 	player.state = state
 	add_child(player)
-	player.build_treasures()
 	for f in state.figures:
 		var v := FigureView.new()
 		player.add_child(v)
 		v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 		player.views[f.id] = v
+		v.set_active(f.id == state.active_id)
+		if f.out_of_action:
+			v.take_out()
+		if f.exited:
+			v.visible = false
+	player.build_treasures()
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
 	controller.event_emitted.connect(player.push)
 	controller.event_emitted.connect(_on_event)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
-	controller.start_game()
+	if start:
+		controller.start_game()
+	else:
+		for event in controller.history.slice(-8):
+			var line := Explainer.text(state, event)
+			if line != "":
+				hud.add_line(line)
 	_update_status()
 	_dirty = true
 
@@ -114,7 +132,10 @@ func _process(delta: float) -> void:
 	if s.over and _campaign_battle:
 		_campaign_battle = false
 		_campaign.settle(controller, controller.dice)
-		_campaign.save()
+		if _campaign.save():
+			var checkpoint := BattleSnapshot.read()
+			if checkpoint.get("meta", {}).get("campaign", false):
+				DirAccess.remove_absolute(BattleSnapshot.PATH)
 		_open_campaign()
 	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side and (s.active() == null or s.active().side >= 0)):
 		_wait = 0.0
@@ -126,7 +147,7 @@ func _process(delta: float) -> void:
 
 
 func set_watch_mode(on: bool) -> void:
-	if controller.state.active() != null or controller.state.group.in_progress() or not player.idle():
+	if controller.state.active() != null or controller.state.group.in_progress() or controller.awaiting_reaction() or not player.idle():
 		hud.set_watch(watch_mode, false, false)
 		return
 	watch_mode = on
@@ -149,7 +170,7 @@ func _on_event(event: GameEvent) -> void:
 func _refresh() -> void:
 	_dirty = false
 	_update_status()
-	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress(), true)
+	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress() and not controller.awaiting_reaction(), true)
 	if _human_turn():
 		player_input.refresh()
 	else:
@@ -180,6 +201,9 @@ func _update_status() -> void:
 	var score := ""
 	for side in s.side_count():
 		score += "  |  %s: %d" % [s.side_names[side], s.secured_count(side)]
+	if s.pending_initiative:
+		hud.set_status("Turn %d · Initiative choice%s" % [s.turn, score])
+		return
 	if s.over:
 		var result := "Draw" if s.winner < 0 else "%s win" % s.side_names[s.winner]
 		hud.set_status("Turn %d — %s%s" % [s.turn, result, score])
@@ -224,6 +248,7 @@ func _open_campaign() -> void:
 		_campaign_dialog.setup(_campaign, _figures)
 		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
 		_campaign_dialog.start_requested.connect(_create_campaign)
+		_campaign_dialog.restart_requested.connect(_restart_campaign)
 	_campaign_dialog.refresh(_campaign_battle)
 	_campaign_dialog.popup_centered_ratio(0.85)
 
@@ -241,6 +266,13 @@ func _create_campaign() -> void:
 	_campaign_dialog.refresh(false)
 
 
+func _restart_campaign() -> void:
+	if _campaign_battle:
+		return
+	_campaign.data = {}
+	_create_campaign()
+
+
 func _begin_campaign_battle() -> void:
 	if _campaign_battle or not _campaign.can_deploy():
 		return
@@ -249,7 +281,49 @@ func _begin_campaign_battle() -> void:
 			unit["dead"] = true
 			CampaignInventory.lose_owned(_campaign.data, int(unit["id"]))
 			_campaign.data["last_report"].append("%s retires after losing both eyes." % str(unit["type"]).capitalize())
+	if not _campaign.save():
+		return
 	_campaign_battle = true
 	watch_mode = false
 	_campaign_dialog.hide()
 	new_game(0)
+
+
+
+func _campaign_fingerprint() -> String:
+	return FileAccess.get_sha256(CampaignProgress.PATH) if FileAccess.file_exists(CampaignProgress.PATH) else ""
+
+
+func _save_battle() -> void:
+	if controller == null or not player.idle() or not BattleSnapshot.can_save(controller):
+		hud.add_line("Finish the current roll or animation before saving.")
+		return
+	var meta := {"scenario": _scenario_id, "campaign": _campaign_battle, "campaign_hash": _campaign_fingerprint() if _campaign_battle else "", "watch": watch_mode}
+	if BattleSnapshot.save(controller, meta):
+		hud.add_line("Battle saved.")
+	else:
+		hud.add_line("Could not save this battle.")
+
+
+func _resume_battle() -> void:
+	if controller != null and not player.idle():
+		hud.add_line("Finish the current animation before resuming.")
+		return
+	var data := BattleSnapshot.read()
+	if data.is_empty():
+		hud.add_line("No compatible saved battle.")
+		return
+	var meta: Dictionary = data.get("meta", {})
+	if meta.get("campaign", false) and (meta.get("campaign_hash", "") == "" or meta["campaign_hash"] != _campaign_fingerprint()):
+		hud.add_line("Campaign changed since this checkpoint; cannot resume it.")
+		return
+	var restored := BattleSnapshot.rebuild(data, _figures)
+	if restored == null:
+		hud.add_line("Could not restore the saved battle.")
+		return
+	_scenario_id = str(meta.get("scenario", SCENARIO))
+	hud.select_scenario(_scenario_id)
+	_campaign_battle = bool(meta.get("campaign", false))
+	watch_mode = bool(meta.get("watch", false))
+	_attach_battle(restored, false)
+	hud.add_line("Battle resumed.")

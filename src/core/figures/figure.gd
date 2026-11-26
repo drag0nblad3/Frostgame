@@ -19,6 +19,7 @@ var controller_id := -1
 var control_spell := ""
 var control_roll := 0
 var summoned_by := -1
+var prepared_demon_caster := -1
 var summon_spell := ""
 var def: FigureDef
 var side := 0
@@ -37,6 +38,8 @@ var elemental_shield := 0
 var poisoned := false
 var poison_weapon := ""
 var empowerment_used := false
+var used_gear := {}
+var next_cast_gear := ""
 var petrified_skip := false
 var magic_exhausted := false
 var last_time_walk := -2

@@ -6,7 +6,7 @@ belongs to Osprey Games and Joseph A. McCullough, and no rulebook text is includ
 
 ![Bot vs bot game](docs/screenshot.png)
 
-**Status:** milestone 2 — playable human-vs-bot treasure skirmish, with movement and combat, optional bot-vs-bot observation, and automated rules tests. Magic and campaign play are still in development.
+**Status:** playable human-vs-bot skirmishes with initial implementations of the core spell, potion and magic gear catalogs, persistent between-battle campaigns, base resources and progression. Rules fidelity, scenario variety and battle save/resume are still in development.
 
 ## Run it
 1. Install [Godot 4.5+](https://godotengine.org/download) (standard build, not .NET).
@@ -29,3 +29,10 @@ still needs checking against the book, and `docs/PLANNING.md` for the roadmap.
 
 ## Wizard and magic prototype
 Open **Warband** to name a wizard, select a school and eight spells, hire soldiers and start a new skirmish. The budget and specialist cap are validated. Unimplemented spell effects are explicitly marked in the editor. During a caster activation, **Cast** lists usable known spells; choose a target, then choose Health empowerment and resolve the roll. The creature phase and optional treasure encounters are enabled in the default scenario.
+
+## Battle checkpoints
+Use **Save battle** and **Resume battle** after animations and unresolved rolls finish. The local checkpoint retains active battle state and random generator state; campaign checkpoints cannot be resumed after the campaign save changes. Saving replaces the previous battle checkpoint.
+
+Additional scenarios: Well of Dreams and Sorrows, The Library and The Worm Hunts. Rival spellcasters score attack, healing, control and support choices, while treasure carriers prioritize terrain-aware extraction.
+
+Presentation: procedural low-poly tabletop miniatures, distinct silhouettes for spellcasters, warriors and creature families; snow tiles and stone details, frozen treasure markers, compact menu and collapsible combat log. These are original programmatic graphics, not finished custom sculpted assets.

@@ -14,6 +14,7 @@ var _displacement: CombatDisplacement
 var _encounters: EncounterActions
 var _magic: SpellActions
 var _potions: PotionActions
+var _fate_combat: FateCombat
 
 
 func _init(s: GameState, d: Dice) -> void:
@@ -27,6 +28,7 @@ func _init(s: GameState, d: Dice) -> void:
 	_encounters = EncounterActions.new(self)
 	_magic = SpellActions.new(self)
 	_potions = PotionActions.new(self)
+	_fate_combat = FateCombat.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:
@@ -41,7 +43,7 @@ func start_game() -> void:
 
 ## Figures the side to play may activate now.
 func activatable() -> Array[Figure]:
-	if state.over:
+	if state.over or state.pending_initiative:
 		var none: Array[Figure] = []
 		return none
 	return state.waiting(state.current_side())
@@ -161,8 +163,12 @@ func fight(target_id: int) -> bool:
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	var res := Melee.resolve(dice, state.figures, f, t, state.critical_hits)
 	_spend(f)
+	_fate_combat.start(f, t, "fight")
+	return true
+
+
+func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("fight", res)
@@ -179,7 +185,6 @@ func fight(target_id: int) -> bool:
 		if winner.side >= 0:
 			state.push_winner = winner.id
 			state.push_loser = t.id if winner == f else f.id
-	return true
 
 
 func can_shoot(target_id: int) -> bool:
@@ -199,13 +204,17 @@ func shoot(target_id: int) -> bool:
 func _shoot_authorized(f: Figure, t: Figure) -> void:
 	if not f.in_play() or not t.in_play():
 		return
+	_magic.illusions.reveal(f)
 	var declared := t.id
 	t = ShotTarget.randomize(dice, state.figures, t)
-	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits, state.storm_penalty)
-	res["declared"] = declared
 	_spend(f)
 	if f.ranged.needs_reload:
 		f.loaded = false
+	_fate_combat.start(f, t, "shoot", declared)
+
+
+func finish_fate_shot(f: Figure, t: Figure, res: Dictionary, declared: int) -> void:
+	res["declared"] = declared
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("shoot", res)
@@ -389,8 +398,16 @@ func cast_max_empowerment() -> int:
 	return _magic.max_empowerment()
 
 
+func answer_initiative(use: bool) -> bool:
+	return _flow.answer_initiative(use)
+
+
+func answer_fate_combat(use: bool) -> bool:
+	return _fate_combat.answer(use)
+
+
 func awaiting_reaction() -> bool:
-	if not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
+	if not state.pending_combat.is_empty() or state.pending_initiative or not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
 		return true
 	if state.push_winner < 0:
 		return false
@@ -473,3 +490,43 @@ func _weapon_damage(t: Figure, dmg: int, f: Figure, w: WeaponDef) -> void:
 	if t.health < old and f.poison_weapon == w.id:
 		f.poison_weapon = ""
 		poison(t)
+
+
+
+func selectable_melee() -> Array[WeaponDef]:
+	var out: Array[WeaponDef] = []
+	var f := state.active()
+	if f == null or not f.in_play() or f.acted or awaiting_reaction() or not state.pending_cast.is_empty() or state.push_winner >= 0 or not _magic.shatter.first.is_empty():
+		return out
+	for w in f.def.weapons:
+		if w.melee and w != f.melee and not f.destroyed_weapons.has(w.id):
+			out.append(w)
+	return out
+
+
+func select_melee(id: String) -> bool:
+	for w in selectable_melee():
+		if w.id == id:
+			var f := state.active()
+			f.melee = w
+			emit("weapon_selected", {"id": f.id, "weapon": id})
+			return true
+	return false
+
+
+
+func can_drink_well() -> bool:
+	return ScenarioObjectives.can_drink(self)
+
+
+func drink_well() -> bool:
+	return ScenarioObjectives.drink(self)
+
+
+
+func can_break_ice() -> bool:
+	return ScenarioObjectives.can_break_ice(self)
+
+
+func break_ice() -> bool:
+	return ScenarioObjectives.break_ice(self)
