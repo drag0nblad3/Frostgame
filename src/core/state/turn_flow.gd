@@ -18,6 +18,10 @@ func start_turn() -> void:
 		return
 	s.turn += 1
 	if s.turn > GameState.MAX_TURNS:
+		if RedKingVeil.active(s):
+			RedKingVeil.finish(_c)
+			_finish(0 if RedKingVeil.xp(_c,0)>0 else 1)
+			return
 		if s.treasures.is_empty():
 			_finish(-1)
 		else:
@@ -96,6 +100,7 @@ func _settle() -> void:
 			CreatureEffects.end_turn(_c)
 			RedKingSquatter.end_turn(_c)
 			RedKingInvestigations.end_turn(_c)
+			RedKingVeil.end_turn(_c)
 			_c._encounters.on_end_turn()
 			start_turn()
 			return
@@ -108,6 +113,7 @@ func _settle() -> void:
 			start_turn()
 			return
 		s.phase = Phase.ORDER[i]
+		RedKingVeil.before_phase(_c)
 		s.fast_acts.clear()
 		s.early.capture(s)
 		if s.phase == Phase.CREATURE:
@@ -122,6 +128,12 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
+	if RedKingVeil.active(s):
+		if not s.side_figures(0).is_empty():
+			return false
+		RedKingVeil.finish(_c)
+		_finish(0 if RedKingVeil.xp(_c,0)>0 else 1)
+		return true
 	if RedKingInvestigations.active(s):
 		if not standing.is_empty():
 			return false

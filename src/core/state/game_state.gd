@@ -123,6 +123,8 @@ func waiting(side: int) -> Array[Figure]:
 		if creatures.size() > 1:
 			creatures.resize(1)
 		return creatures
+	if RedKingVeil.active(self) and side==1:
+		return RedKingVeil.waiting(self)
 	if group.in_progress() and group.side == side:
 		return group.waiting(self)
 	var out: Array[Figure] = []

@@ -41,6 +41,7 @@ func emit(type: String, data: Dictionary = {}) -> void:
 
 func start_game() -> void:
 	RedKingInvestigations.prepare(self)
+	RedKingVeil.prepare(self)
 	_flow.start_turn()
 
 
@@ -80,6 +81,7 @@ func activate(id: int) -> bool:
 		f.used_stored_action = false
 	emit("activate", {"id": id})
 	RedKingInvestigations.activation(self,f)
+	RedKingVeil.activation(self,f)
 	RedKingSquatter.record_contact(self)
 	if not state.group.in_progress() or state.group.movement_pass():
 		CreatureEffects.activation(self,f)

@@ -46,6 +46,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				if side == 1:
 					position.y = s.board.size.y - position.y
 				at = [position.x, position.y]
+			if RedKingVeil.active(s) and side==0:
+				at=[2.0+float(deploy_index%8)*2.7,1.0+1.5*floori(deploy_index/8.0)]
 			deploy_index += 1
 			var def := figures.get_def(entry["type"])
 			if entry.has("stat_bonus"):
