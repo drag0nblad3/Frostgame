@@ -61,3 +61,16 @@ func test_ivory_graft_campaign_cost() -> void:
 	check_eq(d["loot"].size(),1)
 	check(d["loot"][0]["ivory_graft"])
 	check(CampaignInventory.loadout(d,0)[0]["ivory_graft"])
+
+
+func test_pulsing_gem_restricted_power_and_glow() -> void:
+	var c := _game([1])
+	var f := c.state.active()
+	f.items.append({"gear":PowerPool.GEM,"gear_info":RedKingRewards.catalog()[PowerPool.GEM]})
+	check_eq(PowerPool.available(f,"push"),0)
+	check_eq(PowerPool.available(f,"blink"),4)
+	check_eq(PowerPool.spend(f,2,"blink"),2)
+	check_eq(PowerPool.available(f,"blink"),2)
+	check_eq(f.shooting_defence_penalty(),-1)
+	check_eq(PowerPool.spend(f,1,"blink"),1)
+	check_eq(f.shooting_defence_penalty(),-2)

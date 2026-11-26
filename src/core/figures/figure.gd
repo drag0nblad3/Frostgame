@@ -160,7 +160,7 @@ func early_limit() -> int:
 
 
 func shooting_defence_penalty() -> int:
-	return -int(injury_types.get("lost_eye", 0))+MagicEquipment.bonus(self,"shoot_defence")
+	return -int(injury_types.get("lost_eye",0))+MagicEquipment.bonus(self,"shoot_defence")-int(used_gear.get("rk_gem_glow",0))
 
 
 func is_demon() -> bool:

@@ -156,16 +156,23 @@ func push(f: Figure, t: Figure) -> void:
 		force(t,(t.pos-f.pos).normalized(),float(maxi(0,a-t.effective_armour())),f if ivory else null)
 
 
-func blink(f: Figure, t: Figure, roll: int) -> void:
-	if t.side != f.side:
-		c._magic.resistance.attempt(t, roll, _blink_result.bind(t))
+func blink(f: Figure,t: Figure,roll: int,extend: bool=false,reroll: bool=false) -> void:
+	var gem := ActiveGear.has(f,PowerPool.GEM) and not MagicEquipment.suppressed(f)
+	if t.side!=f.side:
+		c._magic.resistance.attempt(t,roll,_blink_result.bind(f,t,extend and gem,reroll and gem),0,false,"blink")
 	else:
-		_blink_result(false, t)
+		_blink_result(false,f,t,extend and gem,reroll and gem)
 
 
-func _blink_result(success: bool, t: Figure) -> void:
+func _blink_result(success: bool,f: Figure,t: Figure,extend: bool,reroll: bool) -> void:
 	if not success and t.in_play():
-		force(t, RedKingDirection.direction(c), 4.0)
+		var direction := RedKingDirection.direction(c)
+		if reroll:
+			direction=RedKingDirection.direction(c)
+		if extend or reroll:
+			f.used_gear["rk_gem_glow"]=int(f.used_gear.get("rk_gem_glow",0))+1
+			c.emit("gear_used",{"id":f.id,"gear":PowerPool.GEM})
+		force(t,direction,6.0 if extend else 4.0)
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:

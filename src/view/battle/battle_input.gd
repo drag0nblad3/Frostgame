@@ -338,12 +338,16 @@ func preview() -> void:
 			var t := c.state.figure(p["id"])
 			points.append(t.pos)
 			radius = 0.65
-			var power := mini(empower, PowerPool.available(t))
+			var power := mini(empower, PowerPool.available(t,str(p.get("spell",""))))
 			hint = "%s resists: %d + %d Will, needs %d. Spend %d power + %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], power, empower - power, int(p["raw"]) + int(p["mod"]) + empower]
 		"empower":
 			var p := c.state.pending_cast
 			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"]),str(p["id"])))
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
+			if p.get("gem_extend",false):
+				hint+=" • Blink 6″"
+			if p.get("gem_reroll",false):
+				hint+=" • Reroll direction"
 			if p.get("golden_fang",false):
 				hint+=" • Golden Fang selected: +1 Fight on success."
 			if p.get("scroll", false):
@@ -653,6 +657,11 @@ func action(key: String) -> bool:
 			return false
 		"cast_scroll":
 			return c._magic.insure()
+		"gem_extend","gem_reroll":
+			c._magic.toggle_gem(key)
+			_empower_buttons()
+			preview()
+			return false
 		"cast_fang":
 			c._magic.toggle_golden_fang()
 			_empower_buttons()
@@ -813,6 +822,9 @@ func _group_buttons() -> void:
 func _empower_buttons() -> void:
 	available.assign(["cast_confirm"])
 	var p := c.state.pending_cast
+	var caster := c.state.figure(p["caster"])
+	if p.get("id","")=="blink" and ActiveGear.has(caster,PowerPool.GEM) and not MagicEquipment.suppressed(caster):
+		available.append_array(["gem_extend","gem_reroll"])
 	if p.get("id","")=="animate_skull" and RedKingMaterials.fang_count(c.state.figure(p["caster"]))>0:
 		available.append("cast_fang")
 	if not p.get("scroll", false) and ActiveGear.ready(c.state.figure(p["caster"]), "gear_fate_stone"):

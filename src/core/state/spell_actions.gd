@@ -440,7 +440,7 @@ func _finish_one(health: int) -> bool:
 		"push":
 			movement.push(f, t)
 		"blink":
-			movement.blink(f, t, int(result["roll"]))
+			movement.blink(f,t,int(result["roll"]),bool(p.get("gem_extend",false)),bool(p.get("gem_reroll",false)))
 		"transpose":
 			movement.transpose(f, t, s.figure(p["second"]), int(result["roll"]))
 		"heal":
@@ -766,4 +766,15 @@ func toggle_golden_fang() -> bool:
 	if p.get("id","")!="animate_skull" or RedKingMaterials.fang_count(c.state.figure(p["caster"]))<=0:
 		return false
 	p["golden_fang"]=not p.get("golden_fang",false)
+	return true
+
+
+func toggle_gem(option: String) -> bool:
+	var p := c.state.pending_cast
+	if p.get("id","")!="blink" or option not in ["gem_extend","gem_reroll"]:
+		return false
+	var f := c.state.figure(p["caster"])
+	if f==null or not ActiveGear.has(f,PowerPool.GEM) or MagicEquipment.suppressed(f):
+		return false
+	p[option]=not p.get(option,false)
 	return true

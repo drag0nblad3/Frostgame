@@ -9,15 +9,15 @@ func _init(controller: GameController) -> void:
 	c = controller
 
 
-func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0, anyone: bool = false) -> void:
+func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0, anyone: bool = false,spell: String="") -> void:
 	var raw := c.dice.d20()
 	var mod := t.effective_will() + t.roll_penalty() + bonus + MagicEquipment.bonus(t,"resistance")
 	var success := StatRoll.succeeds(raw, mod, tn)
 	var caster := t.def.role in ["wizard", "apprentice"]
-	var max_health := t.health + PowerPool.available(t) if (caster or anyone) and raw != 1 and raw != 20 and t.in_play() else 0
+	var max_health := t.health + PowerPool.available(t,spell) if (caster or anyone) and raw != 1 and raw != 20 and t.in_play() else 0
 	var needed := maxi(0, tn - raw - mini(mod, 10))
-	var data := {"id": t.id, "raw": raw, "mod": mini(mod, 10), "tn": tn, "max": max_health}
-	data["resources"] = t.health + PowerPool.available(t) if caster or anyone else 0
+	var data := {"id": t.id, "raw": raw, "mod": mini(mod, 10), "tn": tn, "max": max_health,"spell":spell}
+	data["resources"] = t.health + PowerPool.available(t,spell) if caster or anyone else 0
 	var amulet := not success and raw != 1 and ActiveGear.ready(t, "gear_amulet_resistance")
 	var fate := not success and ActiveGear.ready(t, "gear_fate_stone")
 	if not success and (max_health > 0 or amulet or fate) and t.side == c.state.reaction_side:
@@ -31,7 +31,7 @@ func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0, anyone: bool = 
 		needed = maxi(0, needed - 4)
 		success = true
 	var spend := 0
-	if not success and needed <= mini(2, max_health) and needed < t.health + PowerPool.available(t):
+	if not success and needed <= mini(2, max_health) and needed < t.health + PowerPool.available(t,spell):
 		spend = needed
 	_resolve(data, spend, done)
 
@@ -76,7 +76,7 @@ func reroll_fate() -> bool:
 func _resolve(p: Dictionary, spend: int, done: Callable) -> void:
 	var t := c.state.figure(p["id"])
 	var success := StatRoll.succeeds(p["raw"], p["mod"], p["tn"], spend)
-	var power := PowerPool.spend(t, spend)
+	var power := PowerPool.spend(t,spend,str(p.get("spell","")))
 	if spend > power:
 		c._hurt(t, spend - power, t, false)
 	c.emit("resistance_result", {"id": t.id, "raw": p["raw"], "mod": p["mod"], "tn": p["tn"], "spent": spend - power, "power": power, "success": success})

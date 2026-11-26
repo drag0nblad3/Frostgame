@@ -192,3 +192,7 @@ Optional pre-armed reroll of the next random heading, with binding replacement a
 ## Circlet of Defence
 
 Permanent selection from the specified spell list through the inventory binding control; the wizard cannot cast that spell and starts at -2 Health. Targeted effects, reflected effects, area shots, direct destructive sphere and explosive rune attacks honor the immunity. The selection is required before equipping, including when discovered locked. Suppression disables the immunity and casting restriction during the affected period.
+
+## Pulsing Gem
+
+Four rechargeable power points are restricted to casting and resisting Blink. Optional casting toggles select six-inch movement and a binding direction reroll; each use of power or enhanced movement adds a persistent shooting defence penalty. Reroll is preselected during cast resolution rather than after seeing the direction, matching the current synchronous heading system.
