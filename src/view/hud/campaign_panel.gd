@@ -6,6 +6,7 @@ signal begin_requested
 signal restart_requested
 var campaign: CampaignProgress
 var summary: Label
+var base_banner: BaseBanner
 var spells: OptionButton
 var improve: Button
 var start: Button
@@ -38,7 +39,8 @@ var treasure_dice := Dice.new(0)
 func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	campaign = progress
 	db = figures
-	title = "Campaign"
+	theme = BattleTheme.create()
+	title = "Campaign headquarters"
 	get_ok_button().text = "Close"
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(650, 400)
@@ -46,6 +48,8 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	var col := VBoxContainer.new()
 	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll.add_child(col)
+	base_banner = BaseBanner.new()
+	col.add_child(base_banner)
 	summary = Label.new()
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(summary)
@@ -138,6 +142,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 
 func refresh(in_battle: bool) -> void:
 	var d := campaign.data
+	base_banner.refresh(d)
 	start.visible = d.is_empty()
 	begin.visible = not d.is_empty()
 	spells.visible = not d.is_empty()

@@ -24,6 +24,11 @@ func _process(_delta: float) -> bool:
 	CampaignInventory.buy(scene._campaign.data, "healing")
 	CampaignInventory.buy(scene._campaign.data, "gear_hand_weapon_damage")
 	scene._open_campaign()
+	var banner: BaseBanner = scene._campaign_dialog.base_banner
+	if banner._art.texture == null or not banner._caption.text.contains("Expedition camp"):
+		printerr("Headquarters art unavailable")
+		quit(1)
+		return true
 	var panel: InventoryPanel = scene._campaign_dialog.inventory
 	if panel.loot.item_count != 2 or panel.recipient_choice.item_count < 4:
 		printerr("Inventory controls failed")

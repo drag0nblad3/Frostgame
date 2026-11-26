@@ -35,6 +35,8 @@ var _board_view: BoardView
 var _atmosphere: BattleAtmosphere
 var _rig: CameraRig
 var _wait := 0.0
+var _launch_intent := ""
+var _title_prompt: AcceptDialog
 
 
 func _ready() -> void:
@@ -69,6 +71,7 @@ func _ready() -> void:
 		_atmosphere.set_effects(not _atmosphere.enabled)
 		hud.notify("Snow effects %s." % ("on" if _atmosphere.enabled else "off")))
 	hud.camera_requested.connect(_camera_preset)
+	hud.title_requested.connect(_confirm_title)
 	hud.training_requested.connect(_confirm_training)
 	hud.training_next.connect(_next_training)
 	hud.training_retry.connect(func() -> void:
@@ -89,6 +92,37 @@ func _ready() -> void:
 	_sites = ScenarioMarkers.new()
 	add_child(_sites)
 	new_game(0)
+	if get_tree().root.has_meta("frostgame_launch"):
+		_launch_intent = str(get_tree().root.get_meta("frostgame_launch"))
+		get_tree().root.remove_meta("frostgame_launch")
+
+
+func _open_launch_intent() -> void:
+	var intent := _launch_intent
+	_launch_intent = ""
+	match intent:
+		"resume": _resume_battle()
+		"warband": _open_roster()
+		"campaign": _open_campaign()
+		"training": _start_training(0)
+		"guide": _open_guide()
+		"skirmish": _open_briefing(true)
+
+
+func _confirm_title() -> void:
+	if not player.idle():
+		hud.notify("Finish the current animation before leaving.")
+		return
+	if _title_prompt == null:
+		_title_prompt = AcceptDialog.new()
+		_title_prompt.title = "Return to title?"
+		_title_prompt.dialog_text = "Unsaved battle progress will be lost. Your campaign and saved battle remain on disk."
+		_title_prompt.exclusive = true
+		_title_prompt.get_ok_button().text = "Return to title"
+		_title_prompt.add_cancel_button("Stay here")
+		_title_prompt.confirmed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/title.tscn"))
+		add_child(_title_prompt)
+	_title_prompt.popup_centered(Vector2i(500,220))
 
 
 func _confirm_training() -> void:
@@ -171,7 +205,7 @@ func _open_guide() -> void:
 
 
 func _info_open() -> bool:
-	return (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
+	return (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
 
 
 func _open_briefing(start: bool) -> void:
@@ -262,6 +296,9 @@ func step() -> void:
 func _process(delta: float) -> void:
 	if _info_open() or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
+		return
+	if not _launch_intent.is_empty():
+		_open_launch_intent()
 		return
 	if _training >= 0:
 		_training_complete = TrainingLesson.completed(_training, controller)
