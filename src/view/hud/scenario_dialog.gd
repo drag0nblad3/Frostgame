@@ -27,7 +27,7 @@ func show_briefing(id: String, state: GameState, start: bool) -> void:
 	_mode_start = start
 	title = ScenarioBriefing.title(id)
 	get_ok_button().text = "Start skirmish" if start else "Return to battle"
-	var data := JsonFile.read(ScenarioLoader.DIR + id + ".json")
+	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + id + ".json")
 	var count: int = data.get("treasures", []).size()
 	var encounters := "Wandering encounters enabled." if data.get("random_encounters", false) else "No random pickup encounters."
 	_body.text = ScenarioBriefing.description(id) + "\n\n%d treasure tokens. %s\n\nMost secured treasure wins. A second movement action is at half speed; carrying ordinary treasure also halves movement." % [count, encounters]
