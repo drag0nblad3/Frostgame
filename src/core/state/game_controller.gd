@@ -164,6 +164,11 @@ func move_to(node: Vector2i) -> bool:
 		if RedKingMind.active(state):
 			for i in range(1,path.size()):
 				RedKingMind.collect(self,f,path[i-1],path[i])
+		if RedKingHerded.active(state):
+			for i in range(1,path.size()):
+				if RedKingHerded.contact(self,f,path[i]):
+					f.actions_left=0
+					return true
 		f.pos = MoveGrid.to_pos(node)
 		f.elevation = state.board.height_at(f.pos)
 		f.actions_left -= 1

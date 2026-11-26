@@ -18,13 +18,15 @@ static func choices(d: Dictionary, index: int, db: FigureDb) -> Array[int]:
 	if index < 0 or index >= d["loot"].size():
 		return out
 	var item: Dictionary = d["loot"][index]
+	if RaggedWarbands.active(d) and item.get("ragged_sealed",false):
+		return out
 	var id := str(item.get("potion", ""))
 	if int(item.get("owner", -1)) >= 0 or (id not in AFTER and id != "dreams"):
 		return out
 	if id in AFTER and (int(d["games"]) == 0 or d.get("preparation_started", false)):
 		return out
 	for u: Dictionary in d["units"]:
-		if u.get("dismissed", false):
+		if u.get("dismissed", false) or u.get("ragged_absent",false):
 			continue
 		var eligible := false
 		match id:

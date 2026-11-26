@@ -97,7 +97,7 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var portal_hits := {}
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
-		if RedKingVeil.touch(c,t,at):
+		if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
 			return
 		if BattleBoundary.blocks_segment(b.boundaries,origin,at,"movement",t) or ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
 			if not b.can_stand(at,Figure.BASE_RADIUS):

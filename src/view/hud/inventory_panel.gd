@@ -13,6 +13,7 @@ var campaign_uses: OptionButton
 var use_button: Button
 var assign_button: Button
 var sell_button: Button
+var discard_button: Button
 var caster_equipment: OptionButton
 var caster_equipment_button: Button
 
@@ -33,6 +34,9 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 			changed.call())
 	sell_button = _button("Sell selected unassigned item / known grimoire", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.sell(campaign.data, int(loot.get_selected_metadata())):
+			changed.call())
+	discard_button = _button("Discard selected item",func() -> void:
+		if loot.item_count>0 and RaggedWarbands.discard(campaign.data,int(loot.get_selected_metadata())):
 			changed.call())
 	campaign_uses = OptionButton.new()
 	add_child(campaign_uses)
@@ -72,6 +76,9 @@ func refresh() -> void:
 	use_button.disabled = true
 	if d.is_empty():
 		return
+	var ragged := RaggedWarbands.active(d)
+	discard_button.visible=ragged
+	summary.text="Carried items · Assign or discard new loot before battle" if ragged else "Equipment and potion vault"
 	var catalog := CampaignInventory.catalog()
 	for i in d["loot"].size():
 		var item: Dictionary = d["loot"][i]
@@ -82,6 +89,12 @@ func refresh() -> void:
 		var info: Dictionary = catalog[CampaignInventory.item_id(item)]
 		var assigned := int(item.get("owner", -1))
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
+		if ragged and item.get("ragged_sealed",false):
+			suffix="Inaccessible vault"
+		elif ragged and RaggedWarbands.absent_owner(d,item):
+			suffix+=" (separated)"
+		elif ragged and assigned<0 and CampaignInventory.is_item(item):
+			suffix="Assign or discard"
 		if item["kind"] == "grimoire":
 			suffix = "Known spell; may sell" if d["spells"].has(item["spell"]) else "Unlearned; may learn in campaign"
 		if CampaignInventory.item_id(item) == "gear_staff_casting":
@@ -95,11 +108,12 @@ func refresh() -> void:
 			campaign_uses.add_item("%s → %s #%d" % [info["name"], str(unit["type"]).capitalize(), unit_id + 1])
 			campaign_uses.set_item_metadata(campaign_uses.item_count - 1, {"item": i, "unit": unit_id})
 	use_button.disabled = campaign_uses.item_count == 0
-	recipient_choice.add_item("Vault")
-	recipient_choice.set_item_metadata(0, -1)
+	if not ragged:
+		recipient_choice.add_item("Vault")
+		recipient_choice.set_item_metadata(0, -1)
 	for unit: Dictionary in d["units"]:
 		var capacity := CampaignInventory.slots(unit, db)
-		if unit["dead"] or unit.get("dismissed", false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"]):
+		if unit["dead"] or unit.get("dismissed", false) or unit.get("ragged_absent",false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"]):
 			continue
 		var items := CampaignInventory.loadout(d, int(unit["id"]))
 		var used := items.size()
@@ -119,7 +133,7 @@ func refresh() -> void:
 		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))
 	for id: String in catalog:
 		var info: Dictionary = catalog[id]
-		if not info["live"] or int(info["buy"]) <= 0 or not ContentProfile.from_campaign(d).item_allowed(id):
+		if ragged or not info["live"] or int(info["buy"]) <= 0 or not ContentProfile.from_campaign(d).item_allowed(id):
 			continue
 		shop.add_item("%s · %d gc" % [info["name"], info["buy"]])
 		shop.set_item_metadata(shop.item_count - 1, id)
@@ -131,12 +145,14 @@ func refresh() -> void:
 
 
 func _refresh_item_buttons() -> void:
-	assign_button.disabled = loot.item_count == 0
+	assign_button.disabled = loot.item_count == 0 or recipient_choice.item_count==0
 	sell_button.disabled = loot.item_count == 0
+	discard_button.disabled=true
 	if loot.item_count == 0:
 		return
 	var item: Dictionary = campaign.data["loot"][int(loot.get_selected_metadata())]
-	assign_button.disabled = not CampaignInventory.is_item(item)
+	assign_button.disabled = recipient_choice.item_count==0 or not CampaignInventory.is_item(item) or (RaggedWarbands.active(campaign.data) and (item.get("ragged_sealed",false) or RaggedWarbands.absent_owner(campaign.data,item)))
+	discard_button.disabled=not RaggedWarbands.active(campaign.data) or not CampaignInventory.is_item(item) or item.get("ragged_sealed",false) or RaggedWarbands.absent_owner(campaign.data,item)
 	sell_button.disabled = not CampaignInventory.can_sell(campaign.data, item)
 
 
