@@ -44,6 +44,9 @@ var _tips_enabled := true
 var _training_panel: VBoxContainer
 var _training_text: Label
 var _training_next_button: Button
+var _roll_panel: PanelContainer
+var _roll_label: Label
+var _roll_timer: Timer
 
 
 func _ready() -> void:
@@ -138,6 +141,20 @@ func _ready() -> void:
 	_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(_log)
 	_blocks.append(panel)
+	_roll_panel = PanelContainer.new()
+	_roll_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_roll_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_roll_panel.hide()
+	col.add_child(_roll_panel)
+	_roll_label = _label(17)
+	_roll_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_roll_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_roll_label.custom_minimum_size.x = 330
+	_roll_panel.add_child(_roll_label)
+	_roll_timer = Timer.new()
+	_roll_timer.one_shot = true
+	_roll_timer.timeout.connect(func() -> void: _roll_panel.hide())
+	add_child(_roll_timer)
 	_hint = _label(20)
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_hint)
@@ -156,6 +173,14 @@ func _ready() -> void:
 		button.toggle_mode = key not in ["reload", "end", "pass_phase", "group", "group_begin", "group_cancel", "items", "items_back"]
 		_action_row.add_child(button)
 		_buttons[key] = button
+
+
+func show_roll(text: String) -> void:
+	if text.is_empty():
+		return
+	_roll_label.text = text
+	_roll_panel.show()
+	_roll_timer.start(3.0)
 
 
 func set_training(index: int, complete: bool, failed: bool = false) -> void:
@@ -224,6 +249,8 @@ func add_line(text: String) -> void:
 func clear_log() -> void:
 	_lines.clear()
 	_log.text = ""
+	_roll_panel.hide()
+	_roll_timer.stop()
 
 
 func _label(size: int) -> Label:

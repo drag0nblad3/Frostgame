@@ -5,6 +5,7 @@ extends Node3D
 
 signal line_logged(text: String)
 signal notice(text: String)
+signal roll_resolved(text: String)
 const NOTICES := ["hut_discovered", "disc_transport", "disc_stay", "well_drink", "worm_emerges", "break_ice", "column_fight", "column_opened", "genie_released", "genie_flee", "genie_escaped", "null_field", "tower_entered"]
 
 ## Animation speed multiplier (higher is faster).
@@ -36,6 +37,9 @@ func _play(e: GameEvent) -> void:
 			notice.emit(line)
 		else:
 			line_logged.emit(line)
+	var result := RollSummary.describe(state, e)
+	if not result.is_empty():
+		roll_resolved.emit(result)
 	var d := e.data
 	match e.type:
 		"activate":
@@ -56,7 +60,7 @@ func _play(e: GameEvent) -> void:
 		"allegiance", "heal", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison", "null_field":
 			_view(d["id"]).refresh(state.figure(d["id"]))
 		"shoot", "spell_shot":
-			_animate_shot(_view(d["id"]), _view(d["target"]))
+			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot")
 		"fight":
 			_animate_lunge(_view(d["id"]), _view(d["target"]))
 		"damage":
@@ -113,13 +117,16 @@ func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 	_wait_for(t)
 
 
-func _animate_shot(from: FigureView, to: FigureView) -> void:
+func _animate_shot(from: FigureView, to: FigureView, magic: bool = false) -> void:
 	var bolt := MeshInstance3D.new()
 	var s := SphereMesh.new()
 	s.radius = 0.15
 	s.height = 0.3
 	bolt.mesh = s
-	bolt.material_override = BoardView._mat(Color(1, 0.9, 0.5), 0.2)
+	var mat := BoardView._mat(Color(0.35, 0.85, 1.0) if magic else Color(1, 0.9, 0.5), 0.2)
+	mat.emission_enabled = true
+	mat.emission = mat.albedo_color
+	bolt.material_override = mat
 	add_child(bolt)
 	var up := Vector3(0, 1.1, 0)
 	bolt.position = from.position + up

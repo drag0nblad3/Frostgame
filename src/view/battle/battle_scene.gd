@@ -212,6 +212,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
 	player.notice.connect(hud.notify)
+	player.roll_resolved.connect(hud.show_roll)
 	controller.event_emitted.connect(player.push)
 	controller.event_emitted.connect(_on_event)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
