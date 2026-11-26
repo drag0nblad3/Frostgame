@@ -1,0 +1,136 @@
+{
+  "id": "complex_temple",
+  "name": "The Complex Temple",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        5,
+        8,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        24,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        7,
+        25,
+        5,
+        0.5
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        24,
+        9,
+        5,
+        0.5
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        8,
+        14,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        26,
+        19,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "platform",
+      "rect": [
+        4,
+        20,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "platform",
+      "rect": [
+        29,
+        13,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "temple_column",
+      "rect": [
+        14.5,
+        14.5,
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "temple_column",
+      "rect": [
+        17.5,
+        14.5,
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "temple_column",
+      "rect": [
+        20.5,
+        14.5,
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "temple_column",
+      "rect": [
+        14.5,
+        20.5,
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "temple_column",
+      "rect": [
+        17.5,
+        20.5,
+        1,
+        1
+      ]
+    },
+    {
+      "kind": "temple_column",
+      "rect": [
+        20.5,
+        20.5,
+        1,
+        1
+      ]
+    }
+  ]
+}

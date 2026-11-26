@@ -38,7 +38,7 @@ static func decorate(root: Node3D, piece: TerrainPiece) -> void:
 			var at := piece.rect.get_center() + Vector2.RIGHT.rotated(TAU * i / 8.0) * 0.85
 			MiniatureFactory.box(root, TableSpace.to_world(at, 0.07), Vector3(0.14, 0.04, 0.14), Color(0.89, 0.74, 0.29))
 		return
-	if piece.kind.id not in ["ruin", "wall", "platform", "tower", "library_shelf", "dreams_well", "hut_wall"]:
+	if piece.kind.id not in ["ruin", "wall", "platform", "tower", "library_shelf", "dreams_well", "hut_wall", "null_annex", "null_walk", "null_lower", "null_middle", "null_upper", "temple_column"]:
 		return
 	var decor := Node3D.new()
 	root.add_child(decor)

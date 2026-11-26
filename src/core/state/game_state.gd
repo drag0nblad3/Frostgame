@@ -27,6 +27,8 @@ var disc_travellers := {}
 var lamp_token := -1
 var genie_id := -1
 var genie_kills := 0
+var tower_visitors := {}
+var column_fighters := {}
 var reinforcement_points: Array[Vector2] = []
 var creature_db: FigureDb
 var spellbooks := {}

@@ -84,5 +84,57 @@
     "blocks_move": false,
     "cover": 0,
     "height": 0.06
+  },
+  "null_annex": {
+    "name": "Silent annex",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_walk": {
+    "name": "Silent walkway",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_lower": {
+    "name": "Silent Tower, lower terrace",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_middle": {
+    "name": "Silent Tower, middle terrace",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 6,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "null_upper": {
+    "name": "Silent Tower, summit",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 10,
+    "walkable_top": true,
+    "stairs": true
+  },
+  "temple_column": {
+    "name": "Guardian column",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3
   }
 }
