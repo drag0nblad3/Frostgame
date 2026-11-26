@@ -40,7 +40,13 @@ func _run() -> void:
 		_fail("Field guide unavailable")
 		return
 	scene._guide.hide()
-	print("Scenario UI smoke passed: selection, briefing, confirmation, objectives, inspector, guide")
+	scene.player_input.available.assign(["items"])
+	scene.player_input.item_options.assign(["weapon_staff"])
+	scene.player_input.action("items")
+	if scene.player_input.mode != "items_menu" or not scene.player_input.available.has("weapon_staff") or not scene.player_input.available.has("items_back"):
+		_fail("Equipment menu did not expose its choices")
+		return
+	print("Scenario UI smoke passed: selection, briefing, confirmation, objectives, inspector, guide, equipment")
 	quit(0)
 
 

@@ -15,6 +15,7 @@ var nodes: Array[Vector2i] = []
 var drops: Array[Vector2] = []
 var group_selection: Array[int] = []
 var cast_options: Array[String] = []
+var item_options: Array[String] = []
 var selected_spell := ""
 var selected_potion := ""
 var selected_drop := -1
@@ -41,6 +42,7 @@ func lock(hint: String) -> void:
 
 func refresh() -> void:
 	available.clear()
+	item_options.clear()
 	reach = null
 	var f := c.state.active()
 	if c.state.pending_initiative:
@@ -171,10 +173,18 @@ func refresh() -> void:
 			available.append("drop_shrunk")
 	if c.can_end_activation():
 		available.append("end")
+	# Keep equipment choices behind one button. Reactions and selected
+	# item targets retain their existing dedicated confirmation controls.
+	for key in available.duplicate():
+		if key.begins_with("weapon_") or key.begins_with("gear_") or key.begins_with("potion_") or key == "breathe_fire":
+			item_options.append(key)
+			available.erase(key)
+	if not item_options.is_empty():
+		available.insert(maxi(0, available.size() - (1 if available.has("end") else 0)), "items")
 	if available.is_empty():
 		preview()
 		return
-	if not available.has(mode) or mode in ["reload", "end"]:
+	if not available.has(mode) or mode in ["reload", "end", "items"]:
 		mode = available[0] if available[0] not in ["reload", "end"] else ""
 	preview()
 
@@ -224,6 +234,8 @@ func preview() -> void:
 			hint = "Choose a recipient for the potion."
 		"spell_menu":
 			hint = "Choose a spell."
+		"items_menu":
+			hint = "Choose equipment, a weapon, or a consumable."
 		"counter_select":
 			var option := counter_choices[counter_index]
 			hint = "%s %d/%d: %s" % ["Choose eye face" if selected_spell == "wizard_eye" else "Destroy terrain" if selected_spell == "crumble" else "Destroy weapon" if selected_spell == "decay" else ("Choose spell" if selected_spell in ["power_word", "draining_word"] else "Cancel effect"), counter_index + 1, counter_choices.size(), option["label"]]
@@ -370,6 +382,16 @@ func preview() -> void:
 
 func action(key: String) -> bool:
 	if not available.has(key):
+		return false
+	if key == "items":
+		available.assign(["items_back"])
+		available.append_array(item_options)
+		mode = "items_menu"
+		preview()
+		return false
+	if key == "items_back":
+		mode = ""
+		refresh()
 		return false
 	if key == "drink_well":
 		return c.drink_well()
