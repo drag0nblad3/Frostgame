@@ -1,0 +1,66 @@
+class_name Shooting
+extends RefCounted
+## Shooting: d20 + Shoot against the target's d20 + Fight + cover. Only the
+## shooter can deal damage.
+
+const LIGHT_COVER := 2
+const HEAVY_COVER := 4
+const INTERVENING := 1
+
+
+## Range is measured base edge to base edge.
+static func distance(a: Figure, b: Figure) -> float:
+	return maxf(a.pos.distance_to(b.pos) - 2.0 * Figure.BASE_RADIUS, 0.0)
+
+
+## Why `shooter` can't shoot `target`, or "" if the shot is allowed.
+## TODO(rules): shooting into a combat picks a random figure in 2e; we forbid it.
+static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure, target: Figure) -> String:
+	if shooter.ranged == null:
+		return "no missile weapon"
+	if shooter.ranged.needs_reload and not shooter.loaded:
+		return "needs to reload"
+	if target.side == shooter.side or not target.in_play():
+		return "not an enemy"
+	if Contact.in_combat(figures, shooter):
+		return "in combat"
+	if Contact.in_combat(figures, target):
+		return "target is in combat"
+	if distance(shooter, target) > shooter.ranged.range_in:
+		return "out of range"
+	if not LineOfSight.check(board, shooter.pos, target.pos).clear:
+		return "no line of sight"
+	return ""
+
+
+## Could `shooter` shoot `target` if it stood at `at`? (range, sight, target free)
+static func possible_from(board: Board, figures: Array[Figure], shooter: Figure, at: Vector2, target: Figure) -> bool:
+	if shooter.ranged == null or Contact.in_combat(figures, target):
+		return false
+	if maxf(at.distance_to(target.pos) - 2.0 * Figure.BASE_RADIUS, 0.0) > shooter.ranged.range_in:
+		return false
+	return LineOfSight.check(board, at, target.pos).clear
+
+
+## Bonus to the target's roll from terrain.
+static func target_mod(los: LineOfSight.Result) -> int:
+	var m := los.intervening * INTERVENING
+	if los.cover == TerrainKind.Cover.HEAVY:
+		m += HEAVY_COVER
+	elif los.cover == TerrainKind.Cover.LIGHT:
+		m += LIGHT_COVER
+	return m
+
+
+## Rolls the shot. Returns {s_roll, t_roll, s_total, t_total, mod, dmg}.
+static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure) -> Dictionary:
+	var los := LineOfSight.check(board, shooter.pos, target.pos)
+	var mod := target_mod(los)
+	var sr := dice.d20()
+	var tr := dice.d20()
+	var st := sr + shooter.def.shoot
+	var tt := tr + target.def.fight + mod
+	var dmg := 0
+	if st > tt:
+		dmg = Damage.amount(st, shooter.ranged.damage_mod, target.def.armour, sr)
+	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}

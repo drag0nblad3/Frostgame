@@ -1,0 +1,10 @@
+{
+	"_note": "Frostgrave 2e weapons from memory; every entry still needs checking against the book (see docs/rules-coverage.md).",
+	"hand_weapon": {"name": "Hand weapon", "melee": true, "damage": 0},
+	"dagger": {"name": "Dagger", "melee": true, "damage": -1},
+	"two_handed": {"name": "Two-handed weapon", "melee": true, "damage": 2},
+	"staff": {"name": "Staff", "melee": true, "damage": -1, "enemy_damage": -1},
+	"unarmed": {"name": "Unarmed", "melee": true, "fight": -2, "damage": -2},
+	"bow": {"name": "Bow", "range": 24, "damage": 0},
+	"crossbow": {"name": "Crossbow", "range": 24, "damage": 2, "reload": true}
+}

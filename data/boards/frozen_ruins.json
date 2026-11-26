@@ -1,0 +1,20 @@
+{
+	"id": "frozen_ruins",
+	"name": "Frozen Ruins",
+	"size": [36, 36],
+	"pieces": [
+		{"kind": "ruin", "rect": [4, 12, 6, 5]},
+		{"kind": "ruin", "rect": [26, 19, 6, 5]},
+		{"kind": "ruin", "rect": [15, 15, 6, 6]},
+		{"kind": "ruin", "rect": [9, 25, 4, 4]},
+		{"kind": "ruin", "rect": [23, 7, 4, 4]},
+		{"kind": "wall", "rect": [11, 9, 6, 0.8]},
+		{"kind": "wall", "rect": [19, 26.2, 6, 0.8]},
+		{"kind": "wall", "rect": [2, 21, 0.8, 5]},
+		{"kind": "wall", "rect": [33.2, 10, 0.8, 5]},
+		{"kind": "rubble", "rect": [11, 18, 3, 3]},
+		{"kind": "rubble", "rect": [22, 15, 3, 3]},
+		{"kind": "rubble", "rect": [28, 28, 4, 3]},
+		{"kind": "rubble", "rect": [4, 5, 4, 3]}
+	]
+}

@@ -1,0 +1,26 @@
+{
+	"ruin": {
+		"name": "Ruined building",
+		"blocks_los": true,
+		"blocks_move": true,
+		"cover": 0,
+		"move_mult": 1,
+		"height": 4.0
+	},
+	"wall": {
+		"name": "Low wall",
+		"blocks_los": false,
+		"blocks_move": false,
+		"cover": 2,
+		"move_mult": 2,
+		"height": 1.0
+	},
+	"rubble": {
+		"name": "Rubble",
+		"blocks_los": false,
+		"blocks_move": false,
+		"cover": 1,
+		"move_mult": 2,
+		"height": 0.4
+	}
+}
