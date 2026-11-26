@@ -3,7 +3,7 @@
     "name": "Crumble",
     "school": "chronomancer",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "counter"
   },
   "decay": {
     "name": "Decay",

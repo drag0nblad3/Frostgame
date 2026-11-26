@@ -11,6 +11,7 @@ var illusions: IllusionActions
 var resistance: ResistanceActions
 var weapons: WeaponActions
 var treasure_magic: TreasureMagic
+var crumble: CrumbleActions
 
 
 func _init(controller: GameController) -> void:
@@ -23,6 +24,7 @@ func _init(controller: GameController) -> void:
 	resistance = ResistanceActions.new(c)
 	weapons = WeaponActions.new(c)
 	treasure_magic = TreasureMagic.new(c)
+	crumble = CrumbleActions.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -115,10 +117,12 @@ func start(id: String, target_id: int) -> bool:
 func counter_options(id: String) -> Array[Dictionary]:
 	var f := c.state.active()
 	var empty: Array[Dictionary] = []
-	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
+	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
 	if not available_spell(f, id):
 		return empty
+	if id == "crumble":
+		return crumble.options(f)
 	if id in ["power_word", "draining_word"]:
 		return WordMagic.options(c.state, f, id)
 	return weapons.options(f) if id == "decay" else counter.options(f)
@@ -281,6 +285,9 @@ func finish(health: int) -> bool:
 	if id in ["power_word", "draining_word"]:
 		WordMagic.apply(s, f, id, p["effect"]["chosen"])
 		c.emit("spell_effect", {"id": f.id, "spell": id})
+		return true
+	if id == "crumble":
+		crumble.apply(p["effect"]["piece"])
 		return true
 	if id == "decay":
 		weapons.destroy(t, p["effect"]["weapon"])

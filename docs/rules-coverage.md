@@ -205,3 +205,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Immobilization and protective circles
 
 - pp.114–115: Bones of the Earth immobilizes a ground-level, nonlarge figure until a successful fight against its hand, cancellation or magical movement other than Leap. The hand is represented by a status and contextual fight target; adjacent allies can attack/support. Assumed Armour 10 for hand (not specified in spell description); no dedicated hand model. Circle of Protection is a visible 3-inch diameter area, one per caster, blocks demon/undead pathing and forced-movement landings, expires on 1–3 at turn end and can be dispelled. Circle uses ground-projected geometry and excludes creation overlapping affected figures; voluntary end-turn cancellation and creature summoning/pushback edge cases pending.
+
+## Crumble
+
+- p.118: select a visible solid terrain feature, destroy a conjured Wall entirely or cut a 1.5-inch opening through the centre of a normal rectangular obstruction. Rebuilds the terrain meshes and movement caches. Elevated figures losing their footing make TN22 Move tests (including Lost Toes); a success relocates to an available nearby surface, otherwise falls. This is an exposed-heightfield approximation: arbitrary hole placement, multiple stacked floors, and Wizard Eye cancellation await later work.
