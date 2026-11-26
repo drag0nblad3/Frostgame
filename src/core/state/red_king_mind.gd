@@ -97,7 +97,7 @@ static func apply_card(c: GameController,card: String) -> void:
 		_spawn(c,corners[c.dice.pick(4)])
 		if not tokens.is_empty():
 			var t: TreasureToken=tokens[0] if card in ["A","K"] else tokens.back()
-			_move_token(c,t,t.pos+Vector2.RIGHT.rotated(TAU*float(c.dice.pick(20))/20.0)*6.0)
+			_move_token(c,t,t.pos+RedKingDirection.direction(c)*6.0)
 	elif card in ["10","9"]:
 		var corner := corners[c.dice.pick(4)]
 		_spawn(c,corner)

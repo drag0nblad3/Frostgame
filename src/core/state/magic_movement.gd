@@ -165,7 +165,7 @@ func blink(f: Figure, t: Figure, roll: int) -> void:
 
 func _blink_result(success: bool, t: Figure) -> void:
 	if not success and t.in_play():
-		force(t, Vector2.RIGHT.rotated(TAU * c.dice.pick(20) / 20.0), 4.0)
+		force(t, RedKingDirection.direction(c), 4.0)
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:

@@ -102,7 +102,7 @@ static func creature_turn(c: GameController,f: Figure) -> bool:
 static func _random_move(c: GameController,f: Figure) -> void:
 	if not c.can_move():
 		return
-	var direction := Vector2.RIGHT.rotated(TAU*float(c.dice.pick(20))/20.0)
+	var direction := RedKingDirection.direction(c)
 	var reach := c.reach()
 	var best: Variant=null
 	var score := 0.0

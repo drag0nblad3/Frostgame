@@ -48,7 +48,7 @@ static func end_turn(c: GameController) -> void:
 		return
 	var npc := s.figure(int(s.scenario_data.get("ryce_id",-1)))
 	if npc!=null and npc.in_play():
-		wander(c,npc,Vector2.RIGHT.rotated(TAU*float(c.dice.pick(20))/20.0))
+		wander(c,npc,RedKingDirection.direction(c))
 	if s.turn==2 and not s.scenario_data.get("hunters_deployed",false):
 		deploy_hunters(c)
 	var clock := int(s.scenario_data.get("crack_clock",1))

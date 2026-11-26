@@ -147,7 +147,7 @@ static func fall(c: GameController,f: Figure) -> void:
 		var raw := c.dice.d20()
 		if not StatRoll.succeeds(raw,f.effective_will()+f.roll_penalty(),12):
 			var margin := Vector2.ONE*TreasureRules.TOKEN_RADIUS
-			var desired := (origin+Vector2.RIGHT.rotated(TAU*float(c.dice.pick(20))/20.0)*3.0).clamp(margin,s.board.size-margin)
+			var desired := (origin+RedKingDirection.direction(c)*3.0).clamp(margin,s.board.size-margin)
 			c._loot._drop(f,desired if s.board.can_stand(desired,TreasureRules.TOKEN_RADIUS) else origin,id)
 
 

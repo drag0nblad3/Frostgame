@@ -105,7 +105,7 @@ static func apply(c: GameController,effect: int) -> bool:
 
 
 static func direction(c: GameController) -> Vector2:
-	return Vector2.RIGHT.rotated(TAU*float(c.dice.pick(20))/20.0)
+	return RedKingDirection.direction(c)
 
 
 static func clear(c: GameController) -> void:

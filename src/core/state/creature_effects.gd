@@ -12,7 +12,7 @@ static func elemental_resistance(f: Figure) -> int:
 static func after_damage(c: GameController,f: Figure) -> void:
 	if not f.in_play() or not f.def.traits.has("pain_blink"):
 		return
-	var direction := Vector2.RIGHT.rotated(TAU*float(c.dice.pick(20))/20.0)
+	var direction := RedKingDirection.direction(c)
 	ForcedRelocation.relocate(c,f,f.pos+direction*6.0)
 
 

@@ -264,7 +264,7 @@
       "buy": 400,
       "sell": 100,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_sticky_finger_gloves": {

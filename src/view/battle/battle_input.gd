@@ -113,6 +113,8 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if ActiveGear.ready(f,RedKingDirection.ITEM):
+		available.append("gear_teetotum_arm")
 	if ActiveGear.ready(f,RedKingElemental.AMULET):
 		available.append("gear_absorb_arm")
 	if GearActions.cape_ready(c) and c.state.board.floor_layout.is_empty():
@@ -430,6 +432,8 @@ func preview() -> void:
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
+		if f.used_gear.get(RedKingDirection.ARMED,false):
+			hint="Direction reroll armed. "+hint
 		if f.used_gear.get(RedKingElemental.ARMED,false):
 			hint="Full elemental absorption armed. "+hint
 		if f.next_cast_gear != "":
@@ -483,6 +487,10 @@ func action(key: String) -> bool:
 		mode = "gear_transfer_target"
 		available.assign(["potion_cancel"])
 		preview()
+		return false
+	if key=="gear_teetotum_arm":
+		RedKingDirection.arm(c)
+		refresh()
 		return false
 	if key=="gear_absorb_arm":
 		RedKingElemental.arm(c)

@@ -312,3 +312,14 @@ func test_bracelet_wounded_rules() -> void:
 	check(f.wounded())
 	c.state.wounded_rules=false
 	check(not f.wounded())
+
+
+func test_teetotum_reroll_is_binding_and_single_use() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],LoadedDice.new([1,2,3]))
+	f.items.append({"gear":RedKingDirection.ITEM,"gear_info":RedKingRewards.catalog()[RedKingDirection.ITEM]})
+	f.used_gear[RedKingDirection.ARMED]=true
+	RedKingDirection.pick(c)
+	check(not ActiveGear.ready(f,RedKingDirection.ITEM))
+	check(not f.used_gear.has(RedKingDirection.ARMED))
+	check_eq(c.history.back().type,"direction_reroll")

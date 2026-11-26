@@ -184,3 +184,7 @@ Magic bow with +1 damage and an explicit once-per-game shot option through one t
 ## Bracelet of Vigour
 
 Adds eight to Health target tests via StatRoll.health_test and reduces the optional Wounded threshold to two. The optional core Wounded rule is disabled by default, selectable per campaign, and stored in checkpoints; existing stat, spell and combat paths using roll_penalty inherit the penalty. Raw special-purpose dice tables do not automatically receive the penalty.
+
+## Enchanted Teetotum
+
+Optional pre-armed reroll of the next random heading, with binding replacement and once-per-battle spend. The shared direction resolver is used by Blink, pain blink, and Red King random-heading effects. This is a timing approximation: a post-roll reaction UI and discrete direction/corner rolls remain to be migrated.
