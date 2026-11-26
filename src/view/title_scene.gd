@@ -7,6 +7,10 @@ var _elapsed := 0.0
 var _launching := false
 var _buttons := {}
 var _menu: VBoxContainer
+var _slots: OptionButton
+var _picker: SkirmishPicker
+var _editor: WarbandSetup
+var _notice: Label
 
 
 func _ready() -> void:
@@ -44,35 +48,40 @@ func _ready() -> void:
 	margin.add_child(row)
 	var panel := PanelContainer.new()
 	panel.add_theme_stylebox_override("panel",BattleTheme.panel(Color(0.035,0.065,0.095,0.95),Color(0.61,0.51,0.31),4))
-	panel.custom_minimum_size.x = 420
+	panel.custom_minimum_size.x = minf(420,get_viewport().get_visible_rect().size.x-56)
 	row.add_child(panel)
 	var wrap := MarginContainer.new()
 	for edge: String in ["top","bottom","left","right"]:
 		wrap.add_theme_constant_override("margin_"+edge,18)
 	panel.add_child(wrap)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	wrap.add_child(scroll)
 	_menu = VBoxContainer.new()
+	_menu.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_menu.alignment = BoxContainer.ALIGNMENT_CENTER
 	_menu.add_theme_constant_override("separation",10)
-	wrap.add_child(_menu)
+	scroll.add_child(_menu)
 	_label("A WIZARD'S EXPEDITION",16,Color(0.80,0.70,0.48))
 	_label("FROSTGAME",49,Color(0.92,0.95,0.97))
 	_label("RIVAL WARBANDS  /  FROZEN RUINS",15,Color(0.67,0.80,0.88))
 	_menu.add_child(HSeparator.new())
-	var checkpoint := BattleSnapshot.read()
-	var meta: Dictionary = checkpoint.get("meta",{})
-	var compatible := not checkpoint.is_empty()
-	if meta.get("campaign",false):
-		compatible = compatible and FileAccess.file_exists(CampaignProgress.PATH) and FileAccess.get_sha256(CampaignProgress.PATH) == meta.get("campaign_hash","")
-	if compatible:
-		_button("resume","Resume saved battle",true)
-	_button("skirmish","New skirmish",not compatible)
-	_button("warband","Create a warband")
+	_label("ACTIVE WARBAND",14,Color("c6b17d"))
+	_slots=OptionButton.new()
+	_menu.add_child(_slots)
+	_slots.item_selected.connect(_select_slot)
+	_button("resume","Resume saved battle",true)
+	_button("skirmish","New skirmish",true)
+	_button("warband","Create / edit warband")
 	_button("campaign","Campaign headquarters")
 	_button("training","Training yard")
-	_button("gatehouse","Gatehouse · experimental battle")
-	if not LayeredCheckpoint.read().is_empty():
-		_button("resume_layered","Resume 3D battle")
+	_button("gatehouse","Experimental 3D skirmish")
+	_button("resume_layered","Resume 3D battle")
 	_button("guide","Field guide")
+	_notice=Label.new()
+	_notice.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_menu.add_child(_notice)
+	_refresh_slots()
 	_label("A fan-made tactical tabletop simulator",13,Color(0.65,0.73,0.79))
 	var space := Control.new()
 	space.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -103,6 +112,12 @@ func _button(key: String, value: String, primary: bool = false) -> void:
 func _launch(key: String) -> void:
 	if _launching:
 		return
+	if key=="skirmish" or key=="gatehouse":
+		_choose_scenario(key=="gatehouse")
+		return
+	if key=="warband":
+		_edit_warband()
+		return
 	_launching = true
 	get_tree().root.set_meta(LAUNCH_KEY,key)
 	if key in ["gatehouse","resume_layered"]:
@@ -126,3 +141,61 @@ func _frame() -> void:
 	# Slow scenic pan, only on this presentation scene.
 	_camera.position = Vector3(8.8+sin(_elapsed*0.095)*1.5,7.1,1.0+cos(_elapsed*0.095)*0.7)
 	_camera.look_at(Vector3(14.6,4.6,19.0))
+
+
+func _refresh_slots() -> void:
+	_slots.clear()
+	for i in WarbandSlots.COUNT:
+		_slots.add_item("%d · %s"%[i+1,WarbandSlots.summary(i)])
+	_slots.select(WarbandSlots.active())
+	var checkpoint := BattleSnapshot.read()
+	var meta: Dictionary=checkpoint.get("meta",{})
+	var compatible := not checkpoint.is_empty()
+	var path := WarbandSlots.path_for(CampaignProgress.PATH)
+	if meta.get("campaign",false):
+		compatible=compatible and FileAccess.file_exists(path) and FileAccess.get_sha256(path)==meta.get("campaign_hash","")
+	_buttons["resume"].visible=compatible
+	_buttons["resume_layered"].visible=not LayeredCheckpoint.read().is_empty()
+	_buttons["warband"].text="Create warband" if WarbandSlots.roster().is_empty() else "Edit saved warband"
+	_notice.text="Your selected slot keeps its own roster, campaign and saved battles."
+
+
+func _select_slot(index: int) -> void:
+	if WarbandSlots.select_slot(index):
+		_refresh_slots()
+	else:
+		_notice.text="Could not switch save slot."
+		_slots.select(WarbandSlots.active())
+
+
+func _choose_scenario(experimental: bool) -> void:
+	if _picker==null:
+		_picker=SkirmishPicker.new()
+		add_child(_picker)
+		_picker.selected.connect(func(id: String,layered: bool) -> void:
+			_launching=true
+			if layered:
+				get_tree().root.set_meta("layered_board",id)
+				get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")
+			else:
+				get_tree().root.set_meta("frostgame_scenario",id)
+				get_tree().root.set_meta(LAUNCH_KEY,"selected_skirmish")
+				get_tree().change_scene_to_file(BATTLE))
+	_picker.open(experimental)
+
+
+func _edit_warband() -> void:
+	if _editor!=null:
+		remove_child(_editor)
+		_editor.queue_free()
+	_editor=WarbandSetup.new()
+	add_child(_editor)
+	_editor.setup(FigureDb.load_files(),WarbandSlots.roster())
+	_editor.get_ok_button().text="Save warband"
+	_editor.drafted.connect(func(roster: Dictionary) -> void:
+		if WarbandSlots.save_roster(roster):
+			_refresh_slots()
+			_notice.text="Warband saved to slot %d."%(WarbandSlots.active()+1)
+		else:
+			_notice.text="Could not save warband. Reopen the editor and try again.")
+	_editor.popup_centered_ratio(0.94)

@@ -96,7 +96,9 @@ static func rebuild(d: Dictionary, db: FigureDb) -> GameController:
 	return c
 
 
-static func save(c: GameController, meta: Dictionary = {}, path: String = PATH) -> bool:
+static func save(c: GameController, meta: Dictionary = {}, path: String = "") -> bool:
+	if path.is_empty():
+		path=WarbandSlots.path_for(PATH)
 	var data := capture(c, meta)
 	if data.is_empty():
 		return false
@@ -108,7 +110,9 @@ static func save(c: GameController, meta: Dictionary = {}, path: String = PATH) 
 	return DirAccess.rename_absolute(path + ".tmp", path) == OK
 
 
-static func read(path: String = PATH) -> Dictionary:
+static func read(path: String = "") -> Dictionary:
+	if path.is_empty():
+		path=WarbandSlots.path_for(PATH)
 	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null or file.get_length() > 32 * 1024 * 1024:
 		return {}

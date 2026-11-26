@@ -89,17 +89,14 @@ func _ready() -> void:
 		popup.add_item(label_text)
 	popup.id_pressed.connect(_menu_action)
 	top.add_child(_menu)
+	var home := _button("Home",func() -> void: title_requested.emit())
+	top.add_child(home)
 	var scenarios := OptionButton.new()
 	_scenarios = scenarios
-	scenarios.add_item("Frozen Ruins")
-	scenarios.set_item_metadata(0, "treasure_skirmish")
-	scenarios.add_item("Mausoleum")
-	scenarios.set_item_metadata(1, "mausoleum")
-	scenarios.add_item("Living Museum")
-	scenarios.set_item_metadata(2, "living_museum")
-	for option: Array in [["Well of Dreams", "dreams_well"], ["The Worm Hunts", "worm_hunts"], ["The Library", "underground_library"], ["Haunted Houses", "haunted_houses"], ["The Keep", "the_keep"], ["Genie in the Bottle", "genie_in_the_bottle"], ["The Silent Tower", "silent_tower"], ["The Complex Temple", "complex_temple"], ["Sunken Streets", "sunken_streets"]]:
-		scenarios.add_item(option[0])
-		scenarios.set_item_metadata(scenarios.item_count - 1, option[1])
+	for id: String in ScenarioBriefing.ENTRIES:
+		scenarios.add_item(ScenarioBriefing.title(id))
+		scenarios.set_item_metadata(scenarios.item_count-1,id)
+	scenarios.select(1)
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
 	scenarios.tooltip_text = "Choose the next battle scenario; current battle stays unchanged."
 	top.add_child(scenarios)

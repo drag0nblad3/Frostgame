@@ -37,6 +37,7 @@ var _rig: CameraRig
 var _wait := 0.0
 var _launch_intent := ""
 var _title_prompt: AcceptDialog
+var _picker: SkirmishPicker
 
 
 func _ready() -> void:
@@ -61,7 +62,7 @@ func _ready() -> void:
 	_briefing.start_requested.connect(func() -> void:
 		_campaign_battle = false
 		new_game(0))
-	hud.new_game_pressed.connect(func() -> void: _open_briefing(true))
+	hud.new_game_pressed.connect(_open_map_picker)
 	hud.briefing_pressed.connect(func() -> void: _open_briefing(false))
 	_inspector = FigureInspector.new()
 	add_child(_inspector)
@@ -86,6 +87,13 @@ func _ready() -> void:
 		_scenario_id = id
 		hud.notify("Next battle: " + ScenarioBriefing.title(id)))
 	_campaign.load_save()
+	_roster=WarbandSlots.roster()
+	if get_tree().root.has_meta("frostgame_scenario"):
+		_scenario_id=str(get_tree().root.get_meta("frostgame_scenario"))
+		get_tree().root.remove_meta("frostgame_scenario")
+		if not ScenarioBriefing.ENTRIES.has(_scenario_id):
+			_scenario_id=SCENARIO
+		hud.select_scenario(_scenario_id)
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
 	add_child(_markers)
@@ -106,7 +114,8 @@ func _open_launch_intent() -> void:
 		"campaign": _open_campaign()
 		"training": _start_training(0)
 		"guide": _open_guide()
-		"skirmish": _open_briefing(true)
+		"skirmish": _open_map_picker()
+		"selected_skirmish": _open_briefing(true)
 
 
 func _confirm_title() -> void:
@@ -205,7 +214,7 @@ func _open_guide() -> void:
 
 
 func _info_open() -> bool:
-	return (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
+	return (_picker != null and _picker.visible) or (_title_prompt != null and _title_prompt.visible) or (_training_prompt != null and _training_prompt.visible) or (_briefing != null and _briefing.visible) or (_inspector != null and _inspector.visible) or (_guide != null and _guide.visible)
 
 
 func _open_briefing(start: bool) -> void:
@@ -316,7 +325,7 @@ func _process(delta: float) -> void:
 		if _campaign.save():
 			var checkpoint := BattleSnapshot.read()
 			if checkpoint.get("meta", {}).get("campaign", false):
-				DirAccess.remove_absolute(BattleSnapshot.PATH)
+				DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
 		_open_campaign()
 	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side and (s.active() == null or s.active().side >= 0)):
 		_wait = 0.0
@@ -399,8 +408,12 @@ func _open_roster() -> void:
 	if _setup == null:
 		_setup = WarbandSetup.new()
 		add_child(_setup)
-		_setup.setup(_figures)
+		_setup.setup(_figures,_roster)
+		_setup.get_ok_button().text="Save & deploy"
 		_setup.drafted.connect(func(roster: Dictionary) -> void:
+			if not WarbandSlots.save_roster(roster):
+				hud.notify("Could not save warband.")
+				return
 			_roster = roster
 			_campaign_battle = false
 			watch_mode = false
@@ -458,7 +471,8 @@ func _begin_campaign_battle() -> void:
 
 
 func _campaign_fingerprint() -> String:
-	return FileAccess.get_sha256(CampaignProgress.PATH) if FileAccess.file_exists(CampaignProgress.PATH) else ""
+	var path := WarbandSlots.path_for(CampaignProgress.PATH)
+	return FileAccess.get_sha256(path) if FileAccess.file_exists(path) else ""
 
 
 func _save_battle() -> void:
@@ -504,3 +518,21 @@ func _resume_battle() -> void:
 	watch_mode = bool(meta.get("watch", false))
 	_attach_battle(restored, false)
 	hud.notify("Battle resumed.")
+
+
+func _open_map_picker() -> void:
+	if not player.idle():
+		hud.notify("Finish the current action before choosing a scenario.")
+		return
+	if _picker==null:
+		_picker=SkirmishPicker.new()
+		add_child(_picker)
+		_picker.selected.connect(func(id: String,layered: bool) -> void:
+			if layered:
+				get_tree().root.set_meta("layered_board",id)
+				get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")
+			else:
+				_scenario_id=id
+				hud.select_scenario(id)
+				_open_briefing(true))
+	_picker.open(false)

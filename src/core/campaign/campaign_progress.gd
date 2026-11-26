@@ -260,7 +260,9 @@ func improve_spell(id: String) -> bool:
 	return true
 
 
-func save(path: String = PATH) -> bool:
+func save(path: String = "") -> bool:
+	if path.is_empty():
+		path=WarbandSlots.path_for(PATH)
 	if data.is_empty():
 		return false
 	var file := FileAccess.open(path + ".tmp", FileAccess.WRITE)
@@ -271,7 +273,9 @@ func save(path: String = PATH) -> bool:
 	return DirAccess.rename_absolute(path + ".tmp", path) == OK
 
 
-func load_save(path: String = PATH) -> bool:
+func load_save(path: String = "") -> bool:
+	if path.is_empty():
+		path=WarbandSlots.path_for(PATH)
 	if not FileAccess.file_exists(path):
 		return false
 	var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))

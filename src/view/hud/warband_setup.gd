@@ -18,19 +18,27 @@ var _recruit_info: Label
 var _wizard_portrait: MiniaturePortrait
 
 
-func setup(db: FigureDb) -> void:
+func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	draft = WarbandDraft.new(db)
 	draft.choose_defaults()
+	if not saved.is_empty():
+		draft.restore_roster(saved)
 	theme = BattleTheme.create()
 	title = "Create a wizard and warband"
 	get_ok_button().text = "Begin skirmish"
 	dialog_hide_on_ok = false
-	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(700, 480)
-	add_child(scroll)
-	var body := VBoxContainer.new()
-	body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(body)
+	var frame := VBoxContainer.new()
+	add_child(frame)
+	_summary=Label.new()
+	_summary.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	frame.add_child(_summary)
+	var tabs := TabContainer.new()
+	var viewport := get_parent().get_viewport().get_visible_rect().size
+	tabs.custom_minimum_size=Vector2(minf(740,viewport.x*0.83),minf(440,viewport.y*0.62))
+	frame.add_child(tabs)
+	var body := _tab(tabs,"1 · Wizard")
+	var spells_body := _tab(tabs,"2 · Spells")
+	var recruits_body := _tab(tabs,"3 · Recruits")
 	_name = LineEdit.new()
 	_name.placeholder_text = "Wizard name"
 	_name.text = draft.wizard_name
@@ -51,7 +59,7 @@ func setup(db: FigureDb) -> void:
 	_wizard_portrait.custom_minimum_size = Vector2(260, 190)
 	body.add_child(_wizard_portrait)
 	_spell_rows = VBoxContainer.new()
-	body.add_child(_spell_rows)
+	spells_body.add_child(_spell_rows)
 	_apprentice = CheckBox.new()
 	_apprentice.text = "Hire apprentice (100 gc)"
 	_apprentice.button_pressed = draft.apprentice
@@ -61,8 +69,12 @@ func setup(db: FigureDb) -> void:
 		_update())
 	_add_loadout(body, "Wizard weapons", false)
 	_add_loadout(body, "Apprentice weapons", true)
+	var intro := Label.new()
+	intro.text="Hire soldiers using the available gold. Free recruits still use roster slots."
+	intro.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	recruits_body.add_child(intro)
 	var row := HBoxContainer.new()
-	body.add_child(row)
+	recruits_body.add_child(row)
 	_recruits = OptionButton.new()
 	_recruits.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for id: String in db.figures:
@@ -80,7 +92,7 @@ func setup(db: FigureDb) -> void:
 		draft.hire(str(_recruits.get_selected_metadata()))
 		_update())
 	var recruit_card := HBoxContainer.new()
-	body.add_child(recruit_card)
+	recruits_body.add_child(recruit_card)
 	_recruit_portrait = MiniaturePortrait.new()
 	_recruit_portrait.custom_minimum_size = Vector2(190, 165)
 	recruit_card.add_child(_recruit_portrait)
@@ -90,18 +102,24 @@ func setup(db: FigureDb) -> void:
 	recruit_card.add_child(_recruit_info)
 	_roster = ItemList.new()
 	_roster.custom_minimum_size.y = 130
-	body.add_child(_roster)
+	recruits_body.add_child(_roster)
 	var remove := Button.new()
 	remove.text = "Remove selected soldier"
-	body.add_child(remove)
+	recruits_body.add_child(remove)
 	remove.pressed.connect(func() -> void:
 		var selected := _roster.get_selected_items()
 		if not selected.is_empty():
 			draft.soldiers.remove_at(selected[0])
 			_update())
-	_summary = Label.new()
-	_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	body.add_child(_summary)
+	add_cancel_button("Back")
+	var fill := Button.new()
+	fill.text="Fill empty slots with free recruits"
+	recruits_body.add_child(fill)
+	fill.pressed.connect(func() -> void:
+		while draft.can_hire("thug"):
+			if not draft.hire("thug"):
+				break
+		_update())
 	confirmed.connect(_confirm)
 	_rebuild_spells()
 	_update()
@@ -167,6 +185,9 @@ func _update() -> void:
 			live += 1
 	_summary.text = "%d gc left | %d/8 soldiers | %d/4 specialists | %d/8 implemented spells\n%s" % [WarbandDraft.BUDGET - draft.cost(), draft.soldiers.size(), draft.specialists(), live, "Campaign rituals are available between battles." if problems.is_empty() else "\n".join(problems)]
 	var recruit_id := str(_recruits.get_selected_metadata())
+	for i in _recruits.item_count:
+		var id := str(_recruits.get_item_metadata(i))
+		_recruits.set_item_disabled(i,not draft.can_hire(id) and id!=recruit_id)
 	_hire.disabled = not draft.can_hire(recruit_id)
 	var definition := draft.db.get_def(recruit_id)
 	if definition != null:
@@ -193,6 +214,7 @@ func _add_loadout(body: VBoxContainer, title_text: String, for_apprentice: bool)
 		choice.add_item("%s · %d slots" % [preset, CasterLoadout.weapon_slots(weapons)])
 		choice.set_item_metadata(choice.item_count - 1, preset)
 	body.add_child(choice)
+	_select_loadout(choice,for_apprentice)
 	choice.item_selected.connect(func(index: int) -> void:
 		var weapons: Array = CasterLoadout.PRESETS[choice.get_item_metadata(index)]
 		if for_apprentice:
@@ -200,3 +222,23 @@ func _add_loadout(body: VBoxContainer, title_text: String, for_apprentice: bool)
 		else:
 			draft.wizard_weapons = weapons.duplicate()
 		_update())
+
+
+func _tab(tabs: TabContainer,label: String) -> VBoxContainer:
+	var scroll := ScrollContainer.new()
+	scroll.name=label
+	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	tabs.add_child(scroll)
+	var body := VBoxContainer.new()
+	body.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	body.add_theme_constant_override("separation",8)
+	scroll.add_child(body)
+	return body
+
+
+func _select_loadout(choice: OptionButton,for_apprentice: bool) -> void:
+	var current: Array=draft.apprentice_weapons if for_apprentice else draft.wizard_weapons
+	for i in choice.item_count:
+		if CasterLoadout.PRESETS[choice.get_item_metadata(i)]==current:
+			choice.select(i)
+			return

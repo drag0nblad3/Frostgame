@@ -143,3 +143,40 @@ func as_warband() -> Dictionary:
 	for id in spells:
 		book[id] = casting_number(id)
 	return {"name": wizard_name, "school": school, "spells": book, "figures": units, "gold": BUDGET - cost()}
+
+
+func restore_roster(saved: Dictionary) -> bool:
+	var other := WarbandDraft.new(db)
+	other.wizard_name=str(saved.get("name","New Wizard"))
+	other.school=str(saved.get("school","elementalist"))
+	if not other.schools.has(other.school):
+		return false
+	other.apprentice=false
+	other.soldiers.clear()
+	for entry: Dictionary in saved.get("figures",[]):
+		var id := str(entry.get("type",""))
+		if id=="wizard":
+			other.wizard_weapons=entry.get("weapons",other.wizard_weapons).duplicate()
+		elif id=="apprentice":
+			other.apprentice=true
+			other.apprentice_weapons=entry.get("weapons",other.apprentice_weapons).duplicate()
+		elif db.figures.has(id) and db.get_def(id).role=="soldier":
+			other.soldiers.append(id)
+		else:
+			return false
+	var book: Dictionary=saved.get("spells",{})
+	for slot in 8:
+		for id in other.candidates(slot):
+			if book.has(id) and not other.spells.has(id):
+				other.spells.append(id)
+				break
+	if not other.errors().is_empty():
+		return false
+	wizard_name=other.wizard_name
+	school=other.school
+	apprentice=other.apprentice
+	soldiers.assign(other.soldiers)
+	spells.assign(other.spells)
+	wizard_weapons=other.wizard_weapons.duplicate()
+	apprentice_weapons=other.apprentice_weapons.duplicate()
+	return true
