@@ -234,6 +234,8 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 				gear["power_left"] = PowerPool.remaining(item)
 			if item["gear"]==RedKingMaterials.FANGS:
 				gear["uses"]=RedKingMaterials.amount(item)
+			if item.get("ivory_graft",false):
+				gear["ivory_graft"]=true
 			items.append(gear)
 	return items
 
@@ -301,3 +303,28 @@ static func incunabula_bonus(d: Dictionary,owner: int,spell: String) -> int:
 		if item.get("gear","")=="gear_rk_golden_incunabula" and int(item.get("owner",-1))==owner and item.get("casting_spell","")==spell:
 			return 1
 	return 0
+
+
+static func ivory_staff_choices(d: Dictionary,index: int) -> Array[int]:
+	var out: Array[int]=[]
+	if index<0 or index>=d.get("loot",[]).size() or RedKingCampaign.economy_locked(d) or int(d.get("gold",0))<500:
+		return out
+	var hand: Dictionary=d["loot"][index]
+	if hand.get("gear","")!="gear_rk_ivory_hand" or hand.get("ragged_sealed",false):
+		return out
+	var items := catalog()
+	for i in d["loot"].size():
+		var staff: Dictionary=d["loot"][i]
+		var info: Dictionary=items.get(staff.get("gear",""),{})
+		if info.get("type","")=="staff" and staff.get("unlocked",true) and not staff.get("ivory_graft",false) and not staff.get("ragged_sealed",false):
+			out.append(i)
+	return out
+
+
+static func graft_ivory(d: Dictionary,index: int,staff_index: int) -> bool:
+	if not ivory_staff_choices(d,index).has(staff_index):
+		return false
+	d["loot"][staff_index]["ivory_graft"]=true
+	d["gold"]=int(d["gold"])-500
+	d["loot"].remove_at(index)
+	return true

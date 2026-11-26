@@ -19,6 +19,8 @@ var caster_equipment_button: Button
 var book_spell: OptionButton
 var bind_book: Button
 var split_fang: Button
+var ivory_staff: OptionButton
+var ivory_graft: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -61,6 +63,13 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if loot.item_count>0 and RedKingMaterials.split_fang(campaign.data,int(loot.get_selected_metadata())):
 			changed.call())
 	split_fang.hide()
+	ivory_staff=OptionButton.new()
+	ivory_staff.hide()
+	add_child(ivory_staff)
+	ivory_graft=_button("Graft Ivory Hand onto staff (500 gc)",func() -> void:
+		if loot.item_count>0 and ivory_staff.item_count>0 and CampaignInventory.graft_ivory(campaign.data,int(loot.get_selected_metadata()),int(ivory_staff.get_selected_metadata())):
+			changed.call())
+	ivory_graft.hide()
 	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
 	caster_equipment = OptionButton.new()
 	add_child(caster_equipment)
@@ -124,6 +133,8 @@ func refresh() -> void:
 			suffix+=" · %d uses" % RedKingMaterials.amount(item)
 		if item.get("enchanted",false):
 			suffix+=" · Enchanted"
+		if item.get("ivory_graft",false):
+			suffix+=" · Ivory Hand graft"
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
 		loot.set_item_metadata(loot.item_count - 1, i)
 		for unit_id in CampaignPotions.choices(d, i, db):
@@ -169,6 +180,9 @@ func refresh() -> void:
 
 
 func _refresh_item_buttons() -> void:
+	ivory_staff.clear()
+	ivory_staff.hide()
+	ivory_graft.hide()
 	split_fang.hide()
 	book_spell.hide()
 	bind_book.hide()
@@ -178,7 +192,15 @@ func _refresh_item_buttons() -> void:
 	discard_button.disabled=true
 	if loot.item_count == 0:
 		return
-	var item: Dictionary = campaign.data["loot"][int(loot.get_selected_metadata())]
+	var index := int(loot.get_selected_metadata())
+	var item: Dictionary = campaign.data["loot"][index]
+	for staff_index in CampaignInventory.ivory_staff_choices(campaign.data,index):
+		var staff: Dictionary=campaign.data["loot"][staff_index]
+		ivory_staff.add_item(str(CampaignInventory.catalog()[staff["gear"]]["name"]))
+		ivory_staff.set_item_metadata(ivory_staff.item_count-1,staff_index)
+	if ivory_staff.item_count>0:
+		ivory_staff.show()
+		ivory_graft.show()
 	if item.get("gear","")==RedKingMaterials.FANGS and RedKingMaterials.amount(item)>1 and not RaggedWarbands.active(campaign.data) and not item.get("ragged_sealed",false):
 		split_fang.show()
 	if item.get("gear","")=="gear_rk_golden_incunabula" and str(item.get("casting_spell","")).is_empty() and not item.get("ragged_sealed",false):

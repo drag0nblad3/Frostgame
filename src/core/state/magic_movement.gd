@@ -91,7 +91,7 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, 
 		ScenarioSites.end_move(c, t)
 
 
-func force(t: Figure, direction: Vector2, distance: float) -> void:
+func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=null) -> void:
 	if direction.is_zero_approx():
 		return
 	var b := c.state.board
@@ -99,6 +99,7 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var last := origin
 	var highest := t.elevation
 	var portal_hits := {}
+	var collision := false
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
 		if not BattleBoundary.blocks_segment(b.boundaries,last,at,"movement",t) and RedKingBridge.forced_void(c,t,at,last):
@@ -112,6 +113,7 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 				RedKingSinkhole.contact(c,t,true)
 			return
 		if BattleBoundary.blocks_segment(b.boundaries,origin,at,"movement",t) or ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
+			collision=not b.can_stand(at,Figure.BASE_RADIUS) or b.height_at(at)>highest+0.5
 			if not b.can_stand(at,Figure.BASE_RADIUS):
 				RedKingFire.portal_contact(c,t,last,at,portal_hits)
 			break
@@ -122,7 +124,10 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 		if landing(t, at, true):
 			last = at
 	if last != origin:
-		move(t, last, false, true)
+		move(t,last,false,true)
+	if collision and ivory_caster!=null and t.in_play():
+		c.emit("gear_used",{"id":ivory_caster.id,"target":t.id,"gear":"gear_rk_ivory_hand","damage":3})
+		c._hurt(t,3,ivory_caster,false)
 
 
 func swap(a: Figure, b: Figure) -> void:
@@ -134,11 +139,21 @@ func swap(a: Figure, b: Figure) -> void:
 	ScenarioSites.end_move(c, b)
 
 
+static func ivory_hand(f: Figure) -> bool:
+	if MagicEquipment.suppressed(f):
+		return false
+	for item in f.items:
+		if item.get("gear","")=="gear_rk_ivory_hand" or (item.get("ivory_graft",false) and not f.destroyed_weapons.has("staff")):
+			return true
+	return false
+
+
 func push(f: Figure, t: Figure) -> void:
-	var a := c.dice.d20() + 10
+	var ivory := ivory_hand(f)
+	var a := c.dice.d20() + (11 if ivory else 10)
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
 	if a > d:
-		force(t, (t.pos - f.pos).normalized(), float(maxi(0, a - t.effective_armour())))
+		force(t,(t.pos-f.pos).normalized(),float(maxi(0,a-t.effective_armour())),f if ivory else null)
 
 
 func blink(f: Figure, t: Figure, roll: int) -> void:

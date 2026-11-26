@@ -144,3 +144,7 @@ Found in six-unit lots and traded one at a time; a stack of up to six occupies o
 ## Extended Scroll
 
 Optional 9-inch bridge placement on flat and layered maps; extended bridges collapse only on 1. The flat interface toggles span, and layered endpoint selection includes both six- and nine-inch spans when the scroll is available. A successful extended cast spends the once-per-battle effect. Length and expiration status persist in battle saves. AI still plans ordinary six-inch bridges.
+
+## Ivory Hand
+
+Push attacks gain +1 above the normal +10, and stopping against terrain or the table boundary before completing the push deals three damage. Campaign inventory can permanently attach the item to an eligible magic staff for 500gc; the graft persists on that staff with no extra slot. A destroyed staff or suppressed magic disables the graft. Push remains limited to the existing ordinary-board forced movement path; scenario-specific forced relocation and layered Push remain distinct.

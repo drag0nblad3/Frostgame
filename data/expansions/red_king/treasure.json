@@ -410,8 +410,9 @@
       "buy": 250,
       "sell": 120,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_ring_of_elemental_fire": {
       "name": "Ring of Elemental Fire",
