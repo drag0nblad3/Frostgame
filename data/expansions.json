@@ -44,7 +44,8 @@
           "kalamon_ryce"
         ],
         "terrain": [
-          "red_king_portal"
+          "red_king_portal",
+          "red_king_sinkhole_orb"
         ]
       },
       "catalogs": {
@@ -85,6 +86,11 @@
           "Herded Like Cattle!",
           "Race toward the inner city as Hrut guard abandoned treasure and the veil closes behind you.",
           "The veil advances 2–6 inches each turn. Fully engulfed figures are removed; partial contact causes 6 unavoidable damage. Sight is limited to 12 inches; escape south."
+        ],
+        "red_king_sinkhole": [
+          "Planar Sinkhole",
+          "Recover treasure surrounding a pocket of anti-magic while Nullmen emerge from its darkness.",
+          "The orb draws figures and loose treasure inward each turn. Contact strips active spells and deals damage; casting becomes harder closer to the orb."
         ]
       }
     }

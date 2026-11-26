@@ -208,8 +208,22 @@ func explode(p: TerrainPiece) -> void:
 func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var chunk := PackedVector2Array([f.pos])
 	var portal_hits := {}
+	var orb_contact := false
 	for i in range(1, path.size()):
 		var at := path[i]
+		if RedKingSinkhole.active(c.state):
+			var touches := RedKingSinkhole.touches(c.state,at)
+			if touches and not orb_contact and not RedKingSinkhole.touches(c.state,path[i-1]):
+				f.pos=at
+				f.elevation=c.state.board.height_at(at)
+				chunk.append(at)
+				c.emit("move",{"id":f.id,"path":chunk,"cost":cost})
+				chunk=PackedVector2Array([at])
+				RedKingSinkhole.contact(c,f)
+				if not f.in_play():
+					return false
+			orb_contact=touches
+			RedKingSinkhole.record_xp_at(c,f,at)
 		if RedKingHerded.active(c.state):
 			f.pos=path[i-1]
 			f.elevation=c.state.board.height_at(f.pos)
@@ -283,6 +297,10 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 
 
 func trigger_landing(f: Figure) -> void:
+	RedKingSinkhole.contact(c,f)
+	RedKingSinkhole.record_xp(c,f)
+	if not f.in_play():
+		return
 	for p in triggered(f, f.pos):
 		explode(p)
 

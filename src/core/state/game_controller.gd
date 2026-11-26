@@ -87,6 +87,7 @@ func activate(id: int) -> bool:
 	RedKingSquatter.record_contact(self)
 	if not state.group.in_progress() or state.group.movement_pass():
 		CreatureEffects.activation(self,f)
+		RedKingSinkhole.activation(self,f)
 	if not f.in_play():
 		f.actions_left=0
 	return true
@@ -215,6 +216,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 		_displacement.force_contact(intercept)
 	ScenarioSites.end_move(self, f)
 	RedKingSquatter.record_contact(self)
+	RedKingSinkhole.record_xp(self,f)
 	CreatureSenses.reveal_contacts(self,f)
 	_magic.illusions.after_move(f)
 	return true

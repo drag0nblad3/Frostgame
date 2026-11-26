@@ -42,6 +42,26 @@ static func enter(c: GameController, f: Figure) -> void:
 	var s := c.state
 	if not f.in_play() or not field_at(s.board, f.pos):
 		return
+	cancel_spells(c,f)
+	if not f.in_play():
+		return
+	if f.side < 0 or s.tower_visitors.has(f.id) or f.def.role not in ["wizard", "apprentice"]:
+		return
+	if s.board.floor_layout.has("tower_region"):
+		var r: Array = s.board.floor_layout["tower_region"]
+		if Rect2(r[0],r[1],r[2],r[3]).has_point(f.pos):
+			s.tower_visitors[f.id]=true
+			c.emit("tower_entered",{"id":f.id,"side":f.side,"xp":40 if f.def.role=="wizard" else 20})
+		return
+	for p in s.board.pieces:
+		if p.kind.id == "null_lower" and p.contains(f.pos):
+			s.tower_visitors[f.id] = true
+			c.emit("tower_entered", {"id": f.id, "side": f.side, "xp": 40 if f.def.role == "wizard" else 20})
+			return
+
+
+static func cancel_spells(c: GameController,f: Figure) -> void:
+	var s := c.state
 	var had_magic := not f.spell_effects.is_empty() or f.elemental_shield > 0 or f.controller_id >= 0 or f.familiar
 	if f.shrunk_treasure_id >= 0:
 		c._loot.cancel_shrinking(f)
@@ -64,16 +84,3 @@ static func enter(c: GameController, f: Figure) -> void:
 		return
 	if had_magic:
 		c.emit("null_field", {"id": f.id})
-	if f.side < 0 or s.tower_visitors.has(f.id) or f.def.role not in ["wizard", "apprentice"]:
-		return
-	if s.board.floor_layout.has("tower_region"):
-		var r: Array = s.board.floor_layout["tower_region"]
-		if Rect2(r[0],r[1],r[2],r[3]).has_point(f.pos):
-			s.tower_visitors[f.id]=true
-			c.emit("tower_entered",{"id":f.id,"side":f.side,"xp":40 if f.def.role=="wizard" else 20})
-		return
-	for p in s.board.pieces:
-		if p.kind.id == "null_lower" and p.contains(f.pos):
-			s.tower_visitors[f.id] = true
-			c.emit("tower_entered", {"id": f.id, "side": f.side, "xp": 40 if f.def.role == "wizard" else 20})
-			return

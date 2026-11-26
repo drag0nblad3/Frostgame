@@ -109,6 +109,7 @@ func _settle() -> void:
 			RedKingMadMan.end_turn(_c)
 			RedKingMind.end_turn(_c)
 			RedKingHerded.end_turn(_c)
+			RedKingSinkhole.end_turn(_c)
 			if (RedKingMind.active(s) or RedKingHerded.active(s)) and _check_victory():
 				return
 			_c._encounters.on_end_turn()

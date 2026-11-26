@@ -73,6 +73,10 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 	if not contains(p, radius):
 		return false
 	for piece in pieces:
+		if piece.kind.id=="red_king_sinkhole_orb":
+			if p.distance_to(piece.rect.get_center())<piece.rect.size.x*0.5+radius-0.001:
+				return false
+			continue
 		if piece.kind.id == "temple_column":
 			# Contact must be legal on every face; Rect2.has_point includes
 			# the minimum boundary but excludes the maximum boundary.

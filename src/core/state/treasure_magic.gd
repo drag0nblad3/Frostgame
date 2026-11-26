@@ -30,7 +30,7 @@ func can_place(f: Figure, id: String, token: TreasureToken, at: Vector2) -> bool
 		return false
 	var s := c.state
 	var from := origin(token)
-	var limit := 6.0 if id == "telekinesis" else 4.0
+	var limit := (3.0 if RedKingSinkhole.active(s) else 6.0) if id == "telekinesis" else 4.0
 	if Vector2(from.distance_to(at), s.board.height_at(from) - s.board.height_at(at)).length() > limit + 0.001 or not s.board.can_stand(at, TreasureRules.TOKEN_RADIUS):
 		return false
 	if not WizardEye.visible(s.board, f, at):

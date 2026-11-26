@@ -99,6 +99,12 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 		var at := origin + direction * (i * 0.25)
 		if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
 			return
+		if RedKingSinkhole.touches(c.state,at) and not RedKingSinkhole.touches(c.state,last):
+			if b.can_stand(at,Figure.BASE_RADIUS):
+				move(t,at,false,true)
+			else:
+				RedKingSinkhole.contact(c,t,true)
+			return
 		if BattleBoundary.blocks_segment(b.boundaries,origin,at,"movement",t) or ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
 			if not b.can_stand(at,Figure.BASE_RADIUS):
 				RedKingFire.portal_contact(c,t,last,at,portal_hits)

@@ -47,4 +47,6 @@ static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 		other.disengaged.erase(f.id)
 	c._displacement.clear()
 	c.emit("forced_relocation",{"id":f.id,"from":old,"at":at,"height":f.elevation})
+	RedKingSinkhole.contact(c,f)
+	RedKingSinkhole.record_xp(c,f)
 	return true
