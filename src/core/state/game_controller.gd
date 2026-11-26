@@ -268,7 +268,7 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 		t.spell_effects.erase("elemental_hammer")
 	if f.in_play() and t.in_play() and Contact.figures_touch(f,t) and int(res["winner"]) >= 0:
 		var winner := state.figure(res["winner"])
-		if winner.side >= 0 or RedKingHill.is_herald(state,winner):
+		if not RedKingTethers.pylon(f) and not RedKingTethers.pylon(t) and (winner.side >= 0 or RedKingHill.is_herald(state,winner)):
 			state.push_winner = winner.id
 			state.push_loser = t.id if winner == f else f.id
 			if RedKingHill.is_herald(state,winner):
@@ -408,6 +408,7 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		emit("out_of_action", {"id": f.id, "by": by.id})
 		ScenarioGenie.record_kill(self, f, by)
 		RedKingSquatter.record_kill(self,f,by)
+		RedKingTethers.destroyed(self,f,by)
 	else:
 		CreatureEffects.after_damage(self,f)
 

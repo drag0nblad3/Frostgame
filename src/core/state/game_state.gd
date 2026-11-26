@@ -117,7 +117,7 @@ func waiting(side: int) -> Array[Figure]:
 				creatures.append(member)
 				return creatures
 		for f in side_figures(-1):
-			if not f.activated and not RedKingMadMan.is_ryce(f):
+			if not f.activated and not RedKingMadMan.is_ryce(f) and not RedKingTethers.pylon(f):
 				creatures.append(f)
 		if RedKingMind.active(self):
 			var wizard := RedKingMind.wizard(self)

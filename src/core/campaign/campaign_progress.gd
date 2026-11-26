@@ -100,7 +100,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
-		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp", "mad_man_xp", "sinkhole_xp", "hill_xp"] and int(e["side"]) == side:
+		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp", "mad_man_xp", "sinkhole_xp", "hill_xp", "tether_xp"] and int(e["side"]) == side:
 			scenario_xp += int(e["xp"])
 		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
 			var victim := c.state.figure(e["id"])
@@ -119,7 +119,9 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				if bounty > 0:
 					data["gold"] = int(data["gold"]) + bounty
 					report.append("%s bounty: %d gc." % [victim.label(), bounty])
-				if RedKingHill.is_herald(c.state,victim):
+				if RedKingTethers.pylon(victim):
+					pass
+				elif RedKingHill.is_herald(c.state,victim):
 					scenario_xp+=50
 					xp_cap=325
 				elif c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
@@ -141,7 +143,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		data["red_king_secured_kalamon"]=rescue!=null and rescue.secured_by==side
 		if data["red_king_secured_kalamon"]:
 			secured-=1
-	var treasure_xp := secured*40
+	var treasure_xp := 0 if RedKingTethers.active(c.state) else secured*40
 	if RedKingFire.active(c.state):
 		treasure_xp=0
 		for token in c.state.treasures:

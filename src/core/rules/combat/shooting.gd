@@ -23,6 +23,8 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "needs to reload"
 	if not target.in_play() or target == shooter or not IllusionRules.visible_to(figures, shooter, target):
 		return "not a target"
+	if RedKingTethers.pylon(target) and not WeaponActions.magic_attack(shooter,shooter.ranged):
+		return "pylon requires magical shooting"
 	if target.side == shooter.side and not Contact.in_combat(figures, target):
 		return "not an enemy"
 	if Contact.in_combat(figures, shooter):
@@ -76,6 +78,8 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and (null_target or not WeaponActions.magic_attack(shooter, shooter.ranged)):
 		dmg = 0
 	if target.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(shooter,shooter.ranged) and shooter.ranged.id=="genie_bolt":
+		dmg=0
+	if RedKingTethers.pylon(target) and not WeaponActions.magic_attack(shooter,shooter.ranged):
 		dmg=0
 	if target.def.traits.has("missile_resistant") and shooter.ranged.id in ["bow","crossbow","javelin"] and not WeaponActions.magic_attack(shooter,shooter.ranged):
 		dmg=mini(dmg,2)

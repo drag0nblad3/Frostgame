@@ -11,7 +11,7 @@ const SUPPORT := 2
 static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 	var bonus := 0
 	for o in figures:
-		if o == f or not o.in_play() or o.side != f.side or RedKingMadMan.hunter(o):
+		if RedKingTethers.pylon(o) or o == f or not o.in_play() or o.side != f.side or RedKingMadMan.hunter(o):
 			continue
 		if not Contact.figures_touch(o, enemy):
 			continue
@@ -21,6 +21,8 @@ static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 
 
 static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure, charging: bool = false) -> int:
+	if RedKingTethers.pylon(f):
+		return 0
 	var net := clampi(support(figures, f, enemy) - support(figures, enemy, f), 0, 6)
 	return mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + net + (2 if charging and f.def.traits.has("horns") else 0) + (1 if f.spell_effects.has("enchant_weapon") and f.ranged == null else 0), 10)
 
@@ -47,6 +49,8 @@ static func resolve_rolls(figures: Array[Figure], a: Figure, b: Figure, ar: int,
 
 
 static func _damage(total: int, winner: Figure, loser: Figure, natural: int, critical_hits: bool) -> int:
+	if RedKingTethers.pylon(winner):
+		return 0
 	if loser.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(winner,winner.melee) and winner.melee.id=="natural":
 		return 0
 	if (loser.spell_effects.has("potion_invulnerability") or loser.def.traits.has("immune_normal")) and not WeaponActions.magic_attack(winner, winner.melee):

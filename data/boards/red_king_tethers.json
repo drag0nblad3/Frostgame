@@ -1,0 +1,82 @@
+{
+  "id": "red_king_tethers",
+  "name": "Ethereal Tethers",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        7,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        7,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        25,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        25,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        15,
+        6,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        18,
+        28,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        7,
+        17,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        26,
+        16,
+        3,
+        4
+      ]
+    }
+  ]
+}

@@ -104,6 +104,10 @@ func _play(e: GameEvent) -> void:
 			_float_text(v, "-%d" % d["amount"])
 		"out_of_action":
 			_view(d["id"]).take_out()
+		"pylon_destroyed":
+			var marker: MeshInstance3D=treasure_views[d["treasure"]]
+			marker.position=TableSpace.to_world(d["at"],state.board.height_at(d["at"])+0.25)
+			marker.show()
 		"ryce_unconscious":
 			var marker: MeshInstance3D=treasure_views[d["treasure"]]
 			marker.position=TableSpace.to_world(d["at"],state.board.height_at(d["at"])+0.25)

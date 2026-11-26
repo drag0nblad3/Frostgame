@@ -41,7 +41,8 @@
           "red_king_key_master",
           "mindshrike",
           "nullman",
-          "kalamon_ryce"
+          "kalamon_ryce",
+          "red_king_pylon"
         ],
         "terrain": [
           "red_king_portal",
@@ -96,6 +97,11 @@
           "King of the Hill",
           "Challenge the Herald and its winged Hrut guards before a reality crack folds the battlefield.",
           "The Herald protects the central treasure. A reality crack divides the table into four slopes: sight cannot cross their seams unless the observer is near the summit. Second moves and attack damage require balance tests; failed tests send figures downhill."
+        ],
+        "red_king_tethers": [
+          "Ethereal Tethers",
+          "Destroy five dimensional anchors guarded by berserkers.",
+          "Each pylon can be destroyed in melee or by magical shooting. Hrut emerge from surviving pylons. At the end of turn two the table folds into three connected strips; destroy every pylon before escaping."
         ]
       }
     }

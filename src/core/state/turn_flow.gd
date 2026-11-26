@@ -111,6 +111,7 @@ func _settle() -> void:
 			RedKingMind.end_turn(_c)
 			RedKingHerded.end_turn(_c)
 			RedKingSinkhole.end_turn(_c)
+			RedKingTethers.end_turn(_c)
 			if (RedKingMind.active(s) or RedKingHerded.active(s)) and _check_victory():
 				return
 			_c._encounters.on_end_turn()
@@ -140,6 +141,11 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
+	if RedKingTethers.active(s) and RedKingTethers.remaining(s)>0:
+		if not standing.is_empty():
+			return false
+		_finish(-1)
+		return true
 	if RedKingHerded.active(s):
 		if not standing.is_empty() and float(s.scenario_data.get("herd_veil",0.0))<s.board.size.y:
 			return false

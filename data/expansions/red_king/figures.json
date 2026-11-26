@@ -256,5 +256,28 @@
       "never_wounded"
     ],
     "verify": false
+  },
+  "red_king_pylon": {
+    "name": "Ethereal Tether",
+    "role": "creature",
+    "move": 0,
+    "fight": 0,
+    "shoot": 0,
+    "armour": 20,
+    "will": 20,
+    "health": 1,
+    "cost": 0,
+    "weapons": [
+      "unarmed"
+    ],
+    "traits": [
+      "pylon",
+      "elemental_resistance_3",
+      "immune_critical",
+      "immune_poison",
+      "never_wounded",
+      "immune_mind_control"
+    ],
+    "verify": false
   }
 }

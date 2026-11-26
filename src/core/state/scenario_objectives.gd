@@ -98,6 +98,8 @@ static func exit_distance(s: GameState, at: Vector2) -> float:
 
 
 static func exit_allowed(s: GameState, at: Vector2,side: int=-1) -> bool:
+	if RedKingTethers.active(s) and RedKingTethers.remaining(s)>0:
+		return false
 	if RedKingHerded.active(s):
 		return at.y>=s.board.size.y-Figure.BASE_RADIUS-0.01
 	if RedKingFire.active(s):
