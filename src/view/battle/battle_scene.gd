@@ -202,6 +202,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 		var v := FigureView.new()
 		player.add_child(v)
 		v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
+		v.face_toward(TableSpace.to_world(state.board.size * 0.5, f.elevation))
 		player.views[f.id] = v
 		v.set_active(f.id == state.active_id)
 		if f.out_of_action:

@@ -57,8 +57,12 @@ func _play(e: GameEvent) -> void:
 		"terrain_fall":
 			var f := state.figure(d["id"])
 			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
-		"allegiance", "heal", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison", "null_field":
+		"allegiance", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison", "null_field", "shield_absorb":
 			_view(d["id"]).refresh(state.figure(d["id"]))
+		"heal":
+			var healed := _view(d["id"])
+			healed.refresh(state.figure(d["id"]))
+			_float_text(healed, "+%d" % d["amount"], Color(0.45, 1.0, 0.63))
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot")
 		"fight":
@@ -113,11 +117,13 @@ func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 		var destination := TableSpace.to_world(path[i], state.board.height_at(path[i]))
 		var start := TableSpace.to_world(path[i - 1], state.board.height_at(path[i - 1]))
 		var duration := maxf(0.01, start.distance_to(destination) * 0.06)
+		t.tween_callback(v.face_toward.bind(destination))
 		t.tween_property(v, "position", destination, duration)
 	_wait_for(t)
 
 
 func _animate_shot(from: FigureView, to: FigureView, magic: bool = false) -> void:
+	from.face_toward(to.position)
 	var bolt := MeshInstance3D.new()
 	var s := SphereMesh.new()
 	s.radius = 0.15
@@ -133,19 +139,23 @@ func _animate_shot(from: FigureView, to: FigureView, magic: bool = false) -> voi
 	var t := create_tween()
 	t.tween_property(bolt, "position", to.position + up, from.position.distance_to(to.position) * 0.03)
 	t.tween_callback(bolt.queue_free)
+	t.tween_callback(BattleEffects.burst.bind(self, to.position + Vector3.UP * 0.9, mat.albedo_color))
 	_wait_for(t)
 
 
 func _animate_lunge(a: FigureView, b: FigureView) -> void:
+	a.face_toward(b.position)
+	b.face_toward(a.position)
 	var home := a.position
 	var toward := home.lerp(b.position, 0.35)
 	var t := create_tween()
 	t.tween_property(a, "position", toward, 0.12)
+	t.tween_callback(BattleEffects.burst.bind(self, toward.lerp(b.position, 0.5) + Vector3.UP * 0.85, Color(1.0, 0.78, 0.38)))
 	t.tween_property(a, "position", home, 0.18)
 	_wait_for(t)
 
 
-func _float_text(v: FigureView, text: String) -> void:
+func _float_text(v: FigureView, text: String, color: Color = Color(1, 0.35, 0.3)) -> void:
 	var l := Label3D.new()
 	l.text = text
 	l.billboard = BaseMaterial3D.BILLBOARD_ENABLED
@@ -153,7 +163,7 @@ func _float_text(v: FigureView, text: String) -> void:
 	l.font_size = 64
 	l.pixel_size = 0.01
 	l.outline_size = 12
-	l.modulate = Color(1, 0.35, 0.3)
+	l.modulate = color
 	add_child(l)
 	l.position = v.position + Vector3(0, v.body_height() + 1.5, 0)
 	var t := create_tween()
