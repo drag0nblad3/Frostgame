@@ -209,12 +209,16 @@ func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -
 	for f in c.state.figures:
 		if f.original_side == side and f.campaign_id >= 0:
 			data["units"][f.campaign_id]["last_knocked_out"] = f.out_of_action
+			if f.used_gear.get(VampireStaff.DESERTED,false):
+				data["units"][f.campaign_id]["dismissed"]=true
+				CampaignInventory.lose_owned(data,f.campaign_id)
+				report.append("%s deserted after Vampire Staff empowerment."%f.label())
 	report.append("Battle %d: %d treasure, +%d XP." % [data["games"], secured, xp])
 	# Recover previously resting units after missing this game.
 	for unit: Dictionary in data["units"]:
 		unit["miss"] = maxi(0, int(unit["miss"]) - 1)
 	for f in c.state.figures:
-		if f.original_side != side or f.campaign_id < 0 or not f.out_of_action:
+		if f.original_side != side or f.campaign_id < 0 or not f.out_of_action or f.used_gear.get(VampireStaff.DESERTED,false):
 			continue
 		for unit: Dictionary in data["units"]:
 			if int(unit["id"]) != f.campaign_id:

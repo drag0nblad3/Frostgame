@@ -75,7 +75,9 @@ func reroll_fate() -> bool:
 
 func _resolve(p: Dictionary, spend: int, done: Callable) -> void:
 	var t := c.state.figure(p["id"])
-	var success := StatRoll.succeeds(p["raw"], p["mod"], p["tn"], spend)
+	var stolen := VampireStaff.amount(c,p,false)
+	var success := StatRoll.succeeds(p["raw"],p["mod"],p["tn"],spend+stolen)
+	VampireStaff.spend(c,t,p,stolen)
 	var power := PowerPool.spend(t,spend,str(p.get("spell","")))
 	if spend > power:
 		c._hurt(t, spend - power, t, false)

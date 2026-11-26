@@ -353,3 +353,17 @@ func test_mask_of_death_toggle_and_starting_choice() -> void:
 	check(not f.is_undead())
 	check(f.used_gear.get(DeathMask.EVER,false))
 	check_eq(f.actions_left,1)
+
+
+func test_vampire_staff_donor_deserts() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var t := fig("thug",0,Vector2(11,10))
+	var c := make_game(make_board(),[f,t],Dice.new(1))
+	f.items.append({"gear":VampireStaff.ITEM,"gear_info":RedKingRewards.catalog()[VampireStaff.ITEM]})
+	check(VampireStaff.donors(c.state,f).has(t))
+	var p := {"caster":f.id,"id":"heal","total":10,"raw":10,"vampire_donor":t.id,"vampire_amount":1}
+	check_eq(VampireStaff.amount(c,p,true),1)
+	VampireStaff.spend(c,f,p,1)
+	check(t.used_gear.get(VampireStaff.DESERTED,false))
+	check(t.exited)
+	check(not t.out_of_action)

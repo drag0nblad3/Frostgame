@@ -200,3 +200,7 @@ Four rechargeable power points are restricted to casting and resisting Blink. Op
 ## Mask of Death
 
 Campaign equipment choice determines whether the wearer starts the battle masked. A contextual action toggles the mask, replacing a move when legal. Effective undead status now feeds healing, poison, wound, melee, spell, ward, and Red King scenario trait tests without permanently altering the figure definition. The wizard loses the usual survival modifier if the mask was worn at any time; the historical flag is checkpointed. AI does not proactively toggle the mask.
+
+## Vampire Staff
+
+Explicit donor and empowerment amount on ordinary cast and resistance resolution controls. Each point costs three donor Health, at most four, and respects the ordinary casting cap. Surviving donors desert: soldiers leave, animals and creatures become uncontrolled; their campaign roster entry and inventory are lost. Fatal sacrifices follow normal casualty handling. Temporary phantom figures, undead, constructs and other-plane targets are excluded. Layered casting UI does not yet expose the donor selector; AI does not elect sacrifices.

@@ -327,7 +327,7 @@ func max_empowerment() -> int:
 	var resources := PowerPool.cast_resources(f,str(p["id"]))
 	if p["id"] == "summon_demon":
 		return 0 if int(p["raw"]) == 1 else resources
-	return CastingRoll.max_empowerment(p["total"], resources)
+	return CastingRoll.max_empowerment(int(p["total"])+VampireStaff.amount(c,p,true),resources)
 
 
 func finish(health: int) -> bool:
@@ -347,12 +347,14 @@ func _finish_one(health: int) -> bool:
 	var f := s.figure(p["caster"])
 	var t := s.figure(p["target"])
 	var id: String = p["id"]
-	var result := CastingRoll.resolve(p["total"], p["tn"], health, PowerPool.cast_resources(f,id), false, 100 if id == "summon_demon" else 18)
+	var stolen := VampireStaff.amount(c,p,true)
+	var result := CastingRoll.resolve(int(p["total"])+stolen,p["tn"],health, PowerPool.cast_resources(f,id), false, 100 if id == "summon_demon" else 18)
 	if p.get("scroll", false):
 		result = {"success": true, "roll": int(p["total"]), "health_spent": 0, "failure_damage": 0}
 	elif id == "summon_demon" and int(p["raw"]) == 1:
 		result["success"] = false
 	s.pending_cast = {}
+	VampireStaff.spend(c,f,p,stolen)
 	var power := PowerPool.spend(f,int(result["health_spent"]),id)
 	var hp := int(result["health_spent"]) - power
 	if MagicEquipment.bonus(f,"cast_failure_cap")>0:
@@ -691,6 +693,7 @@ func insure() -> bool:
 	if roll<=0:
 		return false
 	p["scroll"] = true
+	p.erase("vampire_amount")
 	p["total"] = roll
 	return finish(0)
 

@@ -518,10 +518,11 @@
       "buy": 0,
       "sell": 350,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 18,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_mystic_shears": {
       "name": "Mystic Shears",

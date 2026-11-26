@@ -341,11 +341,13 @@ func preview() -> void:
 			points.append(t.pos)
 			radius = 0.65
 			var power := mini(empower, PowerPool.available(t,str(p.get("spell",""))))
-			hint = "%s resists: %d + %d Will, needs %d. Spend %d power + %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], power, empower - power, int(p["raw"]) + int(p["mod"]) + empower]
+			hint = "%s resists: %d + %d Will, needs %d. Spend %d power + %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], power, empower - power, int(p["raw"]) + int(p["mod"]) + empower+VampireStaff.amount(c,p,false)]
+			hint+=_vampire_hint(p,false)
 		"empower":
 			var p := c.state.pending_cast
 			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"]),str(p["id"])))
-			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
+			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower+VampireStaff.amount(c,p,true)]
+			hint+=_vampire_hint(p,true)
 			if p.get("gem_extend",false):
 				hint+=" • Blink 6″"
 			if p.get("gem_reroll",false):
@@ -654,6 +656,20 @@ func action(key: String) -> bool:
 			mode = ""
 			refresh()
 			return false
+		"vampire_donor","vampire_plus","vampire_minus":
+			var cast := mode=="empower"
+			var p := c.state.pending_cast if cast else c.state.pending_resistance
+			if key=="vampire_donor":
+				VampireStaff.cycle(c,p,cast)
+			else:
+				VampireStaff.adjust(c,p,cast,1 if key=="vampire_plus" else -1)
+			if cast:
+				empower=mini(empower,c.cast_max_empowerment())
+				_empower_buttons()
+			else:
+				_resist_buttons()
+			preview()
+			return false
 		"empower_plus", "empower_minus":
 			empower = clampi(empower + (1 if key == "empower_plus" else -1), 0, c.cast_max_empowerment())
 			_empower_buttons()
@@ -827,6 +843,8 @@ func _empower_buttons() -> void:
 	available.assign(["cast_confirm"])
 	var p := c.state.pending_cast
 	var caster := c.state.figure(p["caster"])
+	if not p.get("scroll",false) and not PowerPool.words_only(caster,str(p["id"])):
+		_vampire_buttons(p,true,caster)
 	if p.get("id","")=="blink" and ActiveGear.has(caster,PowerPool.GEM) and not MagicEquipment.suppressed(caster):
 		available.append_array(["gem_extend","gem_reroll"])
 	if p.get("id","")=="animate_skull" and RedKingMaterials.fang_count(c.state.figure(p["caster"]))>0:
@@ -848,6 +866,8 @@ func _surface_at(screen: Vector2) -> Variant:
 func _resist_buttons() -> void:
 	available.assign(["resist_confirm"])
 	var p := c.state.pending_resistance
+	if int(p["raw"]) not in [1,20]:
+		_vampire_buttons(p,false,c.state.figure(p["id"]))
 	if ActiveGear.ready(c.state.figure(p["id"]), "gear_fate_stone"):
 		available.append("resist_fate")
 	if int(p["raw"]) != 1 and ActiveGear.ready(c.state.figure(p["id"]), "gear_amulet_resistance"):
@@ -872,3 +892,21 @@ func _transfer_buttons() -> void:
 		available.append("transfer_minus")
 	if transfer_amount < GearActions.transfer_max(c, c.state.figure(transfer_target)):
 		available.append("transfer_plus")
+
+
+func _vampire_buttons(p: Dictionary,cast: bool,f: Figure) -> void:
+	if VampireStaff.donors(c.state,f).is_empty():
+		return
+	available.append("vampire_donor")
+	if VampireStaff.amount(c,p,cast)<VampireStaff.cap(c,p,cast):
+		available.append("vampire_plus")
+	if VampireStaff.amount(c,p,cast)>0:
+		available.append("vampire_minus")
+
+
+func _vampire_hint(p: Dictionary,cast: bool) -> String:
+	var donor := c.state.figure(int(p.get("vampire_donor",-1)))
+	if donor==null:
+		return ""
+	var amount := VampireStaff.amount(c,p,cast)
+	return " • Vampire Staff: %s, +%d for %d Health; surviving donor deserts."%[donor.label(),amount,amount*3]
