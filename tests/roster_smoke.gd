@@ -27,6 +27,15 @@ func _process(_delta: float) -> bool:
 		printerr("Recruitment preview unavailable")
 		quit(1)
 		return true
+	if not (setup._wizard_portrait.get_parent().get_parent() is HBoxContainer) or setup._spell_slots.size()!=8 or setup._school_info.text.is_empty() or setup._spell_detail.text.is_empty():
+		printerr("Warband decision panels missing")
+		quit(1)
+		return true
+	setup._show_spell(6)
+	if setup._active_slot!=6 or setup._spell_choice.item_count==0:
+		printerr("Spellbook navigation missing")
+		quit(1)
+		return true
 	setup.draft.wizard_name = "CI Wizard"
 	setup.draft.school = "witch"
 	setup.draft.choose_defaults()

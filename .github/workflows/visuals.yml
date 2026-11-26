@@ -73,6 +73,14 @@ jobs:
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/interface_capture.gd -- previews/phone-guide.png guide 2>&1 | tee phone-guide.log
           ! grep -E "SCRIPT ERROR|Parse Error" phone-guide.log
           for file in phone-maps phone-roster portrait-maps phone-guide; do test -s "previews/$file.png"; done
+      - name: Capture compact phone warband editor
+        run: |
+          set -o pipefail
+          for tab in spells recruits; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/interface_capture.gd -- "previews/phone-$tab.png" "$tab" 2>&1 | tee "$tab.log"
+            ! grep -E "SCRIPT ERROR|Parse Error" "$tab.log"
+            test -s "previews/phone-$tab.png"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
