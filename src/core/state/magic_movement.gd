@@ -13,7 +13,7 @@ func landing(t: Figure, at: Vector2, allow_combat: bool = false) -> bool:
 	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or BattleBoundary.blocks_position(b.boundaries,at,t):
 		return false
 	for other in c.state.figures:
-		if other == t or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
+		if other == t or other.ring_side!=t.ring_side or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
 			continue
 		var dist := other.pos.distance_to(at)
 		if dist < Contact.OVERLAP or (not allow_combat and other.side != t.side and dist <= Contact.CONTACT):
@@ -154,7 +154,7 @@ func _blink_result(success: bool, t: Figure) -> void:
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:
-	return a != b and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
+	return a != b and a.ring_side==b.ring_side and f.ring_side==b.ring_side and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
 
 
 func transpose(f: Figure, a: Figure, b: Figure, roll: int) -> void:

@@ -38,7 +38,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var f := s.active()
 	var t := s.figure(target_id)
-	if not c.can_act() or f == null or t == null or not t.in_play() or RedKingMadMan.is_ryce(t) or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
+	if not c.can_act() or f == null or t == null or f.ring_side!=t.ring_side or not t.in_play() or RedKingMadMan.is_ryce(t) or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
 		return false
 	if f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(s.figures, f):
 		return false
@@ -446,11 +446,11 @@ func _finish_one(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.ring_side==f.ring_side and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
 					_banish(f, other, int(result["roll"]), 4)
 		"scatter_shot":
 			for other in s.figures:
-				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
 					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
@@ -473,7 +473,7 @@ func _finish_one(health: int) -> bool:
 		"elemental_ball":
 			var affected: Array[Figure] = []
 			for other in s.figures:
-				if other.in_play() and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check(s.board, t.pos, other.pos).clear):
+				if other.in_play() and other.ring_side==t.ring_side and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check(s.board, t.pos, other.pos).clear):
 					for member in ShotTarget.participants(s.figures, other):
 						if not affected.has(member):
 							affected.append(member)
@@ -505,7 +505,7 @@ func _heal(t: Figure, amount: int) -> void:
 
 
 func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:
-	if (RedKingTethers.pylon(t) and not magical) or not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
+	if f.ring_side!=t.ring_side or (RedKingTethers.pylon(t) and not magical) or not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin

@@ -186,7 +186,7 @@ func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Arr
 	var targets: Array[Figure] = []
 	var at := path[path.size() - 1]
 	for t in state.figures:
-		if t.in_play() and t.side != f.side and absf(t.elevation - state.board.height_at(at)) < 0.5 and Contact.touching(t.pos, at):
+		if t.in_play() and t.ring_side==f.ring_side and t.side != f.side and absf(t.elevation - state.board.height_at(at)) < 0.5 and Contact.touching(t.pos, at):
 			targets.append(t)
 	_magic.beauty.authorize(f, targets, _move_authorized.bind(f, path, cost, ignored))
 	return true
@@ -268,10 +268,10 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 		t.spell_effects.erase("elemental_hammer")
 	if f.in_play() and t.in_play() and Contact.figures_touch(f,t) and int(res["winner"]) >= 0:
 		var winner := state.figure(res["winner"])
-		if not RedKingTethers.pylon(f) and not RedKingTethers.pylon(t) and (winner.side >= 0 or RedKingHill.is_herald(state,winner)):
+		if not RedKingTethers.pylon(f) and not RedKingTethers.pylon(t) and (winner.side >= 0 or RedKingHill.is_herald(state,winner) or (RedKingRingworld.active(state) and RedKingRingworld.key_master(winner))):
 			state.push_winner = winner.id
 			state.push_loser = t.id if winner == f else f.id
-			if RedKingHill.is_herald(state,winner):
+			if RedKingHill.is_herald(state,winner) or RedKingRingworld.key_master(winner):
 				_displacement.push(false)
 
 

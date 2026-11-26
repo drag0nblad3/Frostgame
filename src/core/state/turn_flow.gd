@@ -113,6 +113,7 @@ func _settle() -> void:
 			RedKingSinkhole.end_turn(_c)
 			RedKingTethers.end_turn(_c)
 			RedKingBridge.end_turn(_c)
+			RedKingRingworld.end_turn(_c)
 			if (RedKingMind.active(s) or RedKingHerded.active(s)) and _check_victory():
 				return
 			_c._encounters.on_end_turn()
@@ -142,6 +143,11 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
+	if RedKingRingworld.active(s):
+		if not RedKingRingworld.check_end(_c):
+			return false
+		_finish(TreasureRules.winner(s) if s.scenario_data.get("ring_success",false) else -1)
+		return true
 	if RedKingBridge.active(s):
 		if not standing.is_empty():
 			return false

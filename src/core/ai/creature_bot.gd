@@ -14,7 +14,7 @@ static func weakest(s: GameState, f: Figure) -> Figure:
 static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 	var target: Figure = null
 	for t in c.state.figures:
-		if t.side < 0 or not t.in_play():
+		if t.ring_side!=f.ring_side or t.side < 0 or not t.in_play():
 			continue
 		var normal := IllusionRules.visible_to(c.state.figures,f,t) and LineOfSight.check_figures(c.state.board,f,t).clear
 		if not normal and (shot or (not CreatureSenses.detects(f,t) and not RedKingSquatter.scent(c.state,f,t))):
@@ -27,6 +27,8 @@ static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 
 
 static func play(c: GameController, f: Figure) -> void:
+	if RedKingRingworld.creature_turn(c,f):
+		return
 	if RedKingHill.is_herald(c.state,f):
 		RedKingHill.play_herald(c,f)
 		return

@@ -159,6 +159,9 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		xp=RedKingVeil.xp(c,side)
 	if RedKingHerded.active(c.state):
 		xp+=RedKingHerded.exit_xp(c.state,side)
+	if RedKingRingworld.active(c.state):
+		xp=RedKingRingworld.xp(c,side)
+		data["red_king_completed"]=bool(c.state.scenario_data.get("ring_success",false))
 	data.erase("dreams_xp")
 	data["xp"] = int(data["xp"]) + xp
 	data["games"] = int(data["games"]) + 1
@@ -187,6 +190,12 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		for unit: Dictionary in data["units"]:
 			if int(unit["id"]) != f.campaign_id:
 				continue
+			if f.spell_effects.has("ring_left_behind"):
+				unit["dead"]=true
+				unit["death_game"]=data["games"]
+				CampaignInventory.lose_owned(data,f.campaign_id)
+				report.append("%s was lost in the Ringworld."%f.label())
+				break
 			var raw := dice.d20()
 			var caster := f.def.role in ["wizard", "apprentice"]
 			if RaggedWarbands.active(data) and not caster:
