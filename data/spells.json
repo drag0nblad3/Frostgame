@@ -9,7 +9,7 @@
     "name": "Decay",
     "school": "chronomancer",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "counter"
   },
   "fast_act": {
     "name": "Fast Act",

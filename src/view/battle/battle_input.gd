@@ -154,7 +154,7 @@ func preview() -> void:
 			hint = "Choose a spell."
 		"counter_select":
 			var option := counter_choices[counter_index]
-			hint = "Cancel effect %d/%d: %s" % [counter_index + 1, counter_choices.size(), option["label"]]
+			hint = "%s %d/%d: %s" % ["Destroy weapon" if selected_spell == "decay" else "Cancel effect", counter_index + 1, counter_choices.size(), option["label"]]
 			if option["kind"] == "terrain":
 				points.append(option["piece"].rect.get_center())
 			elif option["kind"] != "storm":
@@ -277,7 +277,7 @@ func action(key: String) -> bool:
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false
-		if selected_spell in ["dispel", "spell_eater"]:
+		if selected_spell in ["dispel", "spell_eater", "decay"]:
 			counter_choices = c._magic.counter_options(selected_spell)
 			if counter_choices.is_empty():
 				refresh()

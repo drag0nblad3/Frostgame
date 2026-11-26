@@ -9,6 +9,7 @@ var movement: MagicMovement
 var counter: CounterMagic
 var illusions: IllusionActions
 var resistance: ResistanceActions
+var weapons: WeaponActions
 
 
 func _init(controller: GameController) -> void:
@@ -19,6 +20,7 @@ func _init(controller: GameController) -> void:
 	counter = CounterMagic.new(c)
 	illusions = IllusionActions.new(c)
 	resistance = ResistanceActions.new(c)
+	weapons = WeaponActions.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -96,11 +98,11 @@ func start(id: String, target_id: int) -> bool:
 func counter_options(id: String) -> Array[Dictionary]:
 	var f := c.state.active()
 	var empty: Array[Dictionary] = []
-	if id not in ["dispel", "spell_eater"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
+	if id not in ["dispel", "spell_eater", "decay"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
 	if not available_spell(f, id):
 		return empty
-	return counter.options(f)
+	return weapons.options(f) if id == "decay" else counter.options(f)
 
 
 func start_counter(id: String, index: int) -> bool:
@@ -212,6 +214,9 @@ func finish(health: int) -> bool:
 		return true
 	if id in ["dispel", "spell_eater"]:
 		counter.apply(p["effect"])
+		return true
+	if id == "decay":
+		weapons.destroy(t, p["effect"]["weapon"])
 		return true
 	if TerrainMagic.SPELLS.has(id):
 		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))

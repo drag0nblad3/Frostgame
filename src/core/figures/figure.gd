@@ -40,6 +40,8 @@ var moves_taken := 0
 var acted := false
 ## Crossbows start loaded and need an action to reload after shooting.
 var loaded := true
+var destroyed_weapons: Array[String] = []
+var unarmed_weapon: WeaponDef
 var melee: WeaponDef
 var ranged: WeaponDef
 
@@ -54,6 +56,7 @@ func _init(fig_id: int = 0, d: FigureDef = null, fig_side: int = 0, at: Vector2 
 		health = d.health
 		if d.id == "apothecary":
 			items.append({"potion": "healing", "campaign_item": false})
+		unarmed_weapon = unarmed
 		melee = unarmed
 		for w in d.weapons:
 			if w.melee:
@@ -73,7 +76,7 @@ func in_play() -> bool:
 func effective_fight() -> int:
 	if spell_effects.has("blinding_light"):
 		return 0
-	var value := def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
+	var value := def.fight - (1 if treasure_id >= 0 and treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
 	value += 1 if spell_effects.has("potion_strength") else 0
 	if spell_effects.has("petrify"):
 		value = maxi(0, value - 3)
@@ -115,3 +118,7 @@ func effective_shoot() -> int:
 
 func immune_to_poison() -> bool:
 	return def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")
+
+
+func treasure_encumbered() -> bool:
+	return def.shield or ranged != null or melee.id in ["staff", "two_handed"]

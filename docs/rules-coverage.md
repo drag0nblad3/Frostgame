@@ -159,3 +159,7 @@ Inventory follow-up: renamed the UI owner selector to avoid a native Node proper
 ## Scrolls
 
 - pp. 65–66, 95, 104: treasure scrolls identify a spell, cost 250gc to buy and sell for 30gc; caster-only one-slot assignment. Unknown implemented spells use scrolls automatically at result 14 without empowerment; known spells can consume a matching scroll after a failed roll, suppressing failure damage. Scroll casts do not award XP. Out-of-game scrolls and AI insurance choice remain pending; special spell edge cases are subject to further verification.
+
+## Weapon destruction
+
+- p. 118: Decay selects one visible mundane weapon, never natural/unarmed weapons or magic/enhanced weapons. Destroyed weapons remain unavailable for the battle; a figure falls back to another standard melee weapon or unarmed combat. Ranged destruction disables shooting and reloading. Original definitions and campaign equipment are unchanged so mundane weapons are restored on deployment. Weapon choice outside destruction, caster mundane customization and duplicate weapons are pending.

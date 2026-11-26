@@ -34,6 +34,8 @@ static func bonus(f: Figure, stat: String, weapon: String = "") -> int:
 			continue
 		var type: String = info["type"]
 		if type in WEAPONS:
+			if f.destroyed_weapons.has(type):
+				continue
 			if weapon != "" and type != weapon:
 				continue
 			if weapon == "" and type != f.melee.id and (f.ranged == null or type != f.ranged.id):
