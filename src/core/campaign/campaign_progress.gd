@@ -113,10 +113,23 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					scenario_xp += 50
 				elif c.state.museum and victim.def.id == "medium_construct":
 					scenario_xp += 10
+				elif RedKingFire.active(c.state) and victim.def.id=="hrut_warrior":
+					scenario_xp+=10
+				elif RedKingFire.active(c.state) and victim.def.id=="blood_marked_berserker":
+					scenario_xp+=5
 				elif not (RedKingInvestigations.active(c.state) and victim.def.id=="blood_marked_berserker"):
 					kills += 1
 	var secured := c.state.secured_count(side)
-	xp = maxi(0, mini(300, xp + secured * 40 + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
+	var treasure_xp := secured*40
+	if RedKingFire.active(c.state):
+		treasure_xp=0
+		for token in c.state.treasures:
+			if token.secured_by==side:
+				treasure_xp+=60 if token.central else 20
+		for f in c.state.figures:
+			if f.original_side==side and not f.out_of_action:
+				scenario_xp+=5
+	xp = maxi(0, mini(300, xp + treasure_xp + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
 	if RedKingVeil.active(c.state):
 		xp=RedKingVeil.xp(c,side)
 	data.erase("dreams_xp")

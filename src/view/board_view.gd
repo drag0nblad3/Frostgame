@@ -125,6 +125,8 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 			TerrainDressing.statue(root,piece)
 		"temple_column":
 			TerrainDressing.column(root,piece)
+		"red_king_portal":
+			PortalView.build(root,piece)
 		"library_shelf":
 			SiteArt.shelf(root,piece)
 		"arcane_disc","dreams_well":

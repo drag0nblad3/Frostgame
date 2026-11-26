@@ -40,6 +40,13 @@ func push(own: bool) -> bool:
 	var other := c.state.figure(c.state.push_loser if own else c.state.push_winner)
 	var from := moving.pos
 	var old_height := moving.elevation
+	if RedKingVeil.touch(c,moving,dest):
+		clear()
+		return true
+	RedKingFire.portal_contact(c,moving,from,dest,{})
+	if not moving.in_play():
+		clear()
+		return true
 	moving.pos = dest
 	moving.elevation = c.state.board.height_at(dest)
 	moving.disengaged[other.id] = moving.pos.distance_to(other.pos)
@@ -93,6 +100,11 @@ func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []
 func force_contact(info: Dictionary) -> void:
 	var guard: Figure = info["guard"]
 	var from := guard.pos
+	if RedKingVeil.touch(c,guard,info["dest"]):
+		return
+	RedKingFire.portal_contact(c,guard,from,info["dest"],{})
+	if not guard.in_play():
+		return
 	guard.pos = info["dest"]
 	guard.elevation = c.state.board.height_at(guard.pos)
 	c.emit("force_combat", {"id": guard.id, "path": PackedVector2Array([from, guard.pos])})

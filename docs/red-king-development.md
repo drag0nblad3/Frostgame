@@ -46,3 +46,7 @@ Hidden scenario prototype: authored two-player camp, seven searchable offerings 
 ## Act I / The Veil of Unreality
 
 Hidden asymmetric scenario prototype: 24x36 map, three normal treasures, lethal receding veil, phase-specific arrivals for six opposing units, respawns at uncovered edges, reduced treasure movement penalty, single exit edge, and Fractured Reality effects. Opposing target and extra withdrawal use automatic choices; target reassignment UI, selectable adversary control, exact respawn placement, safe AI routing, dangerous-path warnings, and campaign restrictions between Investigations and the optional Veil remain pending. Fixed map and scripted deployment are digital adaptations. The expansion remains locked.
+
+## Act II / Back Into the Fire
+
+Hidden prototype: same-edge corner deployment with initial invisibility, six berserkers around the central locked artefact, three impassable circular portals with elemental contact damage and height-independent sight obstruction, seven Hrut arrival opportunities on turns 2–8, four corner exit zones, and modified experience. Fixed temple layout and AI-selected emergence positions are digital adaptations. Artefact-table choice, voluntary invisibility dismissal UI, complete contact-path coverage (including leap trajectories), exact corner doorway geometry, and campaign integration are still pending. Pack remains locked.

@@ -207,8 +207,13 @@ func explode(p: TerrainPiece) -> void:
 ## Animate movement in chunks, resolving triggers at the actual path location.
 func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var chunk := PackedVector2Array([f.pos])
+	var portal_hits := {}
 	for i in range(1, path.size()):
 		var at := path[i]
+		if RedKingFire.active(c.state):
+			RedKingFire.portal_contact(c,f,path[i-1],at,portal_hits)
+			if not f.in_play():
+				return false
 		if RedKingVeil.active(c.state):
 			f.pos=path[i-1]
 			f.elevation=c.state.board.height_at(f.pos)

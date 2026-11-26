@@ -63,6 +63,10 @@ func points(f: Figure, t: Figure, id: String, first_only: bool = false) -> Array
 func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, sites: bool = true) -> void:
 	if RedKingVeil.touch(c,t,at):
 		return
+	# A teleport has no intervening path; test its landing.
+	RedKingFire.portal_contact(c,t,at,at,{})
+	if not t.in_play():
+		return
 	t.spell_effects.erase("bones_of_the_earth")
 	var old := t.pos
 	var height := t.elevation
@@ -89,12 +93,18 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var origin := t.pos
 	var last := origin
 	var highest := t.elevation
+	var portal_hits := {}
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
 		if RedKingVeil.touch(c,t,at):
 			return
 		if BattleBoundary.blocks_segment(b.boundaries,origin,at,"movement",t) or ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
+			if not b.can_stand(at,Figure.BASE_RADIUS):
+				RedKingFire.portal_contact(c,t,last,at,portal_hits)
 			break
+		RedKingFire.portal_contact(c,t,last,at,portal_hits)
+		if not t.in_play():
+			return
 		# Other figures don't interrupt the trajectory; choose a legal final base.
 		if landing(t, at, true):
 			last = at

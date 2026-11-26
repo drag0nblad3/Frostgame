@@ -13,6 +13,12 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"artefact_unlock":
+			return "%s attempts to unlock the artefact: %s."%[name_of(s,d["id"]),"success" if d["success"] else "failed"]
+		"portal_contact":
+			return "%s touches a portal (%d elemental damage)."%[name_of(s,d["id"]),d["amount"]]
+		"portal_emergence":
+			return "A Hrut warrior emerges from a portal."
 		"veil_contact":
 			return "%s touches the veil and is taken out of action!"%name_of(s,d["id"])
 		"fractured_reality":

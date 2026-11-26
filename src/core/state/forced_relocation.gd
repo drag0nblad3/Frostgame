@@ -33,6 +33,9 @@ static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 	var at := destination(c.state,f,desired)
 	if RedKingVeil.touch(c,f,at):
 		return true
+	RedKingFire.portal_contact(c,f,at,at,{})
+	if not f.in_play():
+		return true
 	if at.is_equal_approx(f.pos):
 		return false
 	var old := f.pos

@@ -42,6 +42,11 @@ static func progress(s: GameState) -> String:
 		else:
 			ground += 1
 	var text := "%d secured · %d carried · %d unclaimed" % [secured, carrying, ground]
+	if RedKingFire.active(s):
+		var artefact := s.treasure(0)
+		if artefact!=null and artefact.frozen:
+			text+=" | Artefact locked"
+		text+=" | Corner exits"
 	if RedKingVeil.active(s):
 		text+=" | Veil %.0f / %.0f″ · Exit south"%[float(s.scenario_data.get("veil_y",12.0)),s.board.size.y]
 	if RedKingInvestigations.active(s):
