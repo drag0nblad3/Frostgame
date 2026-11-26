@@ -34,7 +34,7 @@ func _compute_open(n: Vector3i) -> bool:
 		return false
 	var at := layout.world(n)
 	for other in others:
-		if absf(other.elevation-at.y)<0.5 and (other.pos.distance_to(layout.point(n))<Contact.OVERLAP or (running and mover!=null and other.side!=mover.side and other.pos.distance_to(layout.point(n))<1.001)):
+		if absf(other.elevation-at.y)<0.5 and (other.pos.distance_to(layout.point(n))<Contact.OVERLAP or (WormRider.ignored(mover,other) and other.pos.distance_to(layout.point(n))<=Contact.CONTACT) or (running and mover!=null and other.side!=mover.side and other.pos.distance_to(layout.point(n))<1.001)):
 			return false
 	return true
 

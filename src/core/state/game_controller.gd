@@ -245,7 +245,7 @@ func can_act(for_fight: bool = false) -> bool:
 
 func can_fight(target_id: int) -> bool:
 	var t := state.figure(target_id)
-	return can_act(true) and not state.active().spell_effects.has("blinding_light") and t != null and not (RedKingMadMan.hunter(state.active()) and RedKingMadMan.is_ryce(t)) and Contact.enemies_of(state.figures, state.active()).has(t)
+	return can_act(true) and not state.active().spell_effects.has("blinding_light") and t != null and not (RedKingMadMan.hunter(state.active()) and RedKingMadMan.is_ryce(t)) and not WormRider.ignored(state.active(),t) and Contact.enemies_of(state.figures,state.active()).has(t)
 
 
 func fight(target_id: int) -> bool:

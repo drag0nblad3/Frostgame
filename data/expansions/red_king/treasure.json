@@ -662,10 +662,11 @@
       "buy": 0,
       "sell": 200,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 20,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_golden_bottle_of_yens": {
       "name": "Golden Bottle of Yens",

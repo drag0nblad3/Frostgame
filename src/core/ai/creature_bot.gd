@@ -7,6 +7,8 @@ static func weakest(s: GameState, f: Figure,avoid_mask: bool=true) -> Figure:
 	var target: Figure = null
 	var alternative: Figure=null
 	for enemy in Contact.enemies_of(s.figures, f):
+		if WormRider.ignored(f,enemy):
+			continue
 		if target == null or enemy.health < target.health or (enemy.health == target.health and enemy.id < target.id):
 			target = enemy
 		if not masked(enemy) and (alternative==null or enemy.health<alternative.health or (enemy.health==alternative.health and enemy.id<alternative.id)):
@@ -29,7 +31,7 @@ static func apply_mask_cost(s: GameState,f: Figure,target: Figure) -> void:
 static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 	var target: Figure = null
 	for t in c.state.figures:
-		if t.ring_side!=f.ring_side or t.side < 0 or not t.in_play():
+		if t.ring_side!=f.ring_side or t.side<0 or not t.in_play() or WormRider.ignored(f,t):
 			continue
 		var normal := IllusionRules.visible_to(c.state.figures,f,t) and LineOfSight.check_figures(c.state.board,f,t).clear
 		if not normal and (shot or (not CreatureSenses.detects(f,t) and not RedKingSquatter.scent(c.state,f,t))):

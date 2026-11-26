@@ -367,3 +367,20 @@ func test_vampire_staff_donor_deserts() -> void:
 	check(t.used_gear.get(VampireStaff.DESERTED,false))
 	check(t.exited)
 	check(not t.out_of_action)
+
+
+func test_worm_rider_spawn_at_turn_end() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],LoadedDice.new([17]))
+	c.state.creature_db=db()
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.items.append({"gear":WormRider.ITEM,"gear_info":RedKingRewards.catalog()[WormRider.ITEM]})
+	check(WormRider.summon(c,Vector2(15,15)))
+	check_eq(c.state.figures.size(),1)
+	WormRider.end_turn(c)
+	check_eq(c.state.figures.size(),2)
+	var worm: Figure=c.state.figures.back()
+	check_eq(worm.def.id,"giant_worm")
+	check(WormRider.ignored(worm,f))
+	check(not ActiveGear.ready(f,WormRider.ITEM))

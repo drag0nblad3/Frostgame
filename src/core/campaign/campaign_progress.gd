@@ -230,6 +230,13 @@ func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -
 				report.append("%s was lost in the Ringworld."%f.label())
 				break
 			var raw := dice.d20()
+			if raw==1 and ActiveGear.has(f,WormRider.ITEM):
+				unit["dead"]=true
+				unit["death_game"]=data["games"]
+				unit["worm_devoured"]=true
+				CampaignInventory.lose_owned(data,f.campaign_id)
+				report.append("%s was devoured by worms and cannot be revived."%f.label())
+				break
 			if f.campaign_id==plant_target:
 				raw=RedKingCampaignGear.plant_roll(data,raw,report)
 			if f.def.role=="wizard" and data.get("red_king_survival_reroll",false):

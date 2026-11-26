@@ -10,7 +10,7 @@ static func preserved(d: Dictionary, u: Dictionary) -> bool:
 
 
 static func recently_dead(d: Dictionary, u: Dictionary) -> bool:
-	return u["dead"] and (int(u.get("death_game", -1)) == int(d["games"]) or preserved(d, u))
+	return u["dead"] and not u.get("worm_devoured",false) and (int(u.get("death_game", -1)) == int(d["games"]) or preserved(d, u))
 
 
 static func choices(d: Dictionary, index: int, db: FigureDb) -> Array[int]:
