@@ -27,7 +27,7 @@ func destination(own: bool) -> Variant:
 	var dest := moving.pos + (moving.pos - other.pos).normalized()
 	if ScenarioObjectives.inside_well(s, dest):
 		return dest
-	if c.state.board.height_at(dest) > moving.elevation + 0.001 or not _clear_path(moving, dest):
+	if c.state.board.height_at(dest) > moving.elevation + 0.001 or not _clear_path(moving, dest,not own):
 		return null
 	return dest
 
@@ -40,6 +40,14 @@ func push(own: bool) -> bool:
 	var other := c.state.figure(c.state.push_loser if own else c.state.push_winner)
 	var from := moving.pos
 	var old_height := moving.elevation
+	if RedKingBridge.active(c.state) and c.state.board.over_void(dest,Figure.BASE_RADIUS):
+		var last := from
+		for i in range(1,5):
+			var at := from.lerp(dest,float(i)/4.0)
+			if RedKingBridge.forced_void(c,moving,at,last):
+				clear()
+				return true
+			last=at
 	if RedKingVeil.touch(c,moving,dest):
 		clear()
 		return true
@@ -64,11 +72,13 @@ func push(own: bool) -> bool:
 	return true
 
 
-func _clear_path(moving: Figure, dest: Vector2) -> bool:
+func _clear_path(moving: Figure, dest: Vector2,allow_void: bool=false) -> bool:
 	for i in range(1, 5):
 		var p := moving.pos.lerp(dest, i / 4.0)
 		if BattleBoundary.blocks_segment(c.state.board.boundaries,moving.pos,p,"movement",moving) or BattleBoundary.blocks_position(c.state.board.boundaries,p,moving):
 			return false
+		if allow_void and RedKingBridge.active(c.state) and c.state.board.over_void(p,Figure.BASE_RADIUS):
+			return true
 		if not c.state.board.can_stand(p, Figure.BASE_RADIUS):
 			return false
 		for f in c.state.figures:

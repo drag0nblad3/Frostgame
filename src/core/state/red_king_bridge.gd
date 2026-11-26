@@ -120,3 +120,13 @@ static func exit_xp(s: GameState,side: int) -> int:
 		if f.original_side==side and f.exited:
 			xp+=50 if f.def.role=="wizard" else (30 if f.def.role=="apprentice" else 20)
 	return xp
+
+
+static func crosses_void(board: Board,a: Vector2,b: Vector2) -> bool:
+	if board.void_regions.is_empty():
+		return false
+	var steps := maxi(1,ceili(a.distance_to(b)/0.2))
+	for i in range(steps+1):
+		if board.over_void(a.lerp(b,float(i)/steps),Figure.BASE_RADIUS):
+			return true
+	return false

@@ -29,6 +29,8 @@ func can_land(f: Figure, t: Figure, id: String, at: Vector2) -> bool:
 		return f == t and f.pos.distance_to(at) <= 24.0 and LineOfSight.check(b, f.pos, at).clear
 	if id != "leap" or t.side != f.side:
 		return false
+	if RedKingBridge.crosses_void(b,t.pos,at) or BattleBoundary.blocks_segment(b.boundaries,t.pos,at,"movement",t):
+		return false
 	if RedKingSinkhole.active(c.state) and Geometry2D.get_closest_point_to_segment(RedKingSinkhole.center(c.state),t.pos,at).distance_to(RedKingSinkhole.center(c.state))<RedKingSinkhole.RADIUS+Figure.BASE_RADIUS-0.001:
 		return false
 	var delta := Vector2(t.pos.distance_to(at), b.height_at(at) - t.elevation)
@@ -99,6 +101,8 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var portal_hits := {}
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
+		if not BattleBoundary.blocks_segment(b.boundaries,last,at,"movement",t) and RedKingBridge.forced_void(c,t,at,last):
+			return
 		if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
 			return
 		if RedKingSinkhole.touches(c.state,at) and not RedKingSinkhole.touches(c.state,last):

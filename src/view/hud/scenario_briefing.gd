@@ -49,6 +49,11 @@ static func progress(s: GameState) -> String:
 			text+=" | Ryce fleeing"
 		elif rescue!=null:
 			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
+	if RedKingBridge.active(s):
+		text+=" | Bridge exit only · Void TN16"
+		var rolls: Array=s.scenario_data.get("bridge_veil_rolls",[])
+		if rolls.size()==2:
+			text+=" · Veil %d–%d"%[rolls[0],rolls[1]]
 	if RedKingTethers.active(s):
 		text+=" | Pylons: %d/5 intact"%RedKingTethers.remaining(s)
 		if RedKingTethers.remaining(s)>0:

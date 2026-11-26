@@ -30,6 +30,8 @@ static func destination(s: GameState,f: Figure,desired: Vector2) -> Vector2:
 static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 	if not f.in_play() or not c.state.board.floor_layout.is_empty():
 		return false
+	if RedKingBridge.forced_void(c,f,desired,f.pos):
+		return true
 	var at := destination(c.state,f,desired)
 	if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
 		return true

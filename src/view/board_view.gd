@@ -62,10 +62,12 @@ func sync_terrain(board: Board) -> void:
 		build(board)
 		return
 	var scenario := board.id if scenario_id.is_empty() else scenario_id
-	var boundary_key := str(board.boundaries)+str(board.edge_links)
+	var boundary_key := str(board.boundaries)+str(board.edge_links)+str(board.void_regions)
 	if _boundary_view==null or _boundary_key!=boundary_key:
 		_remove(_boundary_view)
 		_boundary_view=BoundaryView.build(board)
+		if not board.void_regions.is_empty():
+			_boundary_view.add_child(VoidView.build(board))
 		add_child(_boundary_view)
 		_boundary_key=boundary_key
 	var ground_parts: Array[String]=[]
