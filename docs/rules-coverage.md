@@ -255,3 +255,7 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ## Philtre of Fury
 
 - p.91: +1 Fight and +1 melee damage. While an eligible visible enemy is present, disables unrelated actions and exit, restricts movement destinations to contact with the nearest eligible enemy when reachable, otherwise to positions advancing along the movement distance field, and prevents ending the activation while legal movement/fighting remains. AI uses the same destinations. Already-engaged enemies are fought first; if blocked with no advancing route, ending is permitted. The shortest-path interpretation and tie breaking are digital approximations. 
+
+## Active magic equipment
+
+- pp.100–102: Staff of Casting identifies a random spell on discovery/purchase and adds +1 to that roll; Gloves of Casting and Wand of Light can be armed before a cast, consumed once per game (wand automatically selects higher die). Amulet of Resistance adds +4 after the roll, even for soldiers; AI uses it when sufficient by itself. Ring of Teleportation spends a normal action to move up to 8 inches without entering/leaving combat or exhausting remaining actions. Horn of Destruction selects a Crumble terrain target without a cast roll. Rechargeable items retain campaign ownership but reset used flags on deployment. Casting gloves and wand currently mutually exclusive per cast, wand die selection automatic; these are simplifications. Existing incomplete Crumble geometry applies to horn.

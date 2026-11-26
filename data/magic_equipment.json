@@ -245,7 +245,7 @@
     "buy": 500,
     "sell": 200,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_boots_speed": {
     "name": "Boots of Speed",
@@ -283,7 +283,7 @@
     "buy": 400,
     "sell": 150,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_gloves_strength": {
     "name": "Gloves of Strength",
@@ -311,7 +311,7 @@
     "buy": 300,
     "sell": 100,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_construct_hammer": {
     "name": "Construct Hammer",
@@ -327,7 +327,7 @@
     "buy": 500,
     "sell": 200,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_wand_light": {
     "name": "Wand of Light",
@@ -335,7 +335,7 @@
     "buy": 400,
     "sell": 200,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_horn_destruction": {
     "name": "Horn of Destruction",
@@ -343,7 +343,7 @@
     "buy": 300,
     "sell": 100,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_fate_stone": {
     "name": "Fate Stone",

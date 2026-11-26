@@ -36,7 +36,10 @@ static func identify(d: Dictionary, reward: Dictionary, dice: Dice) -> void:
 			d["loot"].append({"kind": "scroll", "scroll": CampaignProgress.random_spell(dice), "owner": -1})
 	elif kind in ["magic arms/armour", "magic item"]:
 		var table := MagicEquipment.ARM_TABLE if kind == "magic arms/armour" else MagicEquipment.ITEM_TABLE
-		d["loot"].append({"kind": "gear", "gear": table[dice.d20() - 1], "owner": -1})
+		var item := {"kind": "gear", "gear": table[dice.d20() - 1], "owner": -1}
+		if item["gear"] == "gear_staff_casting":
+			item["casting_spell"] = CampaignProgress.random_spell(dice)
+		d["loot"].append(item)
 	elif kind != "":
 		d["loot"].append(reward)
 
@@ -94,7 +97,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	return true
 
 
-static func buy(d: Dictionary, id: String) -> bool:
+static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 	var potions := catalog()
 	if d.is_empty() or not potions.has(id):
 		return false
@@ -105,7 +108,10 @@ static func buy(d: Dictionary, id: String) -> bool:
 	if id.begins_with("scroll_"):
 		d["loot"].append({"kind": "scroll", "scroll": id.trim_prefix("scroll_"), "owner": -1})
 	elif id.begins_with("gear_"):
-		d["loot"].append({"kind": "gear", "gear": id, "owner": -1})
+		var item := {"kind": "gear", "gear": id, "owner": -1}
+		if id == "gear_staff_casting":
+			item["casting_spell"] = CampaignProgress.random_spell(dice if dice != null else Dice.new(0))
+		d["loot"].append(item)
 	else:
 		d["loot"].append({"kind": "potion", "potion": id, "owner": -1})
 	return true
@@ -133,6 +139,8 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 			items.append({"scroll": item["scroll"], "campaign_item": true})
 		elif item["kind"] == "gear":
 			var gear := {"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true}
+			if item["gear"] == "gear_staff_casting":
+				gear["casting_spell"] = item.get("casting_spell", "")
 			if item["gear"] == PowerPool.ORB:
 				gear["power_left"] = PowerPool.remaining(item)
 			items.append(gear)

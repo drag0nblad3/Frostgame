@@ -256,11 +256,19 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll := not known and ScrollActions.consume(f, id)
 	var raw := 14 if scroll else c.dice.d20()
+	var gear_bonus := ActiveGear.casting_bonus(f, id)
+	if not scroll and f.next_cast_gear == "gear_gloves_casting" and ActiveGear.spend(f, f.next_cast_gear):
+		gear_bonus += 5
+	elif not scroll and f.next_cast_gear == "gear_wand_light" and ActiveGear.spend(f, f.next_cast_gear):
+		var alternate := c.dice.d20()
+		c.emit("wand_roll", {"id": f.id, "first": raw, "second": alternate})
+		raw = maxi(raw, alternate)
+	f.next_cast_gear = ""
 	var plane_penalty := PlaneWalk.penalty(f, c.state.turn) if id == "plane_walk" else 0
 	if id == "plane_walk":
 		PlaneWalk.record(f, c.state.turn)
 	var empowered := not scroll and f.spell_effects.erase("potion_empowerment")
-	var total := 14 if scroll else CastingRoll.modified(raw, (4 if empowered else 0) + plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
+	var total := 14 if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	c._spend(f)
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll, "cordial": empowered}
@@ -488,6 +496,7 @@ func on_activate(f: Figure) -> void:
 
 
 func on_end_activation(f: Figure) -> void:
+	f.next_cast_gear = ""
 	f.spell_effects.erase("potion_fire_breath")
 	f.spell_effects.erase("potion_burrowing")
 	f.petrified_skip = false

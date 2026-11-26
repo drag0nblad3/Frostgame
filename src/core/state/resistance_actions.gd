@@ -17,11 +17,17 @@ func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0, anyone: bool = 
 	var max_health := t.health + PowerPool.available(t) if (caster or anyone) and raw != 1 and raw != 20 and t.in_play() else 0
 	var needed := maxi(0, tn - raw - mini(mod, 10))
 	var data := {"id": t.id, "raw": raw, "mod": mini(mod, 10), "tn": tn, "max": max_health}
-	if not success and max_health > 0 and t.side == c.state.reaction_side:
+	var amulet := not success and raw != 1 and ActiveGear.ready(t, "gear_amulet_resistance")
+	if not success and (max_health > 0 or amulet) and t.side == c.state.reaction_side:
 		c.state.pending_resistance = data
 		continuation = done
 		c.emit("resistance_offer", data.duplicate())
 		return
+	if amulet and needed <= 4:
+		ActiveGear.spend(t, "gear_amulet_resistance")
+		data["mod"] = int(data["mod"]) + 4
+		needed = maxi(0, needed - 4)
+		success = true
 	var spend := 0
 	if not success and needed <= mini(2, max_health) and needed < t.health + PowerPool.available(t):
 		spend = needed
@@ -36,6 +42,17 @@ func answer(spend: int) -> bool:
 	continuation = Callable()
 	c.state.pending_resistance = {}
 	_resolve(p, spend, done)
+	return true
+
+
+func use_amulet() -> bool:
+	var p := c.state.pending_resistance
+	if p.is_empty() or int(p["raw"]) == 1:
+		return false
+	var t := c.state.figure(p["id"])
+	if not ActiveGear.spend(t, "gear_amulet_resistance"):
+		return false
+	p["mod"] = int(p["mod"]) + 4
 	return true
 
 

@@ -44,7 +44,7 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	shop = OptionButton.new()
 	add_child(shop)
 	_button("Buy item", func() -> void:
-		if shop.item_count > 0 and CampaignInventory.buy(campaign.data, str(shop.get_selected_metadata())):
+		if shop.item_count > 0 and CampaignInventory.buy(campaign.data, str(shop.get_selected_metadata()), campaign_dice):
 			changed.call())
 
 
@@ -65,6 +65,8 @@ func refresh() -> void:
 		var info: Dictionary = catalog[CampaignInventory.item_id(item)]
 		var assigned := int(item.get("owner", -1))
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
+		if CampaignInventory.item_id(item) == "gear_staff_casting":
+			suffix += " · " + str(item.get("casting_spell", "unknown")).replace("_", " ").capitalize()
 		if CampaignInventory.item_id(item) == PowerPool.ORB:
 			suffix += " · %d power" % PowerPool.remaining(item)
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])

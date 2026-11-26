@@ -75,6 +75,9 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
+		if GearActions.can_use(c, id):
+			available.append(id)
 	for item in f.items:
 		var id := str(item.get("potion", ""))
 		for t in c.state.figures:
@@ -164,6 +167,9 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"gear_teleport":
+			points.assign(GearActions.teleport_points(c))
+			hint = "Choose a destination within 8 inches."
 		"potion_point":
 			points.assign(c._potions.points(selected_potion))
 			hint = "Choose the potion destination."
@@ -309,6 +315,8 @@ func preview() -> void:
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
+		if f.next_cast_gear != "":
+			hint = "Armed: %s. " % f.next_cast_gear.trim_prefix("gear_").replace("_", " ").capitalize() + hint
 		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", hint]
 	if c.state.group.in_progress():
 		hint = ("GROUP: Movement · " if c.state.group.movement_pass() else "GROUP: Second action · ") + hint
@@ -324,6 +332,28 @@ func action(key: String) -> bool:
 		return false
 	if key in ["coat_melee", "coat_ranged"]:
 		return c._potions.coat(selected_potion, key == "coat_ranged")
+	if key in ["gear_gloves_casting", "gear_wand_light"]:
+		GearActions.arm(c, key)
+		preview()
+		return false
+	if key == "gear_ring_teleportation":
+		mode = "gear_teleport"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key == "gear_horn_destruction":
+		counter_choices = c._magic.crumble.options(c.state.active())
+		if counter_choices.is_empty():
+			return false
+		selected_spell = "horn"
+		counter_index = 0
+		mode = "counter_select"
+		available.assign(["spell_cancel", "counter_confirm"])
+		if counter_choices.size() > 1:
+			available.append("counter_previous")
+			available.append("counter_next")
+		preview()
+		return false
 	if key.begins_with("potion_"):
 		selected_potion = key.trim_prefix("potion_")
 		if selected_potion in PotionActions.POINTS:
@@ -381,6 +411,11 @@ func action(key: String) -> bool:
 			_resist_buttons()
 			preview()
 			return false
+		"resist_amulet":
+			c._magic.resistance.use_amulet()
+			_resist_buttons()
+			preview()
+			return false
 		"resist_confirm":
 			return c._magic.resistance.answer(empower)
 		"counter_previous", "counter_next":
@@ -388,6 +423,8 @@ func action(key: String) -> bool:
 			preview()
 			return false
 		"counter_confirm":
+			if selected_spell == "horn":
+				return GearActions.horn(c, counter_choices[counter_index]["piece"])
 			return c._magic.start_counter(selected_spell, counter_index)
 		"rotate_spell":
 			spell_rotated = not spell_rotated
@@ -502,6 +539,8 @@ func tap(screen: Vector2) -> bool:
 		var t := c.state.figure(spell_first)
 		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return c._magic.start_move(selected_spell, spell_first, destination)
+	if mode == "gear_teleport":
+		return GearActions.teleport(c, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "potion_point":
 		return c._potions.use_at(selected_potion, at.round() if selected_potion == "explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "spell_point":
@@ -579,6 +618,9 @@ func _surface_at(screen: Vector2) -> Variant:
 
 func _resist_buttons() -> void:
 	available.assign(["resist_confirm"])
+	var p := c.state.pending_resistance
+	if int(p["raw"]) != 1 and ActiveGear.ready(c.state.figure(p["id"]), "gear_amulet_resistance"):
+		available.append("resist_amulet")
 	if empower < int(c.state.pending_resistance["max"]):
 		available.append("resist_plus")
 	if empower > 0:
