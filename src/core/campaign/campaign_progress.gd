@@ -91,7 +91,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
-		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight"] and int(e["side"]) == side:
+		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp"] and int(e["side"]) == side:
 			scenario_xp += int(e["xp"])
 		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
 			var victim := c.state.figure(e["id"])

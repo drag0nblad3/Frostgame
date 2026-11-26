@@ -209,6 +209,14 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var chunk := PackedVector2Array([f.pos])
 	for i in range(1, path.size()):
 		var at := path[i]
+		if RedKingSquatter.active(c.state):
+			# The last reached position is the door-side landing on a failed test.
+			f.pos=path[i-1]
+			f.elevation=c.state.board.height_at(f.pos)
+			if not RedKingSquatter.permit_step(c,f,at):
+				if chunk.size()>1:
+					c.emit("move",{"id":f.id,"path":chunk,"cost":cost})
+				return false
 		var occupied := false
 		if c.state.scenario_special == "haunted_houses" and not c.state.discovered_huts.is_empty():
 			for other in c.state.figures:

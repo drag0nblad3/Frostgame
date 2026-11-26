@@ -74,6 +74,7 @@ func activate(id: int) -> bool:
 		f.non_moves = 0
 		f.used_stored_action = false
 	emit("activate", {"id": id})
+	RedKingSquatter.record_contact(self)
 	if not state.group.in_progress() or state.group.movement_pass():
 		CreatureEffects.activation(self,f)
 	if not f.in_play():
@@ -194,6 +195,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
 	ScenarioSites.end_move(self, f)
+	RedKingSquatter.record_contact(self)
 	_magic.illusions.after_move(f)
 	return true
 
@@ -373,6 +375,7 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		_loot.drop_on_death(f)
 		emit("out_of_action", {"id": f.id, "by": by.id})
 		ScenarioGenie.record_kill(self, f, by)
+		RedKingSquatter.record_kill(self,f,by)
 	else:
 		CreatureEffects.after_damage(self,f)
 

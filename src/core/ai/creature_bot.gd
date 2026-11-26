@@ -17,7 +17,7 @@ static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 		if t.side < 0 or not t.in_play():
 			continue
 		var normal := IllusionRules.visible_to(c.state.figures,f,t) and LineOfSight.check_figures(c.state.board,f,t).clear
-		if not normal and (shot or not CreatureSenses.detects(f,t)):
+		if not normal and (shot or (not CreatureSenses.detects(f,t) and not RedKingSquatter.scent(c.state,f,t))):
 			continue
 		if shot and not c.can_shoot(t.id):
 			continue
@@ -27,6 +27,8 @@ static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 
 
 static func play(c: GameController, f: Figure) -> void:
+	if RedKingSquatter.dormant(c,f):
+		return
 	if ScenarioGenie.flee(c, f):
 		return
 	for i in 2:
@@ -56,6 +58,10 @@ static func play(c: GameController, f: Figure) -> void:
 		var node: Variant = null
 		if target != null:
 			node = BotTargets.advance_node(c.state, f, r, target)
+		elif RedKingSquatter.active(c.state) and f.def.id=="blood_marked_berserker":
+			var treasure: Variant=RedKingSquatter.treasure_target(c.state,f)
+			if treasure!=null:
+				node=RedKingSquatter.approach_treasure(c.state,f,r,treasure)
 		elif i == 0 and f.moves_taken == 0:
 			var direction := PackRules.heading(c, f)
 			var grid := MoveGrid.new(c.state.board, f, c.state.figures)

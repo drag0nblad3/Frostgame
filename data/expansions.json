@@ -45,6 +45,13 @@
       },
       "catalogs": {
         "figures": "res://data/expansions/red_king/figures.json"
+      },
+      "briefings": {
+        "red_king_squatter": [
+          "The Squatter",
+          "Explore a three-room ruined dwelling and retrieve treasure guarded by a sleeping troll.",
+          "The troll awakens when a warband approaches. Entering its central chamber requires a Will test, and berserkers arrive from the corners during the first six turns."
+        ]
       }
     }
   },

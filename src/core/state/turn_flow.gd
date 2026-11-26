@@ -92,6 +92,7 @@ func _settle() -> void:
 		if s.phase == Phase.CREATURE:
 			_c._magic.on_end_turn()
 			CreatureEffects.end_turn(_c)
+			RedKingSquatter.end_turn(_c)
 			_c._encounters.on_end_turn()
 			start_turn()
 			return
