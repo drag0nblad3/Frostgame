@@ -13,6 +13,8 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"pack_start":
+			return "%s leads a pack of %d creatures." % [name_of(s, d["id"]), d["members"].size()]
 		"null_field":
 			return "%s loses ongoing magic in the null field." % name_of(s, d["id"])
 		"tower_entered":

@@ -39,6 +39,10 @@ var pending_combat := {}
 var storm_penalty := 0
 var words: Array[Dictionary] = []
 var fast_acts := {}
+var pack_queue: Array[int] = []
+var pack_leader := -1
+var pack_target := -1
+var pack_heading := Vector2.ZERO
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var telescope_ready := {}
 var pending_initiative := false
@@ -102,6 +106,11 @@ func side_figures(side: int) -> Array[Figure]:
 func waiting(side: int) -> Array[Figure]:
 	if phase == Phase.CREATURE:
 		var creatures: Array[Figure] = []
+		for id in pack_queue:
+			var member := figure(id)
+			if member != null and member.in_play() and member.side < 0 and not member.activated:
+				creatures.append(member)
+				return creatures
 		for f in side_figures(-1):
 			if not f.activated:
 				creatures.append(f)

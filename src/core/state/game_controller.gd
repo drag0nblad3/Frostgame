@@ -53,6 +53,8 @@ func activate(id: int) -> bool:
 	var f := state.figure(id)
 	if state.active_id != -1 or f == null or not activatable().has(f):
 		return false
+	f = PackRules.select(self, f)
+	id = f.id
 	state.active_id = id
 	var time_walk := f.spell_effects.has("time_walk") and f.walk_phases.has(state.phase)
 	var fast := state.is_fast(f)
@@ -289,6 +291,7 @@ func end_activation() -> void:
 		return
 	f.activated = true
 	_magic.on_end_activation(f)
+	PackRules.finish(state, f)
 	_flow.after_activation()
 
 
