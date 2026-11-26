@@ -15,6 +15,7 @@ var boundaries: Array[Dictionary]=[]
 var edge_links: Array[Dictionary]=[]
 var wrap_short_edges := false
 var ringworld := false
+var low_gravity := false
 ## Regions with no traversable surface at any elevation.
 var void_regions: Array[Rect2]=[]
 
