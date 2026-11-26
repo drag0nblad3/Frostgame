@@ -236,6 +236,8 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 				gear["power_left"] = PowerPool.remaining(item)
 			if item["gear"]==RedKingMaterials.FANGS:
 				gear["uses"]=RedKingMaterials.amount(item)
+			if item["gear"]==DeathMask.ITEM:
+				gear["mask_start_worn"]=bool(item.get("mask_start_worn",false))
 			if item.get("ivory_graft",false):
 				gear["ivory_graft"]=true
 			if item["gear"]==RedKingCampaignGear.POTION_STAFF and not str(item.get("stored_potion","")).is_empty():
@@ -343,4 +345,14 @@ static func graft_ivory(d: Dictionary,index: int,staff_index: int) -> bool:
 	d["loot"][staff_index]["ivory_graft"]=true
 	d["gold"]=int(d["gold"])-500
 	d["loot"].remove_at(index)
+	return true
+
+
+static func toggle_mask_start(d: Dictionary,index: int) -> bool:
+	if index<0 or index>=d.get("loot",[]).size():
+		return false
+	var item: Dictionary=d["loot"][index]
+	if item.get("gear","")!=DeathMask.ITEM or not item.get("unlocked",false) or item.get("ragged_sealed",false):
+		return false
+	item["mask_start_worn"]=not item.get("mask_start_worn",false)
 	return true

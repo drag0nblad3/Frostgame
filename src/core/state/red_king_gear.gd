@@ -46,7 +46,7 @@ static func before_fight(figures: Array[Figure],f: Figure,target: Figure) -> Dic
 
 static func after_fight(c: GameController,f: Figure,target: Figure,gear: Dictionary,raw: int,damage: int,actual: int,winner: int) -> void:
 	if gear["soul"] and actual>0:
-		if not target.def.traits.has("undead") and not target.def.traits.has("construct") and not target.def.traits.has("large"):
+		if not target.is_undead() and not target.def.traits.has("construct") and not target.def.traits.has("large"):
 			target.used_gear["rk_soulchill_fight"]=int(target.used_gear.get("rk_soulchill_fight",0))+1
 		if target.health<=0:
 			f.used_gear["rk_soulchill_will"]=int(f.used_gear.get("rk_soulchill_will",0))+1

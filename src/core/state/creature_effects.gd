@@ -22,7 +22,7 @@ static func activation(c: GameController,f: Figure) -> void:
 	for source in c.state.figures:
 		if source==f or source.ring_side!=f.ring_side or not source.in_play():
 			continue
-		if source.def.traits.has("aura_of_pain") and Shooting.distance(f,source)<=6.0 and not f.is_demon() and not f.def.traits.has("undead") and not f.def.traits.has("construct"):
+		if source.def.traits.has("aura_of_pain") and Shooting.distance(f,source)<=6.0 and not f.is_demon() and not f.is_undead() and not f.def.traits.has("construct"):
 			var roll := c.dice.d20()
 			var success := StatRoll.succeeds(roll,f.effective_will()+f.roll_penalty(),12)
 			c.emit("creature_test",{"id":f.id,"source":source.id,"trait":"aura_of_pain","roll":roll,"success":success})

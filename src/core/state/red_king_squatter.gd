@@ -52,7 +52,7 @@ static func permit_step(c: GameController,f: Figure,at: Vector2) -> bool:
 		return true
 	var passed: Dictionary=s.scenario_data.get("squatter_passed",{})
 	if not passed.has(f.id):
-		var automatic := f.def.traits.has("undead") or f.def.traits.has("construct")
+		var automatic := f.is_undead() or f.def.traits.has("construct")
 		var roll := 20 if automatic else c.dice.d20()
 		var success := automatic or StatRoll.succeeds(roll,f.effective_will()+f.roll_penalty(),14)
 		c.emit("squatter_will",{"id":f.id,"roll":roll,"success":success})

@@ -237,7 +237,7 @@ func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -
 				RaggedWarbands.soldier_survival(unit,raw)
 				report.append("%s #%d: %s."%[f.label(),f.campaign_id+1,"separated from the warband" if unit.get("ragged_absent",false) else "recovered"])
 				break
-			var roll := raw + (1 if f.def.role == "wizard" else 0)
+			var roll := raw + (1 if f.def.role=="wizard" and not f.used_gear.get(DeathMask.EVER,false) else 0)
 			if f.def.role=="wizard" and ActiveGear.has(f,"gear_rk_ring_of_destiny"):
 				roll=RedKingGear.destiny_survival(roll)
 			var outcome := "recovered"

@@ -126,7 +126,7 @@ func effective_will() -> int:
 
 
 func wounded() -> bool:
-	if battle_ref == null or def.traits.has("undead") or def.traits.has("construct") or health <= 0 or health >= def.health:
+	if battle_ref == null or is_undead() or def.traits.has("construct") or health <= 0 or health >= def.health:
 		return false
 	var s: GameState = battle_ref.get_ref()
 	return s != null and s.wounded_rules and health <= (2 if MagicEquipment.bonus(self,"vigour")>0 else 4)
@@ -148,7 +148,7 @@ func effective_shoot() -> int:
 
 
 func immune_to_poison() -> bool:
-	return MagicEquipment.bonus(self,"poison_immunity")>0 or def.traits.has("immune_poison") or def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")
+	return MagicEquipment.bonus(self,"poison_immunity")>0 or def.traits.has("immune_poison") or is_undead() or def.traits.has("construct") or def.traits.has("demon")
 
 
 func treasure_encumbered() -> bool:
@@ -168,7 +168,7 @@ func is_demon() -> bool:
 
 
 func insects_immune() -> bool:
-	return def.traits.has("large") or def.traits.has("undead") or def.traits.has("construct")
+	return def.traits.has("large") or is_undead() or def.traits.has("construct")
 
 
 func affected_by_insects() -> bool:
@@ -211,3 +211,7 @@ func mind_locked() -> bool:
 
 func has_horns() -> bool:
 	return def.traits.has("horns") or ActiveGear.has(self,"gear_rk_construct_spikes")
+
+
+func is_undead() -> bool:
+	return def.traits.has("undead") or DeathMask.wearing(self)

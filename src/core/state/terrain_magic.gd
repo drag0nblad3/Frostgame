@@ -44,7 +44,7 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool,extended: bool=
 		if f.pos.distance_to(at) > 2.0 or absf(f.elevation - b.height_at(at)) > 0.1:
 			return false
 		for t in c.state.figures:
-			if t.in_play() and (t.is_demon() or t.def.traits.has("undead")) and absf(t.elevation - b.height_at(at)) < 0.5 and t.pos.distance_to(at) < 2.0:
+			if t.in_play() and (t.is_demon() or t.is_undead()) and absf(t.elevation - b.height_at(at)) < 0.5 and t.pos.distance_to(at) < 2.0:
 				return false
 		return true
 	if id == "mud":
@@ -329,7 +329,7 @@ func trigger_landing(f: Figure) -> void:
 
 
 static func ward_blocks(b: Board, f: Figure, at: Vector2) -> bool:
-	if f == null or (not f.is_demon() and not f.def.traits.has("undead")):
+	if f == null or (not f.is_demon() and not f.is_undead()):
 		return false
 	for p in b.pieces:
 		if p.kind.id == "spell_circle_of_protection" and p.rect.get_center().distance_to(at) < 1.5 + Figure.BASE_RADIUS and absf(b.height_at(at) - b.height_at(p.rect.get_center())) < 0.5:

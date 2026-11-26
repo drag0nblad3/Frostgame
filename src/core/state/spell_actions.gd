@@ -121,10 +121,10 @@ func can_cast(id: String, target_id: int) -> bool:
 	if SummonActions.CONTROL.has(id):
 		return summons.can_control(f, t, id)
 	if id == "strike_dead":
-		return t != f and not t.def.traits.has("undead") and not t.def.traits.has("construct")
+		return t != f and not t.is_undead() and not t.def.traits.has("construct")
 	if id == "destroy_undead":
-		return t.def.traits.has("undead")
-	if kind in ["heal", "resist"] and (t.def.traits.has("undead") or t.def.traits.has("construct")):
+		return t.is_undead()
+	if kind in ["heal", "resist"] and (t.is_undead() or t.def.traits.has("construct")):
 		return false
 	if kind == "resist":
 		return t.side != f.side

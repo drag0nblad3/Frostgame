@@ -338,3 +338,18 @@ func test_circlet_immunity_and_cast_restriction() -> void:
 	c._magic._shot(t,f,8,t.pos,true,true,"elemental_bolt")
 	check_eq(f.health,hp-2)
 	check(not CircletDefence.immune(f,"curse"))
+
+
+func test_mask_of_death_toggle_and_starting_choice() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],Dice.new(1))
+	f.items.append({"gear":DeathMask.ITEM,"mask_start_worn":true,"gear_info":RedKingRewards.catalog()[DeathMask.ITEM]})
+	DeathMask.prepare(c)
+	check(f.is_undead())
+	check(f.immune_to_poison())
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(DeathMask.toggle(c))
+	check(not f.is_undead())
+	check(f.used_gear.get(DeathMask.EVER,false))
+	check_eq(f.actions_left,1)

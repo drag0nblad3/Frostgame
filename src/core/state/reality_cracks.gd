@@ -141,7 +141,7 @@ static func _repeat(c: GameController,effect: int) -> void:
 			if not f.in_play():
 				continue
 			ScenarioNull.cancel_spells(c,f)
-			if f.in_play() and (f.def.traits.has("undead") or f.def.traits.has("construct")) and not StatRoll.succeeds(c.dice.d20(),f.effective_will()+f.roll_penalty(),12):
+			if f.in_play() and (f.is_undead() or f.def.traits.has("construct")) and not StatRoll.succeeds(c.dice.d20(),f.effective_will()+f.roll_penalty(),12):
 				f.spell_effects["reality_skip_turn"]=s.turn
 		for p in s.board.pieces.duplicate():
 			if p.kind.id.begins_with("spell_"):
@@ -248,7 +248,7 @@ static func _exchange(c: GameController,secret: bool) -> void:
 	for side: int in order:
 		var candidates: Array[Figure]=[]
 		for f in s.side_figures(side):
-			if not secret or (not f.def.traits.has("undead") and not f.def.traits.has("construct")):
+			if not secret or (not f.is_undead() and not f.def.traits.has("construct")):
 				candidates.append(f)
 		if candidates.size()>1:
 			selected.append(candidates[c.dice.pick(candidates.size())])
