@@ -26,6 +26,17 @@ func build(board: Board) -> void:
 func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	var mi := MeshInstance3D.new()
 	var h := piece.kind.height
+	if piece.kind.id == "spell_wizard_eye":
+		var orb := SphereMesh.new()
+		orb.radius = 0.22
+		orb.height = 0.44
+		mi.mesh = orb
+		var material := _mat(Color(0.4, 0.9, 1.0), 0.35)
+		material.emission_enabled = true
+		material.emission = Color(0.2, 0.6, 0.9)
+		mi.material_override = material
+		mi.position = TableSpace.to_world(piece.rect.get_center(), 1.5)
+		return mi
 	if piece.ramp:
 		var box := BoxMesh.new()
 		var slope := atan2(piece.ramp_end - piece.ramp_start, 6.0)

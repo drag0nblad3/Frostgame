@@ -341,7 +341,7 @@
     "name": "Wizard Eye",
     "school": "soothsayer",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "counter"
   },
   "control_demon": {
     "name": "Control Demon",

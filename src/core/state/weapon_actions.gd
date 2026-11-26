@@ -20,7 +20,7 @@ static func magical(t: Figure, w: WeaponDef) -> bool:
 func options(f: Figure) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	for t in c.state.figures:
-		if t == f or not t.in_play() or not IllusionRules.visible_to(c.state.figures, f, t) or not LineOfSight.check(c.state.board, f.pos, t.pos).clear:
+		if t == f or not t.in_play() or not IllusionRules.visible_to(c.state.figures, f, t) or not WizardEye.visible(c.state.board, f, t.pos):
 			continue
 		for w in t.def.weapons:
 			if w.id in ["natural", "unarmed"] or t.destroyed_weapons.has(w.id) or magical(t, w):

@@ -38,9 +38,9 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 				return false
 		return true
 	if id == "mud":
-		return f.pos.distance_to(at) <= 24 and LineOfSight.check(b, f.pos, at).clear
+		return f.pos.distance_to(at) <= 24 and WizardEye.visible(b, f, at)
 	if id == "grenade":
-		return f.pos.distance_to(at) <= 14.0 and LineOfSight.check(b, f.pos, at).clear
+		return f.pos.distance_to(at) <= 14.0 and WizardEye.visible(b, f, at)
 	if id in ["explosive_rune", "planar_tear"]:
 		if id == "explosive_rune":
 			var count := 0
@@ -49,14 +49,14 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 					count += 1
 			if count >= 3:
 				return false
-		return f.pos.distance_to(at) <= (4.0 if id == "explosive_rune" else 24.0) and LineOfSight.check(b, f.pos, at).clear
+		return f.pos.distance_to(at) <= (4.0 if id == "explosive_rune" else 24.0) and WizardEye.visible(b, f, at)
 	var seen := false
 	for i in range(-6, 7):
 		var p := at + (Vector2.DOWN if rotated else Vector2.RIGHT) * i * 0.5
 		var distance := f.pos.distance_to(p)
 		if id == "fog" and distance > 24.0:
 			return false
-		if (id == "fog" or distance <= 10.0) and LineOfSight.check(b, f.pos, p).clear:
+		if (id == "fog" or distance <= 10.0) and WizardEye.visible(b, f, p):
 			seen = true
 	if not seen:
 		return false
@@ -153,6 +153,7 @@ func expire() -> void:
 
 func remove(p: TerrainPiece) -> void:
 	var s := c.state
+	WizardEye.remove_attached(s.board, p)
 	s.board.pieces.erase(p)
 	s.board.invalidate_terrain()
 	c.emit("terrain_changed", {"spell": p.kind.id.trim_prefix("spell_"), "created": false})
@@ -255,7 +256,7 @@ func bridge_legal(f: Figure, rect: Rect2, rotated: bool) -> bool:
 		var height := lerpf(ends.x, ends.y, ratio)
 		for j in [-0.9, 0.0, 0.9]:
 			var sample: Vector2 = at + across * float(j)
-			if b.height_at(sample) > height + 0.1 or not LineOfSight.check(b, f.pos, sample).clear:
+			if b.height_at(sample) > height + 0.1 or not WizardEye.visible(b, f, sample):
 				return false
 			for p in b.pieces_at(sample):
 				if p.kind.blocks_move and p.kind.height > height + 0.1:

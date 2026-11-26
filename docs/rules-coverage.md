@@ -229,3 +229,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Plane Walk
 
 - p.127: self spell drops carried treasure and grants direct terrain-ignoring movement until turn end; no ordinary combat, direct targeting, treasure collection, potion use, reload or other actions while phased. Consecutive attempts (even failures) incur -5/-10/-15. Endpoints must be legal exposed surfaces with no overlapping bases; movement is straight-line with height distance, no standing inside solid terrain. Exit while phased is conservatively disabled. Area damage from another figure is blocked; not all incidental non-damage area effects are filtered.
+
+## Wizard Eye
+
+- p.135: terrain-face selector within 12 inches, visible glowing marker, one per caster; alternate casting line of sight in the outward 180-degree arc. Uses caster sight if available, automatically uses eye when ordinary sight is blocked; spell range stays measured from caster. Terrain removal/Crumble cancels attached markers; Dispel can remove the eye. Direct spells, ordinary magic shots, several area/placement and counter effects use alternate sight. Eye is at ordinary eye height adjacent to flat terrain, not freely vertically positioned. Optional end-turn cancellation, manual origin selection and some special-case magical movement/area sight remain pending. All 80 spell catalog entries now have a battle or campaign implementation, with approximations tracked here.

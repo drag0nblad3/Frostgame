@@ -13,6 +13,7 @@ var weapons: WeaponActions
 var treasure_magic: TreasureMagic
 var crumble: CrumbleActions
 var beauty: BeautyActions
+var eye: WizardEye
 
 
 func _init(controller: GameController) -> void:
@@ -27,6 +28,7 @@ func _init(controller: GameController) -> void:
 	treasure_magic = TreasureMagic.new(c)
 	crumble = CrumbleActions.new(c)
 	beauty = BeautyActions.new(c)
+	eye = WizardEye.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -67,7 +69,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	if kind == "touch" and t != f and Shooting.distance(f, t) > 1.0:
 		return false
-	if not LineOfSight.check(s.board, f.pos, t.pos).clear and t != f:
+	if not WizardEye.visible(s.board, f, t.pos) and t != f:
 		return false
 	if spell.has("range") and Shooting.distance(f, t) > float(spell["range"]):
 		return false
@@ -127,10 +129,12 @@ func start(id: String, target_id: int) -> bool:
 func counter_options(id: String) -> Array[Dictionary]:
 	var f := c.state.active()
 	var empty: Array[Dictionary] = []
-	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
+	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
 	if not available_spell(f, id):
 		return empty
+	if id == "wizard_eye":
+		return eye.options(f)
 	if id == "crumble":
 		return crumble.options(f)
 	if id in ["power_word", "draining_word"]:
@@ -311,6 +315,9 @@ func finish(health: int) -> bool:
 		WordMagic.apply(s, f, id, p["effect"]["chosen"])
 		c.emit("spell_effect", {"id": f.id, "spell": id})
 		return true
+	if id == "wizard_eye":
+		eye.create(f, p["effect"])
+		return true
 	if id == "crumble":
 		crumble.apply(p["effect"]["piece"])
 		return true
@@ -382,11 +389,11 @@ func finish(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.is_demon() and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.is_demon() and WizardEye.visible(s.board, f, other.pos):
 					_banish(f, other, int(result["roll"]), 4)
 		"scatter_shot":
 			for other in s.figures:
-				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and WizardEye.visible(s.board, f, other.pos):
 					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0)
 		"destructive_sphere":
 			for other in s.figures:
@@ -414,7 +421,7 @@ func finish(health: int) -> bool:
 						if not affected.has(member):
 							affected.append(member)
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else f.pos, true)
+				_shot(f, other, 5, t.pos if other != t else WizardEye.origin(s.board, f, t.pos), true)
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty()
@@ -444,7 +451,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	if not t.in_play() or t.spell_effects.has("plane_walk"):
 		return
 	var s := c.state
-	var from: Vector2 = f.pos if origin == null else origin
+	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
 	var mod := Shooting.target_mod(LineOfSight.check(s.board, from, t.pos)) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
 		mod -= 2

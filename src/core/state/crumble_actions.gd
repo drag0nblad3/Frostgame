@@ -33,6 +33,7 @@ func apply(p: TerrainPiece) -> void:
 	var along_x := r.size.x >= r.size.y
 	var length := r.size.x if along_x else r.size.y
 	var remaining := maxf(0.0, (length - 1.5) * 0.5)
+	WizardEye.remove_attached(s.board, p)
 	s.board.pieces.erase(p)
 	if remaining > 0.01:
 		var a := Rect2(r.position, Vector2(remaining, r.size.y) if along_x else Vector2(r.size.x, remaining))

@@ -163,8 +163,10 @@ func preview() -> void:
 			hint = "Choose a spell."
 		"counter_select":
 			var option := counter_choices[counter_index]
-			hint = "%s %d/%d: %s" % ["Destroy terrain" if selected_spell == "crumble" else "Destroy weapon" if selected_spell == "decay" else ("Choose spell" if selected_spell in ["power_word", "draining_word"] else "Cancel effect"), counter_index + 1, counter_choices.size(), option["label"]]
-			if option["kind"] == "terrain":
+			hint = "%s %d/%d: %s" % ["Choose eye face" if selected_spell == "wizard_eye" else "Destroy terrain" if selected_spell == "crumble" else "Destroy weapon" if selected_spell == "decay" else ("Choose spell" if selected_spell in ["power_word", "draining_word"] else "Cancel effect"), counter_index + 1, counter_choices.size(), option["label"]]
+			if option["kind"] == "eye_face":
+				points.append(option["at"])
+			elif option["kind"] == "terrain":
 				points.append(option["piece"].rect.get_center())
 			elif option["kind"] != "storm":
 				points.append(c.state.figure(option["target"]).pos)
@@ -307,7 +309,7 @@ func action(key: String) -> bool:
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false
-		if selected_spell in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble"]:
+		if selected_spell in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"]:
 			counter_choices = c._magic.counter_options(selected_spell)
 			if counter_choices.is_empty():
 				refresh()

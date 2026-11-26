@@ -12,7 +12,7 @@ func options(f: Figure) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var s := c.state
 	for t in s.figures:
-		if not t.in_play() or t.spell_effects.has("plane_walk") or Shooting.distance(f, t) > 24.0 or (t != f and not LineOfSight.check(s.board, f.pos, t.pos).clear):
+		if not t.in_play() or t.spell_effects.has("plane_walk") or Shooting.distance(f, t) > 24.0 or (t != f and not WizardEye.visible(s.board, f, t.pos)):
 			continue
 		for id: String in t.spell_effects:
 			if s.spell_catalog.has(id) or id.begins_with("potion_"):
@@ -25,7 +25,7 @@ func options(f: Figure) -> Array[Dictionary]:
 		if p.cast_turn < 0:
 			continue
 		var center := p.rect.get_center()
-		if f.pos.distance_to(center) <= 24 and (LineOfSight.check(s.board, f.pos, center).clear or _visible_edge(f, p)):
+		if f.pos.distance_to(center) <= 24 and (WizardEye.visible(s.board, f, center) or _visible_edge(f, p)):
 			result.append({"kind": "terrain", "target": f.id, "piece": p, "spell": p.kind.id.trim_prefix("spell_"), "label": "%s at %.1f, %.1f" % [p.kind.name, center.x, center.y]})
 	for i in s.words.size():
 		var word := s.words[i]
@@ -40,7 +40,7 @@ func _visible_edge(f: Figure, p: TerrainPiece) -> bool:
 	# Sight can reach the near face of opaque conjured terrain.
 	var nearest := Vector2(clampf(f.pos.x, p.rect.position.x, p.rect.end.x), clampf(f.pos.y, p.rect.position.y, p.rect.end.y))
 	var at := nearest.lerp(f.pos, 0.02)
-	return f.pos.distance_to(at) <= 24 and LineOfSight.check(b, f.pos, at).clear
+	return f.pos.distance_to(at) <= 24 and WizardEye.visible(b, f, at)
 
 
 func apply(option: Dictionary) -> void:

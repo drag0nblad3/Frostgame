@@ -13,10 +13,10 @@ func can_target(f: Figure, id: String, token: TreasureToken) -> bool:
 	if not token.unresolved():
 		return false
 	if id == "telekinesis":
-		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and Vector2(f.pos.distance_to(token.pos), f.elevation - s.board.height_at(token.pos)).length() <= 16.0 and LineOfSight.check(s.board, f.pos, token.pos).clear
+		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and Vector2(f.pos.distance_to(token.pos), f.elevation - s.board.height_at(token.pos)).length() <= 16.0 and WizardEye.visible(s.board, f, token.pos)
 	if id == "fools_gold":
 		var carrier := s.figure(token.carrier_id)
-		return carrier != null and carrier.in_play() and IllusionRules.visible_to(s.figures, f, carrier) and LineOfSight.check(s.board, f.pos, carrier.pos).clear
+		return carrier != null and carrier.in_play() and IllusionRules.visible_to(s.figures, f, carrier) and WizardEye.visible(s.board, f, carrier.pos)
 	return false
 
 
@@ -33,14 +33,14 @@ func can_place(f: Figure, id: String, token: TreasureToken, at: Vector2) -> bool
 	var limit := 6.0 if id == "telekinesis" else 4.0
 	if Vector2(from.distance_to(at), s.board.height_at(from) - s.board.height_at(at)).length() > limit + 0.001 or not s.board.can_stand(at, TreasureRules.TOKEN_RADIUS):
 		return false
-	if not LineOfSight.check(s.board, f.pos, at).clear:
+	if not WizardEye.visible(s.board, f, at):
 		return false
 	for t in s.figures:
 		if t.in_play() and absf(t.elevation - s.board.height_at(at)) < 0.5 and t.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
 			return false
 	if id == "telekinesis":
 		for i in range(1, maxi(2, ceili(from.distance_to(at) * 4))):
-			if not LineOfSight.check(s.board, f.pos, from.lerp(at, float(i) / maxi(2, ceili(from.distance_to(at) * 4)))).clear:
+			if not WizardEye.visible(s.board, f, from.lerp(at, float(i) / maxi(2, ceili(from.distance_to(at) * 4)))):
 				return false
 	return true
 
