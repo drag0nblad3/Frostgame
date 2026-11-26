@@ -51,8 +51,10 @@ func deployment() -> Dictionary:
 		units.append(entry)
 	if data.get("prepared_zombie", false):
 		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true,"prepared_zombie_caster":int(data.get("prepared_zombie_caster",-1)),"prepared_zombie_strong":bool(data.get("prepared_zombie_strong",false))})
-	if str(data.get("prepared_illusion", "")) != "":
-		units.append({"type": data["prepared_illusion"], "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_illusion": true})
+	var prepared := Rituals.prepared_illusions(data)
+	var limit := 2 if BaseResources.wizard_item(data,SummonActions.ILLUSION_STAFF) else 1
+	for i in mini(prepared.size(),limit):
+		units.append({"type":prepared[i]["type"],"at":[0,0],"prepared_illusion":true,"prepared_illusion_caster":int(prepared[i]["caster"])})
 	var demon: Dictionary = data.get("prepared_demon", {})
 	if not demon.is_empty():
 		for entry: Dictionary in units:
@@ -190,6 +192,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data.erase("prepared_zombie_caster")
 	data.erase("prepared_zombie_strong")
 	data["prepared_illusion"] = ""
+	data.erase("prepared_illusions")
 	data.erase("prepared_demon")
 	for unit: Dictionary in data["units"]:
 		unit["familiar"] = false

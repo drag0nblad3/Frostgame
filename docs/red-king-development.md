@@ -148,3 +148,7 @@ Optional 9-inch bridge placement on flat and layered maps; extended bridges coll
 ## Ivory Hand
 
 Push attacks gain +1 above the normal +10, and stopping against terrain or the table boundary before completing the push deals three damage. Campaign inventory can permanently attach the item to an eligible magic staff for 500gc; the graft persists on that staff with no extra slot. A destroyed staff or suppressed magic disables the graft. Push remains limited to the existing ordinary-board forced movement path; scenario-specific forced relocation and layered Push remain distinct.
+
+## Staff of the Illusionist
+
+Allows two temporary illusions across a warband, including prepared rituals from both casters; the wizard loses two Will while both exist. Fool’s Gold range becomes six inches for the staff bearer. Losing the wizard immediately removes the newest illusion deterministically on ordinary casualty/extraction and layered extraction paths; player selection and special scenario exits still need integration.

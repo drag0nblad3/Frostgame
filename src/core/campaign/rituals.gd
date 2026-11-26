@@ -33,7 +33,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 			if BaseDemonRitual.available(d, caster):
 				out.append("")
 		"illusionary_soldier":
-			if not d.has("prepared_illusion") or d["prepared_illusion"] == "":
+			if prepared_illusions(d).size() < (2 if BaseResources.wizard_item(d,SummonActions.ILLUSION_STAFF) else 1):
 				var db := FigureDb.load_files()
 				for type: String in db.figures:
 					var def := db.get_def(type)
@@ -127,7 +127,10 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 		"reveal_secret":
 			d["revealed_secrets"] = int(d.get("revealed_secrets", 0)) + 1
 		"illusionary_soldier":
-			d["prepared_illusion"] = option
+			var prepared := prepared_illusions(d)
+			prepared.append({"type":option,"caster":caster})
+			d["prepared_illusions"]=prepared
+			d.erase("prepared_illusion")
 		"brew_potion":
 			var brewed := {"kind":"potion","potion":option,"owner":-1}
 			if enchant and RedKingMaterials.consume(d,supply):
@@ -157,3 +160,9 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 			member["injuries"] = 0
 			member["injury_types"] = {}
 	return true
+
+
+static func prepared_illusions(d: Dictionary) -> Array:
+	if d.has("prepared_illusions"):
+		return d["prepared_illusions"].duplicate(true)
+	return [{"type":d["prepared_illusion"],"caster":-1}] if not str(d.get("prepared_illusion","")).is_empty() else []

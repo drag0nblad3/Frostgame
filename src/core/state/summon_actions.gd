@@ -47,7 +47,7 @@ func can_place(f: Figure, id: String, at: Vector2) -> bool:
 		return false
 	if id=="raise_zombie" and count_summoned(c.state,f,id,true)>=(2 if skull_staff(f) else 1):
 		return false
-	if id=="illusionary_soldier" and summoned(f,id,true)!=null:
+	if id=="illusionary_soldier" and count_summoned(s,f,id,true)>=(2 if illusion_staff_owner(s,f.side)!=null else 1):
 		return false
 	if id == "summon_demon" and controlled(f, "control_demon") != null:
 		return false
@@ -213,3 +213,34 @@ static func skull_cast_modifier(f: Figure,id: String) -> int:
 	if s!=null and (count_summoned(s,f,"animate_skull")>1 or count_summoned(s,f,"raise_zombie",true)>1):
 		result-=2
 	return result
+
+
+const ILLUSION_STAFF := "gear_rk_staff_of_the_illusionist"
+
+
+static func illusion_staff(f: Figure) -> bool:
+	return f!=null and f.def.role=="wizard" and ActiveGear.has(f,ILLUSION_STAFF) and not MagicEquipment.suppressed(f) and not f.destroyed_weapons.has("staff")
+
+
+static func illusion_staff_owner(s: GameState,side: int) -> Figure:
+	for f in s.figures:
+		if f.side==side and f.in_play() and illusion_staff(f):
+			return f
+	return null
+
+
+static func illusion_will(f: Figure) -> int:
+	var s := RedKingVeil.of(f)
+	return -2 if s!=null and illusion_staff(f) and count_summoned(s,f,"illusionary_soldier",true)>1 else 0
+
+
+func enforce_illusion_limit(owner: Figure) -> void:
+	if owner.def.role!="wizard" or not ActiveGear.has(owner,ILLUSION_STAFF):
+		return
+	var copies: Array[Figure]=[]
+	for t in c.state.figures:
+		if t.in_play() and t.side==owner.side and t.summon_spell=="illusionary_soldier":
+			copies.append(t)
+	while copies.size()>1:
+		var newest: Figure=copies.pop_back()
+		vanish(newest)

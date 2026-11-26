@@ -450,6 +450,7 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		ScenarioGenie.record_kill(self, f, by)
 		RedKingSquatter.record_kill(self,f,by)
 		RedKingTethers.destroyed(self,f,by)
+		_magic.summons.enforce_illusion_limit(f)
 	else:
 		CreatureEffects.after_damage(self,f)
 

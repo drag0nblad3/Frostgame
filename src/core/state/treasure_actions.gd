@@ -174,6 +174,7 @@ func exit_table(node: Vector2i) -> bool:
 	for id in f.carried_treasures():
 		secure(_c.state.treasure(id), f.side)
 	f.exited = true
+	_c._magic.summons.enforce_illusion_limit(f)
 	f.actions_left = 0
 	_c.emit("exit", {"id": f.id})
 	if RedKingInvestigations.active(_c.state) and _c.state.turn>3:

@@ -554,10 +554,11 @@
       "buy": 0,
       "sell": 350,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 18,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "wizard_only": true
     },
     "gear_rk_wand_of_brilliant_power_3": {
       "name": "Wand of Brilliant Power (3)",

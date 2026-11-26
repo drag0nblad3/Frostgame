@@ -122,7 +122,7 @@ func effective_move() -> int:
 
 
 func effective_will() -> int:
-	return def.will + RedKingGear.woe_will(self) - int(used_gear.get("rk_soulchill_will",0)) - int(used_gear.get("rk_mask_will",0)) + RealityCracks.will_modifier(self) + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
+	return def.will + SummonActions.illusion_will(self) + RedKingGear.woe_will(self) - int(used_gear.get("rk_soulchill_will",0)) - int(used_gear.get("rk_mask_will",0)) + RealityCracks.will_modifier(self) + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
 
 
 func action_limit() -> int:
