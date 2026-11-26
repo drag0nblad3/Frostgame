@@ -159,6 +159,14 @@ func attack_pose(amount: float) -> void:
 	MiniaturePose.arms(_model, -0.95 * amount, 0.28 * amount)
 
 
+func cast_pose(amount: float) -> void:
+	if _model == null:
+		return
+	_model.position.y = _model_rest_y + amount*0.075
+	_model.rotation.x = -0.08*amount
+	MiniaturePose.arms(_model,-0.68*amount,-0.92*amount)
+
+
 func shot_pose(amount: float) -> void:
 	if _model == null:
 		return

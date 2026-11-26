@@ -62,7 +62,15 @@ func _play(e: GameEvent) -> void:
 		"cast_result":
 			if views.has(d["id"]):
 				var caster := _view(d["id"])
-				BattleEffects.pulse(self, caster.position + Vector3.UP * 0.15, Color(0.38,0.83,1.0) if d["success"] else Color(0.90,0.38,0.36), 1.25)
+				var color := SpellVisuals.color_for(str(d["spell"]),state)
+				if d["success"]:
+					SpellVisuals.sigil(self,caster.position+Vector3.UP*0.16,color,1.25)
+				else:
+					BattleEffects.pulse(self,caster.position+Vector3.UP*0.15,Color(0.90,0.38,0.36),1.1)
+				var pose_tween := create_tween()
+				pose_tween.tween_method(caster.cast_pose,0.0,1.0,0.13)
+				pose_tween.tween_method(caster.cast_pose,1.0,0.0,0.22)
+				_wait_for(pose_tween)
 		"disc_transport":
 			BattleEffects.pulse(self, _view(d["id"]).position + Vector3.UP * 0.15, Color(1.0,0.78,0.32), 1.6)
 		"heal":
@@ -71,7 +79,7 @@ func _play(e: GameEvent) -> void:
 			BattleEffects.pulse(self, healed.position + Vector3.UP * 0.15, Color(0.40,0.95,0.59))
 			_float_text(healed, "+%d" % d["amount"], Color(0.45, 1.0, 0.63))
 		"shoot", "spell_shot":
-			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot")
+			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot",str(d.get("spell","")),d.get("origin",null))
 		"fight":
 			var a := _view(d["id"])
 			var b := _view(d["target"])
@@ -139,28 +147,28 @@ func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 	_wait_for(t)
 
 
-func _animate_shot(from: FigureView, to: FigureView, magic: bool = false) -> void:
+func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell: String = "", origin: Variant = null) -> void:
 	from.face_toward(to.position)
-	var bolt := MeshInstance3D.new()
-	var s := SphereMesh.new()
-	s.radius = 0.15
-	s.height = 0.3
-	bolt.mesh = s
-	var mat := BoardView._mat(Color(0.35, 0.85, 1.0) if magic else Color(1, 0.9, 0.5), 0.2)
-	mat.emission_enabled = true
-	mat.emission = mat.albedo_color
-	bolt.material_override = mat
+	var color := SpellVisuals.color_for(spell,state) if magic else Color(0.92,0.78,0.50)
+	var bolt := SpellVisuals.projectile(spell,magic,color)
 	add_child(bolt)
-	var up := Vector3(0, 1.1, 0)
-	bolt.position = from.position + up
-	bolt.visible = false
+	var start := from.position + Vector3.UP*from.body_height()
+	if origin is Vector2:
+		start = TableSpace.to_world(origin,state.board.height_at(origin)+1.0)
+	var destination := to.position + Vector3.UP*to.body_height()
+	bolt.position = start
+	if start.distance_squared_to(destination)>0.001:
+		bolt.look_at(destination)
+	bolt.hide()
 	var t := create_tween()
-	t.tween_method(from.shot_pose if not magic else from.attack_pose, 0.0, 0.75, 0.14)
+	t.tween_method(from.cast_pose if magic else from.shot_pose, 0.0, 0.75, 0.14)
 	t.tween_callback(bolt.show)
-	t.tween_property(bolt, "position", to.position + up, maxf(0.05, from.position.distance_to(to.position) * 0.03))
-	t.parallel().tween_method(from.shot_pose if not magic else from.attack_pose, 0.75, 0.0, 0.15)
+	t.tween_property(bolt, "position", destination, maxf(0.10,start.distance_to(destination)*0.035))
+	t.parallel().tween_method(from.cast_pose if magic else from.shot_pose, 0.75, 0.0, 0.15)
 	t.tween_callback(bolt.queue_free)
-	t.tween_callback(BattleEffects.burst.bind(self, to.position + Vector3.UP * 0.9, mat.albedo_color))
+	t.tween_callback(BattleEffects.burst.bind(self,destination,color))
+	if spell == "elemental_ball":
+		t.tween_callback(BattleEffects.pulse.bind(self,to.position+Vector3.UP*0.15,color,1.7))
 	_wait_for(t)
 
 

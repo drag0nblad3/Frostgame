@@ -413,7 +413,7 @@ func _finish_one(health: int) -> bool:
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
 			var old_health := t.health
-			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt")
+			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt", id)
 			if id == "poison_dart" and t.health < old_health:
 				c.poison(t)
 		"call_storm":
@@ -429,7 +429,7 @@ func _finish_one(health: int) -> bool:
 		"scatter_shot":
 			for other in s.figures:
 				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
-					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos)
+					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
@@ -456,7 +456,7 @@ func _finish_one(health: int) -> bool:
 						if not affected.has(member):
 							affected.append(member)
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else f.pos, true)
+				_shot(f, other, 5, t.pos if other != t else f.pos, true, true, id)
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty()
@@ -482,7 +482,7 @@ func _heal(t: Figure, amount: int) -> void:
 	c.emit("heal", {"id": t.id, "amount": t.health - old})
 
 
-func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true) -> void:
+func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:
 	if not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t):
 		return
 	var s := c.state
@@ -504,7 +504,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 		dmg = ceili(dmg / 2.0)
 	if elemental:
 		dmg = PotionActions.absorb(t, dmg)
-	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d})
+	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from})
 	c._hurt(t, dmg, f)
 
 
