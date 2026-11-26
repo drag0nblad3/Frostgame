@@ -18,7 +18,7 @@ func can_drink(id: String, target: Figure = null) -> bool:
 		return false
 	if f.moves_taken > 0 and not c.can_act():
 		return false
-	if not catalog.has(id) or not catalog[id]["live"]:
+	if not catalog.has(id) or not catalog[id]["live"] or id in CampaignPotions.VAULT_ONLY:
 		return false
 	if target == null:
 		target = f

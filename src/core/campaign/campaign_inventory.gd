@@ -57,6 +57,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	if owner == -1:
 		item["owner"] = -1
 		return true
+	if item.get("potion", "") in CampaignPotions.VAULT_ONLY:
+		return false
 	if owner < 0 or owner >= d["units"].size():
 		return false
 	var unit: Dictionary = d["units"][owner]

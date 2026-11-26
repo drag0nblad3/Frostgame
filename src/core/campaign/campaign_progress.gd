@@ -31,6 +31,8 @@ func deployment() -> Dictionary:
 			bonuses["health"] = int(bonuses.get("health", 0)) + 2
 		if unit.has("companion_of"):
 			bonuses["will"] = int(bonuses.get("will", 0)) + 3
+		if unit.get("construct_oiled", false):
+			bonuses["move"] = int(bonuses.get("move", 0)) + 1
 		entry["stat_bonus"] = bonuses
 		entry["permanent_summon"] = unit.get("permanent_summon", false)
 		entry["items"] = CampaignInventory.loadout(data, int(unit["id"]))
@@ -83,7 +85,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				else:
 					kills += 1
 	var secured := c.state.secured_count(side)
-	xp = mini(300, xp + secured * 40 + mini(kills * 5, 50) + scenario_xp)
+	xp = maxi(0, mini(300, xp + secured * 40 + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
+	data.erase("dreams_xp")
 	data["xp"] = int(data["xp"]) + xp
 	data["games"] = int(data["games"]) + 1
 	data["spell_improved"] = false
@@ -299,6 +302,8 @@ func can_hire(id: String, db: FigureDb) -> bool:
 	var soldiers := 0
 	var specialists := 0
 	for unit: Dictionary in data["units"]:
+		if id == "apprentice" and unit["type"] == "apprentice" and CampaignPotions.preserved(data, unit):
+			return false
 		if unit["dead"] or unit.get("dismissed", false):
 			continue
 		var other := db.get_def(unit["type"])

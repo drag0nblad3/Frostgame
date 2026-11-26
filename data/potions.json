@@ -101,8 +101,9 @@
     "name": "Construct Oil",
     "buy": 100,
     "sell": 50,
-    "live": false,
-    "greater": false
+    "live": true,
+    "greater": false,
+    "campaign": true
   },
   "fire_breath": {
     "name": "Potion of Fire Breath",
@@ -115,8 +116,9 @@
     "name": "Potion of Preservation",
     "buy": 500,
     "sell": 200,
-    "live": false,
-    "greater": false
+    "live": true,
+    "greater": false,
+    "campaign": true
   },
   "chameleon": {
     "name": "Elixir of the Chameleon",
@@ -153,9 +155,10 @@
     "name": "Bottle of Dreams and Nightmares",
     "buy": 2000,
     "sell": 300,
-    "live": false,
+    "live": true,
     "greater": true,
-    "ingredients": 500
+    "ingredients": 500,
+    "campaign": true
   },
   "shatterstar": {
     "name": "Shatterstar Draught",
@@ -201,8 +204,9 @@
     "name": "Elixir of Life",
     "buy": 0,
     "sell": 1000,
-    "live": false,
+    "live": true,
     "greater": true,
-    "ingredients": 3000
+    "ingredients": 3000,
+    "campaign": true
   }
 }

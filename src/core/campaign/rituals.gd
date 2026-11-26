@@ -81,7 +81,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 					var member: Dictionary = d["units"][i]
 					if member.get("dismissed", false):
 						continue
-					if (member["dead"] and int(member.get("death_game", -1)) == int(d["games"])) or (not member["dead"] and (int(member["injuries"]) > 0 or int(member["miss"]) > 0)):
+					if CampaignPotions.recently_dead(d, member) or (not member["dead"] and (int(member["injuries"]) > 0 or int(member["miss"]) > 0)):
 						out.append(str(i))
 	return out
 
@@ -138,8 +138,7 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 			d["prepared_zombie"] = true
 		"miraculous_cure":
 			var member: Dictionary = d["units"][int(option)]
-			member["dead"] = false
-			member["miss"] = 0
+			CampaignPotions.revive(member)
 			member["injuries"] = 0
 			member["injury_types"] = {}
 	return true

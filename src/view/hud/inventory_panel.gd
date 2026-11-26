@@ -8,6 +8,9 @@ var recipient_choice: OptionButton
 var shop: OptionButton
 var summary: Label
 var changed: Callable
+var campaign_dice := Dice.new(0)
+var campaign_uses: OptionButton
+var use_button: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -27,6 +30,17 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	_button("Sell selected unassigned item", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.sell(campaign.data, int(loot.get_selected_metadata())):
 			changed.call())
+	campaign_uses = OptionButton.new()
+	add_child(campaign_uses)
+	use_button = Button.new()
+	use_button.text = "Use campaign potion"
+	use_button.pressed.connect(func() -> void:
+		if campaign_uses.item_count == 0:
+			return
+		var option: Dictionary = campaign_uses.get_selected_metadata()
+		if CampaignPotions.use(campaign.data, option["item"], option["unit"], db, campaign_dice):
+			changed.call())
+	add_child(use_button)
 	shop = OptionButton.new()
 	add_child(shop)
 	_button("Buy item", func() -> void:
@@ -39,6 +53,8 @@ func refresh() -> void:
 	loot.clear()
 	recipient_choice.clear()
 	shop.clear()
+	campaign_uses.clear()
+	use_button.disabled = true
 	if d.is_empty():
 		return
 	var catalog := CampaignInventory.catalog()
@@ -53,6 +69,11 @@ func refresh() -> void:
 			suffix += " · %d power" % PowerPool.remaining(item)
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
 		loot.set_item_metadata(loot.item_count - 1, i)
+		for unit_id in CampaignPotions.choices(d, i, db):
+			var unit: Dictionary = d["units"][unit_id]
+			campaign_uses.add_item("%s → %s #%d" % [info["name"], str(unit["type"]).capitalize(), unit_id + 1])
+			campaign_uses.set_item_metadata(campaign_uses.item_count - 1, {"item": i, "unit": unit_id})
+	use_button.disabled = campaign_uses.item_count == 0
 	recipient_choice.add_item("Vault")
 	recipient_choice.set_item_metadata(0, -1)
 	for unit: Dictionary in d["units"]:
