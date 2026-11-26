@@ -682,5 +682,25 @@
       "large"
     ],
     "verify": false
+  },
+  "genie": {
+    "name": "Genie",
+    "role": "creature",
+    "move": 7,
+    "fight": 3,
+    "shoot": 3,
+    "armour": 13,
+    "will": 5,
+    "health": 14,
+    "cost": 0,
+    "weapons": [
+      "natural",
+      "genie_bolt"
+    ],
+    "traits": [
+      "demon",
+      "immune_normal"
+    ],
+    "verify": false
   }
 }

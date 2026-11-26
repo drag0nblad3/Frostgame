@@ -317,6 +317,7 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 	if out:
 		_loot.drop_on_death(f)
 		emit("out_of_action", {"id": f.id, "by": by.id})
+		ScenarioGenie.record_kill(self, f, by)
 
 
 func can_pick_up(id: int) -> bool:

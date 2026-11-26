@@ -13,6 +13,12 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"genie_released":
+			return "The lamp releases an angry genie!"
+		"genie_flee":
+			return "The genie has claimed three victims and seeks an exit."
+		"genie_escaped":
+			return "The genie escapes the ruins."
 		"hut_discovered":
 			return "Hut searched: %s." % ("empty" if d.get("creature", "") == "" else str(d["creature"]).capitalize())
 		"disc_transport":

@@ -295,3 +295,6 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 
 ### Haunted Houses and The Keep
 - pp. 148, 150: five open-roof huts with hidden ghoul/wraith encounters, first entry or magical treasure movement, discovery XP, persistent revealed sites. Printed encounter ranges overlap at 17; assigned 17 to wraith. Four visible transport discs with d20 direction, legal automatic placement, no chain transport, protection of treasure on discs and one caster XP bonus each. Full discs leave the mover in place. Fixed north/south board orientation defines left/right. Movement uses sampled nodes and landing checks; no manual disc landing choice. Both scenarios are selectable and checkpointed.
+
+### Genie in the Bottle
+- pp. 148–149: first pickup d20 discovery (guaranteed final token), one genie, normal weapons ineffective, magical missile weapon, three victims trigger retreat toward edge and shooting. Lamp replaces normal loot with 250gc; discovery +30 XP, killing +50 XP. Automatically selects legal placement near finder (relaxes placement if blocked), uses the existing shot model and a 24-inch range, and nearest reachable edge rather than user placement. If engaged, fights rather than retreating illegally. Lamp, genie ID and victim counter persist across checkpoints.

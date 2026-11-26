@@ -89,7 +89,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
-		elif event.type in ["well_drink", "hut_discovered", "disc_transport"] and int(e["side"]) == side:
+		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released"] and int(e["side"]) == side:
 			scenario_xp += int(e["xp"])
 		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
 			var victim := c.state.figure(e["id"])
@@ -102,6 +102,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			var attacker := c.state.figure(e["by"])
 			if victim != null and attacker != null and victim.side < 0 and attacker.side == side:
 				if c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
+					scenario_xp += 50
+				elif c.state.scenario_special == "genie_in_the_bottle" and victim.def.id == "genie":
 					scenario_xp += 50
 				elif c.state.museum and victim.def.id == "medium_construct":
 					scenario_xp += 10
@@ -172,6 +174,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		if token.secured_by == side and not token.central:
 			recovered.append(token)
 	for token in recovered:
+		if c.state.scenario_special == "genie_in_the_bottle" and token.id == c.state.lamp_token:
+			data["gold"] = int(data["gold"]) + 250
+			report.append("Recovered the genie lamp: 250 gc.")
+			continue
 		var raw := dice.d20()
 		if c.state.scenario_special == "underground_library":
 			if token.central:

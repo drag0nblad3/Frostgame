@@ -30,6 +30,7 @@ func pick_up(id: int) -> bool:
 	_c.emit("treasure_pickup", {"id": f.id, "treasure": id})
 	if not token.ever_collected:
 		token.ever_collected = true
+		ScenarioGenie.first_pickup(_c, f, token)
 		_c._encounters.on_pickup()
 	return true
 

@@ -3,6 +3,8 @@ extends RefCounted
 ## Basic uncontrolled-creature priorities (pp. 69–70).
 
 static func play(c: GameController, f: Figure) -> void:
+	if ScenarioGenie.flee(c, f):
+		return
 	for i in 2:
 		if not f.in_play() or f.actions_left <= 0:
 			return
