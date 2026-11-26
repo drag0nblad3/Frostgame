@@ -327,6 +327,8 @@ func select_scenario(id: String) -> void:
 
 
 func _fit_actions() -> void:
+	if not is_inside_tree() or get_viewport()==null:
+		return
 	var bounds := PhoneSafeArea.safe_rect(get_viewport(),10)
 	# Constrain long spell/item lists to a scrollable dock rather than letting
 	# them occupy the entire battlefield. Short lists use one row.

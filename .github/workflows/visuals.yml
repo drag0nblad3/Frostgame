@@ -55,6 +55,14 @@ jobs:
           grep -F 'scenario=dreams_well board=dreams_well' well.log
           grep -F 'scenario=the_keep board=the_keep' keep.log
           for file in tower-upper tower-cutaway gatehouse-upper gatehouse-cutaway sunken-streets roster headquarters title miniatures bestiary schools apprentices soldiers beasts supernatural frozen-ruins complex-temple library well keep; do test -s "previews/$file.png"; done
+      - name: Capture scenario environment refinements
+        run: |
+          set -o pipefail
+          for scenario in haunted_houses mausoleum living_museum; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/capture.gd -- "previews/$scenario.png" 0 "$scenario" 2>&1 | tee "$scenario.log"
+            ! grep -E "SCRIPT ERROR|Parse Error|Shader compilation failed" "$scenario.log"
+            test -s "previews/$scenario.png"
+          done
       - name: Capture phone landscape and portrait UI
         run: |
           set -o pipefail

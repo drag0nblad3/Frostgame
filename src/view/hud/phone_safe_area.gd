@@ -20,6 +20,8 @@ func _process(delta: float) -> void:
 
 
 func refresh() -> void:
+	if not is_inside_tree() or get_viewport()==null:
+		return
 	var bounds := safe_rect(get_viewport(),padding)
 	var viewport := get_viewport().get_visible_rect().size
 	var margins := Vector4(bounds.position.x,bounds.position.y,viewport.x-bounds.end.x,viewport.y-bounds.end.y)

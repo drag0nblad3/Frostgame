@@ -34,6 +34,8 @@ static func build(board: Board, scenario: String, cinematic: bool = false) -> No
 				var w := 2.5+float(posmod(seed,5))*0.30
 				var d := 2.8+float(posmod(seed,7))*0.21
 				_building(root,at,ground_y,h,w,d,tone,seed)
+				DistrictArchitecture.finish(root,at,ground_y,h,w,d,tone,seed)
+	EnvironmentDressing.outskirts(root,board,scenario,ground_y)
 	MiniatureBatch.bake(root)
 	for child in root.get_children():
 		if child is MeshInstance3D:

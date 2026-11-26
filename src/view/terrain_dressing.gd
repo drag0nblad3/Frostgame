@@ -18,8 +18,13 @@ static func rubble(root: Node3D, p: TerrainPiece) -> void:
 		var x := rect.position.x + 0.25 + (rect.size.x - 0.5) * float(posmod(i * 37, 97)) / 97.0
 		var z := rect.position.y + 0.25 + (rect.size.y - 0.5) * float(posmod(i * 61, 89)) / 89.0
 		var shade := Color(0.38, 0.43, 0.48).lightened(float(i % 5) * 0.035)
-		var m := MiniatureFactory.sphere(root, Vector3(x, 0.18, z), Vector3(0.32 + 0.12 * (i % 3), 0.27, 0.34), shade)
-		m.rotation.y = i * 0.73
+		var width := minf(0.32+0.12*(i%3),minf(rect.size.x,rect.size.y)*0.35)
+		var m := MiniatureFactory.box(root,Vector3(x,0.14,z),Vector3(width,0.25,width*0.72),shade)
+		m.rotation.y=i*0.73
+		m.rotation.z=0.11*sin(i*2.0)
+		if i%3==0:
+			var snow := MiniatureFactory.box(root,Vector3(x,0.27,z),Vector3(width*0.86,0.035,width*0.60),Color("c8d4d9"))
+			snow.rotation.y=m.rotation.y
 
 
 static func column(root: Node3D, p: TerrainPiece) -> void:
