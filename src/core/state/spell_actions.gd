@@ -295,7 +295,7 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	if id == "plane_walk":
 		PlaneWalk.record(f, c.state.turn)
 	var empowered := not scroll and f.spell_effects.erase("potion_empowerment")
-	var total := 14 if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + RedKingSinkhole.casting_modifier(c.state,f) + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
+	var total := 14 if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + RealityCracks.casting_modifier(c.state,id) + RedKingSinkhole.casting_modifier(c.state,f) + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	if not shatter.spent:
 		c._spend(f)
@@ -311,6 +311,8 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
 	if id in ["spell_eater", "strike_dead"]:
 		c._hurt(f, 1, f, false)
+	if RealityCracks.id(c.state)==7 and RealityCracks.casting_modifier(c.state,id)==5:
+		c._hurt(f,2,f,false)
 
 
 func max_empowerment() -> int:

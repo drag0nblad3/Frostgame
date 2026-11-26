@@ -98,6 +98,8 @@ static func exit_distance(s: GameState, at: Vector2) -> float:
 
 
 static func exit_allowed(s: GameState, at: Vector2,side: int=-1) -> bool:
+	if RealityCracks.blocks_exit(s):
+		return false
 	if RedKingRingworld.active(s):
 		return false
 	if RedKingBridge.active(s):

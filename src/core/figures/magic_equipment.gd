@@ -48,7 +48,7 @@ static func bonus(f: Figure, stat: String, weapon: String = "") -> int:
 
 ## Anti-magic creatures temporarily suppress carried magical items in melee.
 static func suppressed(f: Figure) -> bool:
-	if f==null or ScenarioNull.muted(f):
+	if f==null or ScenarioNull.muted(f) or RealityCracks.null_wave(f):
 		return true
 	if f.battle_ref==null:
 		return false

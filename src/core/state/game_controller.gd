@@ -84,6 +84,7 @@ func activate(id: int) -> bool:
 	RedKingInvestigations.activation(self,f)
 	RedKingVeil.activation(self,f)
 	RedKingMind.activation(self,f)
+	RealityCracks.activation(self,f)
 	RedKingSquatter.record_contact(self)
 	if not state.group.in_progress() or state.group.movement_pass():
 		CreatureEffects.activation(self,f)
@@ -145,7 +146,7 @@ func reach() -> MoveReach:
 	if f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
 		return PlaneWalk.reach(state, f, false)
 	var grid := MoveGrid.new(state.board, f, state.figures)
-	var r := MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
+	var r := MovePlanner.straight_reach(grid,f.pos,MoveRules.allowance(f)) if state.board.low_gravity else MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
 	return FuryRules.restrict(state, f, r)
 
 

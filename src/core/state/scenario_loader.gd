@@ -16,6 +16,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	s.random_encounters = d.get("random_encounters", false)
 	s.museum = d.get("museum", false)
 	s.scenario_special = str(d.get("special", ""))
+	s.scenario_data["reality_enabled"]=bool(d.get("reality_cracks",false))
 	if s.scenario_special == "dreams_well":
 		for piece in s.board.pieces:
 			if piece.kind.id == "dreams_well":

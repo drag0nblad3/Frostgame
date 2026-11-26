@@ -122,7 +122,7 @@ func effective_move() -> int:
 
 
 func effective_will() -> int:
-	return def.will + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
+	return def.will + RealityCracks.will_modifier(self) + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
 
 
 func action_limit() -> int:
@@ -136,7 +136,7 @@ func roll_penalty() -> int:
 
 
 func effective_shoot() -> int:
-	var value := def.shoot - (4 if spell_effects.has("furious_quill") else 0)
+	var value := def.shoot - (2 if RealityCracks.low_gravity(self) else 0) - (4 if spell_effects.has("furious_quill") else 0)
 	return maxi(0, value - 4) if affected_by_insects() else value
 
 

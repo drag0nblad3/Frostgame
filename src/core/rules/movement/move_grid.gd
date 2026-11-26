@@ -85,6 +85,8 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	var mid := (pa + pb) * 0.5
 	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
+	if board.low_gravity:
+		return pa.distance_to(pb)
 	if board.has_ground_profiles or board.has_ramps:
 		return TerrainTravel.cost(board,pa,pb,mover)
 	for p in board.pieces_at(mid):

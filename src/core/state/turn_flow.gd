@@ -87,6 +87,7 @@ func _roll_initiative(use: bool) -> void:
 	s.early.capture(s)
 	_c.emit("turn_start", {"turn": s.turn, "order": s.order, "rolls": ini["rolls"]})
 	RedKingHill.priority(_c,ini["rolls"])
+	RealityCracks.on_priority(_c,ini["rolls"])
 	_c.emit("phase", {"phase": s.phase})
 	_settle()
 
@@ -114,6 +115,7 @@ func _settle() -> void:
 			RedKingTethers.end_turn(_c)
 			RedKingBridge.end_turn(_c)
 			RedKingRingworld.end_turn(_c)
+			RealityCracks.on_end_turn(_c)
 			if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
 				return
 			_c._encounters.on_end_turn()

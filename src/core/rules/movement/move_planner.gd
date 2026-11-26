@@ -130,3 +130,40 @@ static func exit_field(s: GameState,side: int=-1) -> Dictionary:
 				field[next] = distance
 				heap.push(distance, next)
 	return field
+
+
+## Low gravity allows a single straight route rather than cornering.
+static func straight_reach(grid: MoveGrid,from: Vector2,allowance: float) -> MoveReach:
+	var r := MoveReach.new()
+	r.start=from
+	var base := node_at(from)
+	var radius := ceili(allowance/MoveGrid.STEP)
+	for dx in range(-radius,radius+1):
+		for dy in range(-radius,radius+1):
+			var n := base+Vector2i(dx,dy)
+			var at := MoveGrid.to_pos(n)
+			var cost := from.distance_to(at)
+			if cost>allowance+0.001 or not grid.open(n):
+				continue
+			var clear := true
+			var steps := maxi(1,ceili(cost/0.25))
+			var last := from
+			for i in range(1,steps+1):
+				var p := from.lerp(at,float(i)/steps)
+				if not is_finite(grid.segment_cost(last,p)):
+					clear=false
+					break
+				for other in grid.others:
+					if absf(other.elevation-grid.board.height_at(p))>=0.5:
+						continue
+					var d := other.pos.distance_to(p)
+					if d<Contact.OVERLAP or (i<steps and grid.mover!=null and other.side!=grid.mover.side and d<Contact.CONTACT and other.pos.distance_to(at)>Contact.CONTACT):
+						clear=false
+						break
+				if not clear:
+					break
+				last=p
+			if clear:
+				r.cost[n]=cost
+				r.prev[n]=null
+	return r
