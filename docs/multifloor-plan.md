@@ -51,6 +51,22 @@ or bounded vertical arc to an explicit landing surface, with a 10-inch path
 budget (5 inches with treasure). Only supported landings are offered; free-air
 Leap endpoints and dynamic Bridge spells are still pending.
 
+## Dynamic terrain and tower prototype
+
+Bridge creates a temporary six-by-two-inch surface with explicit connections,
+flat or sloped, through the normal casting roll. Both endpoints must currently
+be anchored, axis-aligned and six horizontal inches apart; bridges have no
+blocking thickness. One per caster, free dismissal during activation, end-turn
+1–2 expiration. Collapse updates figures and dropped loot; no valid landing
+currently means out of action/lost. The skirmish has a two-endpoint selector.
+Floating endpoints, arbitrary rotations, full collision resolution on occupied
+landings and AI bridge placement remain outstanding.
+
+The separate layered_silent_tower board has stacked 3, 6 and 10-inch floors,
+two annexes, walkways and external climbing routes. It is a geometry test
+fixture only: null-field regions are authored but not yet enforced, and no
+campaign scenario is replaced. Internal stairs and null-field rules are next.
+
 ## Current boundary
 
 A Board stores one exposed walking height at each horizontal coordinate. A bridge or

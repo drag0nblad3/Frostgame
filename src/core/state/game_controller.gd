@@ -112,6 +112,14 @@ func leap_on_floor(target_id: int,node: Vector3i) -> bool:
 	return LayeredLeap.start(self,state.figure(target_id),node)
 
 
+func bridge_on_floors(a: Vector3i,b: Vector3i) -> bool:
+	return LayeredBridge.start(self,a,b)
+
+
+func cancel_floor_bridge() -> bool:
+	return LayeredBridge.cancel(self)
+
+
 func reach() -> MoveReach:
 	if not state.board.floor_layout.is_empty():
 		return MoveReach.new()

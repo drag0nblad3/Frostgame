@@ -11,12 +11,14 @@ var controls: LayeredSkirmishControls
 var marks: MultiMeshInstance3D
 var targets := {}
 var _was_idle := false
+var _layout_revision := 0
 
 
 func _ready() -> void:
 	controller=LayeredBattle.create(FigureDb.load_files(),TerrainDb.load_file(),17)
 	var s := controller.state
 	layout=FloorLayout.from_dict(s.board.floor_layout)
+	_layout_revision=s.board.floor_layout.hash()
 	art=LayeredGatehouseArt.new()
 	add_child(art)
 	art.build(layout)
@@ -100,10 +102,23 @@ func _process(_delta: float) -> void:
 
 
 func refresh() -> void:
+	var revision := controller.state.board.floor_layout.hash()
+	if revision!=_layout_revision:
+		var old := floor_choice.selected
+		var chosen_id := layout.surfaces[old].id if old>=0 and old<layout.surfaces.size() else ""
+		layout=FloorLayout.from_dict(controller.state.board.floor_layout)
+		_layout_revision=revision
+		art.build(layout)
+		floor_choice.clear()
+		for surface in layout.surfaces:
+			floor_choice.add_item(surface.id.capitalize())
+		floor_choice.add_item("All floors")
+		var selected := layout.index_of(chosen_id)
+		floor_choice.select(selected if selected>=0 else layout.surfaces.size())
 	var index := floor_choice.selected
 	var all := index==layout.surfaces.size()
 	var chosen := "" if all else layout.surfaces[index].id
-	art.show_upper(all or chosen in ["upper","landing"])
+	art.show_upper(all or chosen in ["upper","landing"] or chosen.begins_with("bridge:"))
 	var s := controller.state
 	for f in s.figures:
 		var view: FigureView = player.views[f.id]

@@ -24,6 +24,14 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 		layout._add_link(entry)
 	for entry: Dictionary in d.get("climbs",[]):
 		FloorClimb.add(layout,entry)
+	for bridge: Dictionary in d.get("bridges",[]):
+		var s := FloorSurface.from_dict(bridge["surface"])
+		if layout.index_of(s.id)>=0:
+			layout.errors.append("Duplicate dynamic surface: "+s.id)
+			continue
+		layout.surfaces.append(s)
+		for entry: Dictionary in bridge["links"]:
+			layout._add_link(entry)
 	return layout
 
 

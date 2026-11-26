@@ -366,6 +366,9 @@ func _finish_one(health: int) -> bool:
 	if id in ["telekinesis", "fools_gold"]:
 		treasure_magic.apply(f, id, s.treasure(p["effect"]["token"]), p["at"], int(result["roll"]))
 		return true
+	if id=="bridge" and p.get("effect",{}).has("layered_bridge"):
+		LayeredBridge.apply(c,p["effect"]["layered_bridge"])
+		return true
 	if TerrainMagic.SPELLS.has(id):
 		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))
 		return true
@@ -545,6 +548,8 @@ func on_end_activation(f: Figure) -> void:
 
 
 func on_end_turn() -> void:
+	if not c.state.board.floor_layout.is_empty():
+		LayeredBridge.expire(c)
 	terrain.expire()
 	for f in c.state.figures:
 		if f.spell_effects.erase("plane_walk"):

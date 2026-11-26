@@ -5,6 +5,7 @@ var c: GameController
 var destinations := {}
 var mode := "move"
 var leap_target := -1
+var bridge_start: Variant = null
 var hint: Label
 var log_line: Label
 var _buttons := {}
@@ -26,7 +27,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["move","Move"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["move","Move"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -52,7 +53,7 @@ func human() -> bool:
 
 
 func marker_color() -> Color:
-	return Color(0.75,0.46,1.0) if mode in ["teleport","leap_land"] else (Color(1.0,0.77,0.30) if mode=="exit" else Color(0.30,0.96,0.77))
+	return Color(0.75,0.46,1.0) if mode in ["teleport","leap_land","bridge","bridge_end"] else (Color(1.0,0.77,0.30) if mode=="exit" else Color(0.30,0.96,0.77))
 
 
 func refresh() -> void:
@@ -121,6 +122,8 @@ func refresh() -> void:
 	for t in s.figures:
 		leap=leap or LayeredLeap.eligible(c,t)
 	_show("leap",leap)
+	_show("bridge",LayeredBridge.eligible(c))
+	_show("cancel_bridge",not LayeredBridge.owned(s,f.id).is_empty())
 	if mode=="move" and c.can_move():
 		var reach := c.layered_reach()
 		for n: Vector3i in reach.cost:
@@ -133,6 +136,13 @@ func refresh() -> void:
 			destinations[n]=true
 	elif mode=="teleport" and teleport:
 		_teleport_points(f)
+	elif mode in ["bridge","bridge_end"]:
+		var layout: FloorLayout = scene.layout
+		var index: int = scene.floor_choice.selected
+		if index>=layout.surfaces.size():
+			index=layout.index_of(f.surface_id)
+		destinations=LayeredBridgePicker.points(c,layout,index,bridge_start if mode=="bridge_end" else null)
+		hint.text="Choose the first bridge endpoint." if mode=="bridge" else "Choose another floor and the second endpoint."
 	elif mode=="leap":
 		hint.text="Choose a friendly figure visible to the caster."
 	elif mode=="leap_land":
@@ -187,8 +197,12 @@ func command(key: String) -> void:
 	if not scene.player.idle() or not _buttons.has(key) or _buttons[key].disabled or not _buttons[key].visible:
 		return
 	match key:
-		"move","jump","fight","shoot","exit","teleport","leap":
+		"move","jump","fight","shoot","exit","teleport","leap","bridge":
 			mode=key
+			bridge_start=null
+		"cancel_bridge":
+			c.cancel_floor_bridge()
+			mode="move"
 		"collect":
 			for token in c.state.treasures:
 				if c.can_pick_up(token.id):
@@ -269,3 +283,10 @@ func choose_destination(n: Vector3i) -> void:
 			mode="move"
 		"teleport": c.teleport_on_floor(n)
 		"leap_land": c.leap_on_floor(leap_target,n)
+		"bridge":
+			bridge_start=n
+			mode="bridge_end"
+		"bridge_end":
+			if c.bridge_on_floors(bridge_start,n):
+				bridge_start=null
+				mode="move"

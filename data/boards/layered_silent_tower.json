@@ -1,0 +1,331 @@
+{
+  "id": "layered_silent_tower",
+  "name": "Silent Tower (layered prototype)",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [],
+  "floor_layout": {
+    "surfaces": [
+      {
+        "id": "street",
+        "rect": [
+          0,
+          0,
+          36,
+          36
+        ],
+        "level": 0
+      },
+      {
+        "id": "tower_first",
+        "rect": [
+          14,
+          14,
+          8,
+          8
+        ],
+        "level": 3
+      },
+      {
+        "id": "tower_second",
+        "rect": [
+          14,
+          14,
+          8,
+          8
+        ],
+        "level": 6
+      },
+      {
+        "id": "tower_roof",
+        "rect": [
+          14,
+          14,
+          8,
+          8
+        ],
+        "level": 10
+      },
+      {
+        "id": "west_annex",
+        "rect": [
+          6,
+          14,
+          5,
+          8
+        ],
+        "level": 3
+      },
+      {
+        "id": "east_annex",
+        "rect": [
+          25,
+          14,
+          5,
+          8
+        ],
+        "level": 6
+      },
+      {
+        "id": "west_walk",
+        "rect": [
+          10,
+          16,
+          5,
+          3
+        ],
+        "level": 3
+      },
+      {
+        "id": "east_walk",
+        "rect": [
+          21,
+          18,
+          5,
+          3
+        ],
+        "level": 6
+      }
+    ],
+    "solids": [
+      [
+        14,
+        2.6,
+        14,
+        8,
+        0.4,
+        8
+      ],
+      [
+        14,
+        5.6,
+        14,
+        8,
+        0.4,
+        8
+      ],
+      [
+        14,
+        9.6,
+        14,
+        8,
+        0.4,
+        8
+      ],
+      [
+        6,
+        2.6,
+        14,
+        5,
+        0.4,
+        8
+      ],
+      [
+        25,
+        5.6,
+        14,
+        5,
+        0.4,
+        8
+      ],
+      [
+        11,
+        2.8,
+        16,
+        3,
+        0.2,
+        3
+      ],
+      [
+        22,
+        5.8,
+        18,
+        3,
+        0.2,
+        3
+      ],
+      [
+        14,
+        0,
+        14,
+        0.4,
+        2.6,
+        2
+      ],
+      [
+        14,
+        3,
+        14,
+        0.4,
+        2.6,
+        2
+      ],
+      [
+        21.6,
+        6,
+        14,
+        0.4,
+        3.6,
+        2
+      ]
+    ],
+    "links": [
+      {
+        "from": [
+          "west_annex",
+          10.5,
+          17.5
+        ],
+        "to": [
+          "west_walk",
+          11,
+          17.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "west_walk",
+          14,
+          17.5
+        ],
+        "to": [
+          "tower_first",
+          14.5,
+          17.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "tower_second",
+          21.5,
+          19.5
+        ],
+        "to": [
+          "east_walk",
+          22,
+          19.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "east_walk",
+          25,
+          19.5
+        ],
+        "to": [
+          "east_annex",
+          25.5,
+          19.5
+        ],
+        "kind": "walk"
+      }
+    ],
+    "climbs": [
+      {
+        "id": "west_annex_ladder",
+        "from": [
+          "street",
+          5.5,
+          18
+        ],
+        "to": [
+          "west_annex",
+          6.5,
+          18
+        ]
+      },
+      {
+        "id": "east_annex_ladder",
+        "from": [
+          "street",
+          30.5,
+          18
+        ],
+        "to": [
+          "east_annex",
+          29.5,
+          18
+        ]
+      },
+      {
+        "id": "tower_south_lower",
+        "from": [
+          "street",
+          18,
+          13.5
+        ],
+        "to": [
+          "tower_first",
+          18,
+          14.5
+        ]
+      },
+      {
+        "id": "tower_south_upper",
+        "from": [
+          "street",
+          19.5,
+          13.5
+        ],
+        "to": [
+          "tower_roof",
+          19.5,
+          14.5
+        ]
+      },
+      {
+        "id": "tower_north_second",
+        "from": [
+          "street",
+          18,
+          22.5
+        ],
+        "to": [
+          "tower_second",
+          18,
+          21.5
+        ]
+      }
+    ],
+    "exit_surfaces": [
+      "street"
+    ],
+    "null_regions": [
+      [
+        14,
+        14,
+        8,
+        8
+      ],
+      [
+        6,
+        14,
+        5,
+        8
+      ],
+      [
+        25,
+        14,
+        5,
+        8
+      ],
+      [
+        10,
+        16,
+        5,
+        3
+      ],
+      [
+        21,
+        18,
+        5,
+        3
+      ]
+    ]
+  }
+}
