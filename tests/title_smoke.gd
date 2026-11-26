@@ -13,6 +13,21 @@ func _run() -> void:
 		printerr("Title navigation missing")
 		quit(1)
 		return
+	title_scene._buttons["guide"].pressed.emit()
+	if current_scene!=title_scene or title_scene._guide==null or not title_scene._guide.visible or root.has_meta("frostgame_launch"):
+		printerr("Field guide should open directly from home")
+		quit(1)
+		return
+	if title_scene._guide._pages.size()<12 or title_scene._guide._body.text.is_empty():
+		printerr("Field guide missing reference topics")
+		quit(1)
+		return
+	title_scene._guide._show(1)
+	if title_scene._guide._topics.selected!=1:
+		printerr("Field guide topic navigation failed")
+		quit(1)
+		return
+	title_scene._guide.hide()
 	title_scene._buttons["skirmish"].pressed.emit()
 	if title_scene._picker==null or title_scene._picker._list.get_child_count()!=12:
 		printerr("Standard scenario catalog incomplete")

@@ -6,7 +6,7 @@ var _scenario_id := SCENARIO
 var _active_scenario_id := SCENARIO
 var _briefing: ScenarioDialog
 var _inspector: FigureInspector
-var _guide: AcceptDialog
+var _guide: FieldGuideDialog
 var _training := -1
 var _training_complete := false
 var _training_failed := false
@@ -201,21 +201,10 @@ func _open_inspector() -> void:
 
 
 func _open_guide() -> void:
-	if _guide == null:
-		_guide = AcceptDialog.new()
-		_guide.title = "Field guide"
-		_guide.exclusive = true
-		_guide.theme = BattleTheme.create()
-		var body := RichTextLabel.new()
-		body.text = FieldGuide.OVERVIEW
-		body.fit_content = false
-		body.scroll_active = true
-		body.add_theme_font_size_override("normal_font_size", 20)
-		var viewport := PhoneSafeArea.safe_rect(get_viewport(),14).size
-		body.custom_minimum_size = Vector2(minf(600, viewport.x * 0.78), minf(380, viewport.y * 0.60))
-		_guide.add_child(body)
+	if _guide==null:
+		_guide=FieldGuideDialog.new()
 		add_child(_guide)
-	PhoneSafeArea.popup_dialog(_guide)
+	_guide.open("Return to battle")
 
 
 func _info_open() -> bool:

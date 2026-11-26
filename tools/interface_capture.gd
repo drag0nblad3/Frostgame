@@ -17,7 +17,12 @@ func _setup() -> void:
 	root.gui_embed_subwindows = true
 	var scene: Node = load("res://scenes/main.tscn").instantiate()
 	root.add_child(scene)
-	if _dialog=="maps":
+	if _dialog=="guide":
+		scene._open_guide()
+		if not scene._guide.visible:
+			quit(1)
+			return
+	elif _dialog=="maps":
 		scene.player.speed=30.0
 		while not scene.player.idle():
 			await process_frame

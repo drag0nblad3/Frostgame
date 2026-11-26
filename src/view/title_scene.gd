@@ -11,6 +11,7 @@ var _slots: OptionButton
 var _picker: SkirmishPicker
 var _editor: WarbandSetup
 var _notice: Label
+var _guide: FieldGuideDialog
 
 
 func _ready() -> void:
@@ -118,6 +119,9 @@ func _launch(key: String) -> void:
 	if key=="warband":
 		_edit_warband()
 		return
+	if key=="guide":
+		_open_guide()
+		return
 	_launching = true
 	get_tree().root.set_meta(LAUNCH_KEY,key)
 	if get_tree().change_scene_to_file(BATTLE) != OK:
@@ -191,3 +195,10 @@ func _edit_warband() -> void:
 		else:
 			_notice.text="Could not save warband. Reopen the editor and try again.")
 	PhoneSafeArea.popup_dialog(_editor,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.96)
+
+
+func _open_guide() -> void:
+	if _guide==null:
+		_guide=FieldGuideDialog.new()
+		add_child(_guide)
+	_guide.open("Back to home")
