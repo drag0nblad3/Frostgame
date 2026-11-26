@@ -53,3 +53,34 @@ func test_sunken_streets_deployment() -> void:
 	for unit in s.figures:
 		check(s.board.can_stand(unit.pos,Figure.BASE_RADIUS))
 		check_eq(unit.elevation,s.board.height_at(unit.pos))
+
+
+func test_side_routes_connect_to_courtyard_without_hidden_step() -> void:
+	var b := BoardLoader.load_id("sunken_streets",terrain())
+	var grid := MoveGrid.new(b)
+	var left_cost := 0.0
+	var right_cost := 0.0
+	for i in range(16,22):
+		left_cost += grid.step_cost(Vector2i(i,38),Vector2i(i+1,38))
+	for i in range(50,56):
+		right_cost += grid.step_cost(Vector2i(i,38),Vector2i(i+1,38))
+	check(is_equal_approx(left_cost,sqrt(21.25)),"western slope is continuous")
+	check(is_equal_approx(right_cost,sqrt(21.25)),"eastern staircase is continuous")
+	check(is_equal_approx(grid.segment_cost(Vector2(10.5,19),Vector2(11,19)),grid.segment_cost(Vector2(11,19),Vector2(10.5,19))),"climb/descent costs are symmetric")
+
+
+func test_existing_terrace_stair_cost_survives_unrelated_bridge() -> void:
+	var b := make_board([["null_lower",10,10,4,4]])
+	var grid := MoveGrid.new(b)
+	var a := Vector2(9.5,11)
+	var end := Vector2(10,11)
+	check_eq(grid.segment_cost(a,end),3.5)
+	var k := TerrainKind.new()
+	k.walkable_top = true
+	var ramp := TerrainPiece.new(k,Rect2(20,20,6,2))
+	ramp.ramp = true
+	ramp.ramp_end = 2.0
+	b.pieces.append(ramp)
+	b.invalidate_terrain()
+	check_eq(grid.segment_cost(a,end),3.5)
+	check_eq(grid.segment_cost(end,a),3.5)

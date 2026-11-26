@@ -23,7 +23,6 @@ jobs:
         run: |
           set -euo pipefail
           godot --headless --import 2>&1 | tee import.log
-          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/sunken-streets.png 0 sunken_streets 2>&1 | tee sunken.log
           if grep -E 'SCRIPT ERROR|Parse Error' import.log; then exit 1; fi
       - name: Render miniatures and battlefields
         env:
@@ -31,6 +30,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p previews
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/sunken-streets.png 0 sunken_streets 2>&1 | tee sunken.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/title_capture.gd -- previews/title.png 2>&1 | tee title.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/miniatures.png 2>&1 | tee gallery.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/bestiary.png bestiary 2>&1 | tee bestiary.log

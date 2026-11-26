@@ -64,7 +64,7 @@
       ],
       "ramp": {
         "start": 1.5,
-        "end": 0,
+        "end": -2,
         "axis": "x"
       }
     },
@@ -87,7 +87,7 @@
         5
       ],
       "ramp": {
-        "start": 0,
+        "start": -2,
         "end": 1.5,
         "axis": "x"
       }
