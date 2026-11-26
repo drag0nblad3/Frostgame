@@ -170,7 +170,7 @@ func _refresh_item_buttons() -> void:
 		return
 	var item: Dictionary = campaign.data["loot"][int(loot.get_selected_metadata())]
 	if item.get("gear","")=="gear_rk_golden_incunabula" and str(item.get("casting_spell","")).is_empty() and not item.get("ragged_sealed",false):
-		var spells := JsonFile.read("res://data/spells.json")
+		var spells: Dictionary = JsonFile.read("res://data/spells.json")
 		for id: String in spells:
 			if db.content_profile.allows("spells",id):
 				book_spell.add_item(str(spells[id]["name"]))
