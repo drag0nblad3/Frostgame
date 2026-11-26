@@ -74,7 +74,7 @@ func refresh() -> void:
 		preview()
 		return
 	for item in f.items:
-		if c._potions.can_drink(item["potion"]):
+		if c._potions.can_drink(str(item.get("potion", ""))):
 			var key := "potion_" + str(item["potion"])
 			if not available.has(key):
 				available.append(key)

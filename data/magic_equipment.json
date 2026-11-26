@@ -1,0 +1,372 @@
+{
+  "gear_hand_weapon_damage": {
+    "name": "Hand Weapon (+1 Damage)",
+    "type": "hand_weapon",
+    "buy": 300,
+    "sell": 125,
+    "bonus": {
+      "damage": 1
+    },
+    "live": true
+  },
+  "gear_hand_weapon_fight": {
+    "name": "Hand Weapon (+1 Fight)",
+    "type": "hand_weapon",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {
+      "fight": 1
+    },
+    "live": true
+  },
+  "gear_hand_weapon_will": {
+    "name": "Hand Weapon (+2 Will)",
+    "type": "hand_weapon",
+    "buy": 300,
+    "sell": 125,
+    "bonus": {
+      "will": 2
+    },
+    "live": true
+  },
+  "gear_two_handed_damage": {
+    "name": "Two-Handed Weapon (+1 Damage)",
+    "type": "two_handed",
+    "buy": 300,
+    "sell": 125,
+    "bonus": {
+      "damage": 1
+    },
+    "live": true
+  },
+  "gear_two_handed_fight": {
+    "name": "Two-Handed Weapon (+1 Fight)",
+    "type": "two_handed",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {
+      "fight": 1
+    },
+    "live": true
+  },
+  "gear_two_handed_will": {
+    "name": "Two-Handed Weapon (+2 Will)",
+    "type": "two_handed",
+    "buy": 300,
+    "sell": 125,
+    "bonus": {
+      "will": 2
+    },
+    "live": true
+  },
+  "gear_bow_damage": {
+    "name": "Bow (+1 Damage)",
+    "type": "bow",
+    "buy": 300,
+    "sell": 125,
+    "bonus": {
+      "damage": 1
+    },
+    "live": true
+  },
+  "gear_bow_shoot": {
+    "name": "Bow (+1 Shoot)",
+    "type": "bow",
+    "buy": 600,
+    "sell": 250,
+    "bonus": {
+      "shoot": 1
+    },
+    "live": true
+  },
+  "gear_crossbow_damage": {
+    "name": "Crossbow (+1 Damage)",
+    "type": "crossbow",
+    "buy": 300,
+    "sell": 125,
+    "bonus": {
+      "damage": 1
+    },
+    "live": true
+  },
+  "gear_crossbow_shoot": {
+    "name": "Crossbow (+1 Shoot)",
+    "type": "crossbow",
+    "buy": 600,
+    "sell": 250,
+    "bonus": {
+      "shoot": 1
+    },
+    "live": true
+  },
+  "gear_dagger_fight": {
+    "name": "Dagger (+1 Fight)",
+    "type": "dagger",
+    "buy": 400,
+    "sell": 200,
+    "bonus": {
+      "fight": 1
+    },
+    "live": true
+  },
+  "gear_dagger_damage": {
+    "name": "Dagger (+1 Damage)",
+    "type": "dagger",
+    "buy": 400,
+    "sell": 150,
+    "bonus": {
+      "damage": 1
+    },
+    "live": true
+  },
+  "gear_dagger_damage2": {
+    "name": "Dagger (+2 Damage)",
+    "type": "dagger",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {
+      "damage": 2
+    },
+    "live": true
+  },
+  "gear_light_armour": {
+    "name": "Light Armour (+1 Armour)",
+    "type": "light_armour",
+    "buy": 600,
+    "sell": 200,
+    "bonus": {
+      "armour": 1
+    },
+    "live": true
+  },
+  "gear_heavy_armour_absorb": {
+    "name": "Heavy Armour (Elemental Absorption)",
+    "type": "heavy_armour",
+    "buy": 800,
+    "sell": 300,
+    "bonus": {
+      "absorb": 1
+    },
+    "live": true
+  },
+  "gear_ring_protection": {
+    "name": "Ring of Protection",
+    "type": "ring",
+    "buy": 600,
+    "sell": 250,
+    "bonus": {
+      "armour": 1
+    },
+    "live": true
+  },
+  "gear_cloak_protection": {
+    "name": "Cloak of Protection",
+    "type": "cloak",
+    "buy": 600,
+    "sell": 250,
+    "bonus": {
+      "armour": 1
+    },
+    "live": true
+  },
+  "gear_cloak_night": {
+    "name": "Cloak of Night",
+    "type": "cloak",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {
+      "absorb": 1
+    },
+    "live": true
+  },
+  "gear_staff_fight": {
+    "name": "Staff (+1 Fight)",
+    "type": "staff",
+    "buy": 300,
+    "sell": 125,
+    "bonus": {
+      "fight": 1
+    },
+    "live": true
+  },
+  "gear_shield_armour": {
+    "name": "Shield (+1 Armour)",
+    "type": "shield",
+    "buy": 700,
+    "sell": 250,
+    "bonus": {
+      "armour": 1
+    },
+    "live": true
+  },
+  "gear_staff_power1": {
+    "name": "Staff of Power (1)",
+    "type": "staff",
+    "buy": 300,
+    "sell": 150,
+    "bonus": {},
+    "live": false
+  },
+  "gear_staff_power2": {
+    "name": "Staff of Power (2)",
+    "type": "staff",
+    "buy": 400,
+    "sell": 200,
+    "bonus": {},
+    "live": false
+  },
+  "gear_ring_transference": {
+    "name": "Ring of Transference",
+    "type": "ring",
+    "buy": 400,
+    "sell": 150,
+    "bonus": {},
+    "live": false
+  },
+  "gear_ring_power1": {
+    "name": "Ring of Power (1)",
+    "type": "ring",
+    "buy": 200,
+    "sell": 100,
+    "bonus": {},
+    "live": false
+  },
+  "gear_orb_power6": {
+    "name": "Orb of Power (6)",
+    "type": "orb",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {},
+    "live": false
+  },
+  "gear_staff_casting": {
+    "name": "Staff of Casting",
+    "type": "staff",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {},
+    "live": false
+  },
+  "gear_boots_speed": {
+    "name": "Boots of Speed",
+    "type": "boots",
+    "buy": 300,
+    "sell": 130,
+    "bonus": {
+      "move": 1
+    },
+    "live": true
+  },
+  "gear_ring_slow_fall": {
+    "name": "Ring of Slow Fall",
+    "type": "ring",
+    "buy": 200,
+    "sell": 100,
+    "bonus": {
+      "slow_fall": 1
+    },
+    "live": true
+  },
+  "gear_ring_will": {
+    "name": "Ring of Will",
+    "type": "ring",
+    "buy": 300,
+    "sell": 150,
+    "bonus": {
+      "will": 1
+    },
+    "live": true
+  },
+  "gear_ring_teleportation": {
+    "name": "Ring of Teleportation",
+    "type": "ring",
+    "buy": 400,
+    "sell": 150,
+    "bonus": {},
+    "live": false
+  },
+  "gear_gloves_strength": {
+    "name": "Gloves of Strength",
+    "type": "gloves",
+    "buy": 300,
+    "sell": 150,
+    "bonus": {
+      "melee_damage": 1
+    },
+    "live": true
+  },
+  "gear_robes_arrows": {
+    "name": "Robes of Arrow Turning",
+    "type": "robes",
+    "buy": 500,
+    "sell": 250,
+    "bonus": {
+      "arrow_armour": 4
+    },
+    "live": true
+  },
+  "gear_amulet_resistance": {
+    "name": "Amulet of Resistance",
+    "type": "amulet",
+    "buy": 300,
+    "sell": 100,
+    "bonus": {},
+    "live": false
+  },
+  "gear_construct_hammer": {
+    "name": "Construct Hammer",
+    "type": "construct_hammer",
+    "buy": 300,
+    "sell": 100,
+    "bonus": {},
+    "live": false
+  },
+  "gear_gloves_casting": {
+    "name": "Gloves of Casting",
+    "type": "gloves",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {},
+    "live": false
+  },
+  "gear_wand_light": {
+    "name": "Wand of Light",
+    "type": "wand",
+    "buy": 400,
+    "sell": 200,
+    "bonus": {},
+    "live": false
+  },
+  "gear_horn_destruction": {
+    "name": "Horn of Destruction",
+    "type": "horn",
+    "buy": 300,
+    "sell": 100,
+    "bonus": {},
+    "live": false
+  },
+  "gear_fate_stone": {
+    "name": "Fate Stone",
+    "type": "stone",
+    "buy": 500,
+    "sell": 200,
+    "bonus": {},
+    "live": false
+  },
+  "gear_wand_power1": {
+    "name": "Wand of Power (1)",
+    "type": "wand",
+    "buy": 300,
+    "sell": 150,
+    "bonus": {},
+    "live": false
+  },
+  "gear_staff_power3": {
+    "name": "Staff of Power (3)",
+    "type": "staff",
+    "buy": 1200,
+    "sell": 300,
+    "bonus": {},
+    "live": false
+  }
+}

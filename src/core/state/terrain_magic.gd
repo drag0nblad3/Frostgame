@@ -118,7 +118,7 @@ func remove(p: TerrainPiece) -> void:
 		if not is_equal_approx(t.elevation, new_height):
 			t.elevation = new_height
 			c.emit("terrain_fall", {"id": t.id})
-		if fall > 0:
+		if fall > 0 and MagicEquipment.bonus(t, "slow_fall") == 0:
 			c._hurt(t, fall, t, false)
 
 

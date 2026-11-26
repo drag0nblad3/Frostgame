@@ -257,7 +257,7 @@ func finish(health: int) -> bool:
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
 			var old_health := t.health
-			_shot(f, t, int(s.spell_catalog[id]["power"]))
+			_shot(f, t, int(s.spell_catalog[id]["power"]), null, id == "elemental_bolt")
 			if id == "poison_dart" and t.health < old_health:
 				c.poison(t)
 		"call_storm":
@@ -290,7 +290,7 @@ func finish(health: int) -> bool:
 						if not affected.has(member):
 							affected.append(member)
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else f.pos)
+				_shot(f, other, 5, t.pos if other != t else f.pos, true)
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty()
@@ -313,7 +313,7 @@ func _heal(t: Figure, amount: int) -> void:
 	c.emit("heal", {"id": t.id, "amount": t.health - old})
 
 
-func _shot(f: Figure, t: Figure, power: int, origin: Variant = null) -> void:
+func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false) -> void:
 	if not t.in_play():
 		return
 	var s := c.state
@@ -329,6 +329,8 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null) -> void:
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)
 	var dmg := Damage.amount(a, 0, t.effective_armour(), ar, s.critical_hits) if won else 0
+	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
+		dmg = ceili(dmg / 2.0)
 	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d})
 	c._hurt(t, dmg, f)
 

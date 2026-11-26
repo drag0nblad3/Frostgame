@@ -46,7 +46,7 @@ func push(own: bool) -> bool:
 	c.emit("push_back", {"id": moving.id, "path": PackedVector2Array([from, moving.pos])})
 	c._magic.terrain.trigger_landing(moving)
 	var fall := ElevationRules.fall_damage(old_height - moving.elevation)
-	if fall > 0:
+	if fall > 0 and MagicEquipment.bonus(moving, "slow_fall") == 0:
 		c._hurt(moving, fall, other, false)
 	return true
 

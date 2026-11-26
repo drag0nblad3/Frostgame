@@ -79,6 +79,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			var outcome := "recovered"
 			if roll <= (2 if caster else 4):
 				unit["dead"] = true
+				CampaignInventory.lose_owned(data, f.campaign_id)
 				outcome = "died"
 			elif caster and roll <= 4:
 				unit["injuries"] = int(unit["injuries"]) + 1
@@ -87,7 +88,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				unit["miss"] = 1
 				outcome = "misses next battle"
 			elif caster and roll <= 8:
-				outcome = "close call"
+				CampaignInventory.lose_owned(data, f.campaign_id)
+				outcome = "close call; carried items lost"
 			report.append("%s #%d: rolled %d, %s." % [f.label(), f.campaign_id + 1, raw, outcome])
 			break
 	for i in secured:

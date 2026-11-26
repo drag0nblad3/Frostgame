@@ -82,21 +82,21 @@ func effective_fight() -> int:
 
 func effective_armour() -> int:
 	var total := def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0) + (1 if spell_effects.has("enchant_armour") else 0)
-	total += 1 if spell_effects.has("potion_toughness") else 0
+	total += (1 if spell_effects.has("potion_toughness") else 0) + MagicEquipment.bonus(self, "armour")
 	return total if def.role == "creature" else mini(total, 15)
 
 
 func effective_move() -> int:
 	if spell_effects.has("blinding_light"):
 		return 1
-	var speed := def.move + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0)
+	var speed := def.move + MagicEquipment.bonus(self, "move") + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0)
 	if spell_effects.has("potion_speed"):
 		speed = mini(9, speed + 2)
 	return maxi(1, speed)
 
 
 func effective_will() -> int:
-	return def.will + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0)
+	return def.will + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0)
 
 
 func action_limit() -> int:

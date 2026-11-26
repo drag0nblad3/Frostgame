@@ -6,7 +6,17 @@ const GREATER := ["empowerment","shrinking","restoration","dreams","shatterstar"
 
 
 static func catalog() -> Dictionary:
-	return JsonFile.read("res://data/potions.json")
+	var result: Dictionary = JsonFile.read("res://data/potions.json")
+	result.merge(JsonFile.read("res://data/magic_equipment.json"))
+	return result
+
+
+static func item_id(item: Dictionary) -> String:
+	return str(item.get("gear", item.get("potion", "")))
+
+
+static func is_item(item: Dictionary) -> bool:
+	return item["kind"] in ["potion", "gear"]
 
 
 static func identify(d: Dictionary, reward: Dictionary, dice: Dice) -> void:
@@ -14,8 +24,11 @@ static func identify(d: Dictionary, reward: Dictionary, dice: Dice) -> void:
 	if kind.ends_with("potions"):
 		for i in int(kind.split(" ")[0]):
 			var roll := dice.d20()
-			var id: String = LESSER[roll - 1] if roll <= 18 else GREATER[(dice.d20() - 1) / 2]
+			var id: String = LESSER[roll - 1] if roll <= 18 else GREATER[floori((dice.d20() - 1) / 2.0)]
 			d["loot"].append({"kind": "potion", "potion": id, "owner": -1})
+	elif kind in ["magic arms/armour", "magic item"]:
+		var table := MagicEquipment.ARM_TABLE if kind == "magic arms/armour" else MagicEquipment.ITEM_TABLE
+		d["loot"].append({"kind": "gear", "gear": table[dice.d20() - 1], "owner": -1})
 	elif kind != "":
 		d["loot"].append(reward)
 
@@ -31,7 +44,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	if d.is_empty() or index < 0 or index >= d["loot"].size():
 		return false
 	var item: Dictionary = d["loot"][index]
-	if item["kind"] != "potion":
+	if not is_item(item):
 		return false
 	if owner == -1:
 		item["owner"] = -1
@@ -42,12 +55,25 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	if unit["dead"] or unit.get("dismissed", false):
 		return false
 	var used := 0
+	var info: Dictionary = catalog()[item_id(item)]
+	if item["kind"] == "gear" and not MagicEquipment.compatible(db.get_def(unit["type"]), info):
+		return false
 	for i in d["loot"].size():
 		if i != index and int(d["loot"][i].get("owner", -1)) == owner:
+			var other: Dictionary = d["loot"][i]
+			if item["kind"] == "gear" and other["kind"] == "gear" and catalog()[item_id(other)]["type"] == info["type"]:
+				return false
 			used += 1
-	# A caster's starting staff uses one of their item slots.
-	if unit["type"] in ["wizard", "apprentice"]:
-		used += 1
+	# Magic staves replace the caster's starting staff; other items use spare slots.
+	var caster := unit["type"] in ["wizard", "apprentice"]
+	var staff := item["kind"] == "gear" and info["type"] == "staff"
+	if caster and not staff:
+		var magic_staff := false
+		for other: Dictionary in d["loot"]:
+			if int(other.get("owner", -1)) == owner and other["kind"] == "gear" and catalog()[item_id(other)]["type"] == "staff":
+				magic_staff = true
+		if not magic_staff:
+			used += 1
 	if used >= slots(unit, db):
 		return false
 	item["owner"] = owner
@@ -62,7 +88,10 @@ static func buy(d: Dictionary, id: String) -> bool:
 	if price <= 0 or int(d["gold"]) < price:
 		return false
 	d["gold"] = int(d["gold"]) - price
-	d["loot"].append({"kind": "potion", "potion": id, "owner": -1})
+	if id.begins_with("gear_"):
+		d["loot"].append({"kind": "gear", "gear": id, "owner": -1})
+	else:
+		d["loot"].append({"kind": "potion", "potion": id, "owner": -1})
 	return true
 
 
@@ -70,9 +99,9 @@ static func sell(d: Dictionary, index: int) -> bool:
 	if d.is_empty() or index < 0 or index >= d["loot"].size():
 		return false
 	var item: Dictionary = d["loot"][index]
-	if item["kind"] != "potion" or int(item.get("owner", -1)) >= 0:
+	if not is_item(item) or int(item.get("owner", -1)) >= 0:
 		return false
-	d["gold"] = int(d["gold"]) + int(catalog()[item["potion"]]["sell"])
+	d["gold"] = int(d["gold"]) + int(catalog()[item_id(item)]["sell"])
 	d["loot"].remove_at(index)
 	return true
 
@@ -80,8 +109,12 @@ static func sell(d: Dictionary, index: int) -> bool:
 static func loadout(d: Dictionary, owner: int) -> Array:
 	var items: Array = []
 	for item: Dictionary in d["loot"]:
-		if item["kind"] == "potion" and int(item.get("owner", -1)) == owner:
+		if int(item.get("owner", -1)) != owner:
+			continue
+		if item["kind"] == "potion":
 			items.append({"potion": item["potion"], "campaign_item": true})
+		elif item["kind"] == "gear":
+			items.append({"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true})
 	return items
 
 
@@ -92,14 +125,20 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 		var remaining := {}
 		for item: Dictionary in f.items:
 			if item.get("campaign_item", false):
-				var id: String = item["potion"]
+				var id := item_id(item)
 				remaining[id] = int(remaining.get(id, 0)) + 1
 		for i in range(d["loot"].size() - 1, -1, -1):
 			var item: Dictionary = d["loot"][i]
-			if item["kind"] != "potion" or int(item.get("owner", -1)) != f.campaign_id:
+			if not is_item(item) or int(item.get("owner", -1)) != f.campaign_id:
 				continue
-			var id: String = item["potion"]
-			if int(remaining.get(id, 0)) <= 0 or f.out_of_action:
+			var id := item_id(item)
+			if int(remaining.get(id, 0)) <= 0:
 				d["loot"].remove_at(i)
 			else:
 				remaining[id] = int(remaining[id]) - 1
+
+
+static func lose_owned(d: Dictionary, owner: int) -> void:
+	for i in range(d["loot"].size() - 1, -1, -1):
+		if int(d["loot"][i].get("owner", -1)) == owner:
+			d["loot"].remove_at(i)

@@ -15,21 +15,21 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	db = figures
 	changed = callback
 	summary = Label.new()
-	summary.text = "Potion vault and loadouts"
+	summary.text = "Equipment and potion vault"
 	add_child(summary)
 	loot = OptionButton.new()
 	add_child(loot)
 	owner = OptionButton.new()
 	add_child(owner)
-	_button("Assign selected potion", func() -> void:
+	_button("Assign selected item", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.assign_item(campaign.data, int(loot.get_selected_metadata()), int(owner.get_selected_metadata()), db):
 			changed.call())
-	_button("Sell selected unassigned potion", func() -> void:
+	_button("Sell selected unassigned item", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.sell(campaign.data, int(loot.get_selected_metadata())):
 			changed.call())
 	shop = OptionButton.new()
 	add_child(shop)
-	_button("Buy potion", func() -> void:
+	_button("Buy item", func() -> void:
 		if shop.item_count > 0 and CampaignInventory.buy(campaign.data, str(shop.get_selected_metadata())):
 			changed.call())
 
@@ -44,9 +44,9 @@ func refresh() -> void:
 	var catalog := CampaignInventory.catalog()
 	for i in d["loot"].size():
 		var item: Dictionary = d["loot"][i]
-		if item["kind"] != "potion":
+		if not CampaignInventory.is_item(item):
 			continue
-		var info: Dictionary = catalog[item["potion"]]
+		var info: Dictionary = catalog[CampaignInventory.item_id(item)]
 		var assigned := int(item.get("owner", -1))
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])

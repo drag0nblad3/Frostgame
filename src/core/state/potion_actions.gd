@@ -25,7 +25,7 @@ func can_drink(id: String, target: Figure = null) -> bool:
 	if id == "healing" and target.health >= target.def.health:
 		return false
 	for item in f.items:
-		if item["potion"] == id:
+		if item.get("potion", "") == id:
 			return true
 	return false
 
@@ -37,7 +37,7 @@ func drink(id: String, target: Figure = null) -> bool:
 	if not can_drink(id, target):
 		return false
 	for i in f.items.size():
-		if f.items[i]["potion"] == id:
+		if f.items[i].get("potion", "") == id:
 			f.items.remove_at(i)
 			break
 	if f.moves_taken == 0 and not c.state.group.in_progress():
