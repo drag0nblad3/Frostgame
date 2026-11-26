@@ -15,6 +15,7 @@ var move_mult := 1.0
 var height := 1.0
 var walkable_top := false
 var stairs := false
+var ground_surface := false
 
 
 static func from_dict(kind_id: String, d: Dictionary) -> TerrainKind:
@@ -28,4 +29,5 @@ static func from_dict(kind_id: String, d: Dictionary) -> TerrainKind:
 	k.height = float(d.get("height", 1))
 	k.walkable_top = d.get("walkable_top", false)
 	k.stairs = d.get("stairs", false)
+	k.ground_surface = d.get("ground_surface", false)
 	return k

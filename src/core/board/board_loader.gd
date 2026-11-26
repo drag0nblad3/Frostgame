@@ -20,5 +20,13 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 		var r: Array = p["rect"]
 		var piece := TerrainPiece.new(terrain.get_kind(p["kind"]), Rect2(r[0], r[1], r[2], r[3]))
 		piece.circular = piece.kind.id == "arcane_disc"
+		piece.level = p.get("level",null)
+		var profile: Dictionary = p.get("ramp",{})
+		if not profile.is_empty():
+			piece.ramp = true
+			piece.ramp_rotated = profile.get("axis","x") == "y"
+			piece.ramp_start = float(profile.get("start",0.0))
+			piece.ramp_end = float(profile.get("end",0.0))
 		b.pieces.append(piece)
+	b.invalidate_terrain()
 	return b

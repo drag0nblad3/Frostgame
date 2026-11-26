@@ -9,6 +9,7 @@ var eye_host: TerrainPiece
 var eye_direction := Vector2.ZERO
 var ramp := false
 var ramp_rotated := false
+var level: Variant = null
 var ramp_start := 0.0
 var ramp_end := 0.0
 var cast_turn := -1
@@ -26,6 +27,6 @@ func contains(p: Vector2) -> bool:
 
 func surface_height(p: Vector2) -> float:
 	if not ramp:
-		return kind.height
+		return float(level) if level != null else kind.height
 	var fraction := (p.y - rect.position.y) / rect.size.y if ramp_rotated else (p.x - rect.position.x) / rect.size.x
 	return lerpf(ramp_start, ramp_end, clampf(fraction, 0.0, 1.0))
