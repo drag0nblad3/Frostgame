@@ -18,19 +18,20 @@ func start(roster: Dictionary,profile: ContentProfile=null) -> void:
 
 func deployment() -> Dictionary:
 	var units: Array = []
-	var reserve := BaseResources.reserve_id(data, FigureDb.load_files())
+	var ragged := RaggedWarbands.active(data)
+	var reserve := -1 if ragged else BaseResources.reserve_id(data, FigureDb.load_files())
 	for unit: Dictionary in data["units"]:
-		if unit["dead"] or unit.get("dismissed", false) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
+		if unit["dead"] or unit.get("dismissed", false) or (ragged and unit.get("ragged_absent",false)) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
 			continue
 		var entry := {"type": unit["type"], "campaign_id": unit["id"], "at": [4.5 + 3.0 * units.size(), 3.0]}
 		if unit["type"] in ["wizard", "apprentice"]:
 			entry["stat_bonus"] = data.get("advances", {}).duplicate()
-		elif data.get("base", "") == "brewery":
+		elif not ragged and data.get("base", "") == "brewery":
 			entry["stat_bonus"] = {"will": 1}
 		var bonuses := InjuryRules.bonuses(unit, entry.get("stat_bonus", {}))
 		entry["injury_types"] = unit.get("injury_types", {}).duplicate(true)
 		entry["starting_loss"] = InjuryRules.starting_loss(unit)
-		entry["campaign_base"] = data.get("base", "")
+		entry["campaign_base"] = "" if ragged else data.get("base", "")
 		entry["familiar"] = unit.get("familiar", false)
 		entry["awareness"] = unit.get("awareness", false)
 		if unit.get("familiar", false):
@@ -39,6 +40,8 @@ func deployment() -> Dictionary:
 			bonuses["will"] = int(bonuses.get("will", 0)) + 3
 		if unit.get("construct_oiled", false):
 			bonuses["move"] = int(bonuses.get("move", 0)) + 1
+		for stat: String in unit.get("ragged_bonuses",{}):
+			bonuses[stat]=int(bonuses.get(stat,0))+int(unit["ragged_bonuses"][stat])
 		entry["stat_bonus"] = bonuses
 		entry["permanent_summon"] = unit.get("permanent_summon", false)
 		entry["items"] = CampaignInventory.loadout(data, int(unit["id"]))
@@ -63,6 +66,8 @@ func deployment() -> Dictionary:
 
 func can_deploy() -> bool:
 	if not data.get("pending_treasure", []).is_empty():
+		return false
+	if RaggedWarbands.active(data) and RaggedWarbands.has_unassigned(data):
 		return false
 	for unit: Dictionary in data.get("units", []):
 		if unit["type"] == "wizard" and not unit["dead"] and not InjuryRules.blind(unit):
@@ -176,6 +181,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				continue
 			var raw := dice.d20()
 			var caster := f.def.role in ["wizard", "apprentice"]
+			if RaggedWarbands.active(data) and not caster:
+				RaggedWarbands.soldier_survival(unit,raw)
+				report.append("%s #%d: %s."%[f.label(),f.campaign_id+1,"separated from the warband" if unit.get("ragged_absent",false) else "recovered"])
+				break
 			var roll := raw + (1 if f.def.role == "wizard" else 0)
 			var outcome := "recovered"
 			if roll <= (2 if caster else 4):
@@ -238,7 +247,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			secrets -= 1
 		else:
 			_award_treasure(raw, dice, report, token.id)
-	match str(data.get("base", "")):
+	match ("" if RaggedWarbands.active(data) else str(data.get("base", ""))):
 		"temple":
 			if dice.d20() >= 16:
 				data["loot"].append({"kind": "potion", "potion": "healing", "owner": -1})
@@ -338,7 +347,7 @@ static func random_spell(dice: Dice) -> String:
 
 
 func choose_base(id: String) -> bool:
-	if data.is_empty() or int(data["games"]) == 0 or not BASES.has(id) or not ContentProfile.from_campaign(data).allows("bases",id):
+	if RaggedWarbands.active(data) or data.is_empty() or int(data["games"]) == 0 or not BASES.has(id) or not ContentProfile.from_campaign(data).allows("bases",id):
 		return false
 	if id == data.get("base", ""):
 		return true
@@ -398,6 +407,8 @@ func recruitment_cost(id: String, db: FigureDb) -> int:
 
 
 func can_hire(id: String, db: FigureDb) -> bool:
+	if RaggedWarbands.active(data):
+		return false
 	if not CampaignSuccession.living_wizard(data) or not db.available(id) or not ContentProfile.from_campaign(data).allows("figures",id) or int(data["gold"]) < recruitment_cost(id, db):
 		return false
 	var d := db.get_def(id)
@@ -421,7 +432,7 @@ func hire(id: String, db: FigureDb) -> bool:
 
 
 func dismiss(index: int) -> bool:
-	if data.is_empty() or index < 0 or index >= data["units"].size():
+	if RaggedWarbands.active(data) or data.is_empty() or index < 0 or index >= data["units"].size():
 		return false
 	var unit: Dictionary = data["units"][index]
 	if unit["dead"] or unit["type"] == "wizard" or unit.get("dismissed", false):
@@ -434,7 +445,7 @@ func dismiss(index: int) -> bool:
 
 
 func treat(index: int) -> bool:
-	if data.is_empty() or index < 0 or index >= data["units"].size():
+	if RaggedWarbands.active(data) or data.is_empty() or index < 0 or index >= data["units"].size():
 		return false
 	var unit: Dictionary = data["units"][index]
 	if unit["dead"] or int(unit["miss"]) == 0 or unit["type"] not in ["wizard", "apprentice"] or unit.get("dismissed", false):

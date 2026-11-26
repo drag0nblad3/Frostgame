@@ -190,6 +190,8 @@ func refresh(in_battle: bool) -> void:
 	rituals.refresh()
 	base_upgrades.refresh()
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
+	if RaggedWarbands.active(d):
+		lines.append("RAGGED WARBANDS · No hiring, purchases or base benefits. Free random replacements before battle.")
 	for unit: Dictionary in d["units"]:
 		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — resting" if int(unit["miss"]) > 0 else ""), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])
 	for unit: Dictionary in d["units"]:
@@ -212,7 +214,7 @@ func refresh(in_battle: bool) -> void:
 	members.clear()
 	for i in d["units"].size():
 		var unit: Dictionary = d["units"][i]
-		if unit["dead"] or unit.get("dismissed", false) or unit["type"] == "wizard" and int(unit["miss"]) == 0:
+		if unit["dead"] or unit.get("dismissed", false) or unit.get("ragged_absent",false) or unit["type"] == "wizard" and int(unit["miss"]) == 0:
 			continue
 		members.add_item("%s #%d%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " (resting)" if int(unit["miss"]) > 0 else ""])
 		members.set_item_metadata(members.item_count - 1, i)
@@ -223,7 +225,7 @@ func refresh(in_battle: bool) -> void:
 			grimoire.add_item(str(item["spell"]).capitalize())
 			grimoire.set_item_metadata(grimoire.item_count - 1, i)
 	upgrade.disabled = not CampaignSuccession.living_wizard(d) or bool(d.get("stat_improved", false)) or int(d["xp"]) < 100
-	base_button.disabled = int(d["games"]) == 0
+	base_button.disabled = RaggedWarbands.active(d) or int(d["games"]) == 0
 	for i in base_choice.item_count:
 		var id := str(base_choice.get_item_metadata(i))
 		var proposed := d.duplicate(true)
@@ -231,8 +233,8 @@ func refresh(in_battle: bool) -> void:
 			proposed["base"] = id
 			proposed["resources"] = []
 		base_choice.set_item_disabled(i, not BaseResources.fits(proposed, db))
-	dismiss_button.disabled = members.item_count == 0
-	treat_button.disabled = members.item_count == 0
+	dismiss_button.disabled = RaggedWarbands.active(d) or members.item_count == 0
+	treat_button.disabled = RaggedWarbands.active(d) or members.item_count == 0
 	learn_button.disabled = not CampaignSuccession.living_wizard(d) or grimoire.item_count == 0 or int(d["xp"]) < 100
 	for i in recruit.item_count:
 		var id := str(recruit.get_item_metadata(i))

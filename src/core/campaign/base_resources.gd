@@ -8,11 +8,11 @@ static func catalog() -> Dictionary:
 
 
 static func owns(d: Dictionary, id: String) -> bool:
-	return d.get("resources", []).has(id)
+	return not RaggedWarbands.active(d) and d.get("resources", []).has(id)
 
 
 static func buy(d: Dictionary, id: String) -> bool:
-	if d.is_empty() or str(d.get("base", "")) == "" or owns(d, id) or not ContentProfile.from_campaign(d).allows("base_resources",id):
+	if RaggedWarbands.active(d) or d.is_empty() or str(d.get("base", "")) == "" or owns(d, id) or not ContentProfile.from_campaign(d).allows("base_resources",id):
 		return false
 	var info: Dictionary = catalog().get(id, {})
 	if not info.get("live", false) or int(d["gold"]) < int(info.get("cost", 0)):
@@ -43,7 +43,7 @@ static func casting_bonus(d: Dictionary, spell: String) -> int:
 
 
 static func alive(unit: Dictionary) -> bool:
-	return not unit.get("dead", false) and not unit.get("dismissed", false)
+	return not unit.get("dead", false) and not unit.get("dismissed", false) and not unit.get("ragged_absent",false)
 
 
 static func soldier(unit: Dictionary, db: FigureDb) -> bool:
@@ -77,6 +77,8 @@ static func counts(d: Dictionary, db: FigureDb, extra_type: String = "") -> Vect
 
 
 static func fits(d: Dictionary, db: FigureDb, extra_type: String = "") -> bool:
+	if RaggedWarbands.active(d):
+		return RaggedWarbands.ready_count(d)+(0 if extra_type.is_empty() else 1)<=10
 	var count := counts(d, db, extra_type)
 	var extra := 1 if d.get("base", "") == "inn" else 0
 	return count.x <= 8 + extra and count.y <= 4 + extra
@@ -84,7 +86,7 @@ static func fits(d: Dictionary, db: FigureDb, extra_type: String = "") -> bool:
 
 static func reserve_candidates(d: Dictionary, db: FigureDb) -> Array[int]:
 	var candidates: Array[int] = []
-	if d.get("base", "") != "inn":
+	if RaggedWarbands.active(d) or d.get("base", "") != "inn":
 		return candidates
 	var ready: Array[Dictionary] = []
 	var kennel_id := -1

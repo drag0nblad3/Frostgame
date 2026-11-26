@@ -61,7 +61,7 @@ func points(f: Figure, t: Figure, id: String, first_only: bool = false) -> Array
 
 
 func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, sites: bool = true) -> void:
-	if RedKingVeil.touch(c,t,at):
+	if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
 		return
 	# A teleport has no intervening path; test its landing.
 	RedKingFire.portal_contact(c,t,at,at,{})

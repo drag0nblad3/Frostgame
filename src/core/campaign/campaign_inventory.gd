@@ -58,6 +58,11 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	if d.is_empty() or index < 0 or index >= d["loot"].size():
 		return false
 	var item: Dictionary = d["loot"][index]
+	if RaggedWarbands.active(d):
+		if item.get("ragged_sealed",false) or RaggedWarbands.absent_owner(d,item):
+			return false
+		if owner<0:
+			return false
 	if not is_item(item):
 		return false
 	if item.get("gear", "") == "gear_construct_hammer":
@@ -79,7 +84,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	if owner < 0 or owner >= d["units"].size():
 		return false
 	var unit: Dictionary = d["units"][owner]
-	if unit["dead"] or unit.get("dismissed", false):
+	if unit["dead"] or unit.get("dismissed", false) or unit.get("ragged_absent",false):
 		return false
 	if item["kind"] == "scroll" and unit["type"] not in ["wizard", "apprentice"]:
 		return false
@@ -107,7 +112,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 
 static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 	var potions := catalog()
-	if d.is_empty() or not potions.has(id) or not ContentProfile.from_campaign(d).item_allowed(id):
+	if RaggedWarbands.active(d) or d.is_empty() or not potions.has(id) or not ContentProfile.from_campaign(d).item_allowed(id):
 		return false
 	var price := int(potions[id]["buy"])
 	if price <= 0 or int(d["gold"]) < price:
@@ -128,6 +133,8 @@ static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 
 
 static func can_sell(d: Dictionary, item: Dictionary) -> bool:
+	if RaggedWarbands.active(d):
+		return false
 	if item["kind"] == "grimoire":
 		return d.get("spells", {}).has(item.get("spell", ""))
 	return is_item(item) and int(item.get("owner", -1)) < 0

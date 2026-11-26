@@ -7,6 +7,9 @@ static func play(c: GameController, f: Figure) -> bool:
 		return _mind_move(c,f)
 	if RedKingMadMan.hunter(f):
 		return false
+	if RedKingHerded.active(c.state) and not Contact.in_combat(c.state.figures,f):
+		if f.treasure_id>=0 or f.pos.y-float(c.state.scenario_data.get("herd_veil",0.0))<8.0:
+			return _escape(c,f)
 	if RedKingVeil.active(c.state):
 		if f.side==1:
 			return false

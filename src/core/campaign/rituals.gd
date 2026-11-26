@@ -14,6 +14,8 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 	var u: Dictionary = d["units"][caster]
 	if u["dead"] or u.get("dismissed", false) or int(u["miss"]) > 0 or u["type"] not in ["wizard", "apprentice"]:
 		return out
+	if RaggedWarbands.active(d) and id=="summon_demon":
+		return out
 	if not BEFORE.has(id) and not AFTER.has(id):
 		return out
 	if AFTER.has(id) and (int(d["games"]) == 0 or d.get("preparation_started", false)):
@@ -41,7 +43,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 			for p: String in CampaignInventory.LESSER:
 				out.append(p)
 			var catalog: Dictionary = JsonFile.read("res://data/potions.json")
-			if wizard:
+			if wizard and not RaggedWarbands.active(d):
 				for p: String in CampaignInventory.GREATER:
 					if int(d["gold"]) >= int(catalog[p]["ingredients"]):
 						out.append(p)
@@ -100,7 +102,8 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 		mod = -4
 	if id == "miraculous_cure" and d["units"][int(option)]["dead"]:
 		mod = -4
-	mod += BaseRules.casting_bonus(str(d.get("base", "")), id) + BaseResources.casting_bonus(d, id)
+	if not RaggedWarbands.active(d):
+		mod += BaseRules.casting_bonus(str(d.get("base", "")), id) + BaseResources.casting_bonus(d, id)
 	var attempts: Dictionary = d.get("ritual_attempts", {})
 	attempts["%d:%s" % [caster, id]] = true
 	d["ritual_attempts"] = attempts

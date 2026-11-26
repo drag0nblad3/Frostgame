@@ -477,6 +477,9 @@ func _begin_campaign_battle() -> void:
 			unit["dead"] = true
 			CampaignInventory.lose_owned(_campaign.data, int(unit["id"]))
 			_campaign.data["last_report"].append("%s retires after losing both eyes." % str(unit["type"]).capitalize())
+	if RaggedWarbands.stage(_scenario_id):
+		RaggedWarbands.enter(_campaign.data)
+		RaggedWarbands.fill(_campaign.data,_figures,Dice.new(0))
 	if not _campaign.save():
 		return
 	_campaign_battle = true
