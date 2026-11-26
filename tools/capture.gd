@@ -7,9 +7,15 @@ var _scene: Node
 var _out := "/tmp/frostgame.png"
 var _left := 12
 var _frames := 0
+var _ready_to_capture := false
+var _scenario := "treasure_skirmish"
 
 
 func _initialize() -> void:
+	call_deferred("_setup")
+
+
+func _setup() -> void:
 	var args := OS.get_cmdline_user_args()
 	if args.size() > 0:
 		_out = args[0]
@@ -19,11 +25,24 @@ func _initialize() -> void:
 	root.add_child(_scene)
 	_scene.watch_mode = true
 	if args.size() > 2:
-		_scene._scenario_id = args[2]
-		_scene.new_game(17)
+		_scenario = args[2]
+	_scene._scenario_id = _scenario
+	_scene.new_game(17)
+	if _scene._active_scenario_id != _scenario or _scene.controller == null:
+		printerr("Capture scenario failed: ", _scenario)
+		quit(1)
+		return
+	var expected: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario + ".json")
+	if _scene.controller.state.board.id != expected.get("board", ""):
+		printerr("Wrong board for capture: ", _scene.controller.state.board.id)
+		quit(1)
+		return
+	_ready_to_capture = true
 
 
 func _process(_delta: float) -> bool:
+	if not _ready_to_capture:
+		return false
 	_frames += 1
 	if _frames < 3:
 		return false
@@ -38,6 +57,9 @@ func _process(_delta: float) -> bool:
 	if _frames < 40:
 		return false
 	var img := root.get_viewport().get_texture().get_image()
-	img.save_png(_out)
-	print("capture saved ", _out)
+	if img == null or img.save_png(_out) != OK:
+		printerr("Failed to save capture: ", _out)
+		quit(1)
+		return true
+	print("capture saved ", _out, " scenario=", _scenario, " board=", _scene.controller.state.board.id)
 	return true

@@ -2,9 +2,14 @@ extends SceneTree
 ## A renderable miniature lineup. No gameplay state is changed.
 var _frames := 0
 var _scene: Node3D
+var _ready_to_capture := false
 
 
 func _initialize() -> void:
+	call_deferred("_setup")
+
+
+func _setup() -> void:
 	_scene = Node3D.new()
 	root.add_child(_scene)
 	var db := FigureDb.load_files()
@@ -34,9 +39,12 @@ func _initialize() -> void:
 	camera.position = Vector3(7, 18, -14)
 	camera.look_at(Vector3(7, 0, 6), Vector3.UP)
 	camera.make_current()
+	_ready_to_capture = true
 
 
 func _process(_delta: float) -> bool:
+	if not _ready_to_capture:
+		return false
 	_frames += 1
 	if _frames < 40:
 		return false
