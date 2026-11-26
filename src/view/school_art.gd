@@ -1,6 +1,6 @@
 class_name SchoolArt
 extends RefCounted
-## Original school-specific color schemes and ornaments. Base rings retain team color.
+## School-specific accessory pigments and ornaments. Clothing is identity-based.
 const PALETTES := {
 	"chronomancer": ["34445d", "b4a46b", "a8ddf0"],
 	"elementalist": ["834334", "d49a51", "ff9a39"],
@@ -44,7 +44,6 @@ static func dress(root: Node3D, school: String, apprentice: bool) -> void:
 	# A shared school insignia on the chest, independent of the selected weapon.
 	var pin := MiniatureFactory.sphere(root, Vector3(0,1.04,-0.195),Vector3(0.115,0.145,0.075),trim)
 	WeaponSculpt.metal(pin)
-	CreatureSculpt.eye(root,Vector3(0,1.04,-0.245),gem)
 	match school:
 		"chronomancer":
 			for y: float in [0.57,0.70]:
@@ -52,18 +51,15 @@ static func dress(root: Node3D, school: String, apprentice: bool) -> void:
 				disc.rotation.x = PI*0.5
 			CreatureSculpt.limb(root,Vector3(-0.27,0.69,-0.24),Vector3(-0.13,0.58,-0.24),0.025,gem,1.0)
 		"elementalist":
-			for side: float in [-1.0,1.0]:
-				for i in 2:
-					var a := Vector3(side*(0.18+i*0.08),1.12,0.045)
-					CreatureSculpt.limb(root,a,a+Vector3(side*0.025,0.17-i*0.045,-0.03),0.045,gem,0.0)
+			for i in 2:
+				MiniatureFactory.sphere(root,Vector3(0.16,0.67+i*0.09,-0.23),Vector3.ONE*0.08,gem)
 		"enchanter":
 			for i in 3:
 				var x := (i-1)*0.13
 				WeaponSculpt.metal(MiniatureFactory.box(root,Vector3(x,0.72,-0.23),Vector3(0.085,0.095,0.065),trim))
 		"illusionist":
 			for side: float in [-1.0,1.0]:
-				var a := Vector3(side*0.22,1.38,0.06)
-				CreatureSculpt.limb(root,a,a+Vector3(side*0.09,0.22,0.16),0.045,trim,0.06)
+				MiniatureFactory.sphere(root,Vector3(side*0.07,1.33,-0.17),Vector3(0.11,0.08,0.04),trim)
 		"necromancer":
 			MiniatureFactory.sphere(root,Vector3(-0.20,0.69,-0.23),Vector3(0.19,0.22,0.17),Color(0.89,0.84,0.69))
 			for x: float in [-0.24,-0.16]:
@@ -80,10 +76,7 @@ static func dress(root: Node3D, school: String, apprentice: bool) -> void:
 			mat.emission = gem*0.45
 		"summoner":
 			for side: float in [-1.0,1.0]:
-				var a := Vector3(side*0.17,1.46,0.04)
-				var b := a+Vector3(side*0.12,0.15,0.01)
-				CreatureSculpt.limb(root,a,b,0.06,trim,0.6)
-				CreatureSculpt.limb(root,b,b+Vector3(side*0.06,0.12,-0.08),0.035,trim,0.0)
+				WeaponSculpt.metal(MiniatureFactory.sphere(root,Vector3(side*0.17,0.90,-0.20),Vector3.ONE*0.10,trim))
 		"thaumaturge":
 			for side: float in [-1.0,1.0]:
 				MiniatureFactory.box(root,Vector3(side*0.16,0.88,-0.18),Vector3(0.095,0.42,0.075),trim)
@@ -93,5 +86,4 @@ static func dress(root: Node3D, school: String, apprentice: bool) -> void:
 				MiniatureFactory.sphere(root,Vector3(x,0.71,-0.235),Vector3(0.10,0.16,0.11),gem.darkened(i*0.13))
 				MiniatureFactory.cylinder(root,Vector3(x,0.80,-0.235),0.034,0.035,0.045,trim)
 	if not apprentice:
-		var hem := MiniatureFactory.cylinder(root,Vector3(0,0.23,0),0.34,0.36,0.035,trim)
-		hem.scale.z = 0.75
+		WeaponSculpt.metal(MiniatureFactory.sphere(root,Vector3(0.22,0.65,-0.23),Vector3.ONE*0.075,trim))

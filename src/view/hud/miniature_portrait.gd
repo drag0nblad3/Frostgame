@@ -56,7 +56,7 @@ func _ready() -> void:
 func set_figure(f: Figure, color: Color, school: String = "") -> void:
 	if not is_instance_valid(_turntable):
 		return
-	var next := "%s:%s:%s:%s:%s:%s" % [f.def.id, f.id, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", color, school]
+	var next := "%s:%s:%s:%s:%s:%s:%s" % [f.def.id, WizardSculpt.identity(f), f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", color, school if not school.is_empty() else SchoolArt.of_figure(f), f.side]
 	if next == _key:
 		return
 	_key = next

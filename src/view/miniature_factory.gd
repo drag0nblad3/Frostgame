@@ -14,27 +14,28 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 	if CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
 		MiniatureBatch.bake(model)
 		return model
+	if f.def.role in ["wizard", "apprentice"]:
+		var school := school_override if not school_override.is_empty() else SchoolArt.of_figure(f)
+		WizardSculpt.create(model,f,school)
+		weapon(model,f,school)
+		MiniatureBatch.bake(model)
+		return model
 	if f.def.traits.has("construct"):
 		GolemSculpt.create(model, f.def.id, faction)
 	elif f.def.traits.has("animal"):
 		animal(model, f.def.id)
 	else:
-		var caster := f.def.role in ["wizard", "apprentice"]
-		var school := school_override if not school_override.is_empty() else SchoolArt.of_figure(f)
-		var cloth_color := SchoolArt.cloth(school, faction) if caster else faction
+		var cloth_color := faction
 		var undead := f.def.traits.has("undead")
 		var demon := f.def.traits.has("demon")
 		var large := f.def.traits.has("large")
 		var skin := BONE if undead else (Color(0.62, 0.24, 0.26) if demon else SKIN)
 		var coat := Color(0.29, 0.38, 0.45) if undead else cloth_color.darkened(0.20)
-		var metal := f.def.armour >= 11 and not caster
+		var metal := f.def.armour >= 11
 		for x: float in [-0.13, 0.13]:
 			CreatureSculpt.limb(model, Vector3(x * 0.86, 0.58, 0), Vector3(x * 1.14, 0.17, 0.035), 0.105, LEATHER, 0.81)
 			sphere(model, Vector3(x * 1.14, 0.10, -0.06), Vector3(0.21, 0.19, 0.33), LEATHER.darkened(0.25))
-		if caster:
-			ClothSculpt.robe(model, coat)
-		else:
-			cylinder(model, Vector3(0, 0.57, 0), 0.22, 0.25, 0.55, coat).scale.z = 0.78
+		cylinder(model, Vector3(0, 0.57, 0), 0.22, 0.25, 0.55, coat).scale.z = 0.78
 		sphere(model, Vector3(0, 0.93, 0), Vector3(0.53, 0.54, 0.37), IRON if metal else coat)
 		box(model, Vector3(0, 0.72, -0.18), Vector3(0.50, 0.085, 0.09), LEATHER)
 		for x: float in [-0.30, 0.30]:
@@ -45,16 +46,7 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 			sphere(model, Vector3(x * 1.20, 0.75, -0.09), Vector3.ONE * 0.15, skin)
 			MiniaturePose.attach(model, pivot, first)
 		sphere(model, Vector3(0, 1.30, -0.015), Vector3(0.32, 0.38, 0.31), skin)
-		if caster:
-			if f.def.role == "wizard":
-				cylinder(model, Vector3(0, 1.59, 0), 0.065, 0.24, 0.37, cloth_color.darkened(0.40)).rotation.z = 0.12
-				cylinder(model, Vector3(0, 1.45, 0), 0.32, 0.32, 0.055, cloth_color.darkened(0.35))
-				cylinder(model, Vector3(0, 1.51, 0), 0.20, 0.21, 0.06, Color(0.76, 0.59, 0.27))
-			else:
-				ClothSculpt.hood(model, cloth_color.darkened(0.45))
-			ClothSculpt.cape(model, cloth_color.darkened(0.12), 0.90 if f.def.role == "wizard" else 0.67)
-			SchoolArt.dress(model, school, f.def.role == "apprentice")
-		elif metal:
+		if metal:
 			sphere(model, Vector3(0, 1.36, 0.015), Vector3(0.38, 0.34, 0.35), IRON)
 			box(model, Vector3(0, 1.31, -0.18), Vector3(0.28, 0.075, 0.07), Color(0.08, 0.12, 0.16))
 		elif undead:
@@ -77,14 +69,17 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 	return model
 
 
-static func weapon(model: Node3D, f: Figure) -> void:
+static func weapon(model: Node3D, f: Figure, school: String = "") -> void:
 	var id := f.melee.id if f.melee != null else ""
 	var right := model.get_node_or_null("RightArm") as Node3D
 	var left := model.get_node_or_null("LeftArm") as Node3D
 	var first := model.get_child_count()
 	match id:
 		"staff":
-			WeaponSculpt.staff(model)
+			if f.def.role in ["wizard","apprentice"]:
+				WizardFocus.staff(model,school)
+			else:
+				WeaponSculpt.staff(model)
 		"hand_weapon", "two_handed", "dagger":
 			var length := 1.1 if id == "two_handed" else (0.35 if id == "dagger" else 0.76)
 			WeaponSculpt.sword(model, length, id == "two_handed")

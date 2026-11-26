@@ -22,3 +22,33 @@ func test_school_metadata_survives_checkpoint() -> void:
 	check(restored != null)
 	if restored != null:
 		check_eq(SchoolArt.of_figure(restored.state.figure(1)),"elementalist")
+
+
+func test_wizard_cloth_varies_by_identity_not_school() -> void:
+	var defs := db()
+	var f := Figure.new(1,defs.get_def("wizard"),0,Vector2.ZERO,defs.unarmed())
+	var other := Figure.new(2,defs.get_def("wizard"),0,Vector2.ZERO,defs.unarmed())
+	var coat := WizardSculpt.cloth(f)
+	check(coat!=WizardSculpt.cloth(other))
+	f.campaign_id=99
+	other.campaign_id=99
+	check_eq(WizardSculpt.cloth(f),WizardSculpt.cloth(other))
+	var s := GameState.new()
+	f.battle_ref=weakref(s)
+	s.side_schools[0]="witch"
+	var before := WizardSculpt.cloth(f)
+	s.side_schools[0]="elementalist"
+	check_eq(WizardSculpt.cloth(f),before)
+
+
+func test_every_school_preserves_articulated_wizard_and_apprentice() -> void:
+	var defs := db()
+	for school: String in SchoolArt.PALETTES:
+		for role: String in ["wizard","apprentice"]:
+			var f := Figure.new(3,defs.get_def(role),0,Vector2.ZERO,defs.unarmed())
+			var model := MiniatureFactory.create(f,Color.BLUE,school)
+			check(model.has_node("RightArm"))
+			check(model.has_node("LeftArm"))
+			check(not model.get_node("RightArm").get_children().is_empty())
+			MiniaturePose.arms(model,0.2,-0.4)
+			model.free()
