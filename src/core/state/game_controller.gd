@@ -42,6 +42,7 @@ func emit(type: String, data: Dictionary = {}) -> void:
 func start_game() -> void:
 	RedKingInvestigations.prepare(self)
 	RedKingVeil.prepare(self)
+	RedKingMind.prepare(self)
 	_flow.start_turn()
 
 
@@ -82,6 +83,7 @@ func activate(id: int) -> bool:
 	emit("activate", {"id": id})
 	RedKingInvestigations.activation(self,f)
 	RedKingVeil.activation(self,f)
+	RedKingMind.activation(self,f)
 	RedKingSquatter.record_contact(self)
 	if not state.group.in_progress() or state.group.movement_pass():
 		CreatureEffects.activation(self,f)
@@ -92,7 +94,7 @@ func activate(id: int) -> bool:
 
 func can_move() -> bool:
 	var f := state.active()
-	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and (not RedKingMind.is_wizard(state,f) or f.moves_taken==0) and MoveRules.can_move(f, state.figures)
 
 
 ## Where the active figure could go with its next movement action.
@@ -215,7 +217,7 @@ func can_act(for_fight: bool = false) -> bool:
 	var f := state.active()
 	if not for_fight and FuryRules.target(state, f) != null:
 		return false
-	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (not f.acted or (RedKingMind.is_wizard(state,f) and f.non_moves<2) or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:

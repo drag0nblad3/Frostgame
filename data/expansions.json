@@ -75,6 +75,11 @@
           "The Demons and the Mad Man",
           "Capture a fleeing survivor of ancient Felstad while Hrut hunting parties enter the ruins.",
           "Only melee damage can render Ryce unconscious. Carry him off as an objective; at the end of turn two, each side receives a temporary Hrut hunting party. Repeated reality cracks exchange opposite edge regions."
+        ],
+        "red_king_mind": [
+          "In the Mind of Kalamon Ryce",
+          "Enter a fractured mind alone and gather memories while mindshrikes converge.",
+          "Eight turns, three actions per turn with at most one move. Touch memories to secure them immediately. An event changes the board after each turn; defeat does not require a survival roll."
         ]
       }
     }

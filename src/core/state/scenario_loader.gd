@@ -40,7 +40,9 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			s.telescope_ready[side] = true
 		var deploy_index := 0
 		for entry: Dictionary in wb.get("figures", []):
-			var at: Array = entry["at"]
+			if RedKingMind.active(s) and (side!=0 or entry["type"]!="wizard"):
+				continue
+			var at: Array = [0.5,0.5] if RedKingMind.active(s) else entry["at"]
 			if s.scenario_special == "underground_library":
 				var position := Vector2(15.0 + float(deploy_index % 5) * 1.5, 1.5 + floori(deploy_index / 5.0) * 1.5)
 				if side == 1:

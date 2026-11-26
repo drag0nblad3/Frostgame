@@ -16,6 +16,10 @@ func start_turn() -> void:
 	var s := _c.state
 	if s.over:
 		return
+	if RedKingMind.active(s) and s.turn>=8:
+		RedKingMind.finish(_c)
+		_finish(0)
+		return
 	s.turn += 1
 	if s.turn > GameState.MAX_TURNS:
 		if RedKingVeil.active(s):
@@ -103,6 +107,9 @@ func _settle() -> void:
 			RedKingVeil.end_turn(_c)
 			RedKingFire.end_turn(_c)
 			RedKingMadMan.end_turn(_c)
+			RedKingMind.end_turn(_c)
+			if RedKingMind.active(s) and _check_victory():
+				return
 			_c._encounters.on_end_turn()
 			start_turn()
 			return
@@ -130,6 +137,13 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
+	if RedKingMind.active(s):
+		var wizard := RedKingMind.wizard(s)
+		if wizard!=null and wizard.in_play():
+			return false
+		RedKingMind.finish(_c)
+		_finish(0)
+		return true
 	if RedKingMadMan.active(s):
 		var living_warband := false
 		for f in s.figures:

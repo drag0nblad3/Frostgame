@@ -119,7 +119,15 @@ func waiting(side: int) -> Array[Figure]:
 		for f in side_figures(-1):
 			if not f.activated and not RedKingMadMan.is_ryce(f):
 				creatures.append(f)
-		creatures.sort_custom(func(a: Figure, b: Figure) -> bool: return a.health > b.health or (a.health == b.health and a.id < b.id))
+		if RedKingMind.active(self):
+			var wizard := RedKingMind.wizard(self)
+			if wizard!=null:
+				creatures.sort_custom(func(a: Figure,b: Figure) -> bool:
+					var da := a.pos.distance_squared_to(wizard.pos)
+					var db := b.pos.distance_squared_to(wizard.pos)
+					return da<db or (is_equal_approx(da,db) and a.id<b.id))
+		else:
+			creatures.sort_custom(func(a: Figure, b: Figure) -> bool: return a.health > b.health or (a.health == b.health and a.id < b.id))
 		if creatures.size() > 1:
 			creatures.resize(1)
 		return creatures
