@@ -21,6 +21,8 @@ func test_campaign_survival_and_progression() -> void:
 	c.state.treasures.append(token)
 	check(p.settle(c, LoadedDice.new([5, 1])))
 	check_eq(p.data["xp"], 80)
+	check(not p.can_deploy())
+	check(p.resolve_treasure(false, LoadedDice.new([])))
 	check_eq(p.data["gold"], d.BUDGET - d.cost() + 50)
 	check_eq(p.data["units"][2]["miss"], 1)
 	check_eq(p.deployment()["figures"].size(), 3)

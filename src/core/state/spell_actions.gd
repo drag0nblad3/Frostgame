@@ -43,7 +43,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
-	if kind in ["unimplemented", "placement", "counter", "treasure"]:
+	if kind in ["unimplemented", "ritual", "placement", "counter", "treasure"]:
 		return false
 	if kind == "self":
 		return t == f and f.elemental_shield == 0
