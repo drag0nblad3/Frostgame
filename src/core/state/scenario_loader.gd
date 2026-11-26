@@ -30,6 +30,10 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for side in warbands.size():
 		var wb: Dictionary = warbands[side]
 		s.side_names.append(wb.get("name", "Warband %d" % (side + 1)))
+		var schools: Dictionary = JsonFile.read("res://data/schools.json")
+		var school := str(wb.get("school", wb.get("name", ""))).to_lower()
+		if schools.has(school):
+			s.side_schools[side] = school
 		s.spellbooks[side] = wb.get("spells", {})
 		if wb.get("telescope", false):
 			s.telescope_ready[side] = true

@@ -8,7 +8,7 @@ const BONE := Color(0.85, 0.82, 0.69)
 const SKIN := Color(0.78, 0.61, 0.46)
 
 
-static func create(f: Figure, faction: Color) -> Node3D:
+static func create(f: Figure, faction: Color, school_override: String = "") -> Node3D:
 	var model := Node3D.new()
 	var color := faction
 	if CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
@@ -20,11 +20,13 @@ static func create(f: Figure, faction: Color) -> Node3D:
 		animal(model, f.def.id)
 	else:
 		var caster := f.def.role in ["wizard", "apprentice"]
+		var school := school_override if not school_override.is_empty() else SchoolArt.of_figure(f)
+		var cloth_color := SchoolArt.cloth(school, faction) if caster else faction
 		var undead := f.def.traits.has("undead")
 		var demon := f.def.traits.has("demon")
 		var large := f.def.traits.has("large")
 		var skin := BONE if undead else (Color(0.62, 0.24, 0.26) if demon else SKIN)
-		var coat := Color(0.29, 0.38, 0.45) if undead else faction.darkened(0.30)
+		var coat := Color(0.29, 0.38, 0.45) if undead else cloth_color.darkened(0.20)
 		var metal := f.def.armour >= 11 and not caster
 		for x: float in [-0.13, 0.13]:
 			CreatureSculpt.limb(model, Vector3(x * 0.86, 0.58, 0), Vector3(x * 1.14, 0.17, 0.035), 0.105, LEATHER, 0.81)
@@ -45,12 +47,13 @@ static func create(f: Figure, faction: Color) -> Node3D:
 		sphere(model, Vector3(0, 1.30, -0.015), Vector3(0.32, 0.38, 0.31), skin)
 		if caster:
 			if f.def.role == "wizard":
-				cylinder(model, Vector3(0, 1.59, 0), 0.065, 0.24, 0.37, faction.darkened(0.40)).rotation.z = 0.12
-				cylinder(model, Vector3(0, 1.45, 0), 0.32, 0.32, 0.055, faction.darkened(0.35))
+				cylinder(model, Vector3(0, 1.59, 0), 0.065, 0.24, 0.37, cloth_color.darkened(0.40)).rotation.z = 0.12
+				cylinder(model, Vector3(0, 1.45, 0), 0.32, 0.32, 0.055, cloth_color.darkened(0.35))
 				cylinder(model, Vector3(0, 1.51, 0), 0.20, 0.21, 0.06, Color(0.76, 0.59, 0.27))
 			else:
-				ClothSculpt.hood(model, faction.darkened(0.45))
-			ClothSculpt.cape(model, faction.darkened(0.12), 0.90 if f.def.role == "wizard" else 0.67)
+				ClothSculpt.hood(model, cloth_color.darkened(0.45))
+			ClothSculpt.cape(model, cloth_color.darkened(0.12), 0.90 if f.def.role == "wizard" else 0.67)
+			SchoolArt.dress(model, school, f.def.role == "apprentice")
 		elif metal:
 			sphere(model, Vector3(0, 1.36, 0.015), Vector3(0.38, 0.34, 0.35), IRON)
 			box(model, Vector3(0, 1.31, -0.18), Vector3(0.28, 0.075, 0.07), Color(0.08, 0.12, 0.16))

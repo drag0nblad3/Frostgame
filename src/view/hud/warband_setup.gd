@@ -15,6 +15,7 @@ var _apprentice: CheckBox
 var _hire: Button
 var _recruit_portrait: MiniaturePortrait
 var _recruit_info: Label
+var _wizard_portrait: MiniaturePortrait
 
 
 func setup(db: FigureDb) -> void:
@@ -45,6 +46,9 @@ func setup(db: FigureDb) -> void:
 			_school.select(_school.item_count - 1)
 	body.add_child(_school)
 	_school.item_selected.connect(_change_school)
+	_wizard_portrait = MiniaturePortrait.new()
+	_wizard_portrait.custom_minimum_size = Vector2(260, 190)
+	body.add_child(_wizard_portrait)
 	_spell_rows = VBoxContainer.new()
 	body.add_child(_spell_rows)
 	_apprentice = CheckBox.new()
@@ -137,6 +141,8 @@ func _rebuild_spells() -> void:
 func _update() -> void:
 	if _summary == null:
 		return
+	var wizard_def := CasterLoadout.definition(draft.db.get_def("wizard"), draft.wizard_weapons, draft.db)
+	_wizard_portrait.set_figure(Figure.new(0, wizard_def, 0, Vector2.ZERO, draft.db.unarmed()), FigureView.SIDE_COLORS[0], draft.school)
 	_roster.clear()
 	for id in draft.soldiers:
 		var d := draft.db.get_def(id)

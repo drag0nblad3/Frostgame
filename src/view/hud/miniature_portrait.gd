@@ -53,17 +53,17 @@ func _ready() -> void:
 	set_process(false)
 
 
-func set_figure(f: Figure, color: Color) -> void:
+func set_figure(f: Figure, color: Color, school: String = "") -> void:
 	if not is_instance_valid(_turntable):
 		return
-	var next := "%s:%s:%s:%s:%s" % [f.def.id, f.id, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", color]
+	var next := "%s:%s:%s:%s:%s:%s" % [f.def.id, f.id, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", color, school]
 	if next == _key:
 		return
 	_key = next
 	if is_instance_valid(_model):
 		_turntable.remove_child(_model)
 		_model.queue_free()
-	_model = MiniatureFactory.create(f, color)
+	_model = MiniatureFactory.create(f, color, school)
 	_turntable.add_child(_model)
 	_turntable.rotation.y = 0.0
 	var box := _bounds(_model, _model.transform)

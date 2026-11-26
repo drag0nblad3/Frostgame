@@ -15,6 +15,13 @@ func _setup() -> void:
 	var db := FigureDb.load_files()
 	var ids := ["wizard", "apprentice", "knight", "templar", "ranger", "archer", "apothecary", "barbarian", "skeleton", "armoured_skeleton", "wraith", "genie", "ice_spider", "ice_toad", "white_gorilla", "werewolf", "snow_troll", "frost_giant", "wolf", "boar", "bear", "snow_leopard", "giant_rat", "large_construct"]
 	var args := OS.get_cmdline_user_args()
+	var school_gallery := args.size() > 1 and args[1] == "schools"
+	var schools: Array = SchoolArt.PALETTES.keys()
+	if school_gallery:
+		ids.clear()
+		for school in schools:
+			ids.append("wizard")
+			ids.append("apprentice")
 	if args.size() > 1 and args[1] == "bestiary":
 		ids = ["imp", "minor_demon", "major_demon", "small_construct", "medium_construct", "large_construct", "ghoul", "zombie", "vampire", "animated_skull", "giant_worm", "skeleton_archer", "thug", "thief", "crossbowman", "infantryman", "man_at_arms", "marksman", "treasure_hunter", "tracker", "war_hound", "wild_dog"]
 	for i in ids.size():
@@ -22,7 +29,14 @@ func _setup() -> void:
 		var f := Figure.new(i + 1, def, 0 if def.role != "creature" else -1, Vector2(2 + i % 6 * 2.2, 2 + floori(i / 6.0) * 3.1), db.unarmed())
 		var v := FigureView.new()
 		_scene.add_child(v)
+		var state: GameState
+		if school_gallery:
+			state = GameState.new()
+			state.side_schools[0] = schools[floori(i/2.0)]
+			f.battle_ref = weakref(state)
 		v.setup(f, "Gallery")
+		if school_gallery:
+			v._plate.text = str(schools[floori(i/2.0)]).capitalize() + "\n" + f.def.name
 		v.face_toward(Vector3(6, 0, -12))
 	var base := BoxMesh.new()
 	base.size = Vector3(15, 0.25, 14)

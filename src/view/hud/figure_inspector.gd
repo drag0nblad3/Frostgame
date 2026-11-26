@@ -74,7 +74,7 @@ func _display(id: int) -> void:
 	if f != null:
 		_body.text = describe(_state, f)
 		var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else FigureView.SIDE_COLORS[f.side % FigureView.SIDE_COLORS.size()]
-		_portrait.set_figure(f, color)
+		_portrait.set_figure(f, color, SchoolArt.of_figure(f))
 
 
 static func describe(s: GameState, f: Figure) -> String:

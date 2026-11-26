@@ -7,6 +7,8 @@ const MAX_TURNS := 12
 var board: Board
 var figures: Array[Figure] = []
 var side_names: Array[String] = []
+## Optional declared school for presentation; empty for old checkpoints or generic warbands.
+var side_schools := {}
 var turn := 0
 var phase := Phase.WIZARD
 var early := EarlyPhase.new()
