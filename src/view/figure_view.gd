@@ -48,7 +48,7 @@ func setup(f: Figure, side_name: String) -> void:
 	_plate.outline_size = 10
 	_plate.position.y = tall + 0.7
 	add_child(_plate)
-	position = TableSpace.to_world(f.pos)
+	position = TableSpace.to_world(f.pos, f.elevation)
 	refresh(f)
 
 

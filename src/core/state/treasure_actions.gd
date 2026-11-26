@@ -29,7 +29,7 @@ func pick_up(id: int) -> bool:
 
 
 func can_drop(at: Vector2) -> bool:
-	if _c.state.group.movement_pass() or not _c.state.pending_cast.is_empty():
+	if _c.awaiting_reaction() or _c.state.group.movement_pass() or not _c.state.pending_cast.is_empty():
 		return false
 	var f := _c.state.active()
 	if f == null or not f.in_play() or f.treasure_id < 0 or f.actions_left <= 0:
@@ -38,7 +38,7 @@ func can_drop(at: Vector2) -> bool:
 		return false
 	if f.pos.distance_to(at) < 0.85 or f.pos.distance_to(at) > 1.25:
 		return false
-	if not _c.state.board.can_stand(at, TreasureRules.TOKEN_RADIUS):
+	if not _c.state.board.can_stand(at, TreasureRules.TOKEN_RADIUS) or not is_equal_approx(_c.state.board.height_at(at), f.elevation):
 		return false
 	for other in _c.state.figures:
 		if other.in_play() and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:

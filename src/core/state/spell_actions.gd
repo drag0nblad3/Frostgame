@@ -25,7 +25,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	if kind == "self":
 		return t == f and f.elemental_shield == 0
-	if kind == "touch" and t != f and not Contact.touching(f.pos, t.pos):
+	if kind == "touch" and t != f and not Contact.figures_touch(f, t):
 		return false
 	if not LineOfSight.check(s.board, f.pos, t.pos).clear and t != f:
 		return false

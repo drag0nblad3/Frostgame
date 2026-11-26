@@ -70,6 +70,7 @@ func new_game(seed_value: int) -> void:
 	state.reaction_side = -2 if watch_mode else player_side
 	controller = GameController.new(state, Dice.new(seed_value))
 	_board_view.build(state.board)
+	_markers.board = state.board
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
 	player = EventPlayer.new()
 	player.state = state

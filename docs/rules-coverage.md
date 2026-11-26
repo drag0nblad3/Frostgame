@@ -99,3 +99,5 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Elevation foundation
 
 - pp. 46, 50, 57: optional walkable platform and tower surfaces; movement planner charges vertical climbing distance, rejects cross-height base contacts, and shooting uses 3D range and a height-sensitive ray. Combat push down a ledge causes falling damage. This is a single exposed-surface heightfield, not a multilayer navigation mesh. Partial climbs, run-up jumps, deliberate falls and floor interiors remain pending.
+
+The default Frozen Ruins board now includes a two-inch raised platform and a four-inch tower. Figure, movement, targeting and treasure markers use surface elevation. Picking uses the nearest exposed surface, and movement animations follow the heightfield. Group range and treasure proximity now account for height. Rendered geometry and movement remain block-based prototypes.

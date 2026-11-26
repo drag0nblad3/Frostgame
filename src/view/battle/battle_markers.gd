@@ -3,6 +3,7 @@ extends Node3D
 ## Instanced tabletop markers: legal movement positions or selectable targets.
 
 var _layers: Array[MultiMeshInstance3D] = []
+var board: Board
 
 
 func clear() -> void:
@@ -31,7 +32,7 @@ func show_points(points: Array[Vector2], color: Color, radius: float, append: bo
 	mm.mesh = disk
 	mm.instance_count = points.size()
 	for i in points.size():
-		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, TableSpace.to_world(points[i], 0.035)))
+		mm.set_instance_transform(i, Transform3D(Basis.IDENTITY, TableSpace.to_world(points[i], 0.035 + (board.height_at(points[i]) if board != null else 0.0))))
 	marker.multimesh = mm
 	add_child(marker)
 	_layers.append(marker)

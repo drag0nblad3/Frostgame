@@ -33,7 +33,7 @@ func capture(s: GameState) -> void:
 		for soldier in s.side_figures(side):
 			if soldier.activated or Phase.of_figure(soldier) != Phase.SOLDIER:
 				continue
-			var edge_distance := maxf(leader.pos.distance_to(soldier.pos) - 2.0 * Figure.BASE_RADIUS, 0.0)
+			var edge_distance := Shooting.distance(leader, soldier)
 			if edge_distance <= RANGE and LineOfSight.check(s.board, leader.pos, soldier.pos).clear:
 				ids.append(soldier.id)
 		eligible[side] = ids

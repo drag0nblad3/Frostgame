@@ -64,7 +64,7 @@ func _play(e: GameEvent) -> void:
 		"treasure_drop":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(self, false)
-			token.position = TableSpace.to_world(d["at"], 0.25)
+			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))
 		"treasure_secured", "treasure_lost":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.visible = false
@@ -85,8 +85,10 @@ func _wait_for(t: Tween) -> void:
 func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 	var t := create_tween()
 	for i in range(1, path.size()):
-		var step := path[i - 1].distance_to(path[i])
-		t.tween_property(v, "position", TableSpace.to_world(path[i]), step * 0.06)
+		var destination := TableSpace.to_world(path[i], state.board.height_at(path[i]))
+		var start := TableSpace.to_world(path[i - 1], state.board.height_at(path[i - 1]))
+		var duration := maxf(0.01, start.distance_to(destination) * 0.06)
+		t.tween_property(v, "position", destination, duration)
 	_wait_for(t)
 
 
@@ -141,5 +143,5 @@ func build_treasures() -> void:
 		marker.mesh = box
 		marker.material_override = BoardView._mat(Color(1.0, 0.73, 0.15), 0.3)
 		add_child(marker)
-		marker.position = TableSpace.to_world(token.pos, 0.25)
+		marker.position = TableSpace.to_world(token.pos, 0.25 + state.board.height_at(token.pos))
 		treasure_views[token.id] = marker

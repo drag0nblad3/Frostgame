@@ -10,12 +10,12 @@ static func can_pick_up(s: GameState, f: Figure, token: TreasureToken) -> bool:
 		return false
 	if f.treasure_id >= 0 or f.def.traits.has("animal"):
 		return false
-	if f.pos.distance_to(token.pos) > Figure.BASE_RADIUS + TOKEN_RADIUS + 0.01:
+	if absf(f.elevation - s.board.height_at(token.pos)) >= 0.5 or f.pos.distance_to(token.pos) > Figure.BASE_RADIUS + TOKEN_RADIUS + 0.01:
 		return false
 	for enemy in s.figures:
 		if enemy.side == f.side or not enemy.in_play():
 			continue
-		if enemy.pos.distance_to(f.pos) <= 2.0 or enemy.pos.distance_to(token.pos) <= Figure.BASE_RADIUS + TOKEN_RADIUS + 1.0:
+		if Shooting.distance(enemy, f) <= 1.0 or Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, s.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TOKEN_RADIUS + 1.0:
 			return false
 	return true
 

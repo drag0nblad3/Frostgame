@@ -272,10 +272,10 @@ func tap(screen: Vector2) -> bool:
 			"select": return c.activate(id)
 			"fight": return c.fight(id)
 			"shoot": return c.shoot(id)
-	var hit: Variant = Plane(Vector3.UP, 0.0).intersects_ray(camera.project_ray_origin(screen), camera.project_ray_normal(screen))
+	var hit: Variant = _surface_at(screen)
 	if hit == null:
 		return false
-	var at := TableSpace.to_table(hit)
+	var at: Vector2 = hit
 	if mode == "collect":
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:
@@ -295,7 +295,7 @@ func _figure_at(screen: Vector2) -> int:
 	var id := -1
 	var distance := 42.0
 	for f in targets:
-		var point := TableSpace.to_world(f.pos, 0.75)
+		var point := TableSpace.to_world(f.pos, 0.75 + f.elevation)
 		if camera.is_position_behind(point):
 			continue
 		var d := screen.distance_to(camera.unproject_position(point))
@@ -317,3 +317,28 @@ func _empower_buttons() -> void:
 		available.append("empower_plus")
 	if empower > 0:
 		available.append("empower_minus")
+
+
+## Pick the nearest visible exposed surface rather than always intersecting ground.
+func _surface_at(screen: Vector2) -> Variant:
+	var origin := camera.project_ray_origin(screen)
+	var direction := camera.project_ray_normal(screen)
+	var board := c.state.board
+	var heights: Array[float] = [0.0]
+	for piece in board.pieces:
+		if piece.kind.walkable_top and not heights.has(piece.kind.height):
+			heights.append(piece.kind.height)
+	var best: Variant = null
+	var nearest := INF
+	for height in heights:
+		var hit: Variant = Plane(Vector3.UP, height).intersects_ray(origin, direction)
+		if hit == null:
+			continue
+		var point := TableSpace.to_table(hit)
+		if not board.contains(point) or not is_equal_approx(board.height_at(point), height):
+			continue
+		var distance := origin.distance_to(hit)
+		if distance < nearest:
+			nearest = distance
+			best = point
+	return best
