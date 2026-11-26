@@ -20,7 +20,7 @@ func build(board: Board) -> void:
 	top.material_override = _mat(Color(0.74, 0.79, 0.86), 0.9)
 	top.position = TableSpace.to_world(board.size * 0.5, -0.25)
 	add_child(top)
-	add_child(TabletopDetails.ground(board))
+	add_child(StoneFinish.floor_surface(board))
 	TerrainDressing.slab_frame(self, board)
 	for piece in board.pieces:
 		match piece.kind.id:
@@ -33,7 +33,8 @@ func build(board: Board) -> void:
 			_:
 				add_child(_piece(piece))
 				TabletopDetails.decorate(self, piece)
-				TerrainDressing.masonry(self, piece)
+				if piece.kind.id in ["ruin", "tower", "null_upper"]:
+					RuinSilhouette.decorate(self, piece)
 
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:
@@ -89,7 +90,7 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	var mat := _mat(col, 0.95)
 	if col.a < 1.0:
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mi.material_override = mat
+	mi.material_override = StoneFinish.material(col, false, piece.kind.id == "ruin", piece.rect.position) if piece.kind.id in StoneFinish.STONE_KINDS else mat
 	mi.position = TableSpace.to_world(piece.rect.get_center(), h * 0.5)
 	return mi
 

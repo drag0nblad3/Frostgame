@@ -33,7 +33,7 @@ jobs:
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/miniatures.png 2>&1 | tee gallery.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/frozen-ruins.png 0 treasure_skirmish 2>&1 | tee ruins.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/complex-temple.png 0 complex_temple 2>&1 | tee temple.log
-          if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree' gallery.log ruins.log temple.log; then exit 1; fi
+          if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed|SHADER ERROR|Shader error' gallery.log ruins.log temple.log; then exit 1; fi
           grep -F 'scenario=treasure_skirmish board=frozen_ruins' ruins.log
           grep -F 'scenario=complex_temple board=complex_temple' temple.log
           test -s previews/miniatures.png && test -s previews/frozen-ruins.png && test -s previews/complex-temple.png
