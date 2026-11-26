@@ -34,3 +34,5 @@ Open **Warband** to name a wizard, select a school and eight spells, hire soldie
 Use **Save battle** and **Resume battle** after animations and unresolved rolls finish. The local checkpoint retains active battle state and random generator state; campaign checkpoints cannot be resumed after the campaign save changes. Saving replaces the previous battle checkpoint.
 
 Additional scenarios: Well of Dreams and Sorrows, The Library and The Worm Hunts. Rival spellcasters score attack, healing, control and support choices, while treasure carriers prioritize terrain-aware extraction.
+
+Presentation: procedural low-poly tabletop miniatures, distinct silhouettes for spellcasters, warriors and creature families; snow tiles and stone details, frozen treasure markers, compact menu and collapsible combat log. These are original programmatic graphics, not finished custom sculpted assets.

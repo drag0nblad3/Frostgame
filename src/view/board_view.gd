@@ -19,8 +19,10 @@ func build(board: Board) -> void:
 	top.material_override = _mat(Color(0.74, 0.79, 0.86), 0.9)
 	top.position = TableSpace.to_world(board.size * 0.5, -0.25)
 	add_child(top)
+	add_child(TabletopDetails.ground(board))
 	for piece in board.pieces:
 		add_child(_piece(piece))
+		TabletopDetails.decorate(self, piece)
 
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:

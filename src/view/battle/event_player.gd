@@ -48,7 +48,7 @@ func _play(e: GameEvent) -> void:
 		"terrain_fall":
 			var f := state.figure(d["id"])
 			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
-		"allegiance", "heal", "spell_effect", "spell_expired":
+		"allegiance", "heal", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison":
 			_view(d["id"]).refresh(state.figure(d["id"]))
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]))
@@ -64,10 +64,12 @@ func _play(e: GameEvent) -> void:
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(_view(d["id"]), false)
 			token.position = Vector3(-0.48 if state.figure(d["id"]).second_treasure_id >= 0 else 0.48, 0.65, 0)
+			_view(d["id"]).refresh(state.figure(d["id"]))
 		"treasure_drop":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(self, false)
 			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))
+			_view(d["id"]).refresh(state.figure(d["id"]))
 		"treasure_moved":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))

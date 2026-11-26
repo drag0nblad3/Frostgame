@@ -26,6 +26,9 @@ var _watch: Button
 var _buttons := {}
 var _blocks: Array[Control] = []
 var _action_row: HFlowContainer
+var _log_panel: PanelContainer
+var _menu: MenuButton
+var _scenarios: OptionButton
 
 
 func _ready() -> void:
@@ -34,6 +37,7 @@ func _ready() -> void:
 	for side in ["left", "right", "top", "bottom"]:
 		root.add_theme_constant_override("margin_" + side, 12)
 	root.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	root.theme = BattleTheme.create()
 	add_child(root)
 	var col := VBoxContainer.new()
 	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -53,9 +57,16 @@ func _ready() -> void:
 	_auto = _button("Auto", func() -> void: auto_toggled.emit(_auto.button_pressed))
 	_auto.toggle_mode = true
 	top.add_child(_auto)
-	top.add_child(_button("Campaign", func() -> void: campaign_pressed.emit()))
-	top.add_child(_button("Warband", func() -> void: roster_pressed.emit()))
+	_menu = MenuButton.new()
+	_menu.text = "Menu"
+	_menu.custom_minimum_size = Vector2(90, 48)
+	var popup := _menu.get_popup()
+	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle"]:
+		popup.add_item(label_text)
+	popup.id_pressed.connect(_menu_action)
+	top.add_child(_menu)
 	var scenarios := OptionButton.new()
+	_scenarios = scenarios
 	scenarios.add_item("Frozen Ruins")
 	scenarios.set_item_metadata(0, "treasure_skirmish")
 	scenarios.add_item("Mausoleum")
@@ -67,18 +78,19 @@ func _ready() -> void:
 		scenarios.set_item_metadata(scenarios.item_count - 1, option[1])
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
 	top.add_child(scenarios)
-	top.add_child(_button("New game", func() -> void: new_game_pressed.emit()))
-	top.add_child(_button("Save battle", func() -> void: save_battle_pressed.emit()))
-	top.add_child(_button("Resume battle", func() -> void: resume_battle_pressed.emit()))
+	var log_toggle := _button("Log", func() -> void: _log_panel.visible = not _log_panel.visible)
+	top.add_child(log_toggle)
 	_blocks.append(top)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(spacer)
 	var panel := PanelContainer.new()
+	_log_panel = panel
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	panel.custom_minimum_size = Vector2(480, 0)
+	panel.custom_minimum_size = Vector2(360, 0)
+	panel.visible = false
 	col.add_child(panel)
 	_log = _label(16)
 	_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -122,8 +134,7 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 	for key: String in _buttons:
 		var b: Button = _buttons[key]
 		b.disabled = not available.has(key)
-		if key not in ["move", "fight", "shoot", "reload", "collect", "drop", "exit", "end"]:
-			b.visible = available.has(key)
+		b.visible = available.has(key)
 		b.set_pressed_no_signal(key == mode and b.toggle_mode)
 
 
@@ -158,7 +169,24 @@ func _label(size: int) -> Label:
 func _button(text: String, on_press: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(104, 52)
-	b.add_theme_font_size_override("font_size", 20)
+	b.custom_minimum_size = Vector2(88, 48)
+	b.add_theme_font_size_override("font_size", 18)
 	b.pressed.connect(on_press)
 	return b
+
+
+
+func _menu_action(id: int) -> void:
+	match id:
+		0: campaign_pressed.emit()
+		1: roster_pressed.emit()
+		2: new_game_pressed.emit()
+		3: save_battle_pressed.emit()
+		4: resume_battle_pressed.emit()
+
+
+func select_scenario(id: String) -> void:
+	for i in _scenarios.item_count:
+		if _scenarios.get_item_metadata(i) == id:
+			_scenarios.select(i)
+			return

@@ -322,6 +322,7 @@ func _resume_battle() -> void:
 		hud.add_line("Could not restore the saved battle.")
 		return
 	_scenario_id = str(meta.get("scenario", SCENARIO))
+	hud.select_scenario(_scenario_id)
 	_campaign_battle = bool(meta.get("campaign", false))
 	watch_mode = bool(meta.get("watch", false))
 	_attach_battle(restored, false)
