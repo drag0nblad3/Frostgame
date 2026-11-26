@@ -117,7 +117,7 @@ func waiting(side: int) -> Array[Figure]:
 				creatures.append(member)
 				return creatures
 		for f in side_figures(-1):
-			if not f.activated:
+			if not f.activated and not RedKingMadMan.is_ryce(f):
 				creatures.append(f)
 		creatures.sort_custom(func(a: Figure, b: Figure) -> bool: return a.health > b.health or (a.health == b.health and a.id < b.id))
 		if creatures.size() > 1:

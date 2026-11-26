@@ -234,5 +234,27 @@
       "sense_magic"
     ],
     "verify": false
+  },
+  "kalamon_ryce": {
+    "name": "Kalamon Ryce",
+    "role": "creature",
+    "move": 6,
+    "fight": 0,
+    "shoot": 0,
+    "armour": 18,
+    "will": 0,
+    "health": 1,
+    "cost": 0,
+    "weapons": [
+      "unarmed"
+    ],
+    "traits": [
+      "kalamon_ryce",
+      "antithetical_magic",
+      "immune_poison",
+      "immune_critical",
+      "never_wounded"
+    ],
+    "verify": false
   }
 }

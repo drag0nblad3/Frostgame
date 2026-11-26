@@ -102,6 +102,7 @@ func _settle() -> void:
 			RedKingInvestigations.end_turn(_c)
 			RedKingVeil.end_turn(_c)
 			RedKingFire.end_turn(_c)
+			RedKingMadMan.end_turn(_c)
 			_c._encounters.on_end_turn()
 			start_turn()
 			return
@@ -129,6 +130,14 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
+	if RedKingMadMan.active(s):
+		if RedKingMadMan.unresolved(s):
+			return false
+		for token in s.treasures:
+			if token.unresolved():
+				return false
+		_finish(TreasureRules.winner(s))
+		return true
 	if RedKingVeil.active(s):
 		if not s.side_figures(0).is_empty():
 			return false

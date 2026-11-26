@@ -110,4 +110,21 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		stand.central=false
 		stand.investigation=true
 		s.treasures.append(stand)
+	if RedKingMadMan.active(s):
+		# Keep a reserved hidden objective ID so UI and checkpoint token maps
+		# remain stable when Ryce becomes unconscious.
+		var rescue := TreasureToken.new(s.treasures.size(),s.board.size*0.5)
+		rescue.central=false
+		rescue.lost=true
+		s.treasures.append(rescue)
+		s.scenario_data["ryce_token"]=rescue.id
+		s.scenario_data["crack_clock"]=1
+		s.scenario_data["hunters_deployed"]=false
+		for npc in s.figures:
+			if RedKingMadMan.is_ryce(npc):
+				s.scenario_data["ryce_id"]=npc.id
+				break
+		for side in warbands.size():
+			if warbands[side].get("red_king_artefact_recovered",false):
+				s.scenario_data["reduced_hunters_%d"%side]=true
 	return s

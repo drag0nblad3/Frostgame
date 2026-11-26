@@ -1,0 +1,136 @@
+{
+  "id": "red_king_demons_and_mad_man",
+  "name": "The Demons and the Mad Man",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        4,
+        7,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        27,
+        7,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        4,
+        25,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        25,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        12,
+        10,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        20,
+        10,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        12,
+        24,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        20,
+        24,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        2,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        30,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        8,
+        16,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        26,
+        16,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        15,
+        14,
+        2,
+        1
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        19,
+        21,
+        2,
+        1
+      ]
+    }
+  ]
+}

@@ -40,7 +40,8 @@
           "hrut_darter",
           "red_king_key_master",
           "mindshrike",
-          "nullman"
+          "nullman",
+          "kalamon_ryce"
         ],
         "terrain": [
           "red_king_portal"
@@ -69,6 +70,11 @@
           "Back Into the Fire",
           "Infiltrate a ruined temple and recover the locked artefact before Hrut emerge from its portals.",
           "Begin invisible. Unlock the central stand with a Will test (TN16); thieves, treasure hunters and casters gain +5. Portal contact causes elemental damage. Exit through corner doors."
+        ],
+        "red_king_demons_and_mad_man": [
+          "The Demons and the Mad Man",
+          "Capture a fleeing survivor of ancient Felstad while Hrut hunting parties enter the ruins.",
+          "Only melee damage can render Ryce unconscious. Carry him off as an objective; at the end of turn two, each side receives a temporary Hrut hunting party. Repeated reality cracks exchange opposite edge regions."
         ]
       }
     }
