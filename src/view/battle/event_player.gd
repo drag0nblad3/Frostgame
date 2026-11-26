@@ -4,6 +4,8 @@ extends Node3D
 ## names and health; never changes it.
 
 signal line_logged(text: String)
+signal notice(text: String)
+const NOTICES := ["hut_discovered", "disc_transport", "disc_stay", "well_drink", "worm_emerges", "break_ice", "column_fight", "column_opened", "genie_released", "genie_flee", "genie_escaped", "null_field", "tower_entered"]
 
 ## Animation speed multiplier (higher is faster).
 var speed := 1.0
@@ -30,7 +32,10 @@ func _process(_delta: float) -> void:
 func _play(e: GameEvent) -> void:
 	var line := Explainer.text(state, e)
 	if line != "":
-		line_logged.emit(line)
+		if e.type in NOTICES:
+			notice.emit(line)
+		else:
+			line_logged.emit(line)
 	var d := e.data
 	match e.type:
 		"activate":
@@ -48,7 +53,7 @@ func _play(e: GameEvent) -> void:
 		"terrain_fall":
 			var f := state.figure(d["id"])
 			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
-		"allegiance", "heal", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison":
+		"allegiance", "heal", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison", "null_field":
 			_view(d["id"]).refresh(state.figure(d["id"]))
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]))

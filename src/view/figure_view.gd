@@ -68,6 +68,10 @@ func refresh(f: Figure) -> void:
 	var status := " · Loot" if f.treasure_id >= 0 else ""
 	if f.poisoned:
 		status += " · Poison"
+	if ScenarioNull.muted(f):
+		status += " · Null"
+	if f.def.traits.has("immune_normal"):
+		status += " · Magic only"
 	_plate.text = "%s%s%s\n%d/%d" % [f.label(), suffix, status, f.health, f.def.health]
 	_plate.modulate = Color(1, 1, 1) if f.health * 2 > f.def.health else Color(1, 0.6, 0.4)
 

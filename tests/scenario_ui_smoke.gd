@@ -24,6 +24,9 @@ func _run() -> void:
 	if scene.controller == original or scene.controller.state.scenario_special != "complex_temple":
 		_fail("Confirmed scenario did not start")
 		return
+	if scene._sites.get_child_count() != 6:
+		_fail("Missing guardian markers")
+		return
 	if not scene.hud._objective.text.contains("Guardians 6"):
 		_fail("Scenario progress not visible")
 		return

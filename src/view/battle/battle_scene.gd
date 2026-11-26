@@ -16,6 +16,7 @@ var watch_mode := false
 var player_side := 0
 var player_input: BattleInput
 var _markers: BattleMarkers
+var _sites: ScenarioMarkers
 var _dirty := true
 var _roster: Dictionary = {}
 var _setup: WarbandSetup
@@ -63,6 +64,8 @@ func _ready() -> void:
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
 	add_child(_markers)
+	_sites = ScenarioMarkers.new()
+	add_child(_sites)
 	new_game(0)
 
 
@@ -92,6 +95,8 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	controller = c
 	var state := c.state
 	_board_view.build(state.board)
+	_sites.reset()
+	_sites.update_sites(state)
 	_markers.board = state.board
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
 	player = EventPlayer.new()
@@ -110,6 +115,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player.build_treasures()
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
+	player.notice.connect(hud.notify)
 	controller.event_emitted.connect(player.push)
 	controller.event_emitted.connect(_on_event)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
@@ -182,6 +188,7 @@ func _on_event(event: GameEvent) -> void:
 
 func _refresh() -> void:
 	_dirty = false
+	_sites.update_sites(controller.state)
 	_update_status()
 	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress() and not controller.awaiting_reaction(), true)
 	if _human_turn():
