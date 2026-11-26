@@ -132,3 +132,7 @@ Wax and vials now award six charges, trade individually at the prose-rule prices
 ## Dazzling Cape
 
 One optional move out of combat per battle, with original melee opponents excluded from forced-combat interception and all other normal terrain, action, movement and reaction checks intact. Available from Equipment on ordinary boards and via a dedicated escape control on the supported layered movement path. Layered movement retains its existing restrictions on unresolved scenario and reaction systems; rivals do not yet deliberately spend the cape.
+
+## Slippery Boots
+
+Self-withdrawal offers legal half-inch increments up to three inches on normal and layered boards, including tied melee. Tied combat never grants enemy displacement. If both figures qualify, the human reaction side has priority; declining passes the opportunity to the other figure. The existing straight retreat direction and layered lattice are retained. AI defenders use tied withdrawals when carrying treasure; other AI tactics retain normal displacement logic. Tie state is saved in checkpoints.

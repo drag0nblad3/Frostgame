@@ -12,10 +12,29 @@ func _init(controller: GameController) -> void:
 func clear() -> void:
 	c.state.push_winner = -1
 	c.state.push_loser = -1
+	c.state.push_tie=false
+	c.state.push_tie_second=false
 
 
-func destination(own: bool) -> Variant:
+const BOOTS := "gear_rk_slippery_boots"
+
+
+static func boots(f: Figure) -> bool:
+	return f!=null and ActiveGear.has(f,BOOTS) and not MagicEquipment.suppressed(f)
+
+
+static func distance_allowed(s: GameState,own: bool,distance: float) -> bool:
+	if s.push_tie and not own:
+		return false
+	if is_equal_approx(distance,1.0):
+		return not s.push_tie or boots(s.figure(s.push_winner))
+	return own and boots(s.figure(s.push_winner)) and distance>=0.5 and distance<=3.0
+
+
+func destination(own: bool,distance: float=1.0) -> Variant:
 	var s := c.state
+	if not distance_allowed(s,own,distance):
+		return null
 	var winner := s.figure(s.push_winner)
 	var loser := s.figure(s.push_loser)
 	if winner == null or loser == null or not winner.in_play() or not loser.in_play():
@@ -24,7 +43,7 @@ func destination(own: bool) -> Variant:
 		return null
 	var moving := winner if own else loser
 	var other := loser if own else winner
-	var dest := moving.pos + (moving.pos - other.pos).normalized()
+	var dest := moving.pos + (moving.pos - other.pos).normalized()*distance
 	if ScenarioObjectives.inside_well(s, dest):
 		return dest
 	if c.state.board.height_at(dest) > moving.elevation + 0.001 or not _clear_path(moving, dest,not own):
@@ -32,8 +51,8 @@ func destination(own: bool) -> Variant:
 	return dest
 
 
-func push(own: bool) -> bool:
-	var dest: Variant = destination(own)
+func push(own: bool,distance: float=1.0) -> bool:
+	var dest: Variant = destination(own,distance)
 	if dest == null:
 		return false
 	var moving := c.state.figure(c.state.push_winner if own else c.state.push_loser)
@@ -73,8 +92,9 @@ func push(own: bool) -> bool:
 
 
 func _clear_path(moving: Figure, dest: Vector2,allow_void: bool=false) -> bool:
-	for i in range(1, 5):
-		var p := moving.pos.lerp(dest, i / 4.0)
+	var steps := maxi(4,ceili(moving.pos.distance_to(dest)*4.0))
+	for i in range(1,steps+1):
+		var p := moving.pos.lerp(dest,float(i)/steps)
 		if BattleBoundary.blocks_segment(c.state.board.boundaries,moving.pos,p,"movement",moving) or BattleBoundary.blocks_position(c.state.board.boundaries,p,moving):
 			return false
 		if allow_void and RedKingBridge.active(c.state) and c.state.board.over_void(p,Figure.BASE_RADIUS):

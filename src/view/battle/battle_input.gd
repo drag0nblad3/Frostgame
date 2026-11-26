@@ -84,6 +84,9 @@ func refresh() -> void:
 		available.append("stay")
 		if c.can_push(true):
 			available.append("push_self")
+		for distance in [0.5,1.5,2.0,2.5,3.0]:
+			if c.can_push(true,distance):
+				available.append("push_self_"+str(int(distance*10)))
 		if c.can_push(false):
 			available.append("push_enemy")
 		mode = "push"
@@ -602,6 +605,8 @@ func action(key: String) -> bool:
 			return c.resolve_push(true)
 		"push_enemy":
 			return c.resolve_push(false)
+		"push_self_5","push_self_15","push_self_20","push_self_25","push_self_30":
+			return c.resolve_push(true,float(key.trim_prefix("push_self_"))/10.0)
 		"group":
 			group_selection.assign([int(c.state.early.leaders[c.state.current_side()])])
 			mode = "group_select"

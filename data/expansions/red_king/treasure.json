@@ -235,7 +235,7 @@
       "buy": 200,
       "sell": 50,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_potion_drinker_staff": {

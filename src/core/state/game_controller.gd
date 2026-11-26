@@ -289,6 +289,31 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 			state.push_loser = t.id if winner == f else f.id
 			if RedKingHill.is_herald(state,winner) or RedKingRingworld.key_master(winner):
 				_displacement.push(false)
+	elif f.in_play() and t.in_play() and Contact.figures_touch(f,t) and int(res["winner"])<0 and not RedKingTethers.pylon(f) and not RedKingTethers.pylon(t):
+		var first: Figure=null
+		var other: Figure=null
+		if CombatDisplacement.boots(f) and f.side>=0:
+			first=f
+			other=t
+		if CombatDisplacement.boots(t) and t.side>=0 and (first==null or t.side==state.reaction_side):
+			first=t
+			other=f
+		if first!=null:
+			state.push_winner=first.id
+			state.push_loser=other.id
+			state.push_tie=true
+			state.push_tie_second=CombatDisplacement.boots(other) and other.side>=0
+			if first.side!=state.reaction_side and first!=state.active():
+				_auto_tie_withdraw()
+
+
+func _auto_tie_withdraw() -> void:
+	var f := state.figure(state.push_winner)
+	if f!=null and f.treasure_id>=0:
+		for distance in [3.0,2.0,1.0,0.5]:
+			if resolve_push(true,distance):
+				return
+	stay_in_combat()
 
 
 func can_shoot(target_id: int) -> bool:
@@ -478,21 +503,30 @@ func begin_group(ids: Array[int]) -> bool:
 	return true
 
 
-func can_push(own_figure: bool) -> bool:
+func can_push(own_figure: bool,distance: float=1.0) -> bool:
 	if not state.board.floor_layout.is_empty():
-		return LayeredPush.destination(self,own_figure)!=null
-	return _displacement.destination(own_figure) != null
+		return LayeredPush.destination(self,own_figure,distance)!=null
+	return _displacement.destination(own_figure,distance)!=null
 
 
-func resolve_push(own_figure: bool) -> bool:
+func resolve_push(own_figure: bool,distance: float=1.0) -> bool:
 	if not state.board.floor_layout.is_empty():
-		return LayeredPush.apply(self,own_figure)
-	return _displacement.push(own_figure)
+		return LayeredPush.apply(self,own_figure,distance)
+	return _displacement.push(own_figure,distance)
 
 
 func stay_in_combat() -> bool:
 	if state.push_winner < 0:
 		return false
+	if state.push_tie and state.push_tie_second:
+		var old := state.push_winner
+		state.push_winner=state.push_loser
+		state.push_loser=old
+		state.push_tie_second=false
+		var other := state.figure(state.push_winner)
+		if other!=null and other.side!=state.reaction_side:
+			_auto_tie_withdraw()
+		return true
 	_displacement.clear()
 	emit("stay_in_combat")
 	return true

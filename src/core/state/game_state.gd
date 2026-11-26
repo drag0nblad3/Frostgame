@@ -15,6 +15,8 @@ var early := EarlyPhase.new()
 var group := GroupActivation.new()
 var push_winner := -1
 var push_loser := -1
+var push_tie := false
+var push_tie_second := false
 var forced_combat := false
 # -2 means no human reaction owner (headless / watch).
 var reaction_side := -2

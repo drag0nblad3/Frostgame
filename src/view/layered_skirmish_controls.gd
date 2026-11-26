@@ -27,7 +27,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -79,6 +79,9 @@ func refresh() -> void:
 		var winner := s.figure(s.push_winner)
 		if winner!=null and winner.side==0:
 			_show("push_self",c.can_push(true))
+			for distance in [0.5,1.5,2.0,2.5,3.0]:
+				if c.can_push(true,distance):
+					_show("push_self_"+str(int(distance*10)),true)
 			_show("push_enemy",c.can_push(false))
 			_show("stay",true)
 			hint.text="Choose the outcome of melee contact."
@@ -239,6 +242,8 @@ func command(key: String) -> void:
 			c.reload()
 		"push_self","push_enemy":
 			c.resolve_push(key=="push_self")
+		"push_self_5","push_self_15","push_self_20","push_self_25","push_self_30":
+			c.resolve_push(true,float(key.trim_prefix("push_self_"))/10.0)
 		"stay":
 			c.stay_in_combat()
 		"end":
