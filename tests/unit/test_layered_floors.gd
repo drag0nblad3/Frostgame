@@ -56,7 +56,7 @@ func test_stacked_occupancy_and_solid_floor_sight() -> void:
 	check_eq(Shooting.blocked_reason(b,[a,enemy],a,enemy),"no line of sight")
 	check(LayeredSight.clear(layout,Vector3(6,1.5,8),Vector3(10,1.0,8)))
 	check(LayeredSight.clear(layout,Vector3(6,4.5,8),Vector3(10,4.0,8)))
-	check(LayeredSight.clear(layout,Vector3(1,1.5,8),Vector3(5.5,4.0,8)),"open air beside deck")
+	check(LayeredSight.clear(layout,Vector3(1,3.5,8),Vector3(5.5,4.0,8)),"open air beside deck")
 
 
 func test_treasure_and_checkpoint_keep_surface() -> void:
@@ -82,7 +82,7 @@ func test_treasure_and_checkpoint_keep_surface() -> void:
 func test_controller_commits_floor_move_and_action_cost() -> void:
 	var b := _board()
 	var layout := FloorLayout.from_dict(b.floor_layout)
-	var f := fig("thug",0,Vector2(2.5,8))
+	var f := fig("thug",0,Vector2(2,8))
 	_place(f,layout,"stairs",f.pos)
 	var c := make_game(b,[f],Dice.new(1))
 	c.state.active_id=1
@@ -99,7 +99,7 @@ func test_controller_commits_floor_move_and_action_cost() -> void:
 	check(not c.move_to(MovePlanner.node_at(Vector2(6,8))),"legacy moves blocked")
 	check(not c.move_on_floor(layout.node("street",Vector2(5.5,8))),"no implicit floor switch")
 	check_eq(f.actions_left,1)
-	var event := c.history.back()
+	var event: GameEvent = c.history.back()
 	check_eq(event.type,"layered_move")
 	check_eq(event.data["surfaces"].back(),"upper")
 	var loaded := BattleSnapshot.rebuild(BattleSnapshot.capture(c),db())
@@ -114,3 +114,16 @@ func test_invalid_floor_links_are_rejected() -> void:
 	d["links"].append({"from":["unknown",1,1],"to":["upper",8,8]})
 	var layout := FloorLayout.from_dict(d)
 	check(not layout.errors.is_empty())
+
+
+func test_bot_routes_to_correct_level() -> void:
+	var layout := FloorLayout.from_dict(_board().floor_layout)
+	var start := layout.node("street",Vector2(8,8))
+	var target := layout.node("upper",Vector2(8,8))
+	var grid := LayeredGrid.new(layout)
+	var r := LayeredReach.search(grid,start,6.0)
+	var next: Variant = LayeredBot.best_step(layout,r,target,grid)
+	check(next!=null and next!=start)
+	if next!=null:
+		check(r.can_reach(next))
+		check(layout.point(next).x<8.0)

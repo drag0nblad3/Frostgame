@@ -7,12 +7,15 @@ volumes and explicit staircase links. FloorLayout validates endpoints; LayeredGr
 and LayeredReach search layered nodes; LayeredSight tests vertical slab occlusion.
 Figures and treasures have optional stable surface IDs in checkpoints. Figure-target
 shooting and treasure pickup recognize explicitly assigned floors. Existing battles
-still use their original exposed-surface movement. The gatehouse is a unit-test
-fixture, deliberately not selectable for campaign play yet.
+still use their original exposed-surface movement. The gatehouse is an isolated mechanics lab accessible from the title screen,
+not selectable for campaign play. It provides floor selection, upper deck cutaway,
+explicit destination markers and a goal-directed route helper. The lab allows
+ordinary movement and treasure pickup; it is not a full battle or AI opponent.
 
 Current limitations: connections are atomic movement edges, not partial climbs;
 floor surfaces and solids are separately authored; no general floor-aware AI,
-magic, displacement, input or rendering is wired yet. GameController exposes
+magic or displacement is wired yet. Limited floor-specific input and rendering
+are implemented in the isolated lab. GameController exposes
 experimental layered_reach/move_on_floor methods which consume a normal move
 action, persist the selected surface and emit a 3D movement path. Unsupported
 reaction/magic cases are rejected, and legacy move_to cannot act on layered boards.

@@ -99,6 +99,11 @@ func _add_link(d: Dictionary) -> void:
 		errors.append("Unsupported connection kind: "+kind)
 		return
 	var distance := world(a).distance_to(world(b))
+	var steps := maxi(1,ceili(distance/0.1))
+	for i in range(1,steps):
+		if not clearance(world(a).lerp(world(b),float(i)/steps),Figure.BASE_RADIUS,1.6):
+			errors.append("Connection crosses a solid: "+str(from)+" -> "+str(to))
+			return
 	if kind=="climb":
 		distance = point(a).distance_to(point(b))+ceilf(absf(height(a)-height(b)))*2.0
 	var edge := {"to":b,"cost":distance,"kind":kind}

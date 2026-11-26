@@ -52,6 +52,11 @@ jobs:
           set -o pipefail
           timeout 30s godot --headless -s tests/title_smoke.gd 2>&1 | tee title-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" title-smoke.log
+      - name: Layered gatehouse smoke test
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless -s tests/layered_demo_smoke.gd 2>&1 | tee layered-demo.log
+          ! grep -E "SCRIPT ERROR|Parse Error" layered-demo.log
       - name: Smoke run main scene
         run: |
           set -o pipefail

@@ -31,7 +31,7 @@
       {
         "id": "stairs",
         "rect": [
-          2,
+          1.5,
           6,
           3,
           4
@@ -39,6 +39,16 @@
         "level": 0,
         "end_level": 3,
         "axis": "x"
+      },
+      {
+        "id": "landing",
+        "rect": [
+          4,
+          6,
+          1.5,
+          4
+        ],
+        "level": 3
       }
     ],
     "solids": [
@@ -79,12 +89,12 @@
       {
         "from": [
           "street",
-          1.5,
+          1,
           8
         ],
         "to": [
           "stairs",
-          2.5,
+          2,
           8
         ],
         "kind": "stairs"
@@ -92,7 +102,20 @@
       {
         "from": [
           "stairs",
+          4,
+          8
+        ],
+        "to": [
+          "landing",
           4.5,
+          8
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "landing",
+          5,
           8
         ],
         "to": [
@@ -100,7 +123,7 @@
           5.5,
           8
         ],
-        "kind": "stairs"
+        "kind": "walk"
       }
     ]
   }
