@@ -36,3 +36,6 @@ Use **Save battle** and **Resume battle** after animations and unresolved rolls 
 Additional scenarios: Well of Dreams and Sorrows, The Library and The Worm Hunts. Rival spellcasters score attack, healing, control and support choices, while treasure carriers prioritize terrain-aware extraction.
 
 Presentation: procedural low-poly tabletop miniatures, distinct silhouettes for spellcasters, warriors and creature families; snow tiles and stone details, frozen treasure markers, compact menu and collapsible combat log. These are original programmatic graphics, not finished custom sculpted assets.
+
+## Android APK builds
+GitHub Actions builds a signed ARM64 debug APK on pushes to main. Open the **Android debug build** run and download its Frostgame-Android artifact, unzip it, and install Frostgame.apk on a compatible Android device. This is a personal test build, not a Play Store release. Without a persistent debug signing key, different CI runs use different certificates; updates may require uninstalling the old build, which can delete saved games. To preserve updates, configure repository Actions secrets FROSTGAME_DEBUG_KEYSTORE_B64 and FROSTGAME_DEBUG_KEYSTORE_PASSWORD using an existing test keystore with alias androiddebugkey. Never commit keystores or release credentials.
