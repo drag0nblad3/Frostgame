@@ -42,6 +42,8 @@ static func progress(s: GameState) -> String:
 		else:
 			ground += 1
 	var text := "%d secured · %d carried · %d unclaimed" % [secured, carrying, ground]
+	if RedKingVeil.active(s):
+		text+=" | Veil %.0f / %.0f″ · Exit south"%[float(s.scenario_data.get("veil_y",12.0)),s.board.size.y]
 	if RedKingInvestigations.active(s):
 		var stands := 0
 		for token in s.treasures:

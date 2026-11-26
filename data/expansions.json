@@ -56,6 +56,11 @@
           "Investigations",
           "Search ritual offerings around a barbarian camp before the guards overwhelm you.",
           "The guards remain dormant until alerted. Search the stands to reveal treasure or traps; after turn three, each warband must escape via its new assigned edges."
+        ],
+        "red_king_veil": [
+          "The Veil of Unreality",
+          "Escape through a receding dimensional barrier while hostile forces arrive from both sides.",
+          "Touching the veil is fatal. Escape via the opposite short edge. Opposing creatures can return after defeat."
         ]
       }
     }

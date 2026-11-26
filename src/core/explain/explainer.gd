@@ -13,6 +13,10 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"veil_contact":
+			return "%s touches the veil and is taken out of action!"%name_of(s,d["id"])
+		"fractured_reality":
+			return "Reality fractures around %s (roll %d)."%[name_of(s,d["id"]),d["roll"]]
 		"investigation_alarm":
 			return "The camp is alerted: %s!"%d["reason"]
 		"investigation_routes":

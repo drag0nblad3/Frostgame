@@ -11,9 +11,10 @@ static func build(board: Board) -> Node3D:
 		var distance := a.distance_to(b)
 		if distance<0.001:
 			continue
+		var lethal: bool=line.get("lethal",false)
 		var blocks_move: bool=line.get("movement",false)
 		var blocks_sight: bool=line.get("sight",false)
-		var tint := Color(0.94,0.25,0.16) if blocks_move else Color(0.39,0.74,0.96)
+		var tint := Color(0.94,0.25,0.16) if blocks_move or lethal else Color(0.39,0.74,0.96)
 		var count := maxi(1,ceili(distance/4.0))
 		for i in count:
 			var start := a.lerp(b,float(i)/count)
@@ -23,7 +24,7 @@ static func build(board: Board) -> Node3D:
 			var top := maxf(board.ground_height_at(start),board.ground_height_at(end))
 			var length := start.distance_to(end)
 			_bar(root,center,top+0.075,Vector3(length,0.15,0.20),end-start,tint)
-			if blocks_sight:
+			if blocks_sight or lethal:
 				var height := 2.6+top-bottom
 				_bar(root,center,bottom+height*0.5,Vector3(length,height,0.035),end-start,Color(tint,0.20))
 	return root
