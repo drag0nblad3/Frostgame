@@ -10,6 +10,13 @@ const INTERVENING := 1
 
 ## Range is measured base edge to base edge.
 static func distance(a: Figure, b: Figure) -> float:
+	var s := RedKingVeil.of(a)
+	if s!=null:
+		var relation := RealityCrackGeometry.cross_relation(s.board,a.pos,b.pos)
+		if relation!=0:
+			return 12.0 if relation==1 else INF
+		if s.board.reality_sphere:
+			return maxf(0.0,Vector2(RealityCrackGeometry.sight_distance(s.board,a.pos,b.pos),a.elevation-b.elevation).length()-2.0*Figure.BASE_RADIUS)
 	return maxf(Vector3(a.pos.x, a.elevation, a.pos.y).distance_to(Vector3(b.pos.x, b.elevation, b.pos.y)) - 2.0 * Figure.BASE_RADIUS, 0.0)
 
 

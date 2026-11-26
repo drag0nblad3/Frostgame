@@ -27,6 +27,11 @@ static func destinations(board: Board,node: Vector2i) -> Array[Vector2i]:
 			out.append(MovePlanner.node_at(Vector2(at.x,board.size.y-Figure.BASE_RADIUS)))
 		elif is_equal_approx(at.y,board.size.y-Figure.BASE_RADIUS):
 			out.append(MovePlanner.node_at(Vector2(at.x,Figure.BASE_RADIUS)))
+	if board.wrap_long_edges:
+		if is_equal_approx(at.x,Figure.BASE_RADIUS):
+			out.append(MovePlanner.node_at(Vector2(board.size.x-Figure.BASE_RADIUS,at.y)))
+		elif is_equal_approx(at.x,board.size.x-Figure.BASE_RADIUS):
+			out.append(MovePlanner.node_at(Vector2(Figure.BASE_RADIUS,at.y)))
 	if board.edge_links.is_empty():
 		return out
 	for link in board.edge_links:
@@ -37,7 +42,8 @@ static func destinations(board: Board,node: Vector2i) -> Array[Vector2i]:
 
 static func sources(board: Board,node: Vector2i) -> Array[Vector2i]:
 	var out: Array[Vector2i]=[]
-	if board.wrap_short_edges:
+	if board.wrap_short_edges or board.wrap_long_edges:
+		# Wrap pairs are bidirectional.
 		out.append_array(destinations(board,node))
 	if board.edge_links.is_empty():
 		return out
@@ -50,6 +56,6 @@ static func sources(board: Board,node: Vector2i) -> Array[Vector2i]:
 
 
 static func is_transfer(board: Board,a: Vector2,b: Vector2) -> bool:
-	if (board.edge_links.is_empty() and not board.wrap_short_edges) or a.distance_to(b)<=MoveGrid.STEP*1.5:
+	if (board.edge_links.is_empty() and not board.wrap_short_edges and not board.wrap_long_edges) or a.distance_to(b)<=MoveGrid.STEP*1.5:
 		return false
 	return destinations(board,MovePlanner.node_at(a)).has(MovePlanner.node_at(b))

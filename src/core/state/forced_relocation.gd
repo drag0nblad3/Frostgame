@@ -19,7 +19,7 @@ static func destination(s: GameState,f: Figure,desired: Vector2) -> Vector2:
 				var node := center+Vector2i(x,y)
 				var at := MoveGrid.to_pos(node)
 				var distance := at.distance_squared_to(target)
-				if distance<best_distance and grid.open(node):
+				if distance<best_distance and grid.open(node) and not BattleBoundary.blocks_end(b.boundaries,at):
 					best=at
 					best_distance=distance
 		if best_distance<INF and sqrt(best_distance)<float(radius)*MoveGrid.STEP:

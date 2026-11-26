@@ -41,6 +41,9 @@ static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 				r.cost[m]=nc
 				r.prev[m]=n
 				heap.push(nc,m)
+	for node: Vector2i in r.nodes():
+		if BattleBoundary.blocks_end(grid.board.boundaries,MoveGrid.to_pos(node)):
+			r.cost.erase(node)
 	return r
 
 

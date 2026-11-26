@@ -22,7 +22,7 @@ static func reach(s: GameState, f: Figure, phased: bool = true) -> MoveReach:
 			var n := center + Vector2i(x, y)
 			var at := MoveGrid.to_pos(n)
 			var cost := Vector2(f.pos.distance_to(at), f.elevation - s.board.height_at(at)).length()
-			if cost > allowance + 0.001 or not s.board.can_stand(at, Figure.BASE_RADIUS):
+			if cost > allowance + 0.001 or not s.board.can_stand(at, Figure.BASE_RADIUS) or BattleBoundary.blocks_end(s.board.boundaries,at):
 				continue
 			var clear := true
 			if RedKingBridge.crosses_void(s.board,f.pos,at):

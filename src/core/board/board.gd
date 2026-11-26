@@ -14,6 +14,9 @@ var boundaries: Array[Dictionary]=[]
 ## Directed links between edge segments and their destination centers.
 var edge_links: Array[Dictionary]=[]
 var wrap_short_edges := false
+var wrap_long_edges := false
+var reality_sphere := false
+var reality_cross := -1
 var ringworld := false
 var low_gravity := false
 ## Regions with no traversable surface at any elevation.

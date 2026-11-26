@@ -34,6 +34,17 @@ static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 
 
 static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null) -> Result:
+	var relation := RealityCrackGeometry.cross_relation(board,from,to)
+	if relation!=0:
+		var result := Result.new()
+		result.clear=relation==1
+		return result
+	if board.reality_sphere:
+		return RealityCrackGeometry.wrapped_sight(board,from,to,observer)
+	return plain_check(board,from,to,observer)
+
+
+static func plain_check(board: Board,from: Vector2,to: Vector2,observer: Figure=null) -> Result:
 	var r := Result.new()
 	if board.ringworld and (observer==null or observer.ring_side==0) and from.distance_to(to)>18.0:
 		r.clear=false

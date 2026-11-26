@@ -10,7 +10,7 @@ func _init(controller: GameController) -> void:
 
 func landing(t: Figure, at: Vector2, allow_combat: bool = false) -> bool:
 	var b := c.state.board
-	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or BattleBoundary.blocks_position(b.boundaries,at,t):
+	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or BattleBoundary.blocks_position(b.boundaries,at,t) or BattleBoundary.blocks_end(b.boundaries,at):
 		return false
 	for other in c.state.figures:
 		if other == t or other.ring_side!=t.ring_side or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
@@ -26,7 +26,7 @@ func can_land(f: Figure, t: Figure, id: String, at: Vector2) -> bool:
 	if not landing(t, at) or at.distance_to(t.pos) < 0.1:
 		return false
 	if id == "teleport":
-		return f == t and f.pos.distance_to(at) <= 24.0 and LineOfSight.check(b, f.pos, at).clear
+		return f == t and RealityCrackGeometry.sight_distance(b,f.pos,at)<=24.0 and LineOfSight.check(b,f.pos,at,f).clear
 	if id != "leap" or t.side != f.side:
 		return false
 	if RedKingBridge.crosses_void(b,t.pos,at) or BattleBoundary.blocks_segment(b.boundaries,t.pos,at,"movement",t):

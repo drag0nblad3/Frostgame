@@ -52,3 +52,10 @@ static func blocks_position(lines: Array[Dictionary],at: Vector2,figure: Figure=
 ## Caller decides whether an axis wraps and validates occupancy at landing.
 static func wrapped(at: Vector2,size: Vector2,wrap_x: bool,wrap_y: bool) -> Vector2:
 	return Vector2(fposmod(at.x,size.x) if wrap_x else at.x,fposmod(at.y,size.y) if wrap_y else at.y)
+
+
+static func blocks_end(lines: Array[Dictionary],at: Vector2) -> bool:
+	for line in lines:
+		if line.get("stop",false) and Geometry2D.get_closest_point_to_segment(at,line["a"],line["b"]).distance_to(at)<Figure.BASE_RADIUS-EPS:
+			return true
+	return false

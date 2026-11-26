@@ -30,7 +30,7 @@ static func marker(b: Board, f: Figure) -> TerrainPiece:
 
 
 static func origin(b: Board, f: Figure, at: Vector2, max_range: float = 24.0) -> Vector2:
-	if Vector2(f.pos.distance_to(at), f.elevation - b.height_at(at)).length() <= max_range and LineOfSight.check(b, f.pos, at,f).clear:
+	if Vector2(RealityCrackGeometry.sight_distance(b,f.pos,at), f.elevation - b.height_at(at)).length() <= max_range and LineOfSight.check(b, f.pos, at,f).clear:
 		return f.pos
 	var eye := marker(b, f)
 	if eye != null:
@@ -42,7 +42,7 @@ static func origin(b: Board, f: Figure, at: Vector2, max_range: float = 24.0) ->
 
 static func visible(b: Board, f: Figure, at: Vector2, max_range: float = 24.0) -> bool:
 	var start := origin(b, f, at, max_range)
-	return Vector2(start.distance_to(at), b.height_at(start) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, start, at,f).clear
+	return Vector2(RealityCrackGeometry.sight_distance(b,start,at), b.height_at(start) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, start, at,f).clear
 
 
 func create(f: Figure, option: Dictionary) -> void:
