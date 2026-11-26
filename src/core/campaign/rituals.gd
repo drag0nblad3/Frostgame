@@ -9,7 +9,7 @@ const CONSTRUCTS := ["small_construct", "medium_construct", "large_construct"]
 
 static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 	var out: Array[String] = []
-	if d.is_empty() or caster < 0 or caster >= d["units"].size() or not d["spells"].has(id):
+	if d.is_empty() or caster < 0 or caster >= d["units"].size() or not d["spells"].has(id) or not ContentProfile.from_campaign(d).allows("spells",id):
 		return out
 	var u: Dictionary = d["units"][caster]
 	if u["dead"] or u.get("dismissed", false) or int(u["miss"]) > 0 or u["type"] not in ["wizard", "apprentice"]:
@@ -35,7 +35,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 				var db := FigureDb.load_files()
 				for type: String in db.figures:
 					var def := db.get_def(type)
-					if def.role == "soldier" and type != "apothecary":
+					if def.role == "soldier" and type != "apothecary" and ContentProfile.from_campaign(d).allows("figures",type):
 						out.append(type)
 		"brew_potion":
 			for p: String in CampaignInventory.LESSER:

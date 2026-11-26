@@ -35,6 +35,7 @@ var reinforcement_points: Array[Vector2] = []
 var creature_db: FigureDb
 var spellbooks := {}
 var spell_catalog := {}
+var content_profile := ContentProfile.new()
 var pending_cast := {}
 var pending_resistance := {}
 var pending_combat := {}

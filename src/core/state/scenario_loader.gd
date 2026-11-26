@@ -24,7 +24,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		s.reinforcement_points.append(Vector2(at[0], at[1]))
 	s.forced_combat = d.get("forced_combat", false)
 	s.creature_db = figures
-	s.spell_catalog = JsonFile.read("res://data/spells.json")
+	s.content_profile=figures.content_profile
+	s.spell_catalog = s.content_profile.filter("spells",JsonFile.read("res://data/spells.json"))
 	var next_id := 1
 	var warbands: Array = d.get("warbands", [])
 	for side in warbands.size():
@@ -34,7 +35,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		var school := str(wb.get("school", wb.get("name", ""))).to_lower()
 		if schools.has(school):
 			s.side_schools[side] = school
-		s.spellbooks[side] = wb.get("spells", {})
+		s.spellbooks[side] = s.content_profile.filter("spells",wb.get("spells",{}))
 		if wb.get("telescope", false):
 			s.telescope_ready[side] = true
 		var deploy_index := 0

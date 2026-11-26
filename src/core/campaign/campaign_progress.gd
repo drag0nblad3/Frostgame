@@ -5,8 +5,10 @@ const PATH := "user://frostgame_campaign_v1.json"
 var data: Dictionary = {}
 
 
-func start(roster: Dictionary) -> void:
+func start(roster: Dictionary,profile: ContentProfile=null) -> void:
 	data = {"version": 1, "name": roster["name"], "school": roster.get("school", "elementalist"), "spells": roster.get("spells", {}).duplicate(true), "gold": int(roster.get("gold", 0)), "xp": 0, "level": 0, "games": 0, "units": [], "loot": [], "last_report": [], "spell_improved": false, "stat_improved": false, "advances": {}, "base": ""}
+	if profile!=null:
+		data["expansions"]=profile.enabled.duplicate()
 	for entry: Dictionary in roster["figures"]:
 		var unit := {"type": entry["type"], "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false}
 		if entry.has("weapons"):
@@ -299,7 +301,7 @@ static func random_spell(dice: Dice) -> String:
 
 
 func choose_base(id: String) -> bool:
-	if data.is_empty() or int(data["games"]) == 0 or not BASES.has(id):
+	if data.is_empty() or int(data["games"]) == 0 or not BASES.has(id) or not ContentProfile.from_campaign(data).allows("bases",id):
 		return false
 	if id == data.get("base", ""):
 		return true
@@ -338,7 +340,7 @@ func learn_grimoire(index: int, db: FigureDb) -> bool:
 		return false
 	var item: Dictionary = data["loot"][index]
 	var id: String = item.get("spell", "")
-	if item["kind"] != "grimoire" or id == "" or data["spells"].has(id):
+	if item["kind"] != "grimoire" or id == "" or data["spells"].has(id) or not ContentProfile.from_campaign(data).allows("spells",id):
 		return false
 	var draft := WarbandDraft.new(db)
 	draft.school = data["school"]
@@ -359,7 +361,7 @@ func recruitment_cost(id: String, db: FigureDb) -> int:
 
 
 func can_hire(id: String, db: FigureDb) -> bool:
-	if not CampaignSuccession.living_wizard(data) or not db.figures.has(id) or int(data["gold"]) < recruitment_cost(id, db):
+	if not CampaignSuccession.living_wizard(data) or not db.available(id) or not ContentProfile.from_campaign(data).allows("figures",id) or int(data["gold"]) < recruitment_cost(id, db):
 		return false
 	var d := db.get_def(id)
 	for unit: Dictionary in data["units"]:

@@ -12,7 +12,7 @@ static func owns(d: Dictionary, id: String) -> bool:
 
 
 static func buy(d: Dictionary, id: String) -> bool:
-	if d.is_empty() or str(d.get("base", "")) == "" or owns(d, id):
+	if d.is_empty() or str(d.get("base", "")) == "" or owns(d, id) or not ContentProfile.from_campaign(d).allows("base_resources",id):
 		return false
 	var info: Dictionary = catalog().get(id, {})
 	if not info.get("live", false) or int(d["gold"]) < int(info.get("cost", 0)):

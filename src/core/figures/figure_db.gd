@@ -7,10 +7,13 @@ const WEAPONS := "res://data/weapons.json"
 
 var weapons := {}
 var figures := {}
+var content_profile := ContentProfile.new()
 
 
-static func load_files(fig_path: String = FIGURES, weapon_path: String = WEAPONS) -> FigureDb:
+static func load_files(fig_path: String = FIGURES, weapon_path: String = WEAPONS,profile: ContentProfile=null) -> FigureDb:
 	var db := FigureDb.new()
+	if profile!=null:
+		db.content_profile=profile
 	var wd: Dictionary = JsonFile.read(weapon_path)
 	for key: String in wd:
 		if not key.begins_with("_"):
@@ -31,3 +34,12 @@ func get_def(id: String) -> FigureDef:
 
 func unarmed() -> WeaponDef:
 	return weapons["unarmed"]
+
+
+func available(id: String) -> bool:
+	if not figures.has(id) or not content_profile.allows("figures",id):
+		return false
+	for weapon in get_def(id).weapons:
+		if not content_profile.allows("weapons",weapon.id):
+			return false
+	return true

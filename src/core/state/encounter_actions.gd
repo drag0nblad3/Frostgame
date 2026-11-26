@@ -16,6 +16,8 @@ func on_pickup() -> void:
 	if not c.state.random_encounters or c.state.creature_db == null or pool.is_empty() or c.dice.d20() < 10:
 		return
 	var entry := encounter(c.dice.d20(), c.dice.d20())
+	if entry.is_empty() or not c.state.creature_db.available(str(entry.get("type",""))):
+		return
 	var edge := c.dice.pick(4)
 	for i in int(entry.get("count", 1)):
 		_spawn(entry["type"], edge)

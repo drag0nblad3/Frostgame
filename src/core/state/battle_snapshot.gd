@@ -56,7 +56,9 @@ static func capture(c: GameController, meta: Dictionary = {}) -> Dictionary:
 	if not can_save(c):
 		return {}
 	var s := c.state
-	var out := {"version": VERSION, "meta": meta.duplicate(true), "state": pack(s, STATE), "early": pack(s.early, EARLY), "group": pack(s.group, GROUP), "board": BattleSnapshotParts.board_data(s.board), "figures": [], "treasures": [], "history": [], "rng": c.dice._rng.state}
+	var saved_meta := meta.duplicate(true)
+	saved_meta["expansions"]=s.content_profile.enabled.duplicate()
+	var out := {"version": VERSION, "meta": saved_meta, "state": pack(s, STATE), "early": pack(s.early, EARLY), "group": pack(s.group, GROUP), "board": BattleSnapshotParts.board_data(s.board), "figures": [], "treasures": [], "history": [], "rng": c.dice._rng.state}
 	for figure in s.figures:
 		out["figures"].append(BattleSnapshotParts.figure_data(figure))
 	for token in s.treasures:
@@ -73,7 +75,11 @@ static func rebuild(d: Dictionary, db: FigureDb) -> GameController:
 	for key: String in ["state", "early", "group", "board", "figures", "treasures", "history", "rng"]:
 		if not d.has(key):
 			return null
+	var profile := ContentProfile.new(d.get("meta",{}).get("expansions",[]),db.content_profile.packs)
+	if not profile.errors().is_empty() or not db.content_profile.same(profile.enabled):
+		return null
 	var s := GameState.new()
+	s.content_profile=profile
 	s.creature_db = db
 	s.board = BattleSnapshotParts.make_board(d["board"])
 	restore(s, d["state"], STATE)
