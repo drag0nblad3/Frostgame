@@ -30,6 +30,9 @@ func _run() -> void:
 	if not scene.hud._objective.text.contains("Guardians 6"):
 		_fail("Scenario progress not visible")
 		return
+	scene.player.speed = 30.0
+	while not scene.player.idle():
+		await process_frame
 	scene._open_inspector()
 	if not scene._inspector.visible or not scene._inspector._body.text.contains("Health"):
 		_fail("Figure inspector unavailable")

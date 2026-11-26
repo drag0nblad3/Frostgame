@@ -1,0 +1,37 @@
+{
+  "id": "training_yard",
+  "name": "The Training Yard",
+  "size": [
+    18,
+    18
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        2,
+        11,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        12,
+        10,
+        4,
+        0.5
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        12,
+        4,
+        2,
+        2
+      ]
+    }
+  ]
+}

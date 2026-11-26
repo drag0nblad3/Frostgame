@@ -14,6 +14,10 @@ signal scenario_selected(id: String)
 signal briefing_pressed
 signal inspect_pressed
 signal guide_pressed
+signal training_requested
+signal training_next
+signal training_retry
+signal training_leave
 signal action_pressed(action: String)
 
 const LOG_LINES := 4
@@ -37,6 +41,9 @@ var _toast: Label
 var _toast_timer: Timer
 var _context_tip: Label
 var _tips_enabled := true
+var _training_panel: VBoxContainer
+var _training_text: Label
+var _training_next_button: Button
 
 
 func _ready() -> void:
@@ -69,7 +76,7 @@ func _ready() -> void:
 	_menu.text = "Menu"
 	_menu.custom_minimum_size = Vector2(90, 48)
 	var popup := _menu.get_popup()
-	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle", "Scenario briefing", "Combat log", "How to play", "Toggle extra tips"]:
+	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle", "Scenario briefing", "Combat log", "How to play", "Toggle extra tips", "Training battle"]:
 		popup.add_item(label_text)
 	popup.id_pressed.connect(_menu_action)
 	top.add_child(_menu)
@@ -98,6 +105,20 @@ func _ready() -> void:
 	_toast.modulate = Color(1.0, 0.88, 0.55)
 	_toast.visible = false
 	col.add_child(_toast)
+	_training_panel = VBoxContainer.new()
+	_training_panel.hide()
+	col.add_child(_training_panel)
+	_training_text = _label(17)
+	_training_text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_training_text.modulate = Color(1.0, 0.86, 0.52)
+	_training_panel.add_child(_training_text)
+	var training_buttons := HBoxContainer.new()
+	_training_panel.add_child(training_buttons)
+	_training_next_button = _button("Next lesson", func() -> void: training_next.emit())
+	training_buttons.add_child(_training_next_button)
+	training_buttons.add_child(_button("Retry", func() -> void: training_retry.emit()))
+	training_buttons.add_child(_button("Leave training", func() -> void: training_leave.emit()))
+	_blocks.append(_training_panel)
 	_toast_timer = Timer.new()
 	_toast_timer.one_shot = true
 	_toast_timer.timeout.connect(func() -> void: _toast.hide())
@@ -135,6 +156,15 @@ func _ready() -> void:
 		button.toggle_mode = key not in ["reload", "end", "pass_phase", "group", "group_begin", "group_cancel", "items", "items_back"]
 		_action_row.add_child(button)
 		_buttons[key] = button
+
+
+func set_training(index: int, complete: bool, failed: bool = false) -> void:
+	_training_panel.visible = index >= 0
+	if index < 0:
+		return
+	_training_text.text = "TRAINING %d/%d · %s\n%s" % [index + 1, TrainingLesson.NAMES.size(), TrainingLesson.NAMES[index], "Lesson complete!" if complete else ("Try again with Retry." if failed else TrainingLesson.HINTS[index])]
+	_training_next_button.disabled = not complete
+	_training_next_button.text = "Finish training" if index == TrainingLesson.NAMES.size() - 1 else "Next lesson"
 
 
 func set_objective(text: String) -> void:
@@ -229,6 +259,7 @@ func _menu_action(id: int) -> void:
 			_tips_enabled = not _tips_enabled
 			_context_tip.visible = _tips_enabled and not _context_tip.text.is_empty()
 			notify("Extra rules tips %s." % ("on" if _tips_enabled else "off"))
+		9: training_requested.emit()
 
 
 func select_scenario(id: String) -> void:
