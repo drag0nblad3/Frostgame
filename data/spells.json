@@ -96,7 +96,7 @@
     "name": "Wall",
     "school": "elementalist",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "animate_construct": {
     "name": "Animate Construct",
@@ -471,13 +471,13 @@
     "name": "Fog",
     "school": "witch",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "mud": {
     "name": "Mud",
     "school": "witch",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "poison_dart": {
     "name": "Poison Dart",

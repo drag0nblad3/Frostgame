@@ -32,7 +32,7 @@ func can_control(f: Figure, t: Figure, id: String) -> bool:
 	if t.side == f.side or t.controller_id >= 0 or controlled(f, id) != null:
 		return false
 	if id == "mind_control":
-		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless")
+		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless") and not t.spell_effects.has("mind_lock")
 	return t.def.traits.has(CONTROL[id])
 
 

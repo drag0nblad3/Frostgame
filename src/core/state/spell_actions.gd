@@ -4,11 +4,13 @@ extends RefCounted
 
 var c: GameController
 var summons: SummonActions
+var terrain: TerrainMagic
 
 
 func _init(controller: GameController) -> void:
 	c = controller
 	summons = SummonActions.new(c)
+	terrain = TerrainMagic.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -62,25 +64,37 @@ func start(id: String, target_id: int) -> bool:
 	return _roll(id, target_id)
 
 
-func placement_points(id: String, first_only: bool = false) -> Array[Vector2]:
+func placement_points(id: String, first_only: bool = false, rotated: bool = false) -> Array[Vector2]:
 	var f := c.state.active()
 	var empty: Array[Vector2] = []
 	if not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f):
 		return empty
-	if not c.state.spellbooks.get(f.side, {}).has(id) or not SummonActions.PLACEMENT.has(id):
+	if not c.state.spellbooks.get(f.side, {}).has(id) or not is_placement(id):
 		return empty
-	if f.spell_effects.has("blinding_light") and id in ["animate_skull", "imp"]:
+	if f.spell_effects.has("blinding_light") and id not in ["raise_zombie", "summon_demon"]:
 		return empty
+	if TerrainMagic.SPELLS.has(id):
+		return terrain.points(f, id, rotated, first_only)
 	return summons.points(f, id, first_only)
 
 
-func start_at(id: String, at: Vector2) -> bool:
-	if placement_points(id, true).is_empty() or not summons.can_place(c.state.active(), id, at):
+func is_placement(id: String) -> bool:
+	return SummonActions.PLACEMENT.has(id) or TerrainMagic.SPELLS.has(id)
+
+
+func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
+	if placement_points(id, true, rotated).is_empty():
 		return false
-	return _roll(id, c.state.active_id, at)
+	var f := c.state.active()
+	if TerrainMagic.SPELLS.has(id):
+		if not terrain.can_place(f, id, at, rotated):
+			return false
+	elif not summons.can_place(f, id, at):
+		return false
+	return _roll(id, c.state.active_id, at, rotated)
 
 
-func _roll(id: String, target_id: int, at: Variant = null) -> bool:
+func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false) -> bool:
 	var f := c.state.active()
 	var raw := c.dice.d20()
 	var total := CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
@@ -89,6 +103,7 @@ func _roll(id: String, target_id: int, at: Variant = null) -> bool:
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn}
 	if at != null:
 		c.state.pending_cast["at"] = at
+		c.state.pending_cast["rotated"] = rotated
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
 	return true
 
@@ -121,6 +136,9 @@ func finish(health: int) -> bool:
 		return true
 	if not result["success"]:
 		return true
+	if TerrainMagic.SPELLS.has(id):
+		terrain.apply(f, id, p["at"], p["rotated"])
+		return true
 	if SummonActions.PLACEMENT.has(id):
 		summons.spawn(f, id, p["at"], int(p["total"]) + health, int(p["tn"]))
 		return true
@@ -132,6 +150,10 @@ func finish(health: int) -> bool:
 	match id:
 		"heal":
 			_heal(t, 5)
+		"mind_lock":
+			if t.control_spell == "mind_control":
+				summons.release(t)
+			t.spell_effects[id] = true
 		"elemental_shield":
 			t.elemental_shield = 3
 		"elemental_bolt", "bone_dart", "poison_dart":
@@ -235,6 +257,7 @@ func on_end_activation(f: Figure) -> void:
 
 
 func on_end_turn() -> void:
+	terrain.expire()
 	for f in c.state.figures:
 		_resist_effect(f, "curse")
 		_resist_effect(f, "blinding_light")

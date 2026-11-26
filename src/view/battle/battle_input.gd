@@ -16,6 +16,7 @@ var drops: Array[Vector2] = []
 var group_selection: Array[int] = []
 var cast_options: Array[String] = []
 var selected_spell := ""
+var spell_rotated := false
 var empower := 0
 
 
@@ -81,7 +82,7 @@ func refresh() -> void:
 			break
 	cast_options.clear()
 	for id: String in c.state.spellbooks.get(f.side, {}):
-		if not c._magic.placement_points(id, true).is_empty():
+		if not c._magic.placement_points(id, true).is_empty() or (id in ["fog", "wall"] and not c._magic.placement_points(id, true, true).is_empty()):
 			cast_options.append(id)
 			continue
 		for t in c.state.figures:
@@ -123,8 +124,10 @@ func preview() -> void:
 		"spell_menu":
 			hint = "Choose a spell."
 		"spell_point":
-			points.assign(c._magic.placement_points(selected_spell))
-			hint = "Choose a marked summoning location."
+			points.assign(c._magic.placement_points(selected_spell, false, spell_rotated))
+			hint = "Choose a marked spell location."
+			if selected_spell in ["fog", "wall"]:
+				hint += " · " + ("North–south" if spell_rotated else "East–west")
 		"cancel_control":
 			for t in c.state.figures:
 				if c._magic.can_cancel(t.id):
@@ -207,11 +210,18 @@ func action(key: String) -> bool:
 		return false
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
-		mode = "spell_point" if SummonActions.PLACEMENT.has(selected_spell) else "spell_target"
+		spell_rotated = false
+		mode = "spell_point" if c._magic.is_placement(selected_spell) else "spell_target"
 		available.assign(["spell_cancel"])
+		if selected_spell in ["fog", "wall"]:
+			available.append("rotate_spell")
 		preview()
 		return false
 	match key:
+		"rotate_spell":
+			spell_rotated = not spell_rotated
+			preview()
+			return false
 		"intercept_yes", "intercept_no":
 			return c.answer_intercept(key == "intercept_yes")
 		"cast":
@@ -295,7 +305,8 @@ func tap(screen: Vector2) -> bool:
 		return false
 	var at: Vector2 = hit
 	if mode == "spell_point":
-		return c._magic.start_at(selected_spell, MoveGrid.to_pos(MovePlanner.node_at(at)))
+		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
+		return c._magic.start_at(selected_spell, destination, spell_rotated)
 	if mode == "collect":
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:

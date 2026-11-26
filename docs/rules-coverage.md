@@ -117,3 +117,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Summoning and temporary allegiance
 
 - pp. 32, 69, 112, 116, 125, 130, 133: four point-target summons and five control spells implemented; creature placement, per-caster/warband limits, demon tiers and natural-one miscast, release actions, Mind Control resistance after activation, temporary soldier-phase allegiance and color changes. Four new bestiary records. Deployment uses existing half-inch lattice; Will resistance and release timing are simplified (Mind Control end-turn voluntary cancellation and empowerment pending). Campaign survival follows original allegiance. Before-battle Raise Zombie remains pending; no creature item slots. 
+
+## Dynamic terrain spells
+
+- pp. 122, 126, 134: Fog, Mud and Wall use point targets. Fog obstructs sight, Mud creates circular rough ground, Wall creates a climbable obstruction. Dynamic terrain invalidates path caches, expires through turn rolls and updates the 3D board. Wall and Fog use two axis-aligned orientations; placement excludes some terrain overlaps and uses 1-inch markers. Fog expiry is processed at the end-turn boundary. Wall removal can cause falling damage. Mind Lock now breaks and prevents Mind Control. 
