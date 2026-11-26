@@ -80,6 +80,11 @@
           "In the Mind of Kalamon Ryce",
           "Enter a fractured mind alone and gather memories while mindshrikes converge.",
           "Eight turns, three actions per turn with at most one move. Touch memories to secure them immediately. An event changes the board after each turn; defeat does not require a survival roll."
+        ],
+        "red_king_herded": [
+          "Herded Like Cattle!",
+          "Race toward the inner city as Hrut guard abandoned treasure and the veil closes behind you.",
+          "The veil advances 2–6 inches each turn. Fully engulfed figures are removed; partial contact causes 6 unavoidable damage. Sight is limited to 12 inches; escape south."
         ]
       }
     }

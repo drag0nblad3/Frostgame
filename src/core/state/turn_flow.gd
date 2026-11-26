@@ -21,7 +21,7 @@ func start_turn() -> void:
 		_finish(0)
 		return
 	s.turn += 1
-	if s.turn > GameState.MAX_TURNS:
+	if s.turn > (18 if RedKingHerded.active(s) else GameState.MAX_TURNS):
 		if RedKingVeil.active(s):
 			RedKingVeil.finish(_c)
 			_finish(0 if RedKingVeil.xp(_c,0)>0 else 1)
@@ -108,7 +108,8 @@ func _settle() -> void:
 			RedKingFire.end_turn(_c)
 			RedKingMadMan.end_turn(_c)
 			RedKingMind.end_turn(_c)
-			if RedKingMind.active(s) and _check_victory():
+			RedKingHerded.end_turn(_c)
+			if (RedKingMind.active(s) or RedKingHerded.active(s)) and _check_victory():
 				return
 			_c._encounters.on_end_turn()
 			start_turn()
@@ -137,6 +138,14 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
+	if RedKingHerded.active(s):
+		if not standing.is_empty() and float(s.scenario_data.get("herd_veil",0.0))<s.board.size.y:
+			return false
+		for token in s.treasures:
+			if token.unresolved():
+				_c._loot.lose(token)
+		_finish(TreasureRules.winner(s))
+		return true
 	if RedKingMind.active(s):
 		var wizard := RedKingMind.wizard(s)
 		if wizard!=null and wizard.in_play():

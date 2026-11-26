@@ -165,7 +165,7 @@ func exit_table(node: Vector2i) -> bool:
 	var f := _c.state.active()
 	if not _c.move_to(node):
 		return false
-	if f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
+	if not f.in_play() or f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
 		return true
 	for id in f.carried_treasures():
 		secure(_c.state.treasure(id), f.side)

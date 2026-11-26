@@ -144,6 +144,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	xp = maxi(0, mini(300, xp + treasure_xp + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
 	if RedKingVeil.active(c.state):
 		xp=RedKingVeil.xp(c,side)
+	if RedKingHerded.active(c.state):
+		xp+=RedKingHerded.exit_xp(c.state,side)
 	data.erase("dreams_xp")
 	data["xp"] = int(data["xp"]) + xp
 	data["games"] = int(data["games"]) + 1

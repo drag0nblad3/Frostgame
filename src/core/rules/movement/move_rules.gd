@@ -9,7 +9,7 @@ extends RefCounted
 static func allowance(f: Figure) -> float:
 	var speed := float(f.effective_move())
 	if f.carries_normal_treasure():
-		if RedKingVeil.active(RedKingVeil.of(f)):
+		if RedKingVeil.active(RedKingVeil.of(f)) or RedKingHerded.active(RedKingVeil.of(f)):
 			speed=maxf(1.0,speed-1.0)
 		else:
 			speed *= 0.5

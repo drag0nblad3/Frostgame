@@ -21,6 +21,10 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Hrut hunting parties arrive."
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
+		"herd_veil":
+			return "The veil advances %d inches. Escape before it reaches you!"%d["distance"]
+		"herd_contact":
+			return "%s is caught by the advancing veil."%name_of(s,d["id"])
 		"mind_event":
 			return "Mindscape event: %s of hearts."%d["card"]
 		"mind_memory":
