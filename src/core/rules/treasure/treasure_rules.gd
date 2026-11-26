@@ -8,7 +8,7 @@ const TOKEN_RADIUS := 0.3
 static func can_pick_up(s: GameState, f: Figure, token: TreasureToken) -> bool:
 	if f == null or token == null or not f.in_play() or not token.on_ground() or token.frozen or token.investigation or f.surface_id.begins_with("climb:"):
 		return false
-	if RedKingVeil.active(s) and f.side==1:
+	if RedKingMadMan.hunter(f) or (RedKingVeil.active(s) and f.side==1):
 		return false
 	if (f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0)) or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false

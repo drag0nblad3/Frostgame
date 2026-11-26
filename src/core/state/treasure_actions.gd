@@ -35,7 +35,7 @@ func pick_up(id: int) -> bool:
 
 func claim_free(f: Figure, token: TreasureToken) -> bool:
 	# Column contact is with its edge, rather than the newly revealed centre.
-	if f == null or token == null or not token.on_ground() or token.frozen or token.investigation or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
+	if f == null or RedKingMadMan.hunter(f) or token == null or not token.on_ground() or token.frozen or token.investigation or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false
 	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
 		return false

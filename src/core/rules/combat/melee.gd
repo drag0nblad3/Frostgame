@@ -11,7 +11,7 @@ const SUPPORT := 2
 static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 	var bonus := 0
 	for o in figures:
-		if o == f or not o.in_play() or o.side != f.side:
+		if o == f or not o.in_play() or o.side != f.side or RedKingMadMan.hunter(o):
 			continue
 		if not Contact.figures_touch(o, enemy):
 			continue

@@ -220,7 +220,7 @@ func can_act(for_fight: bool = false) -> bool:
 
 func can_fight(target_id: int) -> bool:
 	var t := state.figure(target_id)
-	return can_act(true) and not state.active().spell_effects.has("blinding_light") and t != null and Contact.enemies_of(state.figures, state.active()).has(t)
+	return can_act(true) and not state.active().spell_effects.has("blinding_light") and t != null and not (RedKingMadMan.hunter(state.active()) and RedKingMadMan.is_ryce(t)) and Contact.enemies_of(state.figures, state.active()).has(t)
 
 
 func fight(target_id: int) -> bool:
@@ -241,6 +241,10 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 	_magic.illusions.reveal(t)
 	var a_weapon := f.melee
 	var b_weapon := t.melee
+	if RedKingMadMan.is_ryce(t):
+		if int(res["b_dmg"])>0:
+			RedKingMadMan.knock_out(self,t,f)
+		return
 	_weapon_damage(t, res["b_dmg"], f, a_weapon)
 	_weapon_damage(f, res["a_dmg"], t, b_weapon)
 	CreatureEffects.after_fight(self,f,t,res,a_weapon,b_weapon)
@@ -257,7 +261,7 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 
 func can_shoot(target_id: int) -> bool:
 	var t := state.figure(target_id)
-	return can_act() and t != null and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board, state.figures, state.active(), t) == ""
+	return can_act() and t != null and not RedKingMadMan.is_ryce(t) and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board, state.figures, state.active(), t) == ""
 
 
 func shoot(target_id: int) -> bool:
@@ -361,6 +365,8 @@ func _spend(f: Figure) -> void:
 
 
 func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
+	if RedKingMadMan.is_ryce(f):
+		return
 	if dmg <= 0 or not f.in_play() or (f.spell_effects.has("plane_walk") and by != f) or (combat and by != f and IllusionRules.phantom(by)):
 		return
 	if IllusionRules.phantom(f):
