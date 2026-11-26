@@ -87,6 +87,8 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	for weapon in c.selectable_melee():
+		available.append("weapon_" + weapon.id)
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
@@ -365,6 +367,8 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key.begins_with("weapon_"):
+		return c.select_melee(key.trim_prefix("weapon_"))
 	if key in ["fate_combat_yes", "fate_combat_no"]:
 		return c.answer_fate_combat(key == "fate_combat_yes")
 	if key in ["telescope_use", "telescope_save"]:

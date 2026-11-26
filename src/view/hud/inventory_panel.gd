@@ -13,6 +13,8 @@ var campaign_uses: OptionButton
 var use_button: Button
 var assign_button: Button
 var sell_button: Button
+var caster_equipment: OptionButton
+var caster_equipment_button: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -44,6 +46,14 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 			changed.call())
 	add_child(use_button)
 	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
+	caster_equipment = OptionButton.new()
+	add_child(caster_equipment)
+	caster_equipment_button = _button("Set spellcaster weapons", func() -> void:
+		if caster_equipment.item_count == 0:
+			return
+		var option: Dictionary = caster_equipment.get_selected_metadata()
+		if CasterLoadout.set_weapons(campaign.data, option["owner"], CasterLoadout.PRESETS[option["preset"]]):
+			changed.call())
 	shop = OptionButton.new()
 	add_child(shop)
 	_button("Buy item", func() -> void:
@@ -56,6 +66,8 @@ func refresh() -> void:
 	loot.clear()
 	recipient_choice.clear()
 	shop.clear()
+	caster_equipment.clear()
+	caster_equipment_button.disabled = true
 	campaign_uses.clear()
 	use_button.disabled = true
 	if d.is_empty():
@@ -91,13 +103,15 @@ func refresh() -> void:
 			continue
 		var items := CampaignInventory.loadout(d, int(unit["id"]))
 		var used := items.size()
-		if unit["type"] in ["wizard", "apprentice"]:
-			var staff := false
-			for item: Dictionary in items:
-				if item.get("gear_info", {}).get("type", "") == "staff":
-					staff = true
-			if not staff:
-				used += 1
+		if CasterLoadout.is_caster(unit["type"]):
+			used = int(CasterLoadout.carried(d, unit)["slots"])
+			for preset: String in CasterLoadout.PRESETS:
+				var proposed := unit.duplicate()
+				proposed["weapons"] = CasterLoadout.PRESETS[preset]
+				if not CasterLoadout.fits(d, proposed):
+					continue
+				caster_equipment.add_item("%s #%d · %s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, preset])
+				caster_equipment.set_item_metadata(caster_equipment.item_count - 1, {"owner": int(unit["id"]), "preset": preset})
 		if capacity == 0:
 			recipient_choice.add_item("%s #%d · Hammer graft only" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1])
 		else:
@@ -112,6 +126,7 @@ func refresh() -> void:
 		shop.set_item_disabled(shop.item_count - 1, int(d["gold"]) < int(info["buy"]))
 
 
+	caster_equipment_button.disabled = caster_equipment.item_count == 0
 	_refresh_item_buttons()
 
 

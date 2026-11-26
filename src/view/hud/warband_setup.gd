@@ -51,6 +51,8 @@ func setup(db: FigureDb) -> void:
 	_apprentice.toggled.connect(func(on: bool) -> void:
 		draft.apprentice = on
 		_update())
+	_add_loadout(body, "Wizard weapons", false)
+	_add_loadout(body, "Apprentice weapons", true)
 	var row := HBoxContainer.new()
 	body.add_child(row)
 	_recruits = OptionButton.new()
@@ -142,3 +144,23 @@ func _confirm() -> void:
 		return
 	drafted.emit(draft.as_warband())
 	hide()
+
+
+
+func _add_loadout(body: VBoxContainer, title_text: String, for_apprentice: bool) -> void:
+	var label := Label.new()
+	label.text = title_text
+	body.add_child(label)
+	var choice := OptionButton.new()
+	for preset: String in CasterLoadout.PRESETS:
+		var weapons: Array = CasterLoadout.PRESETS[preset]
+		choice.add_item("%s · %d slots" % [preset, CasterLoadout.weapon_slots(weapons)])
+		choice.set_item_metadata(choice.item_count - 1, preset)
+	body.add_child(choice)
+	choice.item_selected.connect(func(index: int) -> void:
+		var weapons: Array = CasterLoadout.PRESETS[choice.get_item_metadata(index)]
+		if for_apprentice:
+			draft.apprentice_weapons = weapons.duplicate()
+		else:
+			draft.wizard_weapons = weapons.duplicate()
+		_update())

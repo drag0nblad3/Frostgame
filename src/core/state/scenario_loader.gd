@@ -37,6 +37,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				def = def.with_bonuses({})
 				def.role = "soldier"
 				def.specialist = def.id == "large_construct"
+			if CasterLoadout.is_caster(def.role) and entry.has("weapons"):
+				def = CasterLoadout.definition(def, entry["weapons"], figures)
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
 			if entry.get("prepared_zombie", false) or entry.get("prepared_illusion", false):
 				unit.summon_spell = "raise_zombie" if entry.get("prepared_zombie", false) else "illusionary_soldier"

@@ -490,3 +490,25 @@ func _weapon_damage(t: Figure, dmg: int, f: Figure, w: WeaponDef) -> void:
 	if t.health < old and f.poison_weapon == w.id:
 		f.poison_weapon = ""
 		poison(t)
+
+
+
+func selectable_melee() -> Array[WeaponDef]:
+	var out: Array[WeaponDef] = []
+	var f := state.active()
+	if f == null or not f.in_play() or f.acted or awaiting_reaction() or not state.pending_cast.is_empty() or state.push_winner >= 0 or not _magic.shatter.first.is_empty():
+		return out
+	for w in f.def.weapons:
+		if w.melee and w != f.melee and not f.destroyed_weapons.has(w.id):
+			out.append(w)
+	return out
+
+
+func select_melee(id: String) -> bool:
+	for w in selectable_melee():
+		if w.id == id:
+			var f := state.active()
+			f.melee = w
+			emit("weapon_selected", {"id": f.id, "weapon": id})
+			return true
+	return false

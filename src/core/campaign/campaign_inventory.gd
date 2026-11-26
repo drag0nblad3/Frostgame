@@ -87,7 +87,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var info: Dictionary = catalog()[item_id(item)]
 	if item.get("gear", "") == "gear_ring_transference" and unit["type"] not in ["wizard", "apprentice"]:
 		return false
-	if item["kind"] == "gear" and not MagicEquipment.compatible(db.get_def(unit["type"]), info):
+	var caster := CasterLoadout.is_caster(unit["type"])
+	if item["kind"] == "gear" and not (caster and info["type"] in MagicEquipment.WEAPONS) and not MagicEquipment.compatible(db.get_def(unit["type"]), info):
 		return false
 	for i in d["loot"].size():
 		if i != index and int(d["loot"][i].get("owner", -1)) == owner:
@@ -95,17 +96,10 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 			if item["kind"] == "gear" and other["kind"] == "gear" and catalog()[item_id(other)]["type"] == info["type"]:
 				return false
 			used += 1
-	# Magic staves replace the caster's starting staff; other items use spare slots.
-	var caster: bool = unit["type"] in ["wizard", "apprentice"]
-	var staff: bool = item["kind"] == "gear" and info["type"] == "staff"
-	if caster and not staff:
-		var magic_staff := false
-		for other: Dictionary in d["loot"]:
-			if int(other.get("owner", -1)) == owner and other["kind"] == "gear" and catalog()[item_id(other)]["type"] == "staff":
-				magic_staff = true
-		if not magic_staff:
-			used += 1
-	if used >= slots(unit, db):
+	if caster:
+		if not CasterLoadout.fits(d, unit, index, item):
+			return false
+	elif used >= slots(unit, db):
 		return false
 	item["owner"] = owner
 	return true

@@ -8,7 +8,10 @@ var data: Dictionary = {}
 func start(roster: Dictionary) -> void:
 	data = {"version": 1, "name": roster["name"], "school": roster.get("school", "elementalist"), "spells": roster.get("spells", {}).duplicate(true), "gold": int(roster.get("gold", 0)), "xp": 0, "level": 0, "games": 0, "units": [], "loot": [], "last_report": [], "spell_improved": false, "stat_improved": false, "advances": {}, "base": ""}
 	for entry: Dictionary in roster["figures"]:
-		data["units"].append({"type": entry["type"], "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false})
+		var unit := {"type": entry["type"], "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false}
+		if entry.has("weapons"):
+			unit["weapons"] = entry["weapons"].duplicate()
+		data["units"].append(unit)
 
 
 func deployment() -> Dictionary:
@@ -37,6 +40,8 @@ func deployment() -> Dictionary:
 		entry["stat_bonus"] = bonuses
 		entry["permanent_summon"] = unit.get("permanent_summon", false)
 		entry["items"] = CampaignInventory.loadout(data, int(unit["id"]))
+		if CasterLoadout.is_caster(unit["type"]):
+			entry["weapons"] = CasterLoadout.carried(data, unit)["weapons"]
 		units.append(entry)
 	if data.get("prepared_zombie", false):
 		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true})

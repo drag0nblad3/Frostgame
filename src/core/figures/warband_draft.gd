@@ -11,6 +11,8 @@ var school := "elementalist"
 var apprentice := true
 var soldiers: Array[String] = ["thug", "thief"]
 var spells: Array[String] = []
+var wizard_weapons: Array = CasterLoadout.PRESETS["Staff"].duplicate()
+var apprentice_weapons: Array = CasterLoadout.PRESETS["Staff"].duplicate()
 var schools: Dictionary
 var catalog: Dictionary
 var db: FigureDb
@@ -88,6 +90,8 @@ func errors() -> Array[String]:
 		return result
 	if soldiers.size() > MAX_SOLDIERS or specialists() > MAX_SPECIALISTS or cost() > BUDGET:
 		result.append("Recruitment exceeds budget or roster limits.")
+	if not CasterLoadout.valid(wizard_weapons) or CasterLoadout.weapon_slots(wizard_weapons) > 5 or (apprentice and (not CasterLoadout.valid(apprentice_weapons) or CasterLoadout.weapon_slots(apprentice_weapons) > 4)):
+		result.append("Spellcaster equipment exceeds item capacity.")
 	if spells.size() != 8:
 		result.append("Select eight spells.")
 		return result
@@ -129,7 +133,12 @@ func as_warband() -> Dictionary:
 	types.append_array(soldiers)
 	var units: Array = []
 	for i in types.size():
-		units.append({"type": types[i], "at": [4.5 + 3.0 * i, 3.0]})
+		var entry := {"type": types[i], "at": [4.5 + 3.0 * i, 3.0]}
+		if types[i] == "wizard":
+			entry["weapons"] = wizard_weapons.duplicate()
+		elif types[i] == "apprentice":
+			entry["weapons"] = apprentice_weapons.duplicate()
+		units.append(entry)
 	var book := {}
 	for id in spells:
 		book[id] = casting_number(id)
