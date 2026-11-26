@@ -70,3 +70,15 @@ func treasure_encumbered() -> bool:
 		if w.is_ranged() or w.id in ["staff", "two_handed"]:
 			return true
 	return false
+
+
+## Copy a type before applying per-campaign modifiers; database definitions stay immutable.
+func with_bonuses(bonuses: Dictionary) -> FigureDef:
+	var copy := FigureDef.new()
+	for key in ["id", "name", "role", "move", "fight", "shoot", "armour", "will", "health", "cost", "specialist", "shield", "verify"]:
+		copy.set(key, get(key))
+	copy.traits.assign(traits)
+	copy.weapons.assign(weapons)
+	for key in ["move", "fight", "shoot", "armour", "will", "health"]:
+		copy.set(key, int(copy.get(key)) + int(bonuses.get(key, 0)))
+	return copy

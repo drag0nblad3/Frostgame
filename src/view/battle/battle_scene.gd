@@ -217,7 +217,7 @@ func _open_campaign() -> void:
 	if _campaign_dialog == null:
 		_campaign_dialog = CampaignPanel.new()
 		add_child(_campaign_dialog)
-		_campaign_dialog.setup(_campaign)
+		_campaign_dialog.setup(_campaign, _figures)
 		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
 		_campaign_dialog.start_requested.connect(_create_campaign)
 	_campaign_dialog.refresh(_campaign_battle)

@@ -26,6 +26,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		for entry: Dictionary in wb.get("figures", []):
 			var at: Array = entry["at"]
 			var def := figures.get_def(entry["type"])
+			if entry.has("stat_bonus"):
+				def = def.with_bonuses(entry["stat_bonus"])
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
 			unit.campaign_id = int(entry.get("campaign_id", -1))
 			unit.elevation = s.board.height_at(unit.pos)

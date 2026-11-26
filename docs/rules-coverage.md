@@ -105,3 +105,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Complete spell metadata and additional effects
 
 - All 80 core spell names, schools and base casting numbers from the spell reference (pp. 112–135, 202–217) are available in wizard creation; pending spells remain explicitly unavailable in battle. Nine additional effects: Banish, Call Storm, Scatter Shot, Destructive Sphere, Blinding Light, Petrify, Poison Dart, Enchant Weapon and Elemental Hammer. Weapon spells use a single equipped weapon choice (missile weapon preferred when present); ammunition choices and magic-attack immunity are not yet modelled. Area attacks and resistance use current approximations. 
+
+## Campaign management
+
+- pp. 75, 83–85, 96, 103, 106: recruits and dismissals with soldier/specialist caps and level-priced apprentice; wounded caster treatment including debt and apothecary discount; one stat increase per game, wizard/apprentice bonuses applied to copies of definitions; grimoire identification and learning using the random spell table; three initial functional bases (brewery, laboratory, treasury). Other bases, detailed permanent injuries, spell learning/improvement ordering, item identities and loadouts remain pending. Existing version-1 campaign saves use defaults for added fields.

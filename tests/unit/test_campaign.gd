@@ -34,3 +34,26 @@ func test_campaign_survival_and_progression() -> void:
 	check(loaded.load_save("user://campaign_test.json"))
 	check_eq(loaded.data["level"], 1.0)
 	DirAccess.remove_absolute("user://campaign_test.json")
+
+
+func test_campaign_recruit_and_advancement() -> void:
+	var d := WarbandDraft.new(db())
+	d.choose_defaults()
+	var p := CampaignProgress.new()
+	p.start(d.as_warband())
+	p.data["gold"] = 500
+	p.data["xp"] = 300
+	check(p.hire("archer", db()))
+	check_eq(p.data["gold"], 425)
+	check(not p.hire("apprentice", db()))
+	check(p.improve_stat("fight", db()))
+	check(not p.improve_stat("will", db()))
+	check_eq(p.deployment()["figures"][0]["stat_bonus"]["fight"], 1)
+	check_eq(p.deployment()["figures"][1]["stat_bonus"]["fight"], 1)
+	check(p.dismiss(4))
+	check_eq(p.deployment()["figures"].size(), 4)
+	check(not p.choose_base("brewery"))
+	p.data["games"] = 1
+	check(p.choose_base("brewery"))
+	check_eq(p.deployment()["figures"][2]["stat_bonus"]["will"], 1)
+	check_eq(CampaignProgress.random_spell(LoadedDice.new([20, 20])), "destroy_undead")
