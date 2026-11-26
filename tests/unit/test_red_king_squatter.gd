@@ -11,7 +11,7 @@ func test_setup_and_scent() -> void:
 	var s := ScenarioLoader.load_id("red_king_squatter",preview_db(),terrain())
 	var c := GameController.new(s,Dice.new(12))
 	check_eq(s.treasures.size(),5)
-	var troll := s.figures.back()
+	var troll: Figure = s.figures.back()
 	check_eq(troll.def.id,"snow_troll")
 	check(RedKingSquatter.dormant(c,troll))
 	RedKingSquatter.awaken_near(c,Vector2(18,10),0)
