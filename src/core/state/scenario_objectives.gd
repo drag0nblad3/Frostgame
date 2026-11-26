@@ -97,7 +97,9 @@ static func exit_distance(s: GameState, at: Vector2) -> float:
 	return distance
 
 
-static func exit_allowed(s: GameState, at: Vector2) -> bool:
+static func exit_allowed(s: GameState, at: Vector2,side: int=-1) -> bool:
+	if RedKingInvestigations.active(s):
+		return RedKingInvestigations.exit_allowed(s,at,side)
 	if s.scenario_special != "underground_library":
 		return true
 	var size := s.board.size

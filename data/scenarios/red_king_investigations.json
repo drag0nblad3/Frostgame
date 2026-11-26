@@ -1,0 +1,195 @@
+{
+  "id": "red_king_investigations",
+  "name": "Investigations",
+  "board": "red_king_investigations",
+  "warbands": [
+    {
+      "name": "Elementalist",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            3
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            15,
+            3
+          ]
+        },
+        {
+          "type": "knight",
+          "at": [
+            20,
+            4.5
+          ]
+        },
+        {
+          "type": "man_at_arms",
+          "at": [
+            13,
+            4.5
+          ]
+        },
+        {
+          "type": "infantryman",
+          "at": [
+            22,
+            3
+          ]
+        },
+        {
+          "type": "archer",
+          "at": [
+            10,
+            3
+          ]
+        },
+        {
+          "type": "crossbowman",
+          "at": [
+            26,
+            3
+          ]
+        }
+      ],
+      "spells": {
+        "elemental_bolt": 12,
+        "elemental_shield": 10,
+        "fleet_feet": 12,
+        "strength": 12,
+        "heal": 12,
+        "combat_awareness": 16
+      }
+    },
+    {
+      "name": "Necromancer",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            33
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            21,
+            33
+          ]
+        },
+        {
+          "type": "barbarian",
+          "at": [
+            16,
+            31.5
+          ]
+        },
+        {
+          "type": "treasure_hunter",
+          "at": [
+            23,
+            31.5
+          ]
+        },
+        {
+          "type": "thug",
+          "at": [
+            19,
+            31.5
+          ]
+        },
+        {
+          "type": "ranger",
+          "at": [
+            12,
+            33
+          ]
+        },
+        {
+          "type": "marksman",
+          "at": [
+            26,
+            33
+          ]
+        }
+      ],
+      "spells": {
+        "bone_dart": 10,
+        "steal_health": 10,
+        "fleet_feet": 12,
+        "glow": 14,
+        "mind_lock": 16,
+        "strength": 14
+      }
+    }
+  ],
+  "treasures": [],
+  "random_encounters": false,
+  "forced_combat": true,
+  "special": "red_king_investigations",
+  "creatures": [
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        18,
+        13
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        18,
+        23
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        11,
+        17
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        25,
+        19
+      ]
+    }
+  ],
+  "investigation_stands": [
+    [
+      24,
+      18
+    ],
+    [
+      21.5,
+      22.5
+    ],
+    [
+      16.5,
+      24
+    ],
+    [
+      12.5,
+      20.5
+    ],
+    [
+      12.5,
+      15.5
+    ],
+    [
+      16.5,
+      12
+    ],
+    [
+      21.5,
+      13.5
+    ]
+  ]
+}

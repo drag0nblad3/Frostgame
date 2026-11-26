@@ -21,6 +21,8 @@ func start_turn() -> void:
 		if s.treasures.is_empty():
 			_finish(-1)
 		else:
+			if RedKingInvestigations.active(s):
+				RedKingInvestigations.finish_unsearched(_c)
 			_finish(TreasureRules.winner(s))
 		return
 	for f in s.figures:
@@ -93,6 +95,7 @@ func _settle() -> void:
 			_c._magic.on_end_turn()
 			CreatureEffects.end_turn(_c)
 			RedKingSquatter.end_turn(_c)
+			RedKingInvestigations.end_turn(_c)
 			_c._encounters.on_end_turn()
 			start_turn()
 			return
@@ -119,6 +122,12 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
+	if RedKingInvestigations.active(s):
+		if not standing.is_empty():
+			return false
+		RedKingInvestigations.finish_unsearched(_c)
+		_finish(TreasureRules.winner(s))
+		return true
 	if not s.treasures.is_empty():
 		if standing.size() <= 1:
 			var survivor := standing[0] if standing.size() == 1 else -1

@@ -10,7 +10,10 @@ func _init(c: GameController) -> void:
 
 
 func can_pick_up(id: int) -> bool:
-	return _c.can_act() and TreasureRules.can_pick_up(_c.state, _c.state.active(), _c.state.treasure(id))
+	var token := _c.state.treasure(id)
+	if token!=null and token.investigation:
+		return RedKingInvestigations.can_investigate(_c,token)
+	return _c.can_act() and TreasureRules.can_pick_up(_c.state, _c.state.active(), token)
 
 
 func pick_up(id: int) -> bool:
@@ -18,6 +21,8 @@ func pick_up(id: int) -> bool:
 		return false
 	var f := _c.state.active()
 	var token := _c.state.treasure(id)
+	if token.investigation:
+		return RedKingInvestigations.investigate(_c,f,token)
 	_c._spend(f)
 	if _c.state.museum and not _c._encounters.museum_pickup(f):
 		return true
@@ -26,7 +31,7 @@ func pick_up(id: int) -> bool:
 
 func claim_free(f: Figure, token: TreasureToken) -> bool:
 	# Column contact is with its edge, rather than the newly revealed centre.
-	if f == null or token == null or not token.on_ground() or token.frozen or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
+	if f == null or token == null or not token.on_ground() or token.frozen or token.investigation or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false
 	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
 		return false
@@ -137,7 +142,7 @@ func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if r == null:
 		r = _c.reach()
 	var at := MoveGrid.to_pos(node)
-	if not r.can_reach(node) or TreasureRules.edge_distance(_c.state.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(_c.state, at):
+	if not r.can_reach(node) or TreasureRules.edge_distance(_c.state.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(_c.state, at,f.side):
 		return false
 	# The lattice keeps the base on the table; budget one more half inch to cross the edge.
 	if r.cost[node] + Figure.BASE_RADIUS > MoveRules.allowance(f) + 0.001:
@@ -161,6 +166,8 @@ func exit_table(node: Vector2i) -> bool:
 	f.exited = true
 	f.actions_left = 0
 	_c.emit("exit", {"id": f.id})
+	if RedKingInvestigations.active(_c.state) and _c.state.turn>3:
+		_c.emit("investigation_xp",{"side":f.side,"xp":10})
 	return true
 
 

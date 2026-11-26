@@ -3,6 +3,8 @@ extends RefCounted
 ## Objective-first bot policy. Combat remains the fallback if no route is usable.
 
 static func play(c: GameController, f: Figure) -> bool:
+	if RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state):
+		return _escape(c,f)
 	if c.state.treasures.is_empty() or Contact.in_combat(c.state.figures, f):
 		return false
 	if f.def.traits.has("animal"):
@@ -99,7 +101,7 @@ static func _escape(c: GameController, f: Figure) -> bool:
 		return false
 	var r := c.reach()
 	var best: Variant = null
-	var field := MovePlanner.exit_field(c.state)
+	var field := MovePlanner.exit_field(c.state,f.side)
 	var score: float = field.get(MovePlanner.node_at(f.pos), INF)
 	for n: Vector2i in r.nodes():
 		var at := MoveGrid.to_pos(n)

@@ -35,9 +35,12 @@ func emit(type: String, data: Dictionary = {}) -> void:
 	var e := GameEvent.new(type, data)
 	history.append(e)
 	event_emitted.emit(e)
+	if RedKingInvestigations.active(state):
+		RedKingInvestigations.observe_event(self,type,data)
 
 
 func start_game() -> void:
+	RedKingInvestigations.prepare(self)
 	_flow.start_turn()
 
 
@@ -59,6 +62,8 @@ func activate(id: int) -> bool:
 	var time_walk := f.spell_effects.has("time_walk") and f.walk_phases.has(state.phase)
 	var fast := state.is_fast(f)
 	if not state.group.in_progress() or state.group.movement_pass():
+		RedKingInvestigations.before_activation(self,f)
+	if not state.group.in_progress() or state.group.movement_pass():
 		_magic.on_activate(f)
 	if state.group.in_progress():
 		state.group.start_member(state, f)
@@ -74,6 +79,7 @@ func activate(id: int) -> bool:
 		f.non_moves = 0
 		f.used_stored_action = false
 	emit("activate", {"id": id})
+	RedKingInvestigations.activation(self,f)
 	RedKingSquatter.record_contact(self)
 	if not state.group.in_progress() or state.group.movement_pass():
 		CreatureEffects.activation(self,f)

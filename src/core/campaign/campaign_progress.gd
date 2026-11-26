@@ -91,7 +91,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
-		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp"] and int(e["side"]) == side:
+		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp"] and int(e["side"]) == side:
 			scenario_xp += int(e["xp"])
 		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
 			var victim := c.state.figure(e["id"])
@@ -113,7 +113,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					scenario_xp += 50
 				elif c.state.museum and victim.def.id == "medium_construct":
 					scenario_xp += 10
-				else:
+				elif not (RedKingInvestigations.active(c.state) and victim.def.id=="blood_marked_berserker"):
 					kills += 1
 	var secured := c.state.secured_count(side)
 	xp = maxi(0, mini(300, xp + secured * 40 + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
@@ -180,6 +180,9 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		if token.secured_by == side and not token.central:
 			recovered.append(token)
 	for token in recovered:
+		if token.bonus_gold>0:
+			data["gold"]=int(data["gold"])+token.bonus_gold
+			report.append("Recovered offering: +%d gc."%token.bonus_gold)
 		if c.state.scenario_special == "genie_in_the_bottle" and token.id == c.state.lamp_token:
 			data["gold"] = int(data["gold"]) + 250
 			report.append("Recovered the genie lamp: 250 gc.")

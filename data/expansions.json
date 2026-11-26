@@ -51,6 +51,11 @@
           "The Squatter",
           "Explore a three-room ruined dwelling and retrieve treasure guarded by a sleeping troll.",
           "The troll awakens when a warband approaches. Entering its central chamber requires a Will test, and berserkers arrive from the corners during the first six turns."
+        ],
+        "red_king_investigations": [
+          "Investigations",
+          "Search ritual offerings around a barbarian camp before the guards overwhelm you.",
+          "The guards remain dormant until alerted. Search the stands to reveal treasure or traps; after turn three, each warband must escape via its new assigned edges."
         ]
       }
     }

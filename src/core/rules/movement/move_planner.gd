@@ -88,8 +88,8 @@ static func node_at(p: Vector2) -> Vector2i:
 
 
 ## Multi-source exit field avoids getting trapped against a wall near the table edge.
-static func exit_field(s: GameState) -> Dictionary:
-	var key := "exit:" + s.scenario_special
+static func exit_field(s: GameState,side: int=-1) -> Dictionary:
+	var key := "exit:" + s.scenario_special+":"+str(side)
 	if s.board.field_cache.has(key):
 		return s.board.field_cache[key]
 	var grid := MoveGrid.new(s.board)
@@ -100,7 +100,7 @@ static func exit_field(s: GameState) -> Dictionary:
 		for y in grid.rows:
 			var node := Vector2i(x, y)
 			var at := MoveGrid.to_pos(node)
-			if TreasureRules.edge_distance(s.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(s, at) or not grid.open(node):
+			if TreasureRules.edge_distance(s.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(s, at,side) or not grid.open(node):
 				continue
 			field[node] = 0.0
 			heap.push(0.0, node)

@@ -11,6 +11,9 @@ var lost := false
 var ever_collected := false
 var central := false
 var frozen := false
+## Unsearched objective marker, not yet a treasure.
+var investigation := false
+var bonus_gold := 0
 
 
 func _init(token_id: int, at: Vector2) -> void:

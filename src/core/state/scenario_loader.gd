@@ -98,4 +98,9 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
 		token.frozen = (s.scenario_special == "underground_library" and token.central) or s.scenario_special == "complex_temple"
 		s.treasures.append(token)
+	for at: Array in d.get("investigation_stands",[]):
+		var stand := TreasureToken.new(s.treasures.size(),Vector2(at[0],at[1]))
+		stand.central=false
+		stand.investigation=true
+		s.treasures.append(stand)
 	return s
