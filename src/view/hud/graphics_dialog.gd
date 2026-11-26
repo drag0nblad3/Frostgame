@@ -36,5 +36,5 @@ func open() -> void:
 
 
 func _describe(index: int) -> void:
-	var detail := ["Lower 3D resolution; no dynamic shadows or snow; fewer background buildings. Recommended if your phone stutters.","Reduced 3D resolution, lighter shadows and snow; full miniature detail. Default on phones.","Full 3D resolution, full scenery, shadows and snowfall. Best on fast devices."][index]
+	var detail: String = ["Lower 3D resolution; no dynamic shadows or snow; fewer background buildings. Recommended if your phone stutters.","Reduced 3D resolution, lighter shadows and snow; full miniature detail. Default on phones.","Full 3D resolution, full scenery, shadows and snowfall. Best on fast devices."][index]
 	_description.text=detail+"\n\nText and interface stay sharp. No rules or saves change. Scenery density updates on the next battlefield."
