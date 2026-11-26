@@ -26,3 +26,24 @@ func test_wizard_arms_keep_independent_pose() -> void:
 		check(is_equal_approx(left.rotation.x, 0.25))
 		check(right.get_child_count() > 0)
 	model.free()
+
+
+func test_refined_soldiers_keep_equipment_pivots() -> void:
+	var defs := db()
+	for id: String in ["thug","thief","archer","crossbowman","infantryman","man_at_arms","treasure_hunter","knight","barbarian","ranger","marksman","tracker","templar","apothecary","vampire"]:
+		var f := Figure.new(7,defs.get_def(id),0,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.BLUE)
+		check(model.has_node("RightArm") and model.has_node("LeftArm"))
+		check(not model.get_node("RightArm").get_children().is_empty())
+		check(not model.get_node("LeftArm").get_children().is_empty())
+		MiniaturePose.arms(model,-0.3,0.2)
+		model.free()
+
+
+func test_refined_beasts_and_constructs_have_batched_meshes() -> void:
+	var defs := db()
+	for id: String in ["war_hound","wild_dog","wolf","bear","boar","giant_rat","snow_leopard","small_construct","medium_construct","large_construct"]:
+		var f := Figure.new(8,defs.get_def(id),0,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.RED)
+		check(not model.find_children("*","MeshInstance3D",true,false).is_empty())
+		model.free()

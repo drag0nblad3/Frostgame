@@ -20,6 +20,11 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 		weapon(model,f,school)
 		MiniatureBatch.bake(model)
 		return model
+	if f.def.role=="soldier" or f.def.id=="vampire":
+		SoldierSculpt.create(model,f,faction)
+		weapon(model,f)
+		MiniatureBatch.bake(model)
+		return model
 	if f.def.traits.has("construct"):
 		GolemSculpt.create(model, f.def.id, faction)
 	elif f.def.traits.has("animal"):
@@ -88,13 +93,9 @@ static func weapon(model: Node3D, f: Figure, school: String = "") -> void:
 	first = model.get_child_count()
 	if f.ranged != null:
 		if f.ranged.id == "bow":
-			var points := [Vector3(-0.39, 0.37, -0.18), Vector3(-0.53, 0.58, -0.18), Vector3(-0.58, 0.91, -0.18), Vector3(-0.53, 1.24, -0.18), Vector3(-0.39, 1.45, -0.18)]
-			for i in range(1, points.size()):
-				CreatureSculpt.limb(model, points[i - 1], points[i], 0.035, LEATHER.lightened(0.25), 1.0)
-			CreatureSculpt.limb(model, points[0], points[-1], 0.010, BONE, 1.0)
+			RangedSculpt.bow(model)
 		else:
-			box(model, Vector3(-0.38, 0.85, -0.19), Vector3(0.11, 0.10, 0.60), LEATHER)
-			box(model, Vector3(-0.38, 0.88, -0.37), Vector3(0.65, 0.06, 0.10), IRON)
+			RangedSculpt.crossbow(model)
 	if f.def.shield:
 		WeaponSculpt.shield(model, f.def.id in ["knight", "templar"])
 	if left != null:

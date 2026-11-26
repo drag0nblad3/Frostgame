@@ -17,17 +17,26 @@ func _setup() -> void:
 	var args := OS.get_cmdline_user_args()
 	var school_gallery := args.size() > 1 and args[1] in ["schools","apprentices"]
 	var schools: Array = SchoolArt.PALETTES.keys()
+	var soldier_gallery := args.size()>1 and args[1]=="soldiers"
+	var beast_gallery := args.size()>1 and args[1]=="beasts"
 	if school_gallery:
 		ids.clear()
 		for school in schools:
 			ids.append("apprentice" if args[1]=="apprentices" else "wizard")
 	if args.size() > 1 and args[1] == "bestiary":
 		ids = ["imp", "minor_demon", "major_demon", "small_construct", "medium_construct", "large_construct", "ghoul", "zombie", "vampire", "animated_skull", "giant_worm", "skeleton_archer", "thug", "thief", "crossbowman", "infantryman", "man_at_arms", "marksman", "treasure_hunter", "tracker", "war_hound", "wild_dog"]
+	if soldier_gallery:
+		ids=["thug","thief","archer","crossbowman","infantryman","man_at_arms","treasure_hunter","knight","barbarian","ranger","marksman","tracker","templar","apothecary","war_hound"]
+	if beast_gallery:
+		ids=["wolf","bear","boar","snow_leopard","giant_rat","wild_dog","war_hound","small_construct","medium_construct","large_construct"]
+	var close_gallery := school_gallery or soldier_gallery or beast_gallery
 	for i in ids.size():
 		var def := db.get_def(ids[i])
-		var columns := 5 if school_gallery else 6
-		var at := Vector2(2.0 + i % columns * (2.5 if school_gallery else 2.2), 2.0 + floori(float(i) / columns) * (3.5 if school_gallery else 3.1))
+		var columns := 5 if close_gallery else 6
+		var at := Vector2(2.0 + i % columns * (2.5 if close_gallery else 2.2), 2.0 + floori(float(i) / columns) * (3.5 if close_gallery else 3.1))
 		var side := (i%2 if args[1]=="schools" else (i+1)%2) if school_gallery else (0 if def.role!="creature" else -1)
+		if soldier_gallery:
+			side=i%2
 		var f := Figure.new(i + 1, def, side, at, db.unarmed())
 		if school_gallery and args[1]=="apprentices":
 			f.campaign_id=i+101
@@ -60,10 +69,10 @@ func _setup() -> void:
 	_scene.add_child(camera)
 	camera.position = Vector3(7, 18, -14)
 	camera.look_at(Vector3(7, 0, 6), Vector3.UP)
-	if school_gallery:
-		camera.size=9.2
+	if close_gallery:
+		camera.size=12.1 if soldier_gallery else 9.2
 		camera.position=Vector3(7,11,-12)
-		camera.look_at(Vector3(7,0.8,3.75),Vector3.UP)
+		camera.look_at(Vector3(7,0.8,5.5 if soldier_gallery else 3.75),Vector3.UP)
 	camera.make_current()
 	_ready_to_capture = true
 

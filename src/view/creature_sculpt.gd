@@ -40,7 +40,7 @@ static func create(root: Node3D, f: Figure, faction: Color) -> bool:
 		"white_gorilla", "werewolf", "snow_troll", "frost_giant":
 			brute(root, f)
 		"wolf", "wild_dog", "war_hound", "giant_rat", "snow_leopard", "bear", "boar":
-			beast(root, f.def.id)
+			BeastSculpt.create(root,f,faction)
 		_:
 			return false
 	return true

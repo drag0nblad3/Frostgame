@@ -9,6 +9,9 @@ static func create(root: Node3D, id: String, faction: Color) -> void:
 	var stone := Color(0.44, 0.49, 0.51) if not small else Color(0.58, 0.47, 0.31)
 	var trim := Color(0.31, 0.38, 0.41) if large else Color(0.63, 0.49, 0.28)
 	var light := Color(0.43, 0.83, 0.92) if large else Color(0.75, 0.88, 0.54)
+	if not small and not large:
+		stone=Color("687477")
+		light=Color("8fd6c9")
 	for side: float in [-1.0, 1.0]:
 		var shin := Vector3(side * 0.18, 0.29, 0)
 		MiniatureFactory.cylinder(root, shin, 0.15, 0.17, 0.40, stone).rotation.z = side * 0.10
@@ -23,6 +26,14 @@ static func create(root: Node3D, id: String, faction: Color) -> void:
 		MiniatureFactory.sphere(root, elbow, Vector3.ONE * 0.24, trim)
 		CreatureSculpt.limb(root, elbow, Vector3(side * 0.46, 0.61, -0.14), 0.19, stone, 0.85)
 		MiniatureFactory.box(root, Vector3(side * 0.46, 0.57, -0.16), Vector3(0.30, 0.27, 0.31), stone.darkened(0.12))
+		for i in 3:
+			var at := Vector3(side*0.46+(i-1)*0.085,0.54,-0.325)
+			MiniatureFactory.box(root,at,Vector3(0.05,0.13,0.035),trim)
+		if small:
+			WeaponSculpt.metal(MiniatureFactory.sphere(root,elbow,Vector3.ONE*0.25,trim))
+		elif not large:
+			for i in 2:
+				MiniatureFactory.box(root,shoulder+Vector3(side*0.04,0.04-i*0.07,-0.19),Vector3(0.20,0.035,0.035),trim)
 		if large:
 			MiniatureFactory.box(root, shoulder + Vector3(side * 0.03, 0.15, 0), Vector3(0.36, 0.14, 0.41), trim)
 			CreatureSculpt.limb(root, shoulder + Vector3(side * 0.10, 0.19, 0), shoulder + Vector3(side * 0.21, 0.37, 0), 0.09, trim, 0.1)
@@ -46,4 +57,14 @@ static func create(root: Node3D, id: String, faction: Color) -> void:
 	if small:
 		var fin := MiniatureFactory.sphere(root, Vector3(0, 1.59, 0.01), Vector3(0.11, 0.18, 0.12), trim)
 		WeaponSculpt.metal(fin)
+	if large:
+		for side: float in [-1.0,1.0]:
+			CreatureSculpt.limb(root,Vector3(side*0.16,0.91,0.19),Vector3(side*0.25,1.53,0.22),0.10,stone.darkened(0.18),0.65)
+			MiniatureFactory.box(root,Vector3(side*0.22,1.07,-0.19),Vector3(0.055,0.19,0.04),light)
+	elif small:
+		for side: float in [-1.0,1.0]:
+			WeaponSculpt.metal(MiniatureFactory.cylinder(root,Vector3(side*0.17,1.30,0),0.07,0.09,0.15,trim))
+	else:
+		for side: float in [-1.0,1.0]:
+			MiniatureFactory.box(root,Vector3(side*0.20,0.99,-0.22),Vector3(0.075,0.22,0.045),trim)
 	root.scale = Vector3.ONE * (0.75 if small else (1.42 if large else 1.0))
