@@ -27,6 +27,9 @@ func options(f: Figure) -> Array[Dictionary]:
 		var center := p.rect.get_center()
 		if f.pos.distance_to(center) <= 24 and (LineOfSight.check(s.board, f.pos, center).clear or _visible_edge(f, p)):
 			result.append({"kind": "terrain", "target": f.id, "piece": p, "spell": p.kind.id.trim_prefix("spell_"), "label": "%s at %.1f, %.1f" % [p.kind.name, center.x, center.y]})
+	for i in s.words.size():
+		var word := s.words[i]
+		result.append({"kind": "word", "target": f.id, "spell": word["spell"], "word_index": i, "label": "%s: %s" % [s.spell_catalog[word["spell"]]["name"], s.spell_catalog[word["chosen"]]["name"]]})
 	if s.storm_penalty > 0:
 		result.append({"kind": "storm", "target": f.id, "spell": "call_storm", "label": "Call Storm (one casting)"})
 	return result
@@ -59,6 +62,8 @@ func apply(option: Dictionary) -> void:
 			var p: TerrainPiece = option["piece"]
 			if s.board.pieces.has(p):
 				c._magic.terrain.remove(p)
+		"word":
+			s.words.remove_at(int(option["word_index"]))
 		"storm":
 			s.storm_penalty = maxi(0, s.storm_penalty - 1)
 	c.emit("spell_expired", {"id": option["target"], "spell": id})

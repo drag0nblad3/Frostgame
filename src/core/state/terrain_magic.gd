@@ -1,7 +1,7 @@
 class_name TerrainMagic
 extends RefCounted
 ## Dynamic terrain on the exposed-surface heightfield.
-const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear"]
+const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade"]
 var c: GameController
 
 
@@ -11,7 +11,7 @@ func _init(controller: GameController) -> void:
 
 func footprint(id: String, at: Vector2, rotated: bool) -> Rect2:
 	var size := Vector2(6, 6) if id == "mud" else (Vector2(1, 6) if rotated else Vector2(6, 1))
-	if id in ["explosive_rune", "planar_tear"]:
+	if id in ["explosive_rune", "planar_tear", "grenade"]:
 		size = Vector2(0.5, 0.5)
 	return Rect2(at - size * 0.5, size)
 
@@ -23,6 +23,8 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 		return false
 	if id == "mud":
 		return f.pos.distance_to(at) <= 24 and LineOfSight.check(b, f.pos, at).clear
+	if id == "grenade":
+		return f.pos.distance_to(at) <= 14.0 and LineOfSight.check(b, f.pos, at).clear
 	if id in ["explosive_rune", "planar_tear"]:
 		if id == "explosive_rune":
 			var count := 0
@@ -66,6 +68,18 @@ func points(f: Figure, id: String, rotated: bool, first_only: bool) -> Array[Vec
 
 
 func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14) -> void:
+	if id == "grenade":
+		var affected: Array[Figure] = []
+		var s := c.state
+		for t in s.figures:
+			if not t.in_play() or Vector2(t.pos.distance_to(at), t.elevation - s.board.height_at(at)).length() > 1.5 + Figure.BASE_RADIUS:
+				continue
+			for member in ShotTarget.participants(s.figures, t):
+				if not affected.has(member):
+					affected.append(member)
+		for t in affected:
+			c._magic._shot(f, t, 3, at)
+		return
 	if id == "planar_tear":
 		for t in c.state.figures:
 			if not t.in_play() or Vector2(t.pos.distance_to(at), t.elevation - c.state.board.height_at(at)).length() > 2.0 + Figure.BASE_RADIUS:

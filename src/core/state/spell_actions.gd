@@ -78,6 +78,8 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t.def.role == "soldier" and t.def.armour >= 11 and not t.spell_effects.has(id)
 	if SummonActions.CONTROL.has(id):
 		return summons.can_control(f, t, id)
+	if id == "strike_dead":
+		return t != f and not t.def.traits.has("undead") and not t.def.traits.has("construct")
 	if id == "destroy_undead":
 		return t.def.traits.has("undead")
 	if kind in ["heal", "resist"] and (t.def.traits.has("undead") or t.def.traits.has("construct")):
@@ -98,10 +100,12 @@ func start(id: String, target_id: int) -> bool:
 func counter_options(id: String) -> Array[Dictionary]:
 	var f := c.state.active()
 	var empty: Array[Dictionary] = []
-	if id not in ["dispel", "spell_eater", "decay"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
+	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
 	if not available_spell(f, id):
 		return empty
+	if id in ["power_word", "draining_word"]:
+		return WordMagic.options(c.state, f, id)
 	return weapons.options(f) if id == "decay" else counter.options(f)
 
 
@@ -166,7 +170,7 @@ func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll := not known and ScrollActions.consume(f, id)
 	var raw := 14 if scroll else c.dice.d20()
-	var total := 14 if scroll else CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
+	var total := 14 if scroll else CastingRoll.modified(raw, f.roll_penalty() + WordMagic.modifier(c.state, id) - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	c._spend(f)
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll}
@@ -177,7 +181,7 @@ func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false
 	if not effect.is_empty():
 		c.state.pending_cast["effect"] = effect
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
-	if id == "spell_eater":
+	if id in ["spell_eater", "strike_dead"]:
 		c._hurt(f, 1, f, false)
 	return true
 
@@ -218,6 +222,10 @@ func finish(health: int) -> bool:
 		return true
 	if id in ["dispel", "spell_eater"]:
 		counter.apply(p["effect"])
+		return true
+	if id in ["power_word", "draining_word"]:
+		WordMagic.apply(s, f, id, p["effect"]["chosen"])
+		c.emit("spell_effect", {"id": f.id, "spell": id})
 		return true
 	if id == "decay":
 		weapons.destroy(t, p["effect"]["weapon"])
@@ -309,6 +317,9 @@ func finish(health: int) -> bool:
 			var total := raw + t.effective_will() + t.roll_penalty()
 			if not StatRoll.succeeds(raw, t.effective_will() + t.roll_penalty(), result["roll"]):
 				c._hurt(t, t.health if t.effective_will() <= 2 else maxi(0, int(result["roll"]) - total) * 3, f, false)
+		"strike_dead":
+			resistance.attempt(t, int(result["roll"]), _resisted_death.bind(f, t), 0, true)
+			return true
 		"steal_health":
 			resistance.attempt(t, int(result["roll"]), _resisted_steal.bind(f, t))
 			return true
@@ -450,3 +461,8 @@ func insure() -> bool:
 	p["scroll"] = true
 	p["total"] = 14
 	return finish(0)
+
+
+func _resisted_death(success: bool, f: Figure, t: Figure) -> void:
+	if not success and t.in_play():
+		c._hurt(t, t.health, f, false)

@@ -9,12 +9,12 @@ func _init(controller: GameController) -> void:
 	c = controller
 
 
-func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0) -> void:
+func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0, anyone: bool = false) -> void:
 	var raw := c.dice.d20()
 	var mod := t.effective_will() + t.roll_penalty() + bonus
 	var success := StatRoll.succeeds(raw, mod, tn)
 	var caster := t.def.role in ["wizard", "apprentice"]
-	var max_health := t.health + PowerPool.available(t) if caster and raw != 1 and raw != 20 and t.in_play() else 0
+	var max_health := t.health + PowerPool.available(t) if (caster or anyone) and raw != 1 and raw != 20 and t.in_play() else 0
 	var needed := maxi(0, tn - raw - mini(mod, 10))
 	var data := {"id": t.id, "raw": raw, "mod": mini(mod, 10), "tn": tn, "max": max_health}
 	if not success and max_health > 0 and t.side == c.state.reaction_side:

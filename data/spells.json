@@ -132,7 +132,7 @@
     "name": "Grenade",
     "school": "enchanter",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "strength": {
     "name": "Strength",
@@ -243,7 +243,8 @@
     "name": "Strike Dead",
     "school": "necromancer",
     "number": 18,
-    "kind": "unimplemented"
+    "kind": "special",
+    "range": 8
   },
   "absorb_knowledge": {
     "name": "Absorb Knowledge",
@@ -261,7 +262,7 @@
     "name": "Draining Word",
     "school": "sigilist",
     "number": 14,
-    "kind": "unimplemented"
+    "kind": "counter"
   },
   "explosive_rune": {
     "name": "Explosive Rune",
@@ -279,7 +280,7 @@
     "name": "Power Word",
     "school": "sigilist",
     "number": 14,
-    "kind": "unimplemented"
+    "kind": "counter"
   },
   "push": {
     "name": "Push",

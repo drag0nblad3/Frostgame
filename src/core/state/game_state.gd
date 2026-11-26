@@ -25,6 +25,7 @@ var spell_catalog := {}
 var pending_cast := {}
 var pending_resistance := {}
 var storm_penalty := 0
+var words: Array[Dictionary] = []
 var fast_acts := {}
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var order: Array[int] = []
