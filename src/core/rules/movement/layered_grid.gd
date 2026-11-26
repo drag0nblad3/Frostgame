@@ -6,6 +6,7 @@ var mover: Figure
 var others: Array[Figure] = []
 var null_boundary := false
 var null_board: Board
+var _open_cache := {}
 
 
 func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> void:
@@ -22,6 +23,12 @@ func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> 
 
 
 func open(n: Vector3i) -> bool:
+	if not _open_cache.has(n):
+		_open_cache[n]=_compute_open(n)
+	return _open_cache[n]
+
+
+func _compute_open(n: Vector3i) -> bool:
 	if not layout.standable(n):
 		return false
 	var at := layout.world(n)

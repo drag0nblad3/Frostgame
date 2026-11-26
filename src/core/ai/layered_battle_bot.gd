@@ -1,7 +1,7 @@
 class_name LayeredBattleBot
 extends RefCounted
 ## Small battle AI. Plans with the full floor graph, then executes legal
-## controller moves. It deliberately uses ordinary movement rather than magic.
+## controller moves. Selective shortcuts use the same action validators.
 
 
 static func play(c: GameController) -> bool:
@@ -82,6 +82,8 @@ static func _move(c: GameController,f: Figure) -> bool:
 				if enemy.in_play() and enemy.side!=f.side and absf(enemy.elevation-layout.height(n))<0.5 and Contact.touching(enemy.pos,layout.point(n)):
 					best=distance
 					goal=n
+	if LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal):
+		return true
 	if goal==null or goal==reach.start:
 		return false
 	var path := long_route.path_to(goal)

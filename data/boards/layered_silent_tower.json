@@ -137,9 +137,9 @@
       {
         "id": "stair_second_landing",
         "rect": [
-          21,
+          20,
           12,
-          2,
+          3,
           3
         ],
         "level": 6
@@ -368,12 +368,12 @@
       {
         "from": [
           "stair_second_landing",
-          22,
+          20.5,
           14
         ],
         "to": [
           "tower_second",
-          21.5,
+          20.5,
           14.5
         ],
         "kind": "walk"

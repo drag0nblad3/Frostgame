@@ -71,6 +71,17 @@ sides provide routes between levels; cutaways use selected height. The
 original campaign scenario is unchanged. Stair geometry and full simulation
 must pass before treating this as a campaign replacement.
 
+## Route repair and shortcut AI
+
+The middle stair exit was moved clear of the eastern wall after its geometry
+validation failed. Targeted regression coverage checks the doorway connection.
+LayeredTactics evaluates safe authored running jumps and selects Teleport or
+Leap when ordinary movement cannot reach a treasure efficiently. It avoids
+magic inside the null field, only spends at most two Health on empowerment,
+and leaves ordinary movement preferable for nearby reachable objectives.
+Bridge placement AI is still pending. The visual workflow now captures the
+actual layered tower and its ground-level cutaway.
+
 ## Current boundary
 
 A Board stores one exposed walking height at each horizontal coordinate. A bridge or

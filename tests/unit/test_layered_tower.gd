@@ -12,3 +12,6 @@ func test_tower_has_independent_floors_and_access_routes() -> void:
 	check(not LayeredReach.search(LayeredGrid.new(layout),start,10.0).can_reach(target))
 	check(LayeredReach.search(LayeredGrid.new(layout),start,100.0).can_reach(target))
 	check(not LayeredSight.clear(layout,Vector3(18,1,18),Vector3(18,11,18)))
+	var a := layout.node("stair_second_landing",Vector2(20.5,14))
+	var b2 := layout.node("tower_second",Vector2(20.5,14.5))
+	check(LayeredReach.search(LayeredGrid.new(layout),a,0.5).can_reach(b2),"middle stair doorway has clearance")

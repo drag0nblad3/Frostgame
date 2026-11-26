@@ -31,6 +31,7 @@ jobs:
           set -euo pipefail
           mkdir -p previews
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/layered_capture.gd 2>&1 | tee gatehouse.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/layered_capture.gd -- tower 2>&1 | tee tower.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/sunken-streets.png 0 sunken_streets 2>&1 | tee sunken.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/title_capture.gd -- previews/title.png 2>&1 | tee title.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/miniature_gallery.gd -- previews/miniatures.png 2>&1 | tee gallery.log
@@ -43,13 +44,13 @@ jobs:
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/keep.png 0 the_keep 2>&1 | tee keep.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/interface_capture.gd -- previews/roster.png roster 2>&1 | tee roster.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/interface_capture.gd -- previews/headquarters.png campaign 2>&1 | tee headquarters.log
-          if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed|SHADER ERROR|Shader error' gatehouse.log sunken.log roster.log headquarters.log title.log gallery.log bestiary.log schools.log ruins.log temple.log library.log well.log keep.log; then exit 1; fi
+          if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed|SHADER ERROR|Shader error' tower.log gatehouse.log sunken.log roster.log headquarters.log title.log gallery.log bestiary.log schools.log ruins.log temple.log library.log well.log keep.log; then exit 1; fi
           grep -F 'scenario=treasure_skirmish board=frozen_ruins' ruins.log
           grep -F 'scenario=complex_temple board=complex_temple' temple.log
           grep -F 'scenario=underground_library board=underground_library' library.log
           grep -F 'scenario=dreams_well board=dreams_well' well.log
           grep -F 'scenario=the_keep board=the_keep' keep.log
-          for file in gatehouse-upper gatehouse-cutaway sunken-streets roster headquarters title miniatures bestiary schools frozen-ruins complex-temple library well keep; do test -s "previews/$file.png"; done
+          for file in tower-upper tower-cutaway gatehouse-upper gatehouse-cutaway sunken-streets roster headquarters title miniatures bestiary schools frozen-ruins complex-temple library well keep; do test -s "previews/$file.png"; done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
