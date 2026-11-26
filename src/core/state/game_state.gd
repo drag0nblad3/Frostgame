@@ -36,6 +36,8 @@ var creature_db: FigureDb
 var spellbooks := {}
 var spell_catalog := {}
 var content_profile := ContentProfile.new()
+## Scenario-specific plain data (including shuffled decks and ongoing events).
+var scenario_data: Dictionary = {}
 var pending_cast := {}
 var pending_resistance := {}
 var pending_combat := {}

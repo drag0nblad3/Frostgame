@@ -3,7 +3,7 @@ extends RefCounted
 ## Local, versioned checkpoint. No objects or suspended callbacks are deserialized.
 const VERSION := 1
 const PATH := "user://frostgame_battle_v1.dat"
-const STATE := ["side_names", "side_schools", "turn", "phase", "push_winner", "push_loser", "forced_combat", "reaction_side", "random_encounters", "museum", "scenario_special", "worm_spawned", "well_drinkers", "discovered_huts", "disc_travellers", "lamp_token", "genie_id", "genie_kills", "tower_visitors", "column_fighters", "reinforcement_points", "spellbooks", "spell_catalog", "storm_penalty", "words", "fast_acts", "pack_queue", "pack_leader", "pack_target", "pack_heading", "telescope_ready", "pending_initiative", "order", "order_index", "active_id", "winner", "over", "critical_hits"]
+const STATE := ["side_names", "side_schools", "turn", "phase", "push_winner", "push_loser", "forced_combat", "reaction_side", "random_encounters", "museum", "scenario_special", "scenario_data", "worm_spawned", "well_drinkers", "discovered_huts", "disc_travellers", "lamp_token", "genie_id", "genie_kills", "tower_visitors", "column_fighters", "reinforcement_points", "spellbooks", "spell_catalog", "storm_penalty", "words", "fast_acts", "pack_queue", "pack_leader", "pack_target", "pack_heading", "telescope_ready", "pending_initiative", "order", "order_index", "active_id", "winner", "over", "critical_hits"]
 const EARLY := ["leaders", "eligible", "used", "closed"]
 const GROUP := ["stage", "side", "members", "pending"]
 const TOKEN := ["id", "pos", "surface_id", "carrier_id", "secured_by", "lost", "ever_collected", "central", "frozen"]

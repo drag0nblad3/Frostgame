@@ -1,5 +1,36 @@
 {
   "version": 1,
-  "packs": {},
-  "_note": "Core Frostgrave 2e is always enabled. Register implemented expansions here. No expansion books imported yet."
+  "packs": {
+    "red_king": {
+      "name": "The Red King",
+      "description": "A three-act invasion campaign featuring unstable dimensions, demonic opponents, unusual treasure and isolated warbands.",
+      "status": "development",
+      "requires": [],
+      "content": {
+        "campaigns": [
+          "red_king"
+        ],
+        "scenarios": [
+          "red_king_squatter",
+          "red_king_investigations",
+          "red_king_veil",
+          "red_king_back_into_fire",
+          "red_king_demons_and_mad_man",
+          "red_king_mind",
+          "red_king_herded",
+          "red_king_sinkhole",
+          "red_king_hill",
+          "red_king_tethers",
+          "red_king_bridge",
+          "red_king_ringworld"
+        ],
+        "rules": [
+          "red_king_reality_cracks",
+          "red_king_ragged_warbands",
+          "red_king_treasure"
+        ]
+      }
+    }
+  },
+  "_note": "Core Frostgrave 2e is always enabled. Development packs are visible but cannot be enabled until ready."
 }

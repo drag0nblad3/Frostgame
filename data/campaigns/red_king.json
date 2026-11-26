@@ -1,0 +1,101 @@
+{
+  "id": "red_king",
+  "pack": "red_king",
+  "status": "development",
+  "source": "The Red King (2020), pp. 22–62",
+  "stages": [
+    {
+      "id": "red_king_squatter",
+      "title": "The Squatter",
+      "act": 1,
+      "number": 1,
+      "status": "pending"
+    },
+    {
+      "id": "red_king_investigations",
+      "title": "Investigations",
+      "act": 1,
+      "number": 2,
+      "status": "pending"
+    },
+    {
+      "id": "red_king_veil",
+      "title": "The Veil of Unreality",
+      "act": 1,
+      "number": 3,
+      "status": "pending",
+      "optional": true
+    },
+    {
+      "id": "red_king_back_into_fire",
+      "title": "Back Into the Fire",
+      "act": 2,
+      "number": 4,
+      "status": "pending"
+    },
+    {
+      "id": "red_king_demons_and_mad_man",
+      "title": "The Demons and the Mad Man",
+      "act": 2,
+      "number": 5,
+      "status": "pending"
+    },
+    {
+      "id": "red_king_mind",
+      "title": "In the Mind of Kalamon Ryce",
+      "act": 2,
+      "number": 6,
+      "status": "pending",
+      "requires_flag": "secured_kalamon",
+      "solo": true
+    },
+    {
+      "id": "red_king_herded",
+      "title": "Herded Like Cattle!",
+      "act": 3,
+      "number": 7,
+      "status": "pending",
+      "campaign_mode": "ragged_warbands"
+    },
+    {
+      "id": "red_king_sinkhole",
+      "title": "Planar Sinkhole",
+      "act": 3,
+      "number": 8,
+      "status": "pending",
+      "campaign_mode": "ragged_warbands"
+    },
+    {
+      "id": "red_king_hill",
+      "title": "King of the Hill",
+      "act": 3,
+      "number": 9,
+      "status": "pending",
+      "campaign_mode": "ragged_warbands"
+    },
+    {
+      "id": "red_king_tethers",
+      "title": "Ethereal Tethers",
+      "act": 3,
+      "number": 10,
+      "status": "pending",
+      "campaign_mode": "ragged_warbands"
+    },
+    {
+      "id": "red_king_bridge",
+      "title": "The Bridge",
+      "act": 3,
+      "number": 11,
+      "status": "pending",
+      "campaign_mode": "ragged_warbands"
+    },
+    {
+      "id": "red_king_ringworld",
+      "title": "Ringworld of the Red King",
+      "act": 3,
+      "number": 12,
+      "status": "pending",
+      "campaign_mode": "ragged_warbands"
+    }
+  ]
+}

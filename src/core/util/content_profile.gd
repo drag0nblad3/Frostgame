@@ -43,6 +43,8 @@ func errors() -> Array[String]:
 		if not packs.has(id):
 			result.append("Missing content pack: "+id)
 			continue
+		if packs[id].get("status","ready")!="ready":
+			result.append("%s is not playable yet."%packs[id].get("name",id))
 		for required: String in packs[id].get("requires",[]):
 			if not enabled.has(required):
 				result.append("%s requires %s."%[packs[id].get("name",id),required])
@@ -52,7 +54,7 @@ func errors() -> Array[String]:
 func allows(category: String,id: String) -> bool:
 	var owners: Array=_owners.get(category+":"+id,[])
 	for owner: String in owners:
-		if not enabled.has(owner):
+		if not enabled.has(owner) or packs[owner].get("status","ready")!="ready":
 			return false
 	return true
 

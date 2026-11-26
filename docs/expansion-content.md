@@ -37,3 +37,5 @@ Optional mechanics must test `state.content_profile.rule("example_optional_rule"
 Disabling a pack scans the saved draft and campaign for references to its content IDs, including historical members, and refuses changes that could break those records. Campaign-rule packs cannot be removed after the first completed battle, pending a pack-specific migration. No destructive automatic replacement is performed. Pack migration, revised core rules, and actual expansion-specific systems need individual implementation when the books are supplied.
 
 Tests: add pack fixtures for each new catalog and rule gate; check enabled/disabled saves, deterministic core outcomes, saved battle resume, and dependencies.
+
+A pack may declare `status: development` while being built. The dialog displays it disabled, profile validation refuses it, and its owned content is excluded even if a manually edited save requests it. Change to `ready` only after all exposed content is verified.
