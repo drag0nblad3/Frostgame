@@ -57,6 +57,8 @@ func stops(n: Vector2i) -> bool:
 	if mover == null:
 		return false
 	var p := to_pos(n)
+	if mover.side >= 0 and not IllusionRules.phantom(mover) and ScenarioColumns.contact(board, p) != null:
+		return true
 	for o in others:
 		if o.side != mover.side and absf(o.elevation - board.height_at(p)) < 0.5 and Contact.touching(o.pos, p):
 			return true

@@ -19,6 +19,19 @@ static func play(c: GameController, f: Figure) -> bool:
 		var target := _nearest(c, f)
 		if target == null:
 			break
+		if target.frozen and c.state.scenario_special == "complex_temple" and ScenarioColumns.contact(c.state.board, f.pos) != null and c.can_move():
+			# Move around the column to make contact again after a failed fight.
+			var reach := c.reach()
+			var moved := false
+			for node: Vector2i in reach.nodes():
+				var at := MoveGrid.to_pos(node)
+				if at.distance_to(f.pos) > 0.1 and ScenarioColumns.contact(c.state.board, at) == ScenarioColumns.contact(c.state.board, f.pos):
+					moved = c.move_to(node)
+					if moved:
+						break
+			if moved:
+				acted = true
+				continue
 		if target.frozen and c.break_ice():
 			acted = true
 			continue

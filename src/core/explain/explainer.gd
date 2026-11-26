@@ -13,6 +13,14 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"null_field":
+			return "%s loses ongoing magic in the null field." % name_of(s, d["id"])
+		"tower_entered":
+			return "%s enters the Silent Tower." % name_of(s, d["id"])
+		"column_fight":
+			return "%s fights a guardian column: %d vs %d (%s)." % [name_of(s, d["id"]), d["total"], d["column"], "won" if d["won"] else ("lost" if d["lost"] else "tie")]
+		"column_opened":
+			return "The column crumbles, revealing treasure."
 		"genie_released":
 			return "The lamp releases an angry genie!"
 		"genie_flee":

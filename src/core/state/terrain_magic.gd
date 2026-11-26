@@ -228,7 +228,8 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 		var hut := ScenarioSites.site_at(c.state, "haunted_floor", at) if c.state.scenario_special == "haunted_houses" and f.side >= 0 else null
 		var undiscovered := hut != null and not c.state.discovered_huts.has(hut.rect.position)
 		var null_field := ScenarioNull.field_at(c.state.board, at)
-		if hits.is_empty() and not undiscovered and not occupied and not null_field:
+		var column := f.side >= 0 and not IllusionRules.phantom(f) and ScenarioColumns.contact(c.state.board, at) != null
+		if hits.is_empty() and not undiscovered and not occupied and not null_field and not column:
 			continue
 		f.pos = at
 		f.elevation = c.state.board.height_at(at)
@@ -240,6 +241,9 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 		for p in hits:
 			explode(p)
 		if not f.in_play():
+			return false
+		if column and i < path.size() - 1:
+			ScenarioColumns.challenge(c, f)
 			return false
 		if undiscovered and ScenarioSites.enter(c, f) and Contact.in_combat(c.state.figures, f):
 			return false

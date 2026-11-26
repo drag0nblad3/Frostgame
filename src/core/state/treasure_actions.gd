@@ -21,6 +21,25 @@ func pick_up(id: int) -> bool:
 	_c._spend(f)
 	if _c.state.museum and not _c._encounters.museum_pickup(f):
 		return true
+	return _claim(f, token)
+
+
+func claim_free(f: Figure, token: TreasureToken) -> bool:
+	# Column contact is with its edge, rather than the newly revealed centre.
+	if f == null or token == null or not token.on_ground() or token.frozen or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
+		return false
+	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
+		return false
+	for enemy in _c.state.figures:
+		if enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
+			continue
+		if Shooting.distance(enemy, f) <= 1.0 or Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, _c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
+			return false
+	return _claim(f, token)
+
+
+func _claim(f: Figure, token: TreasureToken) -> bool:
+	var id := token.id
 	ScenarioSites.discover(_c, token.pos, f.side)
 	_c._magic.illusions.reveal(f)
 	if f.treasure_id >= 0:

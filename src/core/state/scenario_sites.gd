@@ -54,6 +54,9 @@ static func end_move(c: GameController, f: Figure) -> void:
 	if not f.in_play():
 		return
 	enter(c, f)
+	ScenarioColumns.challenge(c, f)
+	if not f.in_play():
+		return
 	var s := c.state
 	if s.scenario_special != "the_keep" or f.elevation >= 0.5:
 		return
