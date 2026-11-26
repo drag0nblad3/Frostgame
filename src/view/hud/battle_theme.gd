@@ -41,6 +41,28 @@ static func create() -> Theme:
 	theme.set_stylebox("hover", "PopupMenu", hover)
 	theme.set_color("font_color", "PopupMenu", Color(0.94, 0.94, 0.88))
 	theme.set_color("font_hover_color", "PopupMenu", Color(1.0, 0.90, 0.65))
+	# Larger embedded window X and scroll tracks, in logical UI units.
+	# A 42-unit close icon has a much larger hit target than Godot's default.
+	var close := _close_texture(Color("e9e3d3"),Color("344752"))
+	var close_pressed := _close_texture(Color.WHITE,Color("8a5b3d"))
+	theme.set_icon("close","Window",close)
+	theme.set_icon("close_pressed","Window",close_pressed)
+	theme.set_constant("title_height","Window",58)
+	theme.set_constant("close_h_offset","Window",48)
+	theme.set_constant("close_v_offset","Window",50)
+	theme.set_font_size("title_font_size","Window",22)
+	var track := panel(Color("24333d"),Color("52626a"),4)
+	track.set_content_margin_all(14)
+	var grab := panel(Color("9eacb0"),Color("d1dbd9"),5)
+	grab.set_content_margin_all(14)
+	var active := panel(Color("d6bd82"),Color("f5dfad"),5)
+	active.set_content_margin_all(14)
+	for kind: String in ["VScrollBar","HScrollBar"]:
+		theme.set_stylebox("scroll",kind,track)
+		theme.set_stylebox("scroll_focus",kind,track)
+		theme.set_stylebox("grabber",kind,grab)
+		theme.set_stylebox("grabber_highlight",kind,active)
+		theme.set_stylebox("grabber_pressed",kind,active)
 	theme.set_constant("v_separation", "PopupMenu", 16)
 	theme.set_constant("scrollbar_h_separation","ScrollContainer",10)
 	theme.set_constant("scrollbar_v_separation","ScrollContainer",10)
@@ -48,3 +70,18 @@ static func create() -> Theme:
 	theme.set_constant("h_separation", "HBoxContainer", 6)
 	theme.set_constant("v_separation", "VBoxContainer", 4)
 	return theme
+
+
+static var _close_icons := {}
+
+
+static func _close_texture(foreground: Color,background: Color) -> Texture2D:
+	var key := str(foreground)+str(background)
+	if _close_icons.has(key):
+		return _close_icons[key]
+	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42"><rect x="1" y="1" width="40" height="40" rx="7" fill="#%s"/><path d="M13 13 L29 29 M29 13 L13 29" stroke="#%s" stroke-width="3.8" stroke-linecap="round"/></svg>'%[background.to_html(false),foreground.to_html(false)]
+	var image := Image.new()
+	image.load_svg_from_string(svg)
+	var texture := ImageTexture.create_from_image(image)
+	_close_icons[key]=texture
+	return texture

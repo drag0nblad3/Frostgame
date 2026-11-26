@@ -44,6 +44,10 @@ func _setup() -> void:
 			return
 	else:
 		scene._open_roster()
+		if _dialog=="spells":
+			scene._setup._tabs.current_tab=1
+		elif _dialog=="recruits":
+			scene._setup._tabs.current_tab=2
 		if not scene._setup.visible:
 			quit(1)
 			return

@@ -125,7 +125,7 @@ func _resume() -> void:
 		get_tree().root.set_meta("layered_resume",true)
 		get_tree().reload_current_scene())
 	confirm.canceled.connect(confirm.queue_free)
-	confirm.popup_centered()
+	PhoneSafeArea.popup_dialog(confirm)
 
 
 func _switch_board() -> void:
@@ -149,7 +149,7 @@ func _leave(path: String) -> void:
 		if action=="save_leave" and LayeredCheckpoint.save(controller):
 			get_tree().change_scene_to_file(path))
 	confirm.canceled.connect(confirm.queue_free)
-	confirm.popup_centered()
+	PhoneSafeArea.popup_dialog(confirm)
 
 
 func _process(_delta: float) -> void:

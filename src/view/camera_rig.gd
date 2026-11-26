@@ -77,6 +77,9 @@ func _pan(delta: Vector2) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if ModalInput.blocked():
+		cancel_gesture()
+		return
 	# Native touch is handled below; ignore its emulated mouse events here.
 	if event is InputEventMouse and event.device == -1:
 		return
@@ -143,3 +146,11 @@ func _unhandled_input(event: InputEvent) -> void:
 func _touch_span() -> float:
 	var pts: Array = _touches.values()
 	return (pts[0] as Vector2).distance_to(pts[1])
+
+
+func cancel_gesture() -> void:
+	_mouse_down=false
+	_mouse_dragged=false
+	_touches.clear()
+	_touch_dragged=false
+	_pinch_start=0.0

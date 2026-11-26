@@ -117,7 +117,7 @@ func _button(key: String, value: String, primary: bool = false) -> void:
 
 
 func _launch(key: String) -> void:
-	if _launching:
+	if _launching or ModalInput.blocked():
 		return
 	if key=="skirmish":
 		_choose_scenario()
@@ -171,6 +171,9 @@ func _refresh_slots() -> void:
 
 
 func _select_slot(index: int) -> void:
+	if ModalInput.blocked():
+		_slots.select(WarbandSlots.active())
+		return
 	if WarbandSlots.select_slot(index):
 		_refresh_slots()
 	else:
@@ -223,3 +226,8 @@ func _open_graphics() -> void:
 			GraphicsQuality.apply(get_viewport())
 			_atmosphere.configure(_title_board,"silent_tower"))
 	_graphics.open()
+
+
+func _notification(what: int) -> void:
+	if what==NOTIFICATION_WM_GO_BACK_REQUEST and is_inside_tree():
+		ModalInput.close_top(get_tree().root)

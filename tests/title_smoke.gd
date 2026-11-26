@@ -27,7 +27,20 @@ func _run() -> void:
 		printerr("Field guide topic navigation failed")
 		quit(1)
 		return
-	title_scene._guide.hide()
+	if not ModalInput.blocked() or not title_scene._guide.exclusive or not title_scene._guide.transient:
+		printerr("Guide is not modal")
+		quit(1)
+		return
+	title_scene._buttons["training"].pressed.emit()
+	if title_scene._launching or current_scene!=title_scene:
+		printerr("Home navigation leaked behind guide")
+		quit(1)
+		return
+	title_scene._notification(Node.NOTIFICATION_WM_GO_BACK_REQUEST)
+	if title_scene._guide.visible or ModalInput.blocked():
+		printerr("Android Back failed to close guide")
+		quit(1)
+		return
 	title_scene._buttons["skirmish"].pressed.emit()
 	if title_scene._picker==null or title_scene._picker._list.get_child_count()!=12:
 		printerr("Standard scenario catalog incomplete")
