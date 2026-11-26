@@ -6,6 +6,7 @@ var c: GameController
 var summons: SummonActions
 var terrain: TerrainMagic
 var movement: MagicMovement
+var counter: CounterMagic
 
 
 func _init(controller: GameController) -> void:
@@ -13,6 +14,7 @@ func _init(controller: GameController) -> void:
 	summons = SummonActions.new(c)
 	terrain = TerrainMagic.new(c)
 	movement = MagicMovement.new(c)
+	counter = CounterMagic.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -27,7 +29,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
-	if kind in ["unimplemented", "placement"]:
+	if kind in ["unimplemented", "placement", "counter"]:
 		return false
 	if kind == "self":
 		return t == f and f.elemental_shield == 0
@@ -77,6 +79,24 @@ func start(id: String, target_id: int) -> bool:
 	return _roll(id, target_id)
 
 
+func counter_options(id: String) -> Array[Dictionary]:
+	var f := c.state.active()
+	var empty: Array[Dictionary] = []
+	if id not in ["dispel", "spell_eater"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
+		return empty
+	if not c.state.spellbooks.get(f.side, {}).has(id):
+		return empty
+	return counter.options(f)
+
+
+func start_counter(id: String, index: int) -> bool:
+	var options := counter_options(id)
+	if index < 0 or index >= options.size():
+		return false
+	var option := options[index]
+	return _roll(id, option["target"], null, false, -1, option)
+
+
 func start_move(id: String, target_id: int, at: Vector2) -> bool:
 	if id != "leap" or not can_cast(id, target_id) or not movement.can_land(c.state.active(), c.state.figure(target_id), id, at):
 		return false
@@ -124,7 +144,7 @@ func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 	return _roll(id, c.state.active_id, at, rotated)
 
 
-func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1) -> bool:
+func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
 	var f := c.state.active()
 	var raw := c.dice.d20()
 	var total := CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
@@ -135,7 +155,11 @@ func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false
 		c.state.pending_cast["at"] = at
 		c.state.pending_cast["rotated"] = rotated
 	c.state.pending_cast["second"] = second
+	if not effect.is_empty():
+		c.state.pending_cast["effect"] = effect
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
+	if id == "spell_eater":
+		c._hurt(f, 1, f, false)
 	return true
 
 
@@ -166,6 +190,9 @@ func finish(health: int) -> bool:
 		summons.miscast_demon(f)
 		return true
 	if not result["success"]:
+		return true
+	if id in ["dispel", "spell_eater"]:
+		counter.apply(p["effect"])
 		return true
 	if TerrainMagic.SPELLS.has(id):
 		terrain.apply(f, id, p["at"], p["rotated"])

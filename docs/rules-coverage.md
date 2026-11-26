@@ -125,3 +125,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Magical movement
 
 - pp. 114, 125, 130, 133–134: Teleport and Leap use selectable legal destinations; Leap has reduced range with treasure and a sampled arc for obstacle clearance. Both exhaust remaining actions this turn, including later group actions. Blink and Push move along a direction with legal landing and falling checks; Transpose selects two figures and checks enemy resistance before swapping. Resistance is automatic for enemies, waived for allies in Blink; no resistance empowerment yet. Forced movement uses quarter-inch samples; leap arc is a fixed approximation and vertical-only movement is not supported.
+
+## Counter-magic
+
+- pp. 65, 119, 131: Dispel and Spell Eater select one ongoing figure, control, terrain or Call Storm effect through a contextual effect selector. Spell Eater costs one additional Health on casting attempt. Canceling control restores original allegiance, not removing the summon. Terrain cancellation uses the existing terrain-removal/fall path. Global spell attribution and future effect types still need extensions; Will-roll empowerment remains pending.

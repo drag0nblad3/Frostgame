@@ -18,6 +18,8 @@ var cast_options: Array[String] = []
 var selected_spell := ""
 var spell_rotated := false
 var spell_first := -1
+var counter_index := 0
+var counter_choices: Array[Dictionary] = []
 var empower := 0
 
 
@@ -83,6 +85,9 @@ func refresh() -> void:
 			break
 	cast_options.clear()
 	for id: String in c.state.spellbooks.get(f.side, {}):
+		if not c._magic.counter_options(id).is_empty():
+			cast_options.append(id)
+			continue
 		if not c._magic.placement_points(id, true).is_empty() or (id in ["fog", "wall"] and not c._magic.placement_points(id, true, true).is_empty()):
 			cast_options.append(id)
 			continue
@@ -124,6 +129,14 @@ func preview() -> void:
 	match mode:
 		"spell_menu":
 			hint = "Choose a spell."
+		"counter_select":
+			var option := counter_choices[counter_index]
+			hint = "Cancel effect %d/%d: %s" % [counter_index + 1, counter_choices.size(), option["label"]]
+			if option["kind"] == "terrain":
+				points.append(option["piece"].rect.get_center())
+			elif option["kind"] != "storm":
+				points.append(c.state.figure(option["target"]).pos)
+			radius = 0.7
 		"leap_destination":
 			points.assign(c._magic.movement.points(f, c.state.figure(spell_first), "leap"))
 			hint = "Choose a landing spot for the selected ally."
@@ -221,6 +234,19 @@ func action(key: String) -> bool:
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false
+		if selected_spell in ["dispel", "spell_eater"]:
+			counter_choices = c._magic.counter_options(selected_spell)
+			if counter_choices.is_empty():
+				refresh()
+				return false
+			counter_index = 0
+			mode = "counter_select"
+			available.assign(["spell_cancel", "counter_confirm"])
+			if counter_choices.size() > 1:
+				available.append("counter_previous")
+				available.append("counter_next")
+			preview()
+			return false
 		mode = "spell_point" if c._magic.is_placement(selected_spell) else "spell_target"
 		available.assign(["spell_cancel"])
 		if selected_spell in ["fog", "wall"]:
@@ -228,6 +254,12 @@ func action(key: String) -> bool:
 		preview()
 		return false
 	match key:
+		"counter_previous", "counter_next":
+			counter_index = posmod(counter_index + (1 if key == "counter_next" else -1), counter_choices.size())
+			preview()
+			return false
+		"counter_confirm":
+			return c._magic.start_counter(selected_spell, counter_index)
 		"rotate_spell":
 			spell_rotated = not spell_rotated
 			preview()

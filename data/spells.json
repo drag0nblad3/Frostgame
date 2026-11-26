@@ -231,7 +231,7 @@
     "name": "Spell Eater",
     "school": "necromancer",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "counter"
   },
   "steal_health": {
     "name": "Steal Health",
@@ -417,7 +417,7 @@
     "name": "Dispel",
     "school": "thaumaturge",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "counter"
   },
   "heal": {
     "name": "Heal",
