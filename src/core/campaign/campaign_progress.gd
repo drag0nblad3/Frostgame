@@ -98,6 +98,9 @@ func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -
 	if plant_target>=0 and not RedKingCampaignGear.plant_choices(data,c,side).has(plant_target):
 		return false
 	CampaignInventory.settle(data, c, side)
+	for item: Dictionary in data["loot"]:
+		if item.get("gear","")==RedKingCampaignGear.POTION_STAFF:
+			item.erase("stored_potion")
 	var report: Array[String] = []
 	var xp := 0
 	var kills := 0

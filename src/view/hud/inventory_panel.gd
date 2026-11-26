@@ -21,6 +21,8 @@ var bind_book: Button
 var split_fang: Button
 var ivory_staff: OptionButton
 var ivory_graft: Button
+var staff_potion: OptionButton
+var charge_staff: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -70,6 +72,13 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if loot.item_count>0 and ivory_staff.item_count>0 and CampaignInventory.graft_ivory(campaign.data,int(loot.get_selected_metadata()),int(ivory_staff.get_selected_metadata())):
 			changed.call())
 	ivory_graft.hide()
+	staff_potion=OptionButton.new()
+	staff_potion.hide()
+	add_child(staff_potion)
+	charge_staff=_button("Sacrifice potion to staff",func() -> void:
+		if loot.item_count>0 and staff_potion.item_count>0 and RedKingCampaignGear.charge_staff(campaign.data,int(loot.get_selected_metadata()),int(staff_potion.get_selected_metadata())):
+			changed.call())
+	charge_staff.hide()
 	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
 	caster_equipment = OptionButton.new()
 	add_child(caster_equipment)
@@ -135,6 +144,10 @@ func refresh() -> void:
 			suffix+=" · Enchanted"
 		if item.get("ivory_graft",false):
 			suffix+=" · Ivory Hand graft"
+		if item.has("stored_potion"):
+			suffix+=" · "+str(item["stored_potion"]).capitalize()
+		if int(item.get("bottle_doses",0))>0:
+			suffix+=" · %s (%d doses)"%[str(item["bottle_potion"]).capitalize(),int(item["bottle_doses"])]
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
 		loot.set_item_metadata(loot.item_count - 1, i)
 		for unit_id in CampaignPotions.choices(d, i, db):
@@ -180,6 +193,9 @@ func refresh() -> void:
 
 
 func _refresh_item_buttons() -> void:
+	staff_potion.clear()
+	staff_potion.hide()
+	charge_staff.hide()
 	ivory_staff.clear()
 	ivory_staff.hide()
 	ivory_graft.hide()
@@ -194,6 +210,13 @@ func _refresh_item_buttons() -> void:
 		return
 	var index := int(loot.get_selected_metadata())
 	var item: Dictionary = campaign.data["loot"][index]
+	for potion_index in RedKingCampaignGear.staff_potions(campaign.data,index):
+		var potion: Dictionary=campaign.data["loot"][potion_index]
+		staff_potion.add_item(str(CampaignInventory.catalog()[potion["potion"]]["name"]))
+		staff_potion.set_item_metadata(staff_potion.item_count-1,potion_index)
+	if staff_potion.item_count>0:
+		staff_potion.show()
+		charge_staff.show()
 	for staff_index in CampaignInventory.ivory_staff_choices(campaign.data,index):
 		var staff: Dictionary=campaign.data["loot"][staff_index]
 		ivory_staff.add_item(str(CampaignInventory.catalog()[staff["gear"]]["name"]))

@@ -247,3 +247,22 @@ func test_shears_injury_persistent_and_temporary() -> void:
 	check_eq(InjuryRules.starting_loss(d["units"][0]),1)
 	RedKingCampaignGear.shears_injury(d,0,LoadedDice.new([20]))
 	check_eq(InjuryRules.bonuses(d["units"][0],{})["health"],-1)
+
+
+func test_potion_staff_and_golden_bottle_consumption() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],LoadedDice.new([20,1]))
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.items.append({"gear":RedKingCampaignGear.POTION_STAFF,"potion":"strength","gear_info":RedKingRewards.catalog()[RedKingCampaignGear.POTION_STAFF]})
+	check(c._potions.drink("strength"))
+	check_eq(f.items.size(),1)
+	check(not f.items[0].has("potion"))
+	f.items.append({"gear":RedKingCampaignGear.GOLDEN_BOTTLE,"potion":"toughness","bottle_doses":2,"gear_info":RedKingRewards.catalog()[RedKingCampaignGear.GOLDEN_BOTTLE]})
+	check(c._potions.drink("toughness"))
+	check_eq(int(f.items[1]["bottle_doses"]),1)
+	f.actions_left=2
+	check(c._potions.drink("toughness"))
+	check(f.poisoned)
+	check_eq(int(f.items[1]["bottle_doses"]),0)
+	check_eq(f.items.size(),2)

@@ -57,3 +57,50 @@ static func shears_injury(d: Dictionary,unit_id: int,dice: Dice) -> void:
 	else:
 		unit["rk_shears_loss"]=1
 	d["last_report"].append("Mystic Shears: %s #%d loses 1 %sHealth."%[str(unit["type"]).capitalize(),unit_id+1,"permanent " if raw==20 else "starting "])
+
+
+const POTION_STAFF := "gear_rk_potion_drinker_staff"
+const GOLDEN_BOTTLE := "gear_rk_golden_bottle_of_yens"
+
+
+static func staff_potions(d: Dictionary,index: int) -> Array[int]:
+	var out: Array[int]=[]
+	if index<0 or index>=d.get("loot",[]).size() or RedKingCampaign.economy_locked(d) or not CampaignSuccession.living_wizard(d):
+		return out
+	var staff: Dictionary=d["loot"][index]
+	if staff.get("gear","")!=POTION_STAFF or staff.get("ragged_sealed",false) or not str(staff.get("stored_potion","")).is_empty():
+		return out
+	var catalog := CampaignInventory.catalog()
+	for i in d["loot"].size():
+		var potion: Dictionary=d["loot"][i]
+		var id := str(potion.get("potion",""))
+		if potion.get("kind","")=="potion" and int(potion.get("owner",-1))<0 and not potion.get("ragged_sealed",false) and id not in CampaignPotions.VAULT_ONLY and catalog.get(id,{}).get("live",false):
+			out.append(i)
+	return out
+
+
+static func charge_staff(d: Dictionary,index: int,potion_index: int) -> bool:
+	if not staff_potions(d,index).has(potion_index):
+		return false
+	d["loot"][index]["stored_potion"]=d["loot"][potion_index]["potion"]
+	d["loot"].remove_at(potion_index)
+	return true
+
+
+static func empty_bottle(d: Dictionary,caster: int,potion: String) -> int:
+	if caster<0 or caster>=d.get("units",[]).size() or d["units"][caster]["type"]!="wizard" or potion in CampaignPotions.VAULT_ONLY:
+		return -1
+	for i in d.get("loot",[]).size():
+		var item: Dictionary=d["loot"][i]
+		if item.get("gear","")==GOLDEN_BOTTLE and item.get("unlocked",false) and not item.get("ragged_sealed",false) and int(item.get("bottle_doses",0))<=0:
+			return i
+	return -1
+
+
+static func fill_bottle(d: Dictionary,caster: int,potion: String) -> bool:
+	var index := empty_bottle(d,caster,potion)
+	if index<0:
+		return false
+	d["loot"][index]["bottle_potion"]=potion
+	d["loot"][index]["bottle_doses"]=2
+	return true

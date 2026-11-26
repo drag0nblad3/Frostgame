@@ -236,6 +236,11 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 				gear["uses"]=RedKingMaterials.amount(item)
 			if item.get("ivory_graft",false):
 				gear["ivory_graft"]=true
+			if item["gear"]==RedKingCampaignGear.POTION_STAFF and not str(item.get("stored_potion","")).is_empty():
+				gear["potion"]=item["stored_potion"]
+			if item["gear"]==RedKingCampaignGear.GOLDEN_BOTTLE and int(item.get("bottle_doses",0))>0:
+				gear["potion"]=item["bottle_potion"]
+				gear["bottle_doses"]=int(item["bottle_doses"])
 			items.append(gear)
 	return items
 
@@ -248,6 +253,7 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 		var enchanted := {}
 		var orb_left := -1
 		var fangs_left := 0
+		var bottle_left := 0
 		for item: Dictionary in f.items:
 			if item.get("campaign_item", false):
 				var id := item_id(item)
@@ -255,6 +261,8 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 					orb_left = PowerPool.remaining(item)
 				if id==RedKingMaterials.FANGS:
 					fangs_left=RedKingMaterials.amount(item)
+				if id==RedKingCampaignGear.GOLDEN_BOTTLE:
+					bottle_left=int(item.get("bottle_doses",0))
 				remaining[id] = int(remaining.get(id, 0)) + 1
 				if item.get("enchanted",false):
 					enchanted[id]=int(enchanted.get(id,0))+1
@@ -276,6 +284,10 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 					item["power_left"] = orb_left
 				if id==RedKingMaterials.FANGS:
 					item["uses"]=fangs_left
+				if id==RedKingCampaignGear.GOLDEN_BOTTLE:
+					item["bottle_doses"]=bottle_left
+					if bottle_left<=0:
+						item.erase("bottle_potion")
 
 
 static func lose_owned(d: Dictionary, owner: int) -> void:

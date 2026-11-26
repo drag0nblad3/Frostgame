@@ -243,8 +243,10 @@
       "type": "staff",
       "buy": 250,
       "sell": 120,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "damage": 1
+      },
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_bottle_imp": {
@@ -663,7 +665,7 @@
       "buy": 0,
       "sell": 300,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 16,
       "expansion": "red_king"

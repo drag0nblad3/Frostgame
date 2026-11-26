@@ -6,6 +6,7 @@ var choices: OptionButton
 var cast_button: Button
 var enchant_supply: CheckButton
 var shears: OptionButton
+var bottle: CheckButton
 var callback: Callable
 var dice := Dice.new(0)
 
@@ -26,6 +27,17 @@ func setup(p: CampaignProgress, changed: Callable) -> void:
 	shears.custom_minimum_size.y=44
 	shears.hide()
 	add_child(shears)
+	bottle=CheckButton.new()
+	bottle.text="Fill Golden Bottle (two doses)"
+	bottle.custom_minimum_size.y=44
+	bottle.hide()
+	add_child(bottle)
+	bottle.toggled.connect(func(on: bool) -> void:
+		if on:
+			enchant_supply.set_pressed_no_signal(false))
+	enchant_supply.toggled.connect(func(on: bool) -> void:
+		if on:
+			bottle.set_pressed_no_signal(false))
 	choices.item_selected.connect(func(_index: int) -> void: _refresh_supply())
 	cast_button = Button.new()
 	cast_button.text = "Attempt selected ritual"
@@ -34,7 +46,7 @@ func setup(p: CampaignProgress, changed: Callable) -> void:
 		if choices.item_count == 0:
 			return
 		var option: Dictionary = choices.get_selected_metadata()
-		if Rituals.attempt(campaign.data, option["caster"], option["id"], option["option"], dice,enchant_supply.visible and enchant_supply.button_pressed,int(shears.get_selected_metadata()) if shears.visible else -1):
+		if Rituals.attempt(campaign.data, option["caster"], option["id"], option["option"], dice,enchant_supply.visible and enchant_supply.button_pressed,int(shears.get_selected_metadata()) if shears.visible else -1,bottle.visible and bottle.button_pressed):
 			callback.call())
 
 
@@ -63,6 +75,8 @@ func refresh() -> void:
 
 
 func _refresh_supply() -> void:
+	bottle.hide()
+	bottle.set_pressed_no_signal(false)
 	shears.hide()
 	shears.clear()
 	enchant_supply.hide()
@@ -80,6 +94,8 @@ func _refresh_supply() -> void:
 			shears.add_item("Shears +2: %s #%d"%[str(unit["type"]).capitalize(),target+1])
 			shears.set_item_metadata(shears.item_count-1,target)
 		shears.show()
+	if option["id"]=="brew_potion" and RedKingCampaignGear.empty_bottle(campaign.data,int(option["caster"]),str(option["option"]))>=0:
+		bottle.show()
 	var id := RedKingMaterials.for_ritual(str(option["id"]))
 	var amount := RedKingMaterials.available(campaign.data,id)
 	if amount>0:

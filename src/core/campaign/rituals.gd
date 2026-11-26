@@ -85,8 +85,10 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 	return out
 
 
-static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false,shears_target: int=-1) -> bool:
+static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false,shears_target: int=-1,bottle: bool=false) -> bool:
 	if not choices(d, caster, id).has(option):
+		return false
+	if bottle and (id!="brew_potion" or enchant or RedKingCampaignGear.empty_bottle(d,caster,option)<0):
 		return false
 	var supply := RedKingMaterials.for_ritual(id)
 	if enchant and RedKingMaterials.available(d,supply)<=0:
@@ -136,6 +138,8 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 			d["prepared_illusions"]=prepared
 			d.erase("prepared_illusion")
 		"brew_potion":
+			if bottle and RedKingCampaignGear.fill_bottle(d,caster,option):
+				return true
 			var brewed := {"kind":"potion","potion":option,"owner":-1}
 			if enchant and RedKingMaterials.consume(d,supply):
 				brewed["enchanted"]=true

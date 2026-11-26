@@ -160,3 +160,7 @@ The Ring of Elemental Fire marks conjured walls as elemental hazards. Entry into
 ## Campaign survival and ritual equipment
 
 Lifelong Plant presents a pre-survival casualty picker after ordinary campaign battles, with an explicit skip choice; the selected non-wizard gains one to survival and the plant is removed on a natural twenty. The plant is unavailable in sealed Ragged vaults or mindscape resolution. Mystic Shears can be used once per preparation, by a wizard on a living eligible specialist, adding two to one pre-battle cast (including the initial Summoning Circle cast). A second roll records temporary starting Health loss or permanent Health loss on twenty. The ritual interface exposes the optional donor; the temporary penalty expires after the next battle.
+
+## Potion Drinker Staff and Golden Bottle
+
+The staff adds one weapon damage and accepts a sacrificed vault potion before battle. Its charge is consumed by the existing potion action paths and expires after the game, without consuming the staff or a separate equipment slot. The Golden Bottle can optionally receive a successful wizard Brew Potion ritual, generating two doses in one item; drinking tests Will TN4, with poison and no effect on failure. Doses persist through battle settlement. Both currently support battle-use potions only, not campaign-only doses, and follow the existing ordinary-board potion action restrictions.
