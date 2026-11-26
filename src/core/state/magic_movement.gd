@@ -60,7 +60,7 @@ func points(f: Figure, t: Figure, id: String, first_only: bool = false) -> Array
 	return result
 
 
-func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false) -> void:
+func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, sites: bool = true) -> void:
 	t.spell_effects.erase("bones_of_the_earth")
 	var old := t.pos
 	var height := t.elevation
@@ -76,7 +76,8 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false) 
 		var dmg := ElevationRules.fall_damage(height - t.elevation)
 		if dmg > 0 and MagicEquipment.bonus(t, "slow_fall") == 0:
 			c._hurt(t, dmg, t, false)
-	ScenarioSites.end_move(c, t)
+	if sites:
+		ScenarioSites.end_move(c, t)
 
 
 func force(t: Figure, direction: Vector2, distance: float) -> void:
@@ -100,8 +101,10 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 func swap(a: Figure, b: Figure) -> void:
 	var pos := a.pos
 	var other := b.pos
-	move(a, other)
-	move(b, pos)
+	move(a, other, false, false, false)
+	move(b, pos, false, false, false)
+	ScenarioSites.end_move(c, a)
+	ScenarioSites.end_move(c, b)
 
 
 func push(f: Figure, t: Figure) -> void:

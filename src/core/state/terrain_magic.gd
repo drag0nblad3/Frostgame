@@ -208,7 +208,7 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 		var hut := ScenarioSites.site_at(c.state, "haunted_floor", at) if c.state.scenario_special == "haunted_houses" and f.side >= 0 else null
 		var undiscovered := hut != null and not c.state.discovered_huts.has(hut.rect.position)
 		var occupied := false
-		if c.state.scenario_special == "haunted_houses":
+		if c.state.scenario_special == "haunted_houses" and not c.state.discovered_huts.is_empty():
 			for other in c.state.figures:
 				if other != f and other.in_play() and other.side != f.side and absf(other.elevation - c.state.board.height_at(at)) < 0.5 and Contact.touching(other.pos, at):
 					occupied = true

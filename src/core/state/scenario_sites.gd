@@ -74,7 +74,7 @@ static func end_move(c: GameController, f: Figure) -> void:
 		for y in range(-2, 3):
 			var at := to + Vector2(x, y) * 0.5
 			if at.distance_to(to) <= dest.rect.size.x * 0.5 - Figure.BASE_RADIUS + 0.001 and grid.open(MovePlanner.node_at(at)):
-				points.append(at)
+				points.append(MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if points.is_empty():
 		c.emit("disc_stay", {"id": f.id, "roll": roll})
 		return
