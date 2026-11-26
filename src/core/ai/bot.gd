@@ -17,15 +17,25 @@ static func resume_activation(c: GameController) -> bool:
 	var f := c.state.active()
 	if f == null or c.awaiting_reaction():
 		return false
-	if f.side >= 0 and f.def.health - f.health >= 4 and c._potions.can_drink("healing"):
-		c._potions.drink("healing")
+	if not c.state.pending_cast.is_empty():
+		MagicBot.resolve(c)
+		if c.awaiting_reaction():
+			return true
+	if f.side >= 0:
+		_use_healing(c, f)
 	if FuryRules.target(c.state, f) != null:
 		FuryRules.play(c, f)
 	elif f.side < 0:
 		CreatureBot.play(c, f)
 	elif c.can_drink_well():
 		c.drink_well()
-	elif not MagicBot.play(c, f) and not TreasureBot.play(c, f):
+		TreasureBot.play(c, f)
+	elif f.treasure_id >= 0 and TreasureBot.play(c, f):
+		pass
+	elif MagicBot.play(c, f):
+		if not c.awaiting_reaction() and c.can_move():
+			TreasureBot.play(c, f)
+	elif not TreasureBot.play(c, f):
 		if f.ranged != null:
 			_play_shooter(c, f)
 		else:
@@ -43,6 +53,9 @@ static func _pick(c: GameController) -> Figure:
 	var options := c.activatable()
 	if options.is_empty():
 		return null
+	for f in options:
+		if f.treasure_id >= 0 and not Contact.in_combat(c.state.figures, f):
+			return f
 	for f in options:
 		if Contact.in_combat(c.state.figures, f):
 			return f
@@ -83,8 +96,8 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 	if _fight_if_engaged(c, f):
 		return
 	if f.ranged.needs_reload and not f.loaded:
-		c.reload()
-		return
+		if not c.reload() or not c.can_act():
+			return
 	var t := BotTargets.best_shot(c.state, f)
 	if t != null:
 		c.shoot(t.id)
@@ -109,3 +122,18 @@ static func _advance(c: GameController, f: Figure, r: MoveReach) -> bool:
 	if n == null:
 		return false
 	return c.move_to(n)
+
+
+
+static func _use_healing(c: GameController, f: Figure) -> void:
+	var target: Figure = null
+	var value := 0.0
+	for t in c.state.figures:
+		if t.def.health - t.health < 3 or not c._potions.can_drink("healing", t):
+			continue
+		var score := float(t.def.health - t.health) * MagicTactics.importance(t)
+		if score > value:
+			target = t
+			value = score
+	if target != null:
+		c._potions.drink("healing", target)

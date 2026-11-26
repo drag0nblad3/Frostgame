@@ -7,7 +7,7 @@ extends RefCounted
 static func weakest_contact(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	for e in Contact.enemies_of(s.figures, f):
-		if best == null or e.health < best.health:
+		if best == null or (float(e.health) / MagicTactics.importance(e)) < (float(best.health) / MagicTactics.importance(best)):
 			best = e
 	return best
 
@@ -15,8 +15,12 @@ static func weakest_contact(s: GameState, f: Figure) -> Figure:
 ## Odds the shot beats the target's roll, from where the shooter stands.
 static func shot_value(s: GameState, f: Figure, at: Vector2, t: Figure) -> float:
 	var mod := Shooting.target_mod(LineOfSight.check(s.board, at, t.pos))
-	var win := Dice.chance_win(f.def.shoot, t.def.fight + mod)
-	return win * (1.0 + 4.0 / maxf(t.health, 1.0))
+	mod += 1 if f.moves_taken > 0 or at != f.pos else 0
+	mod -= 2 if t.def.traits.has("large") else 0
+	var attack := mini(10, f.effective_shoot() + MagicEquipment.bonus(f, "shoot", f.ranged.id) - s.storm_penalty + (3 if t.spell_effects.has("glow") else 0)) + f.roll_penalty()
+	var defence := mini(10, t.effective_fight() + mod) + t.roll_penalty() + t.shooting_defence_penalty()
+	var win := Dice.chance_win(attack, defence)
+	return win * (1.0 + 4.0 / maxf(t.health, 1.0)) * MagicTactics.importance(t)
 
 
 ## Best enemy to shoot right now, or null.

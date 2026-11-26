@@ -71,6 +71,9 @@ func _play(e: GameEvent) -> void:
 		"treasure_moved":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.position = TableSpace.to_world(d["at"], 0.25 + state.board.height_at(d["at"]))
+		"break_ice":
+			if d["success"] and treasure_views.has(0):
+				treasure_views[0].material_override = BoardView._mat(Color(1.0, 0.73, 0.15), 0.3)
 		"treasure_secured", "treasure_lost":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.visible = false
@@ -147,7 +150,7 @@ func build_treasures() -> void:
 		var box := BoxMesh.new()
 		box.size = Vector3(0.6, 0.5, 0.45)
 		marker.mesh = box
-		marker.material_override = BoardView._mat(Color(1.0, 0.73, 0.15), 0.3)
+		marker.material_override = BoardView._mat(Color(0.42, 0.83, 1.0) if token.frozen else Color(1.0, 0.73, 0.15), 0.3)
 		add_child(marker)
 		marker.position = TableSpace.to_world(token.pos, 0.25 + state.board.height_at(token.pos))
 		treasure_views[token.id] = marker

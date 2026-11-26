@@ -53,7 +53,10 @@ static func _nearest(c: GameController, f: Figure) -> TreasureToken:
 	for token in c.state.treasures:
 		if not token.on_ground():
 			continue
-		var d := f.pos.distance_to(token.pos)
+		var d := f.pos.distance_to(token.pos) + (3.0 if token.frozen else 0.0)
+		for ally in c.state.side_figures(f.side):
+			if ally != f and ally.treasure_id < 0 and not ally.def.traits.has("animal") and ally.pos.distance_to(token.pos) + 2.0 < f.pos.distance_to(token.pos):
+				d += 2.0
 		if d < distance:
 			distance = d
 			best = token
@@ -65,10 +68,11 @@ static func _escape(c: GameController, f: Figure) -> bool:
 		return false
 	var r := c.reach()
 	var best: Variant = null
-	var score := ScenarioObjectives.exit_distance(c.state, f.pos)
+	var field := MovePlanner.exit_field(c.state)
+	var score: float = field.get(MovePlanner.node_at(f.pos), INF)
 	for n: Vector2i in r.nodes():
 		var at := MoveGrid.to_pos(n)
-		var d := ScenarioObjectives.exit_distance(c.state, at)
+		var d: float = field.get(n, INF)
 		if TreasureRules.edge_distance(c.state.board, at) <= Figure.BASE_RADIUS + 0.01 and r.cost[n] + Figure.BASE_RADIUS <= MoveRules.allowance(f) + 0.001:
 			if c.exit_table(n):
 				return true

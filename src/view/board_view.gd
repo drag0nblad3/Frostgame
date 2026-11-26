@@ -66,6 +66,8 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 		"spell_explosive_rune": col = Color(1.0, 0.35, 0.1)
 		"spell_circle_of_protection": col = Color(0.9, 0.75, 0.25, 0.45)
 		"museum_statue": col = Color(0.65, 0.71, 0.72)
+		"dreams_well": col = Color(0.12, 0.38, 0.55)
+		"library_shelf": col = Color(0.36, 0.24, 0.18)
 	var mat := _mat(col, 0.95)
 	if col.a < 1.0:
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

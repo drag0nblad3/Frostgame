@@ -6,7 +6,7 @@
 - [x] Wizard creation, all ten schools and 80 core spell entries with initial battle or campaign effects.
 - [x] Initial full potion and magic equipment catalogs, campaign inventory, injuries and survival.
 - [x] Persistent between-game campaign, recruitment, XP, advancement, succession, grimoires and all base locations/resources.
-- [x] Treasure skirmish, Mausoleum and Living Museum scenario implementations.
+- [x] Treasure skirmish, Mausoleum, Living Museum, Well of Dreams, Library and Worm Hunts scenario implementations.
 
 ## Still incomplete
 - Verify all rule interpretations and edge cases in rules-coverage.md; initial catalog coverage is not full fidelity.
