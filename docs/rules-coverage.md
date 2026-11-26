@@ -175,3 +175,5 @@ Inventory follow-up: renamed the UI owner selector to avoid a native Node proper
 ## Persistent injuries
 
 - pp. 77–79: named injury table with repeated-result limits, persistent split-stat modifiers for Move/Fight/Shoot/Will, starting Health loss, Smashed Jaw early/group activation caps, Lost Eye shooting defence penalty, and optional paid Niggling Injury treatment with apothecary discounts. The printed table overlaps on roll 6; assigned 6 to Crushed Arm. Lost Toes is stored but its Move Roll penalty awaits Move tests. Double Lost Eye blocks wizard deployment pending a cure; blind apprentices retire on starting the next battle. Legacy anonymous injuries remain count-only until cured. Starting Health deficits do not alter advancement caps. 
+
+Wizard creation recognizes campaign rituals separately from battle spells; group selection respects the injured leader's activation limit. The supported unique spell total is 61 (54 battle spells plus seven campaign-only spells, with Raise Zombie shared).

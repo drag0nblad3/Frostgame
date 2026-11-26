@@ -399,7 +399,7 @@ func tap(screen: Vector2) -> bool:
 					return false
 				if group_selection.has(id):
 					group_selection.erase(id)
-				elif group_selection.size() < 4:
+				elif group_selection.size() < c.state.figure(c.state.early.leaders[c.state.current_side()]).early_limit() + 1:
 					group_selection.append(id)
 				_group_buttons()
 				preview()

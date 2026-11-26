@@ -40,8 +40,8 @@ func candidates(slot: int) -> Array[String]:
 		if (slot < 3 and other == school) or (slot >= 3 and slot < 6 and other == aligned[slot - 3]) or (slot >= 6 and school_modifier(other) == 4):
 			result.append(id)
 	result.sort_custom(func(a: String, b: String) -> bool:
-		var live_a: bool = catalog[a]["kind"] != "unimplemented"
-		var live_b: bool = catalog[b]["kind"] != "unimplemented"
+		var live_a: bool = catalog[a]["kind"] != "unimplemented" or Rituals.BEFORE.has(a) or Rituals.AFTER.has(a)
+		var live_b: bool = catalog[b]["kind"] != "unimplemented" or Rituals.BEFORE.has(b) or Rituals.AFTER.has(b)
 		return live_a if live_a != live_b else a < b)
 	return result
 
