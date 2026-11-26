@@ -22,6 +22,8 @@ var museum := false
 var scenario_special := ""
 var worm_spawned := false
 var well_drinkers := {}
+var discovered_huts := {}
+var disc_travellers := {}
 var reinforcement_points: Array[Vector2] = []
 var creature_db: FigureDb
 var spellbooks := {}

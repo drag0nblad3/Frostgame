@@ -1,0 +1,352 @@
+{
+  "id": "haunted_houses",
+  "name": "The Haunted Houses",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        5,
+        8,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        24,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        7,
+        25,
+        5,
+        0.5
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        24,
+        9,
+        5,
+        0.5
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        8,
+        14,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        26,
+        19,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "platform",
+      "rect": [
+        4,
+        20,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "platform",
+      "rect": [
+        29,
+        13,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "haunted_floor",
+      "rect": [
+        16,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        15.5,
+        15.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        20,
+        15.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        20,
+        4,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        15.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        19,
+        15.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "haunted_floor",
+      "rect": [
+        10,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        9.5,
+        15.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        14,
+        15.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        10,
+        20,
+        4,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        10,
+        15.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        13,
+        15.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "haunted_floor",
+      "rect": [
+        22,
+        16,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        21.5,
+        15.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        26,
+        15.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        22,
+        20,
+        4,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        22,
+        15.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        25,
+        15.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "haunted_floor",
+      "rect": [
+        16,
+        10,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        15.5,
+        9.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        20,
+        9.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        14,
+        4,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        9.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        19,
+        9.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "haunted_floor",
+      "rect": [
+        16,
+        22,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        15.5,
+        21.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        20,
+        21.5,
+        0.5,
+        5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        26,
+        4,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        21.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        19,
+        21.5,
+        1,
+        0.5
+      ]
+    }
+  ]
+}

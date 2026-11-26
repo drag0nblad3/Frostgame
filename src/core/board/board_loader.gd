@@ -18,5 +18,7 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 	b.size = Vector2(s[0], s[1])
 	for p: Dictionary in d.get("pieces", []):
 		var r: Array = p["rect"]
-		b.pieces.append(TerrainPiece.new(terrain.get_kind(p["kind"]), Rect2(r[0], r[1], r[2], r[3])))
+		var piece := TerrainPiece.new(terrain.get_kind(p["kind"]), Rect2(r[0], r[1], r[2], r[3]))
+		piece.circular = piece.kind.id == "arcane_disc"
+		b.pieces.append(piece)
 	return b

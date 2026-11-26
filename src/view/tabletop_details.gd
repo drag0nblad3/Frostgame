@@ -29,7 +29,16 @@ static func ground(board: Board) -> MultiMeshInstance3D:
 
 
 static func decorate(root: Node3D, piece: TerrainPiece) -> void:
-	if piece.kind.id not in ["ruin", "wall", "platform", "tower", "library_shelf", "dreams_well"]:
+	if piece.kind.id == "arcane_disc":
+		var ring := TorusMesh.new()
+		ring.inner_radius = 1.12
+		ring.outer_radius = 1.38
+		MiniatureFactory.mesh(root, ring, TableSpace.to_world(piece.rect.get_center(), 0.07), Color(0.89, 0.74, 0.29)).scale.y = 0.16
+		for i in 8:
+			var at := piece.rect.get_center() + Vector2.RIGHT.rotated(TAU * i / 8.0) * 0.85
+			MiniatureFactory.box(root, TableSpace.to_world(at, 0.07), Vector3(0.14, 0.04, 0.14), Color(0.89, 0.74, 0.29))
+		return
+	if piece.kind.id not in ["ruin", "wall", "platform", "tower", "library_shelf", "dreams_well", "hut_wall"]:
 		return
 	var decor := Node3D.new()
 	root.add_child(decor)

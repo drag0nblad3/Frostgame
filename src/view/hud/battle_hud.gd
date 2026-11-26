@@ -73,7 +73,7 @@ func _ready() -> void:
 	scenarios.set_item_metadata(1, "mausoleum")
 	scenarios.add_item("Living Museum")
 	scenarios.set_item_metadata(2, "living_museum")
-	for option: Array in [["Well of Dreams", "dreams_well"], ["The Worm Hunts", "worm_hunts"], ["The Library", "underground_library"]]:
+	for option: Array in [["Well of Dreams", "dreams_well"], ["The Worm Hunts", "worm_hunts"], ["The Library", "underground_library"], ["Haunted Houses", "haunted_houses"], ["The Keep", "the_keep"]]:
 		scenarios.add_item(option[0])
 		scenarios.set_item_metadata(scenarios.item_count - 1, option[1])
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))

@@ -63,5 +63,26 @@
     "cover": 0,
     "height": 2.5,
     "walkable_top": true
+  },
+  "haunted_floor": {
+    "name": "Haunted house floor",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "height": 0.045
+  },
+  "hut_wall": {
+    "name": "Stone hut wall",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 2
+  },
+  "arcane_disc": {
+    "name": "Arcane transport disc",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "height": 0.06
   }
 }
