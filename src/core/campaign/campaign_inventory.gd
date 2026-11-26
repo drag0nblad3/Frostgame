@@ -8,6 +8,7 @@ const GREATER := ["empowerment","shrinking","restoration","dreams","shatterstar"
 static func catalog() -> Dictionary:
 	var result: Dictionary = JsonFile.read("res://data/potions.json")
 	result.merge(JsonFile.read("res://data/magic_equipment.json"))
+	result.merge(RedKingRewards.catalog())
 	var spells: Dictionary = JsonFile.read("res://data/spells.json")
 	for id: String in spells:
 		result["scroll_" + id] = {"name": "Scroll: " + str(spells[id]["name"]), "buy": 250, "sell": 30, "live": spells[id]["kind"] not in ["unimplemented", "ritual"]}
@@ -90,6 +91,10 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 		return false
 	var used := 0
 	var info: Dictionary = catalog()[item_id(item)]
+	if info.get("expansion","")=="red_king" and (not info["live"] or not item.get("unlocked",true)):
+		return false
+	if info.get("bonus",{}).has("cast_failure_cap") and unit["type"] not in ["wizard","apprentice"]:
+		return false
 	if item.get("gear", "") == "gear_ring_transference" and unit["type"] not in ["wizard", "apprentice"]:
 		return false
 	var caster := CasterLoadout.is_caster(unit["type"])
@@ -113,6 +118,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 	var potions := catalog()
 	if RedKingCampaign.economy_locked(d) or d.is_empty() or not potions.has(id) or not ContentProfile.from_campaign(d).item_allowed(id):
+		return false
+	if potions[id].get("expansion","")=="red_king" and not potions[id]["live"]:
 		return false
 	var price := int(potions[id]["buy"])
 	if price <= 0 or int(d["gold"]) < price:
@@ -146,7 +153,11 @@ static func sell(d: Dictionary, index: int) -> bool:
 	var item: Dictionary = d["loot"][index]
 	if not can_sell(d, item):
 		return false
-	d["gold"] = int(d["gold"]) + int(catalog()[item_id(item)]["sell"])
+	var info: Dictionary=catalog()[item_id(item)]
+	var price := int(info["sell"])
+	if info.get("artefact",false) and not item.get("unlocked",false):
+		price=floori(float(price)/2.0)
+	d["gold"] = int(d["gold"]) + price
 	d["loot"].remove_at(index)
 	return true
 

@@ -234,6 +234,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	var secrets := int(data.get("revealed_secrets", 0))
 	data["revealed_secrets"] = 0
 	data["pending_treasure"] = []
+	data["red_king_exchange_used"]=false
 	# Central treasure gets its own optional reroll, not a Reveal Secret choice.
 	var recovered: Array[TreasureToken] = []
 	for token in c.state.treasures:
@@ -262,7 +263,13 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				report.append("Library central treasure: extra scroll.")
 			else:
 				raw = ScenarioObjectives.library_roll(raw, dice)
-		if token.central:
+		if RedKingRewards.eligible(c.state):
+			var second := dice.d20() if secrets>0 and not token.central else 0
+			var special := (RedKingFire.active(c.state) and token.central) or RedKingRingworld.active(c.state)
+			data["pending_treasure"].append({"token":token.id,"first":raw,"second":second,"central":token.central,"rk_exchange":not special,"rk_artefact":special})
+			if second>0:
+				secrets-=1
+		elif token.central:
 			data["pending_treasure"].append({"token": token.id, "first": raw, "second": 0, "central": true})
 		elif secrets > 0:
 			var second := dice.d20()
@@ -501,7 +508,12 @@ func resolve_treasure(second: bool, dice: Dice) -> bool:
 	var pending: Array = data.get("pending_treasure", [])
 	if pending.is_empty():
 		return false
-	var entry: Dictionary = pending.pop_front()
+	if pending[0].has("rk_roll"):
+		return RedKingRewards.resolve_bonus(data,second,dice)
+	var entry: Dictionary = pending[0]
+	if second and not entry["central"] and int(entry.get("second",0))<=0:
+		return false
+	pending.pop_front()
 	var roll := int(entry["first"])
 	if second:
 		roll = dice.d20() if entry["central"] else int(entry["second"])

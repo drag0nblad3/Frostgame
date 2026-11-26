@@ -95,6 +95,8 @@ func refresh() -> void:
 			suffix+=" (separated)"
 		elif ragged and assigned<0 and CampaignInventory.is_item(item):
 			suffix="Assign or discard"
+		if info.get("artefact",false):
+			suffix+=" · "+("Unlocked" if item.get("unlocked",false) else "Locked TN%d"%info["unlock_tn"])
 		if item["kind"] == "grimoire":
 			suffix = "Known spell; may sell" if d["spells"].has(item["spell"]) else "Unlearned; may learn in campaign"
 		if CampaignInventory.item_id(item) == "gear_staff_casting":
@@ -133,7 +135,7 @@ func refresh() -> void:
 		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))
 	for id: String in catalog:
 		var info: Dictionary = catalog[id]
-		if ragged or not info["live"] or int(info["buy"]) <= 0 or not ContentProfile.from_campaign(d).item_allowed(id):
+		if RedKingCampaign.economy_locked(d) or not info["live"] or int(info["buy"]) <= 0 or not ContentProfile.from_campaign(d).item_allowed(id):
 			continue
 		shop.add_item("%s · %d gc" % [info["name"], info["buy"]])
 		shop.set_item_metadata(shop.item_count - 1, id)

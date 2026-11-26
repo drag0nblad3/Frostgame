@@ -6,7 +6,7 @@ static func elemental_resistance(f: Figure) -> int:
 	for trait_id: String in f.def.traits:
 		if trait_id.begins_with("elemental_resistance_"):
 			value=maxi(value,int(trait_id.trim_prefix("elemental_resistance_")))
-	return value
+	return maxi(value,MagicEquipment.bonus(f,"elemental_resistance"))
 
 
 static func after_damage(c: GameController,f: Figure) -> void:
@@ -20,7 +20,7 @@ static func activation(c: GameController,f: Figure) -> void:
 	if not f.in_play():
 		return
 	for source in c.state.figures:
-		if source==f or not source.in_play():
+		if source==f or source.ring_side!=f.ring_side or not source.in_play():
 			continue
 		if source.def.traits.has("aura_of_pain") and Shooting.distance(f,source)<=6.0 and not f.is_demon() and not f.def.traits.has("undead") and not f.def.traits.has("construct"):
 			var roll := c.dice.d20()

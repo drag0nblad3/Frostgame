@@ -349,6 +349,8 @@ func _finish_one(health: int) -> bool:
 	s.pending_cast = {}
 	var power := PowerPool.spend(f, int(result["health_spent"]))
 	var hp := int(result["health_spent"]) - power
+	if MagicEquipment.bonus(f,"cast_failure_cap")>0:
+		result["failure_damage"]=mini(int(result["failure_damage"]),1)
 	c._hurt(f, hp + int(result["failure_damage"]) + (2 if p.get("cordial", false) else 0), f, false)
 	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": hp, "power": power, "tn": p["tn"], "failure_damage": result["failure_damage"], "scroll": p.get("scroll", false)})
 	if id == "summon_demon" and int(p["raw"]) == 1 and not p.get("scroll", false):

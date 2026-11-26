@@ -40,6 +40,9 @@ var niggle_button: Button
 var treasure_choice: Label
 var keep_treasure: Button
 var alternate_treasure: Button
+var exchange_treasure: Button
+var artefact_choice: OptionButton
+var study_button: Button
 var treasure_dice := Dice.new(0)
 
 
@@ -71,6 +74,14 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 			changed())
 	alternate_treasure = _command(col, "Choose second result", func() -> void:
 		if campaign.resolve_treasure(true, treasure_dice):
+			changed())
+	exchange_treasure=_command(col,"Exchange treasure",func() -> void:
+		if RedKingRewards.exchange(campaign.data,treasure_dice):
+			changed())
+	artefact_choice=OptionButton.new()
+	col.add_child(artefact_choice)
+	study_button=_command(col,"Study artefact",func() -> void:
+		if artefact_choice.item_count>0 and RedKingRewards.study(campaign.data,int(artefact_choice.get_selected_metadata()),db,treasure_dice):
 			changed())
 	spells = OptionButton.new()
 	spells.add_theme_constant_override("icon_max_width",28)
@@ -186,13 +197,35 @@ func refresh(in_battle: bool) -> void:
 	treasure_choice.visible = deciding
 	keep_treasure.visible = deciding
 	alternate_treasure.visible = deciding
+	exchange_treasure.visible=false
+	artefact_choice.visible=not d.is_empty() and not in_battle and not deciding
+	study_button.visible=artefact_choice.visible
+	artefact_choice.clear()
+	for i in d.get("loot",[]).size():
+		var item: Dictionary=d["loot"][i]
+		if RedKingRewards.can_study(d,item):
+			var info: Dictionary=RedKingRewards.catalog()[item["gear"]]
+			artefact_choice.add_item("%s · TN%d"%[info["name"],info["unlock_tn"]])
+			artefact_choice.set_item_metadata(artefact_choice.item_count-1,i)
+	study_button.disabled=artefact_choice.item_count==0
 	if deciding:
 		var entry: Dictionary = pending[0]
 		treasure_choice.text = "Treasure %d: %s" % [int(entry["token"]) + 1, CampaignProgress.treasure_label(int(entry["first"]))]
-		if entry["central"]:
+		keep_treasure.text="Keep first result"
+		if entry.has("rk_roll"):
+			var rolls: Array=entry["rk_roll"]
+			treasure_choice.text="Red King rolls %d, %d · Optional +2"%[rolls[0],rolls[1]]
+			keep_treasure.text="Keep: "+RedKingRewards.label(rolls[0],rolls[1])
+			alternate_treasure.text="+2: "+RedKingRewards.label(rolls[0],rolls[1]+2)
+		elif entry["central"]:
 			alternate_treasure.text = "Reroll central treasure (must accept)"
-		else:
+		elif int(entry.get("second",0))>0:
 			alternate_treasure.text = "Choose: " + CampaignProgress.treasure_label(int(entry["second"]))
+		else:
+			alternate_treasure.visible=false
+		var exchange := RedKingRewards.offer(d,entry)
+		exchange_treasure.visible=not exchange.is_empty()
+		exchange_treasure.text="Exchange for artefact" if exchange=="artefact" else "Exchange for Red King treasure"
 	for control in controls:
 		control.visible = not d.is_empty() and not in_battle and not deciding
 	if d.is_empty():

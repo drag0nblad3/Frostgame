@@ -29,4 +29,8 @@ static func settle(data: Dictionary,c: GameController,side: int) -> bool:
 	data["red_king_mind_completed"]=true
 	report.push_front("Mindscape: %d memories, +%d XP. No survival roll."%[cards.size(),xp])
 	data["last_report"]=report
+	for kind: String in data.get("red_king_pending_rewards",[]):
+		var id := "artefact" if kind=="artefact" else RedKingRewards.result(c.dice.d20(),c.dice.d20())
+		RedKingRewards.award(data,id,c.dice)
+	data.erase("red_king_pending_rewards")
 	return true

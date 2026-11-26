@@ -141,7 +141,7 @@ func effective_shoot() -> int:
 
 
 func immune_to_poison() -> bool:
-	return def.traits.has("immune_poison") or def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")
+	return MagicEquipment.bonus(self,"poison_immunity")>0 or def.traits.has("immune_poison") or def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")
 
 
 func treasure_encumbered() -> bool:
@@ -153,7 +153,7 @@ func early_limit() -> int:
 
 
 func shooting_defence_penalty() -> int:
-	return -int(injury_types.get("lost_eye", 0))
+	return -int(injury_types.get("lost_eye", 0))+MagicEquipment.bonus(self,"shoot_defence")
 
 
 func is_demon() -> bool:

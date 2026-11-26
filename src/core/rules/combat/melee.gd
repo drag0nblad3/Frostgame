@@ -16,7 +16,7 @@ static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 		if not Contact.figures_touch(o, enemy):
 			continue
 		if Contact.enemies_of(figures, o).size() == 1:
-			bonus += SUPPORT
+			bonus += maxi(0,SUPPORT-MagicEquipment.bonus(enemy,"support_reduction"))
 	return bonus
 
 
