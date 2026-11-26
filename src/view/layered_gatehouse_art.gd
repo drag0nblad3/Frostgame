@@ -15,12 +15,21 @@ func build(layout: FloorLayout) -> void:
 		elif s.id=="stairs" or s.id.begins_with("stair_") and not is_equal_approx(s.level,s.end_level):
 			_stairs(s)
 		elif s.id=="street":
-			_box(Vector3(s.rect.get_center().x,-0.16,s.rect.get_center().y),Vector3(s.rect.size.x,0.3,s.rect.size.y),Color(0.63,0.74,0.81),false)
+			var ground := _box(Vector3(s.rect.get_center().x,-0.16,s.rect.get_center().y),Vector3(s.rect.size.x,0.3,s.rect.size.y),Color(0.63,0.74,0.81),false)
+			var mat := StoneFinish.material(Color(0.48,0.59,0.66),true)
+			mat.set_shader_parameter("footprint_size",s.rect.size)
+			mat.set_shader_parameter("city_paving",true)
+			mat.set_shader_parameter("snow_amount",0.8)
+			ground.material_override=mat
 		elif s.id=="landing" or s.id.ends_with("_landing"):
 			_box(Vector3(s.rect.get_center().x,s.level-0.09,s.rect.get_center().y),Vector3(s.rect.size.x,0.18,s.rect.size.y),Color(0.51,0.60,0.67),true)
 	for solid in layout.solids:
 		var roof := solid.position.y>=2.5
-		_box(solid.get_center(),solid.size,Color(0.43,0.54,0.62) if roof else Color(0.35,0.43,0.49),roof)
+		var color := Color(0.43,0.54,0.62) if roof else Color(0.35,0.43,0.49)
+		var slab := _box(solid.get_center(),solid.size,color,roof)
+		slab.material_override=StoneFinish.material(color,false,solid.size.y>2.0)
+		if solid.size.y<=0.5:
+			_deck_edge(solid)
 	# Wall volumes get narrow masonry courses (visual only).
 	for solid in layout.solids:
 		if solid.position.y>0.1:
@@ -63,7 +72,18 @@ func _stairs(s: FloorSurface) -> void:
 		_box(Vector3(x,h-0.08,s.rect.get_center().y),Vector3(w+0.012,0.16,s.rect.size.y),Color(0.55,0.65,0.72),h>=2.5 and s.id!="stairs")
 
 
-func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> void:
+func _deck_edge(solid: AABB) -> void:
+	# Inlaid perimeter stones, flush with the deck; no collision changes.
+	var y := solid.end.y-0.015
+	var center := solid.get_center()
+	var color := Color(0.74,0.82,0.86)
+	for z: float in [solid.position.z+0.09,solid.end.z-0.09]:
+		_box(Vector3(center.x,y,z),Vector3(solid.size.x,0.03,0.18),color,true)
+	for x: float in [solid.position.x+0.09,solid.end.x-0.09]:
+		_box(Vector3(x,y,center.z),Vector3(0.18,0.03,solid.size.z),color,true)
+
+
+func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	var mesh := BoxMesh.new()
 	mesh.size=size
@@ -73,6 +93,7 @@ func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> void:
 	add_child(node)
 	if upper:
 		upper_nodes.append(node)
+	return node
 
 
 func cut_at(height: float) -> void:

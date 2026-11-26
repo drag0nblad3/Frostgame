@@ -39,6 +39,19 @@ func test_cast_bridge_and_cross_preserves_lower_floor() -> void:
 		check_eq(FloorLayout.from_dict(restored.state.board.floor_layout).height(bridge),4.0)
 
 
+func test_bot_builds_bridge_to_disconnected_treasure() -> void:
+	var c := _fixture()
+	var f := c.state.active()
+	var token := TreasureToken.new(0,Vector2(13,5))
+	token.surface_id="east"
+	c.state.treasures.append(token)
+	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var grid := LayeredGrid.new(layout,f,c.state.figures)
+	var reach := LayeredReach.search(grid,layout.node(f.surface_id,f.pos),100.0)
+	check(LayeredBridgeTactics.try_cast(c,f,layout,reach,grid))
+	check_eq(LayeredBridge.owned(c.state,f.id),"bridge:1")
+
+
 func test_bridge_collapse_moves_figures_and_treasure_to_ground() -> void:
 	var c := _fixture()
 	var layout := FloorLayout.from_dict(c.state.board.floor_layout)

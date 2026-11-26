@@ -82,6 +82,22 @@ and leaves ordinary movement preferable for nearby reachable objectives.
 Bridge placement AI is still pending. The visual workflow now captures the
 actual layered tower and its ground-level cutaway.
 
+## Integration readiness
+
+Bridge AI evaluates bounded legal proposals against actual route distance in a
+hypothetical floor graph, then casts through the controller. The scenario matrix
+now includes both layered maps at seeds 17 and 42 and checks surface validity,
+elevation, overlap and treasure ownership after each activation. Layered art
+uses the shared frozen-stone material and flush deck edging.
+
+LayeredCampaign.build converts the real Silent Tower scenario and campaign
+roster using ScenarioLoader, retaining campaign IDs, injuries, stat upgrades
+and gear. It assigns legal ground deployment and the five named treasure floors.
+This is a tested preparation adapter only, not a live campaign option. Do not
+route normal campaign battles to it until the layered simulations, group
+activation, spell/gear restrictions, encounter placement and checkpoint/settlement
+UI are ready.
+
 ## Current boundary
 
 A Board stores one exposed walking height at each horizontal coordinate. A bridge or

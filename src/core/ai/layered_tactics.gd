@@ -42,6 +42,8 @@ static func shortcut(c: GameController,f: Figure,layout: FloorLayout,reach: Laye
 		return true
 	if not CasterLoadout.is_caster(f.def.role) or not c.can_act() or ScenarioNull.muted(f) or f.health<=3:
 		return false
+	if LayeredBridgeTactics.try_cast(c,f,layout,long_route,grid):
+		return true
 	var candidates := loot_nodes(c.state,layout,grid)
 	var best: Variant = null
 	var gain := 3.0
