@@ -32,6 +32,11 @@ jobs:
           set -o pipefail
           godot --headless -s tests/player_smoke.gd 2>&1 | tee player-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" player-smoke.log
+      - name: Scenario briefing smoke test
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless -s tests/scenario_ui_smoke.gd 2>&1 | tee scenario-ui.log
+          ! grep -E "SCRIPT ERROR|Parse Error" scenario-ui.log
       - name: Roster editor smoke test
         run: |
           set -o pipefail

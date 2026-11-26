@@ -11,6 +11,7 @@ signal campaign_pressed
 signal save_battle_pressed
 signal resume_battle_pressed
 signal scenario_selected(id: String)
+signal briefing_pressed
 signal action_pressed(action: String)
 
 const LOG_LINES := 4
@@ -29,6 +30,9 @@ var _action_row: HFlowContainer
 var _log_panel: PanelContainer
 var _menu: MenuButton
 var _scenarios: OptionButton
+var _objective: Label
+var _toast: Label
+var _toast_timer: Timer
 
 
 func _ready() -> void:
@@ -77,10 +81,25 @@ func _ready() -> void:
 		scenarios.add_item(option[0])
 		scenarios.set_item_metadata(scenarios.item_count - 1, option[1])
 	scenarios.item_selected.connect(func(i: int) -> void: scenario_selected.emit(str(scenarios.get_item_metadata(i))))
+	scenarios.tooltip_text = "Choose the next battle scenario; current battle stays unchanged."
 	top.add_child(scenarios)
+	var info := _button("Briefing", func() -> void: briefing_pressed.emit())
+	top.add_child(info)
 	var log_toggle := _button("Log", func() -> void: _log_panel.visible = not _log_panel.visible)
 	top.add_child(log_toggle)
 	_blocks.append(top)
+	_objective = _label(16)
+	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(_objective)
+	_toast = _label(17)
+	_toast.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_toast.modulate = Color(1.0, 0.88, 0.55)
+	_toast.visible = false
+	col.add_child(_toast)
+	_toast_timer = Timer.new()
+	_toast_timer.one_shot = true
+	_toast_timer.timeout.connect(func() -> void: _toast.hide())
+	add_child(_toast_timer)
 	var spacer := Control.new()
 	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -109,6 +128,17 @@ func _ready() -> void:
 		button.toggle_mode = key not in ["reload", "end", "pass_phase", "group", "group_begin", "group_cancel"]
 		_action_row.add_child(button)
 		_buttons[key] = button
+
+
+func set_objective(text: String) -> void:
+	_objective.text = text
+
+
+func notify(text: String) -> void:
+	add_line(text)
+	_toast.text = text
+	_toast.show()
+	_toast_timer.start(4.0)
 
 
 func set_status(text: String) -> void:

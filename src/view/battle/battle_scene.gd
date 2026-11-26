@@ -3,6 +3,8 @@ extends Node3D
 
 const SCENARIO := "treasure_skirmish"
 var _scenario_id := SCENARIO
+var _active_scenario_id := SCENARIO
+var _briefing: ScenarioDialog
 ## Pause between bot activations in Auto mode (seconds).
 const AUTO_DELAY := 0.35
 
@@ -43,14 +45,20 @@ func _ready() -> void:
 	hud.auto_toggled.connect(func(on: bool) -> void: auto_play = on)
 	hud.watch_toggled.connect(set_watch_mode)
 	hud.action_pressed.connect(_on_action)
-	hud.new_game_pressed.connect(func() -> void:
+	_briefing = ScenarioDialog.new()
+	add_child(_briefing)
+	_briefing.start_requested.connect(func() -> void:
 		_campaign_battle = false
 		new_game(0))
+	hud.new_game_pressed.connect(func() -> void: _open_briefing(true))
+	hud.briefing_pressed.connect(func() -> void: _open_briefing(false))
 	hud.roster_pressed.connect(_open_roster)
 	hud.campaign_pressed.connect(_open_campaign)
 	hud.save_battle_pressed.connect(_save_battle)
 	hud.resume_battle_pressed.connect(_resume_battle)
-	hud.scenario_selected.connect(func(id: String) -> void: _scenario_id = id)
+	hud.scenario_selected.connect(func(id: String) -> void:
+		_scenario_id = id
+		hud.notify("Next battle: " + ScenarioBriefing.title(id)))
 	_campaign.load_save()
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
@@ -58,7 +66,12 @@ func _ready() -> void:
 	new_game(0)
 
 
+func _open_briefing(start: bool) -> void:
+	_briefing.show_briefing(_scenario_id if start else _active_scenario_id, controller.state if controller != null else null, start)
+
+
 func new_game(seed_value: int) -> void:
+	_active_scenario_id = _scenario_id
 	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
 	if _campaign_battle:
 		data["warbands"][0] = _campaign.deployment()
@@ -123,7 +136,7 @@ func step() -> void:
 
 
 func _process(delta: float) -> void:
-	if (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
+	if (_briefing != null and _briefing.visible) or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
 		return
 	if _dirty:
@@ -158,7 +171,7 @@ func set_watch_mode(on: bool) -> void:
 
 
 func _human_turn() -> bool:
-	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
+	return (_briefing == null or not _briefing.visible) and (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
 
 
 func _on_event(event: GameEvent) -> void:
@@ -198,6 +211,7 @@ func _on_tap(at: Vector2) -> void:
 
 func _update_status() -> void:
 	var s := controller.state
+	hud.set_objective(ScenarioBriefing.title(_active_scenario_id) + " | " + ScenarioBriefing.progress(s))
 	var score := ""
 	for side in s.side_count():
 		score += "  |  %s: %d" % [s.side_names[side], s.secured_count(side)]
@@ -296,34 +310,35 @@ func _campaign_fingerprint() -> String:
 
 func _save_battle() -> void:
 	if controller == null or not player.idle() or not BattleSnapshot.can_save(controller):
-		hud.add_line("Finish the current roll or animation before saving.")
+		hud.notify("Finish the current roll or animation before saving.")
 		return
-	var meta := {"scenario": _scenario_id, "campaign": _campaign_battle, "campaign_hash": _campaign_fingerprint() if _campaign_battle else "", "watch": watch_mode}
+	var meta := {"scenario": _active_scenario_id, "campaign": _campaign_battle, "campaign_hash": _campaign_fingerprint() if _campaign_battle else "", "watch": watch_mode}
 	if BattleSnapshot.save(controller, meta):
-		hud.add_line("Battle saved.")
+		hud.notify("Battle saved.")
 	else:
-		hud.add_line("Could not save this battle.")
+		hud.notify("Could not save this battle.")
 
 
 func _resume_battle() -> void:
 	if controller != null and not player.idle():
-		hud.add_line("Finish the current animation before resuming.")
+		hud.notify("Finish the current animation before resuming.")
 		return
 	var data := BattleSnapshot.read()
 	if data.is_empty():
-		hud.add_line("No compatible saved battle.")
+		hud.notify("No compatible saved battle.")
 		return
 	var meta: Dictionary = data.get("meta", {})
 	if meta.get("campaign", false) and (meta.get("campaign_hash", "") == "" or meta["campaign_hash"] != _campaign_fingerprint()):
-		hud.add_line("Campaign changed since this checkpoint; cannot resume it.")
+		hud.notify("Campaign changed since this checkpoint; cannot resume it.")
 		return
 	var restored := BattleSnapshot.rebuild(data, _figures)
 	if restored == null:
-		hud.add_line("Could not restore the saved battle.")
+		hud.notify("Could not restore the saved battle.")
 		return
 	_scenario_id = str(meta.get("scenario", SCENARIO))
+	_active_scenario_id = _scenario_id
 	hud.select_scenario(_scenario_id)
 	_campaign_battle = bool(meta.get("campaign", false))
 	watch_mode = bool(meta.get("watch", false))
 	_attach_battle(restored, false)
-	hud.add_line("Battle resumed.")
+	hud.notify("Battle resumed.")
