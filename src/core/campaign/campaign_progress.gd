@@ -173,10 +173,19 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			recovered.append(token)
 	for token in recovered:
 		var raw := dice.d20()
+		if c.state.scenario_special == "underground_library":
+			if token.central:
+				data["loot"].append({"kind": "scroll", "scroll": random_spell(dice), "owner": -1})
+				report.append("Library central treasure: extra scroll.")
+			else:
+				raw = ScenarioObjectives.library_roll(raw, dice)
 		if token.central:
 			data["pending_treasure"].append({"token": token.id, "first": raw, "second": 0, "central": true})
 		elif secrets > 0:
-			data["pending_treasure"].append({"token": token.id, "first": raw, "second": dice.d20(), "central": false})
+			var second := dice.d20()
+			if c.state.scenario_special == "underground_library":
+				second = ScenarioObjectives.library_roll(second, dice)
+			data["pending_treasure"].append({"token": token.id, "first": raw, "second": second, "central": false})
 			secrets -= 1
 		else:
 			_award_treasure(raw, dice, report, token.id)

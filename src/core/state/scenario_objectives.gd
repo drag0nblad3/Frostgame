@@ -65,3 +65,45 @@ static func spawn_worm(c: GameController) -> void:
 	var worm := c._encounters._spawn_at("giant_worm", MoveGrid.to_pos(points[0]))
 	s.worm_spawned = true
 	c.emit("worm_emerges", {"id": worm.id, "treasure": token.id})
+
+
+
+static func can_break_ice(c: GameController) -> bool:
+	var f := c.state.active()
+	var token := c.state.treasure(0)
+	return c.state.scenario_special == "underground_library" and f != null and token != null and token.frozen and token.on_ground() and c.can_act() and not Contact.in_combat(c.state.figures, f) and not IllusionRules.phantom(f) and absf(f.elevation - c.state.board.height_at(token.pos)) < 0.5 and f.pos.distance_to(token.pos) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 0.01
+
+
+static func break_ice(c: GameController) -> bool:
+	if not can_break_ice(c):
+		return false
+	var f := c.state.active()
+	var raw := c.dice.d20()
+	var success := StatRoll.succeeds(raw, f.effective_fight() + f.roll_penalty(), 14)
+	c._spend(f)
+	if success:
+		c.state.treasure(0).frozen = false
+	c.emit("break_ice", {"id": f.id, "roll": raw, "success": success})
+	return true
+
+
+static func exit_distance(s: GameState, at: Vector2) -> float:
+	if s.scenario_special != "underground_library":
+		return TreasureRules.edge_distance(s.board, at)
+	var size := s.board.size
+	var distance := INF
+	for door: Vector2 in [Vector2(size.x * 0.5, 0), Vector2(size.x * 0.5, size.y), Vector2(0, size.y * 0.5), Vector2(size.x, size.y * 0.5)]:
+		distance = minf(distance, at.distance_to(door))
+	return distance
+
+
+static func exit_allowed(s: GameState, at: Vector2) -> bool:
+	if s.scenario_special != "underground_library":
+		return true
+	var size := s.board.size
+	var margin := Figure.BASE_RADIUS + 0.01
+	return ((at.y <= margin or at.y >= size.y - margin) and absf(at.x - size.x * 0.5) <= 3.0) or ((at.x <= margin or at.x >= size.x - margin) and absf(at.y - size.y * 0.5) <= 3.0)
+
+
+static func library_roll(raw: int, dice: Dice) -> int:
+	return dice.d20() if raw in [1, 2, 3, 4, 5, 8, 9, 10, 11, 12, 13] else raw

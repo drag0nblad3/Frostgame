@@ -124,7 +124,7 @@ func _check_victory() -> bool:
 					continue
 				var secured := false
 				if survivor >= 0:
-					secured = token.carrier_id >= 0 or _c.dice.d20() >= 15
+					secured = not token.frozen and (token.carrier_id >= 0 or _c.dice.d20() >= 15)
 				if secured:
 					_c._loot.secure(token, survivor)
 				else:

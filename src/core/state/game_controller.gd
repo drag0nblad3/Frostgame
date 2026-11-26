@@ -521,3 +521,12 @@ func can_drink_well() -> bool:
 
 func drink_well() -> bool:
 	return ScenarioObjectives.drink(self)
+
+
+
+func can_break_ice() -> bool:
+	return ScenarioObjectives.can_break_ice(self)
+
+
+func break_ice() -> bool:
+	return ScenarioObjectives.break_ice(self)

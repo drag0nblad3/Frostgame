@@ -27,3 +27,25 @@ func test_worm_only_spawns_once() -> void:
 	check_eq(s.figures.size(), size)
 	check_eq(s.figures.back().def.id, "giant_worm")
 	check_eq(s.figures.back().def.health, 20)
+
+
+
+func test_library_ice_and_doorways() -> void:
+	var s := ScenarioLoader.load_id("underground_library", db(), terrain())
+	var c := GameController.new(s, LoadedDice.new([1, 20]))
+	var f := s.figure(1)
+	f.pos = Vector2(18, 17.5)
+	f.actions_left = 2
+	s.active_id = f.id
+	check(s.treasure(0).frozen)
+	check(not c.can_pick_up(0))
+	check(c.break_ice())
+	check(s.treasure(0).frozen)
+	f.acted = false
+	f.actions_left = 2
+	check(c.break_ice())
+	check(not s.treasure(0).frozen)
+	check(ScenarioObjectives.exit_allowed(s, Vector2(18, 0.5)))
+	check(not ScenarioObjectives.exit_allowed(s, Vector2(8, 0.5)))
+	check_eq(ScenarioObjectives.library_roll(1, LoadedDice.new([17])), 17)
+	check_eq(ScenarioObjectives.library_roll(6, LoadedDice.new([17])), 6)

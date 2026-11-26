@@ -9,6 +9,7 @@ var secured_by := -1
 var lost := false
 var ever_collected := false
 var central := false
+var frozen := false
 
 
 func _init(token_id: int, at: Vector2) -> void:

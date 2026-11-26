@@ -33,8 +33,15 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		s.spellbooks[side] = wb.get("spells", {})
 		if wb.get("telescope", false):
 			s.telescope_ready[side] = true
+		var deploy_index := 0
 		for entry: Dictionary in wb.get("figures", []):
 			var at: Array = entry["at"]
+			if s.scenario_special == "underground_library":
+				var position := Vector2(15.0 + float(deploy_index % 5) * 1.5, 1.5 + floori(deploy_index / 5.0) * 1.5)
+				if side == 1:
+					position.y = s.board.size.y - position.y
+				at = [position.x, position.y]
+			deploy_index += 1
 			var def := figures.get_def(entry["type"])
 			if entry.has("stat_bonus"):
 				def = def.with_bonuses(entry["stat_bonus"])
@@ -84,5 +91,6 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for at: Array in d.get("treasures", []):
 		var token := TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1]))
 		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
+		token.frozen = s.scenario_special == "underground_library" and token.central
 		s.treasures.append(token)
 	return s

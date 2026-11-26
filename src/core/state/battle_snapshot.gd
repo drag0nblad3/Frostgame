@@ -6,7 +6,7 @@ const PATH := "user://frostgame_battle_v1.dat"
 const STATE := ["side_names", "turn", "phase", "push_winner", "push_loser", "forced_combat", "reaction_side", "random_encounters", "museum", "scenario_special", "worm_spawned", "well_drinkers", "reinforcement_points", "spellbooks", "spell_catalog", "storm_penalty", "words", "fast_acts", "telescope_ready", "pending_initiative", "order", "order_index", "active_id", "winner", "over", "critical_hits"]
 const EARLY := ["leaders", "eligible", "used", "closed"]
 const GROUP := ["stage", "side", "members", "pending"]
-const TOKEN := ["id", "pos", "carrier_id", "secured_by", "lost", "ever_collected", "central"]
+const TOKEN := ["id", "pos", "carrier_id", "secured_by", "lost", "ever_collected", "central", "frozen"]
 
 
 static func can_save(c: GameController) -> bool:

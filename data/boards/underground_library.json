@@ -1,0 +1,118 @@
+{
+  "id": "underground_library",
+  "name": "Underground Library",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "library_shelf",
+      "rect": [
+        7,
+        7,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        7,
+        19,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        14,
+        7,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        14,
+        19,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        21,
+        7,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        21,
+        19,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        28,
+        7,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        28,
+        19,
+        1.5,
+        10
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        10,
+        11,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        24,
+        23,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        16,
+        26,
+        3,
+        2
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        16,
+        8,
+        3,
+        2
+      ]
+    }
+  ]
+}

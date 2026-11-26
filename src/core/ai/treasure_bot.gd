@@ -19,6 +19,9 @@ static func play(c: GameController, f: Figure) -> bool:
 		var target := _nearest(c, f)
 		if target == null:
 			break
+		if target.frozen and c.break_ice():
+			acted = true
+			continue
 		if c.pick_up(target.id):
 			acted = true
 			continue
@@ -62,11 +65,11 @@ static func _escape(c: GameController, f: Figure) -> bool:
 		return false
 	var r := c.reach()
 	var best: Variant = null
-	var score := TreasureRules.edge_distance(c.state.board, f.pos)
+	var score := ScenarioObjectives.exit_distance(c.state, f.pos)
 	for n: Vector2i in r.nodes():
 		var at := MoveGrid.to_pos(n)
-		var d := TreasureRules.edge_distance(c.state.board, at)
-		if d <= Figure.BASE_RADIUS + 0.01 and r.cost[n] + Figure.BASE_RADIUS <= MoveRules.allowance(f) + 0.001:
+		var d := ScenarioObjectives.exit_distance(c.state, at)
+		if TreasureRules.edge_distance(c.state.board, at) <= Figure.BASE_RADIUS + 0.01 and r.cost[n] + Figure.BASE_RADIUS <= MoveRules.allowance(f) + 0.001:
 			if c.exit_table(n):
 				return true
 		if d < score - 0.05:
