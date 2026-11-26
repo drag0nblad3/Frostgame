@@ -24,3 +24,17 @@ func test_wall_expiry() -> void:
 	c._magic.terrain.expire()
 	check_eq(c.state.board.height_at(Vector2(15, 10)), 0.0)
 	check(LineOfSight.check(c.state.board, Vector2(10, 10), Vector2(20, 10)).clear)
+
+
+func test_elemental_wall_activation_damage() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var target := fig("thug",1,Vector2(15,10))
+	var c := make_game(make_board(),[f,target],Dice.new(1))
+	f.items.append({"gear":"gear_rk_ring_of_elemental_fire","gear_info":RedKingRewards.catalog()["gear_rk_ring_of_elemental_fire"]})
+	c._magic.terrain.apply(f,"wall",Vector2(15,11),false)
+	var wall: TerrainPiece=c.state.board.pieces.back()
+	check(wall.elemental_wall)
+	target.pos=Vector2(15,wall.rect.position.y-Figure.BASE_RADIUS)
+	var hp := target.health
+	c._magic.terrain.wall_activation(target)
+	check_eq(target.health,hp-2)

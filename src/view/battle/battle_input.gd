@@ -320,7 +320,7 @@ func preview() -> void:
 			hint = "%s resists: %d + %d Will, needs %d. Spend %d power + %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], power, empower - power, int(p["raw"]) + int(p["mod"]) + empower]
 		"empower":
 			var p := c.state.pending_cast
-			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"])))
+			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"]),str(p["id"])))
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
 			if p.get("golden_fang",false):
 				hint+=" • Golden Fang selected: +1 Fight on success."

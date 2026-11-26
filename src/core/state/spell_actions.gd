@@ -324,7 +324,7 @@ func max_empowerment() -> int:
 	if p.is_empty() or p.get("scroll", false):
 		return 0
 	var f := c.state.figure(p["caster"])
-	var resources := maxi(0, f.health) + PowerPool.available(f)
+	var resources := PowerPool.cast_resources(f,str(p["id"]))
 	if p["id"] == "summon_demon":
 		return 0 if int(p["raw"]) == 1 else resources
 	return CastingRoll.max_empowerment(p["total"], resources)
@@ -347,13 +347,13 @@ func _finish_one(health: int) -> bool:
 	var f := s.figure(p["caster"])
 	var t := s.figure(p["target"])
 	var id: String = p["id"]
-	var result := CastingRoll.resolve(p["total"], p["tn"], health, maxi(0, f.health) + PowerPool.available(f), false, 100 if id == "summon_demon" else 18)
+	var result := CastingRoll.resolve(p["total"], p["tn"], health, PowerPool.cast_resources(f,id), false, 100 if id == "summon_demon" else 18)
 	if p.get("scroll", false):
 		result = {"success": true, "roll": int(p["total"]), "health_spent": 0, "failure_damage": 0}
 	elif id == "summon_demon" and int(p["raw"]) == 1:
 		result["success"] = false
 	s.pending_cast = {}
-	var power := PowerPool.spend(f, int(result["health_spent"]))
+	var power := PowerPool.spend(f,int(result["health_spent"]),id)
 	var hp := int(result["health_spent"]) - power
 	if MagicEquipment.bonus(f,"cast_failure_cap")>0:
 		result["failure_damage"]=mini(int(result["failure_damage"]),1)
@@ -560,6 +560,9 @@ func _resist_effect(f: Figure, id: String) -> void:
 
 
 func on_activate(f: Figure) -> void:
+	terrain.wall_activation(f)
+	if not f.in_play():
+		return
 	if f.spell_effects.has("potion_invulnerability") and c.dice.d20() >= 17:
 		f.spell_effects.erase("potion_invulnerability")
 		c.emit("spell_expired", {"id": f.id, "spell": "potion_invulnerability"})

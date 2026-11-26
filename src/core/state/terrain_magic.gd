@@ -123,6 +123,7 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,ext
 	kind.move_mult = 2.0 if id == "mud" else 1.0
 	var p := TerrainPiece.new(kind, footprint(id, at, rotated,extended))
 	p.extended_bridge=extended
+	p.elemental_wall=id=="wall" and ActiveGear.has(f,"gear_rk_ring_of_elemental_fire") and not MagicEquipment.suppressed(f)
 	p.circular = id in ["mud", "explosive_rune", "circle_of_protection"]
 	if id == "bridge":
 		var ends := bridge_ends(p.rect, rotated)
@@ -281,11 +282,12 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 					occupied = true
 		chunk.append(at)
 		var hits := triggered(f, at)
+		var wall_hits := entering_walls(f,path[i-1],at)
 		var hut := ScenarioSites.site_at(c.state, "haunted_floor", at) if c.state.scenario_special == "haunted_houses" and f.side >= 0 else null
 		var undiscovered := hut != null and not c.state.discovered_huts.has(hut.rect.position)
 		var null_field := ScenarioNull.field_at(c.state.board, at)
 		var column := f.side >= 0 and not IllusionRules.phantom(f) and ScenarioColumns.contact(c.state.board, at) != null
-		if hits.is_empty() and not undiscovered and not occupied and not null_field and not column:
+		if hits.is_empty() and wall_hits.is_empty() and not undiscovered and not occupied and not null_field and not column:
 			continue
 		f.pos = at
 		f.elevation = c.state.board.height_at(at)
@@ -294,6 +296,8 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 		ScenarioNull.enter(c, f)
 		if not f.in_play():
 			return false
+		for wall in wall_hits:
+			wall_damage(f,wall)
 		for p in hits:
 			explode(p)
 		if not f.in_play():
@@ -318,6 +322,8 @@ func trigger_landing(f: Figure) -> void:
 	RedKingSinkhole.record_xp(c,f)
 	if not f.in_play():
 		return
+	for wall in touching_walls(f.pos,f.elevation):
+		wall_damage(f,wall)
 	for p in triggered(f, f.pos):
 		explode(p)
 
@@ -375,3 +381,34 @@ func cancel_bridge(f: Figure) -> bool:
 			remove(p)
 			return true
 	return false
+
+
+func touching_walls(at: Vector2,height: float) -> Array[TerrainPiece]:
+	var result: Array[TerrainPiece]=[]
+	for wall in c.state.board.pieces:
+		if not wall.elemental_wall or height>wall.kind.height+0.5:
+			continue
+		var nearest := at.clamp(wall.rect.position,wall.rect.end)
+		if at.distance_to(nearest)<=Figure.BASE_RADIUS+0.001:
+			result.append(wall)
+	return result
+
+
+func entering_walls(f: Figure,from: Vector2,at: Vector2) -> Array[TerrainPiece]:
+	var result := touching_walls(at,c.state.board.height_at(at))
+	for wall in touching_walls(from,c.state.board.height_at(from)):
+		result.erase(wall)
+	return result
+
+
+func wall_damage(f: Figure,wall: TerrainPiece) -> void:
+	if not f.in_play() or f.def.traits.has("antithetical_magic") or ScenarioNull.muted(f) or f.spell_effects.has("plane_walk"):
+		return
+	var damage := PotionActions.absorb(f,maxi(0,2-CreatureEffects.elemental_resistance(f)))
+	var owner := c.state.figure(wall.caster_id)
+	c._hurt(f,damage,owner if owner!=null else f)
+
+
+func wall_activation(f: Figure) -> void:
+	for wall in touching_walls(f.pos,f.elevation):
+		wall_damage(f,wall)

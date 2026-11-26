@@ -420,8 +420,9 @@
       "buy": 220,
       "sell": 140,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_ice_crystal_pin": {
       "name": "Ice-Crystal Pin",
@@ -566,10 +567,11 @@
       "buy": 0,
       "sell": 350,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 12,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_tiger_eye_ring": {
       "name": "Tiger Eye Ring",

@@ -152,3 +152,7 @@ Push attacks gain +1 above the normal +10, and stopping against terrain or the t
 ## Staff of the Illusionist
 
 Allows two temporary illusions across a warband, including prepared rituals from both casters; the wizard loses two Will while both exist. Fool’s Gold range becomes six inches for the staff bearer. Losing the wizard immediately removes the newest illusion deterministically on ordinary casualty/extraction and layered extraction paths; player selection and special scenario exits still need integration.
+
+## Elemental wall and Brilliant Wand
+
+The Ring of Elemental Fire marks conjured walls as elemental hazards. Entry into contact and activation in contact cause damage, with elemental resistance, absorption and null-field checks. Wall state survives checkpoints; ordinary-board movement paths are supported (layered Wall is not yet implemented). The Brilliant Wand has three rechargeable power points, adds two to both Word spells, and restricts their empowerment to the wand alone, without Health or other power sources. Tests cover the damage and resource limits.

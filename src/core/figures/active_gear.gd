@@ -24,6 +24,8 @@ static func casting_bonus(f: Figure, id: String) -> int:
 	if MagicEquipment.suppressed(f):
 		return 0
 	var bonus := SummonActions.skull_cast_modifier(f,id)
+	if id in ["draining_word","power_word"] and has(f,PowerPool.BRILLIANT):
+		bonus+=2
 	for item in f.items:
 		if item.get("gear","")=="gear_rk_golden_incunabula" and f.def.role=="apprentice" and item.get("casting_spell","")==id:
 			bonus+=1
