@@ -73,7 +73,12 @@ func _play(e: GameEvent) -> void:
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot")
 		"fight":
-			_animate_lunge(_view(d["id"]), _view(d["target"]))
+			var a := _view(d["id"])
+			var b := _view(d["target"])
+			if int(d["winner"]) == int(d["target"]):
+				_animate_lunge(b, a)
+			else:
+				_animate_lunge(a, b)
 		"damage":
 			var v := _view(d["id"])
 			v.refresh(state.figure(d["id"]))
@@ -120,6 +125,9 @@ func _wait_for(t: Tween) -> void:
 
 
 func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
+	if path.size() < 2:
+		return
+	v.begin_move()
 	var t := create_tween()
 	for i in range(1, path.size()):
 		var destination := TableSpace.to_world(path[i], state.board.height_at(path[i]))
@@ -127,6 +135,7 @@ func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 		var duration := maxf(0.01, start.distance_to(destination) * 0.06)
 		t.tween_callback(v.face_toward.bind(destination))
 		t.tween_property(v, "position", destination, duration)
+	t.tween_callback(v.end_move)
 	_wait_for(t)
 
 
@@ -144,8 +153,12 @@ func _animate_shot(from: FigureView, to: FigureView, magic: bool = false) -> voi
 	add_child(bolt)
 	var up := Vector3(0, 1.1, 0)
 	bolt.position = from.position + up
+	bolt.visible = false
 	var t := create_tween()
-	t.tween_property(bolt, "position", to.position + up, from.position.distance_to(to.position) * 0.03)
+	t.tween_method(from.shot_pose if not magic else from.attack_pose, 0.0, 0.75, 0.14)
+	t.tween_callback(bolt.show)
+	t.tween_property(bolt, "position", to.position + up, maxf(0.05, from.position.distance_to(to.position) * 0.03))
+	t.parallel().tween_method(from.shot_pose if not magic else from.attack_pose, 0.75, 0.0, 0.15)
 	t.tween_callback(bolt.queue_free)
 	t.tween_callback(BattleEffects.burst.bind(self, to.position + Vector3.UP * 0.9, mat.albedo_color))
 	_wait_for(t)
@@ -157,9 +170,14 @@ func _animate_lunge(a: FigureView, b: FigureView) -> void:
 	var home := a.position
 	var toward := home.lerp(b.position, 0.35)
 	var t := create_tween()
-	t.tween_property(a, "position", toward, 0.12)
+	t.tween_method(a.attack_pose, 0.0, -0.45, 0.12)
+	t.tween_property(a, "position", toward, 0.13)
+	t.parallel().tween_method(a.attack_pose, -0.45, 1.0, 0.13)
 	t.tween_callback(BattleEffects.burst.bind(self, toward.lerp(b.position, 0.5) + Vector3.UP * 0.85, Color(1.0, 0.78, 0.38)))
-	t.tween_property(a, "position", home, 0.18)
+	t.tween_method(b.recoil_pose, 0.0, 1.0, 0.10)
+	t.parallel().tween_property(a, "position", home, 0.20)
+	t.parallel().tween_method(a.attack_pose, 1.0, 0.0, 0.20)
+	t.tween_method(b.recoil_pose, 1.0, 0.0, 0.14)
 	_wait_for(t)
 
 

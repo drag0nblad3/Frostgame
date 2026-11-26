@@ -14,10 +14,14 @@ var _facing := 0.0
 var _health_track: MeshInstance3D
 var _health_fill: MeshInstance3D
 var _shield_ring: MeshInstance3D
+var _model_rest_y := 0.12
+var _moving := false
+var _stride := 0.0
 
 
 func setup(f: Figure, _side_name: String) -> void:
 	figure_id = f.id
+	set_process(false)
 	_base = MeshInstance3D.new()
 	var cyl := CylinderMesh.new()
 	cyl.top_radius = Figure.BASE_RADIUS
@@ -80,15 +84,12 @@ func refresh(f: Figure) -> void:
 			_model.queue_free()
 		_model = MiniatureFactory.create(f, color)
 		_model.position.y += 0.12
+		_model_rest_y = _model.position.y
 		_model.rotation.y = _facing
 		add_child(_model)
 		_model_key = key
 		if transparent:
-			for child in _model.get_children():
-				if child is MeshInstance3D:
-					var material: StandardMaterial3D = child.material_override
-					material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-					material.albedo_color.a = 0.35
+			MiniatureBatch.fade(_model)
 	_height = 2.0 if f.def.traits.has("large") else (1.8 if f.def.role in ["wizard", "apprentice"] else 1.5)
 	if f.def.traits.has("animal") and f.def.id != "white_gorilla":
 		_height = 0.95 if not f.def.traits.has("large") else 1.3
@@ -117,6 +118,52 @@ func face_toward(at: Vector3) -> void:
 	_facing = atan2(-dir.x, -dir.z)
 	if _model != null:
 		_model.rotation.y = _facing
+
+
+func begin_move() -> void:
+	_moving = true
+	_stride = 0.0
+	set_process(true)
+
+
+func end_move() -> void:
+	_moving = false
+	set_process(false)
+	if _model != null:
+		_model.position.y = _model_rest_y
+		_model.rotation.x = 0.0
+		_model.rotation.z = 0.0
+		MiniaturePose.arms(_model, 0.0, 0.0)
+
+
+func _process(delta: float) -> void:
+	if not _moving or _model == null:
+		return
+	_stride += delta * 19.0
+	_model.position.y = _model_rest_y + absf(sin(_stride)) * 0.085
+	_model.rotation.z = sin(_stride) * 0.035
+	_model.rotation.x = -0.07
+	MiniaturePose.arms(_model, sin(_stride) * 0.22, -sin(_stride) * 0.22)
+
+
+func attack_pose(amount: float) -> void:
+	if _model == null:
+		return
+	_model.rotation.x = -0.14 * amount
+	MiniaturePose.arms(_model, -0.95 * amount, 0.28 * amount)
+
+
+func shot_pose(amount: float) -> void:
+	if _model == null:
+		return
+	_model.rotation.x = -0.06 * amount
+	MiniaturePose.arms(_model, -0.18 * amount, 0.55 * amount)
+
+
+func recoil_pose(amount: float) -> void:
+	if _model != null:
+		_model.rotation.x = 0.20 * amount
+		MiniaturePose.arms(_model, 0.20 * amount, 0.40 * amount)
 
 
 func set_active(on: bool) -> void:

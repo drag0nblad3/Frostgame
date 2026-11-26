@@ -12,6 +12,7 @@ static func create(f: Figure, faction: Color) -> Node3D:
 	var model := Node3D.new()
 	var color := faction
 	if CreatureSculpt.create(model, f, faction):
+		MiniatureBatch.bake(model)
 		return model
 	if f.def.traits.has("construct"):
 		construct(model, faction, 1.25 if f.def.traits.has("large") else 1.0)
@@ -41,9 +42,12 @@ static func create(f: Figure, faction: Color) -> Node3D:
 		sphere(model, Vector3(0, 0.93, 0), Vector3(0.53, 0.54, 0.37), IRON if metal else coat)
 		box(model, Vector3(0, 0.72, -0.18), Vector3(0.50, 0.085, 0.09), LEATHER)
 		for x: float in [-0.30, 0.30]:
+			var pivot := MiniaturePose.arm(model, x > 0)
+			var first := model.get_child_count()
 			CreatureSculpt.limb(model, Vector3(x * 0.86, 1.12, 0), Vector3(x * 1.14, 0.94, 0.015), 0.105, IRON if metal else coat)
 			CreatureSculpt.limb(model, Vector3(x * 1.14, 0.94, 0.015), Vector3(x * 1.20, 0.77, -0.09), 0.09, IRON if metal else coat)
 			sphere(model, Vector3(x * 1.20, 0.75, -0.09), Vector3.ONE * 0.15, skin)
+			MiniaturePose.attach(model, pivot, first)
 		sphere(model, Vector3(0, 1.30, -0.015), Vector3(0.32, 0.38, 0.31), skin)
 		if caster:
 			if f.def.role == "wizard":
@@ -72,17 +76,24 @@ static func create(f: Figure, faction: Color) -> Node3D:
 			model.scale = Vector3(1.23, 1.35, 1.23)
 		if f.def.traits.has("ethereal"):
 			model.position.y += 0.15
+	MiniatureBatch.bake(model)
 	return model
 
 
 static func weapon(model: Node3D, f: Figure) -> void:
 	var id := f.melee.id if f.melee != null else ""
+	var right := model.get_node_or_null("RightArm") as Node3D
+	var left := model.get_node_or_null("LeftArm") as Node3D
+	var first := model.get_child_count()
 	match id:
 		"staff":
 			WeaponSculpt.staff(model)
 		"hand_weapon", "two_handed", "dagger":
 			var length := 1.1 if id == "two_handed" else (0.35 if id == "dagger" else 0.76)
 			WeaponSculpt.sword(model, length, id == "two_handed")
+	if right != null:
+		MiniaturePose.attach(model, right, first)
+	first = model.get_child_count()
 	if f.ranged != null:
 		if f.ranged.id == "bow":
 			var points := [Vector3(-0.39, 0.37, -0.18), Vector3(-0.53, 0.58, -0.18), Vector3(-0.58, 0.91, -0.18), Vector3(-0.53, 1.24, -0.18), Vector3(-0.39, 1.45, -0.18)]
@@ -94,6 +105,8 @@ static func weapon(model: Node3D, f: Figure) -> void:
 			box(model, Vector3(-0.38, 0.88, -0.37), Vector3(0.65, 0.06, 0.10), IRON)
 	if f.def.shield:
 		WeaponSculpt.shield(model, f.def.id in ["knight", "templar"])
+	if left != null:
+		MiniaturePose.attach(model, left, first)
 
 
 static func construct(model: Node3D, faction: Color, size: float) -> void:
