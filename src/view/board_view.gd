@@ -1,6 +1,6 @@
 class_name BoardView
 extends Node3D
-## Draws the table and its terrain pieces as simple blocks.
+## Draws a frozen city district around the unchanged logical battlefield.
 
 const COLORS := {
 	"ruin": Color(0.42, 0.44, 0.5),
@@ -10,6 +10,7 @@ const COLORS := {
 
 
 var scenario_id := ""
+var cinematic := false
 
 
 func build(board: Board) -> void:
@@ -25,6 +26,7 @@ func build(board: Board) -> void:
 	add_child(top)
 	add_child(StoneFinish.floor_surface(board, scenario_id))
 	TerrainDressing.slab_frame(self, board)
+	add_child(CityScenery.build(board,board.id if scenario_id.is_empty() else scenario_id,cinematic))
 	for piece in board.pieces:
 		match piece.kind.id:
 			"rubble":
@@ -42,7 +44,7 @@ func build(board: Board) -> void:
 			_:
 				add_child(_piece(piece))
 				TabletopDetails.decorate(self, piece)
-				if piece.kind.id in ["ruin", "tower", "null_upper"]:
+				if piece.kind.id in ["ruin", "tower", "wall", "platform", "hut_wall", "null_annex", "null_walk", "null_lower", "null_middle", "null_upper"]:
 					RuinSilhouette.decorate(self, piece)
 				if board.id == "mausoleum" and piece.kind.id == "ruin" and piece.rect.has_point(board.size * 0.5):
 					SiteArt.crypt(self, piece)
@@ -79,6 +81,8 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 		cylinder.bottom_radius = cylinder.top_radius
 		cylinder.height = h
 		mi.mesh = cylinder
+	elif piece.kind.id in ["ruin","wall"] and not piece.kind.walkable_top:
+		mi.mesh = RuinedMesh.build(piece.rect.size,h,roundi(piece.rect.position.x*31.0+piece.rect.position.y*17.0))
 	else:
 		var box := BoxMesh.new()
 		box.size = Vector3(piece.rect.size.x, h, piece.rect.size.y)
@@ -101,7 +105,14 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	var mat := _mat(col, 0.95)
 	if col.a < 1.0:
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	mi.material_override = StoneFinish.material(col, false, piece.kind.id == "ruin", piece.rect.position) if piece.kind.id in StoneFinish.STONE_KINDS else mat
+	if piece.kind.id in StoneFinish.STONE_KINDS:
+		var stone := StoneFinish.material(col,false,piece.kind.id in ["ruin","tower","hut_wall","null_lower","null_middle","null_upper"],piece.rect.position)
+		stone.set_shader_parameter("footprint_size",piece.rect.size)
+		stone.set_shader_parameter("walkable_roof",piece.kind.walkable_top)
+		stone.set_shader_parameter("building_height",h)
+		mi.material_override = stone
+	else:
+		mi.material_override = mat
 	mi.position = TableSpace.to_world(piece.rect.get_center(), h * 0.5)
 	return mi
 

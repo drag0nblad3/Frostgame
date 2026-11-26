@@ -6,6 +6,10 @@ uniform bool ground = false;
 uniform float snow_amount : hint_range(0.0, 1.0) = 1.0;
 uniform bool blind_arches = false;
 uniform vec2 footprint_origin = vec2(0.0);
+uniform vec2 footprint_size = vec2(36.0);
+uniform bool city_paving = false;
+uniform bool walkable_roof = false;
+uniform float building_height = 4.0;
 varying vec3 world_pos;
 varying vec3 world_normal;
 
@@ -48,16 +52,40 @@ void fragment() {
 	vec3 ice = mix(vec3(0.52, 0.64, 0.72), vec3(0.84, 0.89, 0.92), noise2(horizontal * 2.2));
 	if (ground) {
 		rock = mix(rock, rock * 0.8 + vec3(0.11, 0.13, 0.14), 0.4);
+		if (city_paving) {
+			// Crossing cobbled streets and weathered courtyards, flush to the ground.
+			vec2 local = horizontal / footprint_size;
+			float street_d = min(abs(local.x-0.35)*footprint_size.x,abs(local.y-0.62)*footprint_size.y);
+			float street = 1.0-smoothstep(1.1,1.8,street_d+0.22*noise2(horizontal*0.7));
+			float curb = smoothstep(1.15,1.30,street_d)*(1.0-smoothstep(1.50,1.65,street_d));
+			rock = mix(rock,rock*0.72+vec3(0.025,0.033,0.044),street*0.75);
+			rock = mix(rock,stone_color.rgb*1.15,curb*0.70);
+			snow *= 1.0-street*0.45;
+		}
+	}
+	if (walkable_roof && top && !ground) {
+		// Visible pale edge treatment denotes an actual standing surface.
+		vec2 local = horizontal-footprint_origin;
+		vec2 bounds = min(local,footprint_size-local);
+		float rim = 1.0-smoothstep(0.10,0.22,min(bounds.x,bounds.y));
+		rock = mix(rock,vec3(0.63,0.71,0.72),rim*0.9);
+		snow *= 1.0-rim*0.55;
 	}
 	if (blind_arches && !top && n.y > -0.2) {
 		// Blind gothic recesses, filled with masonry rather than fake entrances.
 		float x = abs(mod(local_u + 0.15, 2.15) - 1.075);
-		float y = world_pos.y - 1.55;
-		float dist = length(vec2(x * 1.4, max(0.0, y)));
-		float opening = (1.0 - smoothstep(0.55, 0.60, dist)) * smoothstep(0.42, 0.49, world_pos.y);
-		float arch_rim = smoothstep(0.55, 0.61, dist) * (1.0 - smoothstep(0.74, 0.80, dist)) * smoothstep(0.40, 0.50, world_pos.y);
-		rock = mix(rock, rock * 0.46, opening * 0.87);
-		rock = mix(rock, stone_color.rgb * 1.20, arch_rim * 0.8);
+		float floor_y = mod(world_pos.y, 2.5);
+		float peak = min(2.1,building_height-0.25);
+		float arch_width = max(0.0,0.50-max(0.0,floor_y-peak+0.68)*0.74);
+		float opening = (1.0-smoothstep(arch_width-0.035,arch_width+0.02,x))*smoothstep(0.42,0.49,floor_y)*(1.0-smoothstep(peak-0.02,peak+0.03,floor_y));
+		float surround = (1.0-smoothstep(arch_width+0.08,arch_width+0.13,x))*smoothstep(0.32,0.39,floor_y)*(1.0-smoothstep(peak+0.07,peak+0.12,floor_y));
+		float mullion = (1.0-smoothstep(0.024,0.048,x))*opening;
+		rock = mix(rock,stone_color.rgb*1.18,surround*0.73);
+		rock = mix(rock,rock*0.37,opening*0.90);
+		rock = mix(rock,stone_color.rgb*0.82,mullion);
+		float fracture = abs(fract(u*0.46+noise2(vec2(u,world_pos.y)*1.4)*0.30+world_pos.y*0.20)-0.5);
+		float crack = (1.0-smoothstep(0.010,0.035,fracture))*smoothstep(0.54,0.72,noise2(vec2(u,world_pos.y)*0.54));
+		rock *= 1.0-crack*0.62;
 	}
 	ALBEDO = mix(rock, ice, snow * 0.90);
 	ROUGHNESS = mix(0.93, 0.64, snow);

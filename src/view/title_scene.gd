@@ -14,6 +14,7 @@ func _ready() -> void:
 	var scenery := BoardView.new()
 	add_child(scenery)
 	scenery.scenario_id = "silent_tower"
+	scenery.cinematic = true
 	scenery.build(board)
 	var atmosphere := BattleAtmosphere.new()
 	add_child(atmosphere)
