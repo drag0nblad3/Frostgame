@@ -19,6 +19,7 @@ var caster_equipment_button: Button
 var book_spell: OptionButton
 var bind_book: Button
 var split_fang: Button
+var mask_start: Button
 var ivory_staff: OptionButton
 var ivory_graft: Button
 var staff_potion: OptionButton
@@ -65,6 +66,10 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if loot.item_count>0 and RedKingMaterials.split_fang(campaign.data,int(loot.get_selected_metadata())):
 			changed.call())
 	split_fang.hide()
+	mask_start=_button("Toggle starting mask state",func() -> void:
+		if loot.item_count>0 and CampaignInventory.toggle_mask_start(campaign.data,int(loot.get_selected_metadata())):
+			changed.call())
+	mask_start.hide()
 	ivory_staff=OptionButton.new()
 	ivory_staff.hide()
 	add_child(ivory_staff)
@@ -140,6 +145,8 @@ func refresh() -> void:
 			suffix += " · %d power" % PowerPool.remaining(item)
 		if RedKingMaterials.is_supply(CampaignInventory.item_id(item)):
 			suffix+=" · %d uses" % RedKingMaterials.amount(item)
+		if item.get("gear","")==DeathMask.ITEM:
+			suffix+=" · Starts "+("worn" if item.get("mask_start_worn",false) else "unworn")
 		if item.get("enchanted",false):
 			suffix+=" · Enchanted"
 		if item.get("ivory_graft",false):
@@ -193,6 +200,7 @@ func refresh() -> void:
 
 
 func _refresh_item_buttons() -> void:
+	mask_start.hide()
 	staff_potion.clear()
 	staff_potion.hide()
 	charge_staff.hide()
@@ -210,6 +218,9 @@ func _refresh_item_buttons() -> void:
 		return
 	var index := int(loot.get_selected_metadata())
 	var item: Dictionary = campaign.data["loot"][index]
+	if item.get("gear","")==DeathMask.ITEM and item.get("unlocked",false) and not item.get("ragged_sealed",false):
+		mask_start.text="Start with mask %s (toggle)" % ("on" if item.get("mask_start_worn",false) else "off")
+		mask_start.show()
 	for potion_index in RedKingCampaignGear.staff_potions(campaign.data,index):
 		var potion: Dictionary=campaign.data["loot"][potion_index]
 		staff_potion.add_item(str(CampaignInventory.catalog()[potion["potion"]]["name"]))

@@ -113,6 +113,8 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if DeathMask.can_toggle(c):
+		available.append("gear_death_mask_toggle")
 	if ActiveGear.ready(f,RedKingDirection.ITEM):
 		available.append("gear_teetotum_arm")
 	if ActiveGear.ready(f,RedKingElemental.AMULET):
@@ -492,6 +494,8 @@ func action(key: String) -> bool:
 		available.assign(["potion_cancel"])
 		preview()
 		return false
+	if key=="gear_death_mask_toggle":
+		return DeathMask.toggle(c)
 	if key=="gear_teetotum_arm":
 		RedKingDirection.arm(c)
 		refresh()

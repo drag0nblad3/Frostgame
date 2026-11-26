@@ -196,3 +196,7 @@ Permanent selection from the specified spell list through the inventory binding 
 ## Pulsing Gem
 
 Four rechargeable power points are restricted to casting and resisting Blink. Optional casting toggles select six-inch movement and a binding direction reroll; each use of power or enhanced movement adds a persistent shooting defence penalty. Reroll is preselected during cast resolution rather than after seeing the direction, matching the current synchronous heading system.
+
+## Mask of Death
+
+Campaign equipment choice determines whether the wearer starts the battle masked. A contextual action toggles the mask, replacing a move when legal. Effective undead status now feeds healing, poison, wound, melee, spell, ward, and Red King scenario trait tests without permanently altering the figure definition. The wizard loses the usual survival modifier if the mask was worn at any time; the historical flag is checkpointed. AI does not proactively toggle the mask.

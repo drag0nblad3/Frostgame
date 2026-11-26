@@ -27,7 +27,7 @@ func setup(host: Node3D) -> void:
 	col.add_child(hint)
 	var row := HFlowContainer.new()
 	col.add_child(row)
-	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["run_for_it","Run 3″"],["run_talisman","Run 6″ (Talisman)"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["gutter_skip","Skip free flail attack"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["death_mask","Toggle Death Mask"],["run_for_it","Run 3″"],["run_talisman","Run 6″ (Talisman)"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["gutter_skip","Skip free flail attack"],["shoot","Shoot"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
 		b.custom_minimum_size.y=44
@@ -115,6 +115,8 @@ func refresh() -> void:
 		hint.text+=" • "+("GROUP MOVE" if s.group.movement_pass() else "GROUP SECOND")
 	_show("end",c.can_end_activation())
 	_show("move",c.can_move())
+	if DeathMask.can_toggle(c):
+		_show("death_mask",true)
 	if RunForIt.ready(c):
 		_show("run_for_it",LayeredMovement.eligible(c))
 	if RunForIt.ready(c,true):
@@ -246,6 +248,9 @@ func command(key: String) -> void:
 		"move","run_for_it","run_talisman","cape_move","jump","fight","shoot","exit","teleport","leap","bridge":
 			mode=key
 			bridge_start=null
+		"death_mask":
+			DeathMask.toggle(c)
+			mode="move"
 		"cancel_bridge":
 			c.cancel_floor_bridge()
 			mode="move"
