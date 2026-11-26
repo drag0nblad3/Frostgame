@@ -308,3 +308,6 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 
 ### Creature and objective AI refinement
 - Connected neutral Pack Hunters randomly select a leader, share pursuit/heading, and activate consecutively; state is checkpointed. Individual moves still use ordinary controller legality rather than simultaneous formation movement. Creatures in combat choose lowest Health exactly; missile creatures prioritize closest legal shot. Warband AI prefers damageable foes and avoids immune guards when other objectives are available, using terrain-distance fields rather than straight-line distance. Scenario simulation matrix now uses two seeds per map.
+
+### Uneven ground (p. 46)
+- Authored exposed profiles support negative and positive elevations. Ramps and designed stair routes use inclined distance; abrupt banks use ordinary climbing costs. Staircases are continuous slope approximations. Original optional Sunken Streets skirmish exercises these rules; existing scenarios are unchanged. Ray and movement lattice approximations remain. No swimming, running jumps, mid-wall standing, stacked floors, or general vertical anchors for terrain spells yet. See docs/uneven-terrain.md.

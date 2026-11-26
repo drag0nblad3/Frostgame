@@ -18,10 +18,13 @@ static func material(color: Color, ground: bool = false, arches: bool = false, o
 
 static func floor_surface(board: Board, scenario: String = "") -> MeshInstance3D:
 	var node := MeshInstance3D.new()
-	var slab := PlaneMesh.new()
-	slab.size = board.size
-	node.mesh = slab
-	node.position = TableSpace.to_world(board.size * 0.5, 0.008)
+	if board.has_ground_profiles:
+		node.mesh = GroundMesh.build(board)
+	else:
+		var slab := PlaneMesh.new()
+		slab.size = board.size
+		node.mesh = slab
+		node.position = TableSpace.to_world(board.size * 0.5, 0.008)
 	var palette := VisualPalette.for_scenario(board.id if scenario.is_empty() else scenario)
 	var mat := material(Color(str(palette.get("floor", "687781"))), true)
 	mat.set_shader_parameter("snow_amount", float(palette.get("snow", 0.86)))

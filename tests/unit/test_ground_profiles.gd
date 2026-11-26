@@ -33,5 +33,23 @@ func test_stairs_and_ramp_cost() -> void:
 
 func test_banks_block_sight() -> void:
 	var b := _board()
-	check(not LineOfSight.check(b,Vector2(5.5,8),Vector2(4.5,8)).clear)
+	check(not LineOfSight.check(b,Vector2(5.5,8),Vector2(2,8)).clear)
 	check(LineOfSight.check(b,Vector2(6,7),Vector2(11,10)).clear)
+
+
+func test_surface_picking_and_mesh() -> void:
+	var b := _board()
+	check_eq(SurfacePicker.pick(b,Vector3(8,10,3),Vector3.DOWN),Vector2(8,3))
+	check_eq(SurfacePicker.pick(b,Vector3(8,10,8),Vector3.DOWN),Vector2(8,8))
+	var mesh := GroundMesh.build(b)
+	check(mesh.get_surface_count()>0)
+	check(mesh.get_aabb().position.y < -1.9)
+
+
+func test_sunken_streets_deployment() -> void:
+	var s := ScenarioLoader.load_id("sunken_streets",db(),terrain())
+	check(s.board.has_ground_profiles)
+	check_eq(s.board.height_at(s.treasures[0].pos),-2.0)
+	for unit in s.figures:
+		check(s.board.can_stand(unit.pos,Figure.BASE_RADIUS))
+		check_eq(unit.elevation,s.board.height_at(unit.pos))

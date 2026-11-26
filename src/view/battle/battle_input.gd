@@ -711,28 +711,7 @@ func _empower_buttons() -> void:
 
 ## Pick the nearest visible exposed surface rather than always intersecting ground.
 func _surface_at(screen: Vector2) -> Variant:
-	var origin := camera.project_ray_origin(screen)
-	var direction := camera.project_ray_normal(screen)
-	var board := c.state.board
-	var heights: Array[float] = [0.0]
-	for piece in board.pieces:
-		if piece.kind.walkable_top and not heights.has(piece.kind.height):
-			heights.append(piece.kind.height)
-	var best: Variant = null
-	var nearest := INF
-	for height in heights:
-		var hit: Variant = Plane(Vector3.UP, height).intersects_ray(origin, direction)
-		if hit == null:
-			continue
-		var point := TableSpace.to_table(hit)
-		if not board.contains(point) or not is_equal_approx(board.height_at(point), height):
-			continue
-		var distance := origin.distance_to(hit)
-		if distance < nearest:
-			nearest = distance
-			best = point
-	return best
-
+	return SurfacePicker.pick(c.state.board,camera.project_ray_origin(screen),camera.project_ray_normal(screen))
 
 func _resist_buttons() -> void:
 	available.assign(["resist_confirm"])

@@ -22,12 +22,14 @@ func build(board: Board) -> void:
 	slab.size = Vector3(board.size.x, 0.5, board.size.y)
 	top.mesh = slab
 	top.material_override = _mat(Color(0.74, 0.79, 0.86), 0.9)
-	top.position = TableSpace.to_world(board.size * 0.5, -0.25)
+	top.position = TableSpace.to_world(board.size * 0.5, GroundMesh.bottom(board)-0.25)
 	add_child(top)
 	add_child(StoneFinish.floor_surface(board, scenario_id))
 	TerrainDressing.slab_frame(self, board)
 	add_child(CityScenery.build(board,board.id if scenario_id.is_empty() else scenario_id,cinematic))
 	for piece in board.pieces:
+		if piece.kind.ground_surface:
+			continue
 		match piece.kind.id:
 			"rubble":
 				TerrainDressing.rubble(self, piece)
@@ -66,9 +68,11 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 		return mi
 	if piece.ramp:
 		var box := BoxMesh.new()
-		var slope := atan2(piece.ramp_end - piece.ramp_start, 6.0)
-		var length := Vector2(6.0, piece.ramp_end - piece.ramp_start).length()
-		box.size = Vector3(2.0, 0.08, length) if piece.ramp_rotated else Vector3(length, 0.08, 2.0)
+		var run := piece.rect.size.y if piece.ramp_rotated else piece.rect.size.x
+		var width := piece.rect.size.x if piece.ramp_rotated else piece.rect.size.y
+		var slope := atan2(piece.ramp_end - piece.ramp_start, run)
+		var length := Vector2(run, piece.ramp_end - piece.ramp_start).length()
+		box.size = Vector3(width, 0.08, length) if piece.ramp_rotated else Vector3(length, 0.08, width)
 		mi.mesh = box
 		mi.rotation.x = -slope if piece.ramp_rotated else 0.0
 		mi.rotation.z = 0.0 if piece.ramp_rotated else slope

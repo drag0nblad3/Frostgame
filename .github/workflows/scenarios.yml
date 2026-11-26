@@ -19,7 +19,7 @@ jobs:
       max-parallel: 4
       matrix:
         seed: [17, 42]
-        scenario: [treasure_skirmish, mausoleum, living_museum, dreams_well, worm_hunts, underground_library, haunted_houses, the_keep, genie_in_the_bottle, silent_tower, complex_temple]
+        scenario: [treasure_skirmish, mausoleum, living_museum, dreams_well, worm_hunts, underground_library, haunted_houses, the_keep, genie_in_the_bottle, silent_tower, complex_temple, sunken_streets]
     steps:
       - uses: actions/checkout@v4
       - name: Install Godot
