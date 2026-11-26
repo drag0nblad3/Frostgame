@@ -84,7 +84,7 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, 
 	c._magic.terrain.trigger_landing(t)
 	c._magic.illusions.after_move(t)
 	if falling:
-		var dmg := ElevationRules.fall_damage(height - t.elevation)
+		var dmg := ElevationRules.fall_damage(height - t.elevation - (3.0 if c.state.board.low_gravity else 0.0))
 		if dmg > 0 and MagicEquipment.bonus(t, "slow_fall") == 0:
 			c._hurt(t, dmg, t, false)
 	if sites:

@@ -87,7 +87,7 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 	if not contains(p, radius) or over_void(p,radius):
 		return false
 	for piece in pieces:
-		if piece.kind.id=="red_king_sinkhole_orb":
+		if piece.kind.id in ["red_king_sinkhole_orb","reality_portal","reality_hoof"]:
 			if p.distance_to(piece.rect.get_center())<piece.rect.size.x*0.5+radius-0.001:
 				return false
 			continue

@@ -167,7 +167,7 @@ func remove(p: TerrainPiece) -> void:
 		if not t.in_play():
 			continue
 		var new_height := s.board.height_at(t.pos)
-		var fall := ElevationRules.fall_damage(t.elevation - new_height)
+		var fall := ElevationRules.fall_damage(t.elevation - new_height - (3.0 if s.board.low_gravity else 0.0))
 		if not is_equal_approx(t.elevation, new_height):
 			t.elevation = new_height
 			c.emit("terrain_fall", {"id": t.id})

@@ -50,7 +50,7 @@ static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null
 	for piece in board.pieces:
 		if piece.kind.ground_surface:
 			continue
-		if piece.kind.id in ["red_king_portal","red_king_sinkhole_orb"]:
+		if piece.kind.id in ["red_king_portal","red_king_sinkhole_orb","reality_portal","reality_hoof"]:
 			var center := piece.rect.get_center()
 			if center.distance_to(Geometry2D.get_closest_point_to_segment(center,from,to))<=piece.rect.size.x*0.5:
 				r.clear=false
