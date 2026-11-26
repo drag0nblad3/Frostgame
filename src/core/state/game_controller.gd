@@ -14,6 +14,7 @@ var _displacement: CombatDisplacement
 var _encounters: EncounterActions
 var _magic: SpellActions
 var _potions: PotionActions
+var _fate_combat: FateCombat
 
 
 func _init(s: GameState, d: Dice) -> void:
@@ -27,6 +28,7 @@ func _init(s: GameState, d: Dice) -> void:
 	_encounters = EncounterActions.new(self)
 	_magic = SpellActions.new(self)
 	_potions = PotionActions.new(self)
+	_fate_combat = FateCombat.new(self)
 
 
 func emit(type: String, data: Dictionary = {}) -> void:
@@ -161,8 +163,12 @@ func fight(target_id: int) -> bool:
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	var res := Melee.resolve(dice, state.figures, f, t, state.critical_hits)
 	_spend(f)
+	_fate_combat.start(f, t, "fight")
+	return true
+
+
+func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("fight", res)
@@ -179,7 +185,6 @@ func fight(target_id: int) -> bool:
 		if winner.side >= 0:
 			state.push_winner = winner.id
 			state.push_loser = t.id if winner == f else f.id
-	return true
 
 
 func can_shoot(target_id: int) -> bool:
@@ -202,11 +207,14 @@ func _shoot_authorized(f: Figure, t: Figure) -> void:
 	_magic.illusions.reveal(f)
 	var declared := t.id
 	t = ShotTarget.randomize(dice, state.figures, t)
-	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits, state.storm_penalty)
-	res["declared"] = declared
 	_spend(f)
 	if f.ranged.needs_reload:
 		f.loaded = false
+	_fate_combat.start(f, t, "shoot", declared)
+
+
+func finish_fate_shot(f: Figure, t: Figure, res: Dictionary, declared: int) -> void:
+	res["declared"] = declared
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("shoot", res)
@@ -394,8 +402,12 @@ func answer_initiative(use: bool) -> bool:
 	return _flow.answer_initiative(use)
 
 
+func answer_fate_combat(use: bool) -> bool:
+	return _fate_combat.answer(use)
+
+
 func awaiting_reaction() -> bool:
-	if state.pending_initiative or not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
+	if not state.pending_combat.is_empty() or state.pending_initiative or not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
 		return true
 	if state.push_winner < 0:
 		return false

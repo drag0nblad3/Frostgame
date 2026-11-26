@@ -10,7 +10,7 @@
 
 ## Still incomplete
 - Verify all rule interpretations and edge cases in rules-coverage.md; initial catalog coverage is not full fidelity.
-- Finish interactive weapon loadouts, Fate Stone combat/shooting rerolls, resistance choices, spell cancellation and scroll rituals.
+- Finish interactive weapon loadouts, remaining Fate Stone special-attack/stat rerolls, resistance choices, spell cancellation and scroll rituals.
 - Expand scenarios, creature bestiary and scenario-specific AI; improve deployment and geometry.
 - Active battle save/resume, campaign lifecycle polish, mobile layout and richer 3D presentation.
 - Android export only when explicitly requested; Stargrave remains a future content set.

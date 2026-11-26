@@ -48,6 +48,11 @@ func refresh() -> void:
 		mode = "initiative_choice"
 		preview()
 		return
+	if not c.state.pending_combat.is_empty():
+		available.assign(["fate_combat_yes", "fate_combat_no"])
+		mode = "fate_combat"
+		preview()
+		return
 	if not c.state.pending_resistance.is_empty():
 		empower = 0
 		mode = "resist"
@@ -275,6 +280,12 @@ func preview() -> void:
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
+		"fate_combat":
+			var p := c.state.pending_combat
+			var roller := c.state.figure(p["roller"])
+			points.append(roller.pos)
+			radius = 0.65
+			hint = "%s rolled %d. Opposed totals: %d vs %d. Use Fate Stone? New roll is binding." % [roller.label(), p["roll"], p["own_total"], p["opposing_total"]]
 		"initiative_choice":
 			hint = "Before initiative is rolled: use the telescope for +5, or save it for a later turn?"
 		"intercept":
@@ -354,6 +365,8 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key in ["fate_combat_yes", "fate_combat_no"]:
+		return c.answer_fate_combat(key == "fate_combat_yes")
 	if key in ["telescope_use", "telescope_save"]:
 		return c.answer_initiative(key == "telescope_use")
 	if key == "potion_cancel":

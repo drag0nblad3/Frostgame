@@ -25,6 +25,7 @@ var spellbooks := {}
 var spell_catalog := {}
 var pending_cast := {}
 var pending_resistance := {}
+var pending_combat := {}
 var storm_penalty := 0
 var words: Array[Dictionary] = []
 var fast_acts := {}

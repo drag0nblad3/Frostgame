@@ -65,6 +65,8 @@ func refresh() -> void:
 		var item: Dictionary = d["loot"][i]
 		if not CampaignInventory.is_item(item) and item["kind"] != "grimoire":
 			continue
+		if not catalog.has(CampaignInventory.item_id(item)):
+			continue
 		var info: Dictionary = catalog[CampaignInventory.item_id(item)]
 		var assigned := int(item.get("owner", -1))
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
