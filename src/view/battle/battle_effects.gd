@@ -24,3 +24,23 @@ static func burst(root: Node3D, at: Vector3, color: Color) -> void:
 		tween.tween_property(spark, "position", dir * 0.60, 0.25)
 		tween.tween_property(spark, "scale", Vector3.ZERO, 0.30)
 	tween.chain().tween_callback(effect.queue_free)
+
+
+static func pulse(root: Node3D, at: Vector3, color: Color, radius: float = 0.9) -> void:
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.76
+	ring.outer_radius = 0.84
+	var node := MeshInstance3D.new()
+	node.mesh = ring
+	var mat := BoardView._mat(color, 0.3)
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	node.material_override = mat
+	root.add_child(node)
+	node.position = at
+	node.scale = Vector3(0.25, 0.12, 0.25)
+	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var t := node.create_tween().set_parallel(true)
+	t.tween_property(node, "scale", Vector3(radius, 0.12, radius), 0.55)
+	t.tween_property(mat, "albedo_color:a", 0.0, 0.55)
+	t.chain().tween_callback(node.queue_free)

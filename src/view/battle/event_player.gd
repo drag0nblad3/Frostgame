@@ -59,9 +59,16 @@ func _play(e: GameEvent) -> void:
 			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
 		"allegiance", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison", "null_field", "shield_absorb":
 			_view(d["id"]).refresh(state.figure(d["id"]))
+		"cast_result":
+			if views.has(d["id"]):
+				var caster := _view(d["id"])
+				BattleEffects.pulse(self, caster.position + Vector3.UP * 0.15, Color(0.38,0.83,1.0) if d["success"] else Color(0.90,0.38,0.36), 1.25)
+		"disc_transport":
+			BattleEffects.pulse(self, _view(d["id"]).position + Vector3.UP * 0.15, Color(1.0,0.78,0.32), 1.6)
 		"heal":
 			var healed := _view(d["id"])
 			healed.refresh(state.figure(d["id"]))
+			BattleEffects.pulse(self, healed.position + Vector3.UP * 0.15, Color(0.40,0.95,0.59))
 			_float_text(healed, "+%d" % d["amount"], Color(0.45, 1.0, 0.63))
 		"shoot", "spell_shot":
 			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot")
@@ -78,6 +85,7 @@ func _play(e: GameEvent) -> void:
 			token.reparent(_view(d["id"]), false)
 			token.position = Vector3(-0.48 if state.figure(d["id"]).second_treasure_id >= 0 else 0.48, 0.65, 0)
 			_view(d["id"]).refresh(state.figure(d["id"]))
+			BattleEffects.pulse(self, _view(d["id"]).position + Vector3.UP * 0.13, Color(1.0,0.74,0.28))
 		"treasure_drop":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(self, false)

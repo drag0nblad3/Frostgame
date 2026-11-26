@@ -22,6 +22,6 @@ static func floor_surface(board: Board) -> MeshInstance3D:
 	slab.size = board.size
 	node.mesh = slab
 	node.position = TableSpace.to_world(board.size * 0.5, 0.008)
-	node.material_override = material(Color(0.47, 0.54, 0.60), true)
+	node.material_override = material(Color(0.39, 0.38, 0.34) if board.id == "underground_library" else Color(0.47, 0.54, 0.60), true)
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return node

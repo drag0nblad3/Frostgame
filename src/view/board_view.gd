@@ -30,11 +30,19 @@ func build(board: Board) -> void:
 				TerrainDressing.statue(self, piece)
 			"temple_column":
 				TerrainDressing.column(self, piece)
+			"library_shelf":
+				SiteArt.shelf(self, piece)
+			"arcane_disc", "dreams_well":
+				add_child(_piece(piece))
+				TabletopDetails.decorate(self, piece)
+				SiteArt.surface(self, piece, piece.kind.id == "dreams_well")
 			_:
 				add_child(_piece(piece))
 				TabletopDetails.decorate(self, piece)
 				if piece.kind.id in ["ruin", "tower", "null_upper"]:
 					RuinSilhouette.decorate(self, piece)
+				if board.id == "mausoleum" and piece.kind.id == "ruin" and piece.rect.has_point(board.size * 0.5):
+					SiteArt.crypt(self, piece)
 
 
 func _piece(piece: TerrainPiece) -> MeshInstance3D:

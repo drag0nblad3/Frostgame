@@ -32,6 +32,7 @@ var _campaign_dialog: CampaignPanel
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
+var _atmosphere: BattleAtmosphere
 var _rig: CameraRig
 var _wait := 0.0
 
@@ -39,7 +40,8 @@ var _wait := 0.0
 func _ready() -> void:
 	_figures = FigureDb.load_files()
 	_terrain = TerrainDb.load_file()
-	_add_lighting()
+	_atmosphere = BattleAtmosphere.new()
+	add_child(_atmosphere)
 	_board_view = BoardView.new()
 	add_child(_board_view)
 	_rig = CameraRig.new()
@@ -63,6 +65,9 @@ func _ready() -> void:
 	add_child(_inspector)
 	hud.inspect_pressed.connect(_open_inspector)
 	hud.guide_pressed.connect(_open_guide)
+	hud.atmosphere_toggled.connect(func() -> void:
+		_atmosphere.set_effects(not _atmosphere.enabled)
+		hud.notify("Snow effects %s." % ("on" if _atmosphere.enabled else "off")))
 	hud.training_requested.connect(_confirm_training)
 	hud.training_next.connect(_next_training)
 	hud.training_retry.connect(func() -> void:
@@ -191,6 +196,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	controller = c
 	var state := c.state
 	_board_view.build(state.board)
+	_atmosphere.configure(state.board)
 	_sites.reset()
 	_sites.update_sites(state)
 	_markers.board = state.board
@@ -336,23 +342,6 @@ func _update_status() -> void:
 		hud.set_status("Turn %d — %s%s" % [s.turn, result, score])
 		return
 	hud.set_status("Turn %d · %s · %s%s" % [s.turn, Phase.name_of(s.phase), ("Creatures" if s.current_side() < 0 else s.side_names[s.current_side()]), score])
-
-
-func _add_lighting() -> void:
-	var sun := DirectionalLight3D.new()
-	sun.rotation_degrees = Vector3(-55, 35, 0)
-	sun.light_energy = 1.1
-	sun.shadow_enabled = true
-	add_child(sun)
-	var env := WorldEnvironment.new()
-	var e := Environment.new()
-	e.background_mode = Environment.BG_COLOR
-	e.background_color = Color(0.1, 0.13, 0.18)
-	e.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	e.ambient_light_color = Color(0.7, 0.78, 0.9)
-	e.ambient_light_energy = 0.35
-	env.environment = e
-	add_child(env)
 
 
 func _open_roster() -> void:
