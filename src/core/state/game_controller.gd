@@ -48,15 +48,23 @@ func activate(id: int) -> bool:
 	if state.active_id != -1 or f == null or not activatable().has(f):
 		return false
 	state.active_id = id
+	var time_walk := f.spell_effects.has("time_walk") and f.walk_phases.has(state.phase)
+	var fast := state.is_fast(f)
 	if not state.group.in_progress() or state.group.movement_pass():
 		_magic.on_activate(f)
 	if state.group.in_progress():
 		state.group.start_member(state, f)
 	else:
-		state.early.record_activation(state, f)
-		f.actions_left = f.action_limit()
-		f.moves_taken = 0
+		if not fast and not time_walk:
+			state.early.record_activation(state, f)
+		f.actions_left = mini(f.action_limit(), 1) if time_walk else f.action_limit()
+		if time_walk:
+			f.walk_phases.erase(state.phase)
+		else:
+			f.moves_taken = 0
 		f.acted = false
+		f.non_moves = 0
+		f.used_stored_action = false
 	emit("activate", {"id": id})
 	return true
 
@@ -110,7 +118,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 ## One non-move action (fight, shoot, reload) per activation.
 func can_act() -> bool:
 	var f := state.active()
-	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.acted and not state.group.movement_pass()
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:
@@ -219,6 +227,7 @@ func _spend(f: Figure) -> void:
 	_displacement.clear()
 	f.actions_left -= 1
 	f.acted = true
+	f.non_moves += 1
 
 
 func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
@@ -356,3 +365,19 @@ func poison(f: Figure) -> void:
 	if state.active() == f:
 		f.actions_left = mini(f.actions_left, 0 if f.acted or f.moves_taken > 0 else 1)
 	emit("poison", {"id": f.id})
+
+
+func can_use_stored_action() -> bool:
+	var f := state.active()
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and not state.group.in_progress() and f.spell_effects.has("time_store") and f.stored_action_turn < state.turn and not f.used_stored_action and f.action_limit() == 2 and f.actions_left == 2 and not f.acted and f.moves_taken == 0
+
+
+func use_stored_action() -> bool:
+	if not can_use_stored_action():
+		return false
+	var f := state.active()
+	f.spell_effects.erase("time_store")
+	f.used_stored_action = true
+	f.actions_left += 1
+	emit("stored_action", {"id": f.id})
+	return true

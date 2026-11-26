@@ -73,6 +73,8 @@ func refresh() -> void:
 		mode = "push"
 		preview()
 		return
+	if c.can_use_stored_action():
+		available.append("use_stored_action")
 	if c.can_move():
 		reach = c.reach()
 		available.append("move")
@@ -266,6 +268,8 @@ func action(key: String) -> bool:
 		preview()
 		return false
 	match key:
+		"use_stored_action":
+			return c.use_stored_action()
 		"resist_plus", "resist_minus":
 			empower = clampi(empower + (1 if key == "resist_plus" else -1), 0, int(c.state.pending_resistance["max"]))
 			_resist_buttons()

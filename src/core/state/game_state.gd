@@ -25,6 +25,7 @@ var spell_catalog := {}
 var pending_cast := {}
 var pending_resistance := {}
 var storm_penalty := 0
+var fast_acts := {}
 ## Sides in initiative order this turn, and whose go it is within the phase.
 var order: Array[int] = []
 var order_index := 0
@@ -95,10 +96,32 @@ func waiting(side: int) -> Array[Figure]:
 		return creatures
 	if group.in_progress() and group.side == side:
 		return group.waiting(self)
-	if phase in [Phase.WIZARD, Phase.APPRENTICE]:
-		return early.waiting(self, side)
 	var out: Array[Figure] = []
+	if phase in [Phase.WIZARD, Phase.APPRENTICE]:
+		out.assign(early.waiting(self, side))
+	else:
+		for f in side_figures(side):
+			if not f.activated and Phase.of_figure(f) == phase and not is_fast(f):
+				out.append(f)
 	for f in side_figures(side):
-		if not f.activated and Phase.of_figure(f) == phase:
+		if f.spell_effects.has("time_walk") and f.walk_phases.has(phase):
 			out.append(f)
+	if out.is_empty():
+		for id: int in fast_acts.get(side, []):
+			var f := figure(id)
+			if f != null and f.in_play() and not f.activated:
+				out.append(f)
 	return out
+
+
+func is_fast(f: Figure) -> bool:
+	for ids: Array in fast_acts.values():
+		if ids.has(f.id):
+			return true
+	return false
+
+
+func queue_fast(f: Figure, side: int) -> void:
+	if not fast_acts.has(side):
+		fast_acts[side] = []
+	fast_acts[side].append(f.id)

@@ -141,3 +141,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Immediate resistance empowerment
 
 - p. 65: Blinding Light, Petrify, Steal Health, control spells, Blink and Transpose use a shared Will resistance resolver. Human spellcasters with a failed non-natural-1 roll may spend Health before the spell resolves, with no result cap; natural 1/20 are automatic. AI spends at most two Health to succeed and avoids lethal spending. The battle pauses across rival activations, and a two-target Transpose can request sequential resistance. Ongoing-effect expiration tests and other area/instant resistance spells still use automatic tests. Optional refusal to roll before rolling is not yet exposed.
+
+## Time manipulation
+
+- pp. 45, 61, 121, 133–134: Fast Act queues an unactivated ally or uncontrolled creature after ordinary activations on the caster's side; creatures still use creature AI. Time Store requires the first action of a normal two-action activation and stores an extra action for a later full activation, with two non-movement actions possible provided one movement slot remains. Time Walk gives the wizard one separate activation in Apprentice and Soldier phases; prior movement retains half-rate subsequent moves and consecutive-turn casts cost 8 Health. Stored actions currently cannot be used in groups or Time Walk bonus activations; Time Walk is restricted to Wizard phase. AI does not yet plan around these spells.

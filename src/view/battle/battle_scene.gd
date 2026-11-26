@@ -116,7 +116,7 @@ func _process(delta: float) -> void:
 		_campaign.settle(controller, controller.dice)
 		_campaign.save()
 		_open_campaign()
-	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side):
+	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side and (s.active() == null or s.active().side >= 0)):
 		_wait = 0.0
 		return
 	_wait += delta
@@ -137,7 +137,7 @@ func set_watch_mode(on: bool) -> void:
 
 
 func _human_turn() -> bool:
-	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and (controller.state.current_side() == player_side or controller.awaiting_reaction())
+	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
 
 
 func _on_event(event: GameEvent) -> void:

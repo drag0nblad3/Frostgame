@@ -15,7 +15,7 @@
     "name": "Fast Act",
     "school": "chronomancer",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "fleet_feet": {
     "name": "Fleet Feet",
@@ -39,13 +39,13 @@
     "name": "Time Store",
     "school": "chronomancer",
     "number": 14,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "time_walk": {
     "name": "Time Walk",
     "school": "chronomancer",
     "number": 14,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "call_storm": {
     "name": "Call Storm",

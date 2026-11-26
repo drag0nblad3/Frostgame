@@ -27,6 +27,11 @@ var elemental_shield := 0
 var poisoned := false
 var petrified_skip := false
 var magic_exhausted := false
+var last_time_walk := -2
+var walk_phases: Array[int] = []
+var stored_action_turn := -1
+var used_stored_action := false
+var non_moves := 0
 ## Turn bookkeeping, reset by the controller each turn.
 var activated := false
 var actions_left := 0

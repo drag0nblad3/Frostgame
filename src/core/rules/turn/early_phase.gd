@@ -47,13 +47,13 @@ func waiting(s: GameState, side: int) -> Array[Figure]:
 	# If a rival removed the leader before its side started, it gets no early activations.
 	if not leader.in_play() and not leader.activated:
 		return out
-	if leader.in_play() and not leader.activated:
+	if leader.in_play() and not leader.activated and not s.is_fast(leader):
 		out.append(leader)
 	if int(used[side]) >= MAX_SOLDIERS:
 		return out
 	for id: int in eligible[side]:
 		var f := s.figure(id)
-		if f.in_play() and f.side == side and not f.activated:
+		if f.in_play() and f.side == side and not f.activated and not s.is_fast(f):
 			out.append(f)
 	return out
 

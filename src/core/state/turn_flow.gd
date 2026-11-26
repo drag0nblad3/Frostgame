@@ -26,7 +26,10 @@ func start_turn() -> void:
 	for f in s.figures:
 		f.activated = false
 		f.magic_exhausted = false
+		f.walk_phases.clear()
+		f.spell_effects.erase("time_walk")
 		f.actions_left = 0
+	s.fast_acts.clear()
 	var ini := Initiative.roll(_c.dice, s.side_count())
 	s.order = ini["order"]
 	s.order_index = 0
@@ -60,6 +63,7 @@ func _settle() -> void:
 			start_turn()
 			return
 		s.phase = Phase.ORDER[i]
+		s.fast_acts.clear()
 		s.early.capture(s)
 		if s.phase != Phase.CREATURE or not s.waiting(-1).is_empty():
 			_c.emit("phase", {"phase": s.phase})

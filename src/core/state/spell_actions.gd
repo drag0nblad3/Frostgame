@@ -41,6 +41,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t == f
 	if id == "true_sight":
 		return t == f and not f.spell_effects.has(id)
+	if id == "time_store":
+		return t == f and not f.spell_effects.has(id) and f.actions_left == 2 and not f.acted and f.moves_taken == 0 and not s.group.in_progress()
+	if id == "time_walk":
+		return t == f and f.def.role == "wizard" and s.phase == Phase.WIZARD and f.last_time_walk != s.turn
 	if not IllusionRules.visible_to(s.figures, f, t):
 		return false
 	if f.spell_effects.has("blinding_light") and kind != "touch":
@@ -55,8 +59,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t != f
 	if kind == "area_shot":
 		return t.side != f.side
+	if id == "fast_act":
+		return t != f and not t.activated and not s.is_fast(t) and (t.side == f.side or t.side < 0) and not s.group.members.has(t.id)
 	if id == "leap":
-		return t.side == f.side and not movement.points(f, t, id, true).is_empty()
+		return t.side == f.side and not t.spell_effects.has("petrify") and not movement.points(f, t, id, true).is_empty()
 	if id == "transpose":
 		for other in s.figures:
 			if movement.can_swap(f, t, other):
@@ -216,6 +222,19 @@ func finish(health: int) -> bool:
 		summons.apply_control(f, t, id, int(result["roll"]))
 		return true
 	match id:
+		"fast_act":
+			s.queue_fast(t, f.side)
+		"time_store":
+			f.spell_effects[id] = true
+			f.stored_action_turn = s.turn
+			f.actions_left = 0
+		"time_walk":
+			if f.last_time_walk == s.turn - 1:
+				c._hurt(f, 8, f, false)
+			f.last_time_walk = s.turn
+			if f.in_play():
+				f.spell_effects[id] = true
+				f.walk_phases.assign([Phase.APPRENTICE, Phase.SOLDIER])
 		"invisibility", "true_sight":
 			t.spell_effects[id] = true
 			illusions.sweep()
