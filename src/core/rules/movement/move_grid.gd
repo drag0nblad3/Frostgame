@@ -47,7 +47,7 @@ func open(n: Vector2i) -> bool:
 			var distance := o.pos.distance_to(p)
 			if distance < Contact.OVERLAP:
 				return false
-			if mover != null and o.side != mover.side and distance <= Contact.CONTACT and not IllusionRules.visible_to(others, mover, o):
+			if mover != null and o.side != mover.side and distance <= Contact.CONTACT and (not IllusionRules.visible_to(others, mover, o) or (mover.battle_ref != null and mover.battle_ref.get_ref() != null and BeautyActions.blocked(mover.battle_ref.get_ref(), mover, o))):
 				return false
 	return true
 

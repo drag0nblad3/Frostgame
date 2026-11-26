@@ -150,7 +150,7 @@
     "name": "Beauty",
     "school": "illusionist",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "blink": {
     "name": "Blink",

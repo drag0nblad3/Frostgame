@@ -217,3 +217,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Embed Enchantment
 
 - p.120: surviving friendly campaign figures with active Enchant Weapon or Enchant Armour are recorded after battle as eligible enchantments. The postgame ritual selects a single candidate and, on success, creates its matching permanent equipment in the vault. Normal slot/compatibility rules apply when assigning the item. The extra heavy-armour variant is not part of the random equipment table; its sale price is provisionally matched to enchanted light armour. Current weapon enchantment targets the primary ranged weapon if present, otherwise the active melee weapon. Ownership of the embedded item is assigned manually; duplicate enchantments on already-magical gear, free dagger slots and armour eligibility still need audit.
+
+## Beauty
+
+- pp.113,134: self spell stores the casting result; opposing non-creature figures test Will before direct targeting, ordinary shooting (including potential melee targets) or moving into contact. The shared resistance UI permits caster empowerment; one result per attacker/subject per turn. True Sight within six inches and creatures/animals bypass the restriction. Failed tests leave the action available for another target. Area-effect shooting and indirect targeting paths are not all covered, and forced interception against a protected caster is conservatively suppressed rather than offering a separate Will test. 

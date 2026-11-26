@@ -67,7 +67,7 @@ func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []
 	for i in range(1, path.size()):
 		var p := path[i]
 		for guard in c.state.figures:
-			if ignored.has(guard.id) or not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard) or not IllusionRules.visible_to(c.state.figures, guard, mover):
+			if ignored.has(guard.id) or not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard) or not IllusionRules.visible_to(c.state.figures, guard, mover) or BeautyActions.protected_from(c.state, guard, mover):
 				continue
 			if absf(c.state.board.height_at(p) - guard.elevation) >= 0.5:
 				continue

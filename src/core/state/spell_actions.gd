@@ -12,6 +12,7 @@ var resistance: ResistanceActions
 var weapons: WeaponActions
 var treasure_magic: TreasureMagic
 var crumble: CrumbleActions
+var beauty: BeautyActions
 
 
 func _init(controller: GameController) -> void:
@@ -25,6 +26,7 @@ func _init(controller: GameController) -> void:
 	weapons = WeaponActions.new(c)
 	treasure_magic = TreasureMagic.new(c)
 	crumble = CrumbleActions.new(c)
+	beauty = BeautyActions.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -45,6 +47,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t == f and f.elemental_shield == 0
 	if kind == "self_area":
 		return t == f
+	if id == "beauty":
+		return t == f and not f.spell_effects.has(id)
+	if BeautyActions.blocked(s, f, t):
+		return false
 	if id == "true_sight":
 		return t == f and not f.spell_effects.has(id)
 	if id == "time_store":
@@ -225,6 +231,19 @@ func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
 	var f := c.state.active()
+	var targets: Array[Figure] = [c.state.figure(target_id)]
+	if second >= 0:
+		targets.append(c.state.figure(second))
+	if id in ["elemental_bolt", "bone_dart", "poison_dart"]:
+		targets.assign(ShotTarget.participants(c.state.figures, targets[0]))
+	beauty.authorize(f, targets, _roll_authorized.bind(id, target_id, at, rotated, second, effect))
+	return true
+
+
+func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, second: int, effect: Dictionary) -> void:
+	var f := c.state.active()
+	if f == null or not f.in_play():
+		return
 	illusions.reveal(f)
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll := not known and ScrollActions.consume(f, id)
@@ -242,7 +261,6 @@ func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
 	if id in ["spell_eater", "strike_dead"]:
 		c._hurt(f, 1, f, false)
-	return true
 
 
 func max_empowerment() -> int:
@@ -367,6 +385,8 @@ func finish(health: int) -> bool:
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
 					_direct_attack(f, other, 5)
+		"beauty":
+			t.spell_effects[id] = int(result["roll"])
 		"bones_of_the_earth":
 			t.spell_effects[id] = true
 		"possess":

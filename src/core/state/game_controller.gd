@@ -97,12 +97,24 @@ func move_to(node: Vector2i) -> bool:
 
 
 func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int]) -> bool:
+	var targets: Array[Figure] = []
+	var at := path[path.size() - 1]
+	for t in state.figures:
+		if t.in_play() and t.side != f.side and absf(t.elevation - state.board.height_at(at)) < 0.5 and Contact.touching(t.pos, at):
+			targets.append(t)
+	_magic.beauty.authorize(f, targets, _move_authorized.bind(f, path, cost, ignored))
+	return true
+
+
+func _move_authorized(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int]) -> void:
+	if not f.in_play():
+		return
 	var intercept := _displacement.intercept(f, path, ignored) if state.forced_combat else {}
 	if not intercept.is_empty() and int(intercept["guard"].side) == state.reaction_side:
 		state.pending_intercept = {"mover": f.id, "path": path, "cost": cost, "ignored": ignored, "choice": intercept}
 		emit("intercept_offer", {"id": intercept["guard"].id, "target": f.id})
-		return true
-	return _apply_move(f, path, cost, intercept)
+		return
+	_apply_move(f, path, cost, intercept)
 
 
 func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Dictionary) -> bool:
@@ -158,7 +170,7 @@ func fight(target_id: int) -> bool:
 
 func can_shoot(target_id: int) -> bool:
 	var t := state.figure(target_id)
-	return can_act() and t != null and Shooting.blocked_reason(state.board, state.figures, state.active(), t) == ""
+	return can_act() and t != null and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board, state.figures, state.active(), t) == ""
 
 
 func shoot(target_id: int) -> bool:
@@ -166,6 +178,13 @@ func shoot(target_id: int) -> bool:
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
+	_magic.beauty.authorize(f, ShotTarget.participants(state.figures, t), _shoot_authorized.bind(f, t))
+	return true
+
+
+func _shoot_authorized(f: Figure, t: Figure) -> void:
+	if not f.in_play() or not t.in_play():
+		return
 	var declared := t.id
 	t = ShotTarget.randomize(dice, state.figures, t)
 	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits, state.storm_penalty)
@@ -179,7 +198,6 @@ func shoot(target_id: int) -> bool:
 	_hurt(t, res["dmg"], f)
 	if f.ranged != null:
 		f.spell_effects.erase("elemental_hammer")
-	return true
 
 
 ## Reload may replace the movement action (p. 34); never while engaged.

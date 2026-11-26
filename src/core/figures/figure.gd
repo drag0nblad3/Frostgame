@@ -9,6 +9,7 @@ var id := 0
 var campaign_id := -1
 var injury_types := {}
 var familiar := false
+var beauty_tests := {}
 var campaign_base := ""
 var battle_ref: WeakRef
 var original_side := 0
