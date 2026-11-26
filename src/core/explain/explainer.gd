@@ -13,6 +13,14 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"ryce_unconscious":
+			return "Kalamon Ryce is unconscious. Carry him to safety."
+		"ryce_escaped":
+			return "Kalamon Ryce escapes into the ruins."
+		"hrut_hunt":
+			return "Hrut hunting parties arrive."
+		"mad_man_crack":
+			return "Reality twists: opposite edge regions exchange positions."
 		"artefact_unlock":
 			return "%s attempts to unlock the artefact: %s."%[name_of(s,d["id"]),"success" if d["success"] else "failed"]
 		"portal_contact":

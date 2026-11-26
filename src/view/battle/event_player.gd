@@ -104,6 +104,10 @@ func _play(e: GameEvent) -> void:
 			_float_text(v, "-%d" % d["amount"])
 		"out_of_action":
 			_view(d["id"]).take_out()
+		"ryce_unconscious":
+			var marker: MeshInstance3D=treasure_views[d["treasure"]]
+			marker.position=TableSpace.to_world(d["at"],state.board.height_at(d["at"])+0.25)
+			marker.show()
 		"stand_investigated":
 			var marker: MeshInstance3D=treasure_views[d["treasure"]]
 			if int(d["gold"])==0:
@@ -262,6 +266,8 @@ func build_treasures() -> void:
 		add_child(marker)
 		if token.investigation:
 			_build_stand(marker)
+		elif RedKingMadMan.rescue(state,token):
+			_build_rescue(marker)
 		else:
 			TerrainDressing.chest(marker)
 		var height := state.board.height_at(token.pos)
@@ -310,3 +316,23 @@ func _build_stand(marker: MeshInstance3D) -> void:
 	bundle.rotation.z=0.14
 	bundle.material_override=BoardView._mat(Color(0.64,0.14,0.09),0.9)
 	marker.add_child(bundle)
+
+
+func _build_rescue(marker: MeshInstance3D) -> void:
+	# A bundled unconscious figure rather than a treasure chest.
+	var body := CapsuleMesh.new()
+	body.radius=0.21
+	body.height=1.10
+	body.radial_segments=12
+	body.rings=4
+	marker.mesh=body
+	marker.rotation.z=PI*0.5
+	marker.material_override=BoardView._mat(Color("64566b"),0.9)
+	var head := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius=0.16
+	sphere.height=0.32
+	head.mesh=sphere
+	head.position.y=0.48
+	head.material_override=BoardView._mat(Color("c5ad8e"),0.95)
+	marker.add_child(head)

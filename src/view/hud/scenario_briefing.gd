@@ -42,6 +42,13 @@ static func progress(s: GameState) -> String:
 		else:
 			ground += 1
 	var text := "%d secured · %d carried · %d unclaimed" % [secured, carrying, ground]
+	if RedKingMadMan.active(s):
+		var npc := s.figure(int(s.scenario_data.get("ryce_id",-1)))
+		var rescue := s.treasure(int(s.scenario_data.get("ryce_token",-1)))
+		if npc!=null and npc.in_play():
+			text+=" | Ryce fleeing"
+		elif rescue!=null:
+			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
 	if RedKingFire.active(s):
 		var artefact := s.treasure(0)
 		if artefact!=null and artefact.frozen:

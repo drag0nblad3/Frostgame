@@ -3,6 +3,8 @@ extends RefCounted
 ## Objective-first bot policy. Combat remains the fallback if no route is usable.
 
 static func play(c: GameController, f: Figure) -> bool:
+	if RedKingMadMan.hunter(f):
+		return false
 	if RedKingVeil.active(c.state):
 		if f.side==1:
 			return false

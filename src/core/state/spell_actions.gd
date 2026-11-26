@@ -38,7 +38,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var f := s.active()
 	var t := s.figure(target_id)
-	if not c.can_act() or f == null or t == null or not t.in_play() or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
+	if not c.can_act() or f == null or t == null or not t.in_play() or RedKingMadMan.is_ryce(t) or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
 		return false
 	if f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(s.figures, f):
 		return false
