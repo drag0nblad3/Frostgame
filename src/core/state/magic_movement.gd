@@ -10,7 +10,7 @@ func _init(controller: GameController) -> void:
 
 func landing(t: Figure, at: Vector2, allow_combat: bool = false) -> bool:
 	var b := c.state.board
-	if not b.can_stand(at, Figure.BASE_RADIUS):
+	if not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at):
 		return false
 	for other in c.state.figures:
 		if other == t or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
@@ -61,6 +61,7 @@ func points(f: Figure, t: Figure, id: String, first_only: bool = false) -> Array
 
 
 func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false) -> void:
+	t.spell_effects.erase("bones_of_the_earth")
 	var old := t.pos
 	var height := t.elevation
 	t.pos = at
@@ -86,7 +87,7 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var highest := t.elevation
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
-		if not b.can_stand(at, Figure.BASE_RADIUS) or b.height_at(at) > highest + 0.5:
+		if not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
 			break
 		# Other figures don't interrupt the trajectory; choose a legal final base.
 		if landing(t, at, true):

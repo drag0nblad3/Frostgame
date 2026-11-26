@@ -1,7 +1,7 @@
 class_name TerrainMagic
 extends RefCounted
 ## Dynamic terrain on the exposed-surface heightfield.
-const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade"]
+const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection"]
 var c: GameController
 
 
@@ -11,6 +11,8 @@ func _init(controller: GameController) -> void:
 
 func footprint(id: String, at: Vector2, rotated: bool) -> Rect2:
 	var size := Vector2(6, 6) if id == "mud" else (Vector2(1, 6) if rotated else Vector2(6, 1))
+	if id == "circle_of_protection":
+		size = Vector2(3, 3)
 	if id in ["explosive_rune", "planar_tear", "grenade"]:
 		size = Vector2(0.5, 0.5)
 	return Rect2(at - size * 0.5, size)
@@ -21,6 +23,16 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 	var rect := footprint(id, at, rotated)
 	if not b.contains(rect.position) or not b.contains(rect.end):
 		return false
+	if id == "circle_of_protection":
+		for p in b.pieces:
+			if p.kind.id == "spell_circle_of_protection" and p.caster_id == f.id:
+				return false
+		if f.pos.distance_to(at) > 2.0 or absf(f.elevation - b.height_at(at)) > 0.1:
+			return false
+		for t in c.state.figures:
+			if t.in_play() and (t.is_demon() or t.def.traits.has("undead")) and absf(t.elevation - b.height_at(at)) < 0.5 and t.pos.distance_to(at) < 2.0:
+				return false
+		return true
 	if id == "mud":
 		return f.pos.distance_to(at) <= 24 and LineOfSight.check(b, f.pos, at).clear
 	if id == "grenade":
@@ -90,13 +102,13 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14) ->
 	var kind := TerrainKind.new()
 	kind.id = "spell_" + id
 	kind.name = id.capitalize()
-	kind.height = 0.04 if id in ["mud", "explosive_rune"] else 3.0
+	kind.height = 0.04 if id in ["mud", "explosive_rune", "circle_of_protection"] else 3.0
 	kind.blocks_los = id in ["wall", "fog"]
 	kind.blocks_move = id == "wall"
 	kind.walkable_top = id == "wall"
 	kind.move_mult = 2.0 if id == "mud" else 1.0
 	var p := TerrainPiece.new(kind, footprint(id, at, rotated))
-	p.circular = id in ["mud", "explosive_rune"]
+	p.circular = id in ["mud", "explosive_rune", "circle_of_protection"]
 	p.cast_turn = c.state.turn
 	p.caster_id = f.id
 	c.state.board.pieces.append(p)
@@ -108,6 +120,10 @@ func expire() -> void:
 	var s := c.state
 	for p in s.board.pieces.duplicate():
 		if p.cast_turn < 0:
+			continue
+		if p.kind.id == "spell_circle_of_protection":
+			if c.dice.d20() <= 3:
+				remove(p)
 			continue
 		if p.kind.id == "spell_explosive_rune":
 			var owner := s.figure(p.caster_id)
@@ -192,3 +208,12 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 func trigger_landing(f: Figure) -> void:
 	for p in triggered(f, f.pos):
 		explode(p)
+
+
+static func ward_blocks(b: Board, f: Figure, at: Vector2) -> bool:
+	if f == null or (not f.is_demon() and not f.def.traits.has("undead")):
+		return false
+	for p in b.pieces:
+		if p.kind.id == "spell_circle_of_protection" and p.rect.get_center().distance_to(at) < 1.5 + Figure.BASE_RADIUS and absf(b.height_at(at) - b.height_at(p.rect.get_center())) < 0.5:
+			return true
+	return false

@@ -76,8 +76,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return not t.insects_immune() and not t.spell_effects.has(id)
 	if id == "suggestion":
 		return t != f and not t.spell_effects.has("mind_lock")
+	if id == "bones_of_the_earth":
+		return not t.def.traits.has("large") and t.elevation < 0.01 and not t.spell_effects.has(id)
 	if id == "leap":
-		return t.side == f.side and not t.spell_effects.has("petrify") and not movement.points(f, t, id, true).is_empty()
+		return t.side == f.side and not t.spell_effects.has("bones_of_the_earth") and not t.spell_effects.has("petrify") and not movement.points(f, t, id, true).is_empty()
 	if id == "transpose":
 		for other in s.figures:
 			if movement.can_swap(f, t, other):
@@ -358,6 +360,8 @@ func finish(health: int) -> bool:
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
 					_direct_attack(f, other, 5)
+		"bones_of_the_earth":
+			t.spell_effects[id] = true
 		"possess":
 			t.spell_effects[id] = f.id
 		"slow", "curse", "furious_quill", "plague_of_insects":

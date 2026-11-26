@@ -389,3 +389,31 @@ func use_stored_action() -> bool:
 	f.actions_left += 1
 	emit("stored_action", {"id": f.id})
 	return true
+
+
+func can_fight_hand(id: int) -> bool:
+	var f := state.active()
+	var t := state.figure(id)
+	return can_act() and not f.spell_effects.has("blinding_light") and t != null and t.in_play() and t.spell_effects.has("bones_of_the_earth") and (f == t or Contact.figures_touch(f, t))
+
+
+func fight_hand(id: int) -> bool:
+	if not can_fight_hand(id):
+		return false
+	var f := state.active()
+	var t := state.figure(id)
+	var support := 0
+	for ally in state.figures:
+		if ally != f and ally.in_play() and ally.side == f.side and (ally == t or Contact.figures_touch(ally, t)):
+			support += 2
+	var attack := dice.d20() + mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + mini(6, support), 10) + f.roll_penalty()
+	var defend := dice.d20()
+	_spend(f)
+	var freed := attack >= defend and attack + f.melee.damage_mod + MagicEquipment.bonus(f, "damage", f.melee.id) > 10
+	if freed:
+		t.spell_effects.erase("bones_of_the_earth")
+		emit("spell_expired", {"id": t.id, "spell": "bones_of_the_earth"})
+	if defend >= attack:
+		_hurt(f, maxi(0, defend - f.effective_armour() + f.melee.enemy_damage_mod), t)
+	emit("fight_hand", {"id": f.id, "target": id, "attack": attack, "defence": defend, "freed": freed})
+	return true

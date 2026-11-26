@@ -213,7 +213,8 @@
     "name": "Bones of the Earth",
     "school": "necromancer",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "special",
+    "range": 18
   },
   "control_undead": {
     "name": "Control Undead",
@@ -406,7 +407,7 @@
     "name": "Circle of Protection",
     "school": "thaumaturge",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "destroy_undead": {
     "name": "Destroy Undead",

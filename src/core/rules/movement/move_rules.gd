@@ -16,4 +16,4 @@ static func allowance(f: Figure) -> float:
 ## Figures in combat can't simply walk away.
 ## TODO(rules): leaving combat (and any free strike) is not modelled yet.
 static func can_move(f: Figure, figures: Array[Figure]) -> bool:
-	return not Contact.in_combat(figures, f)
+	return not f.spell_effects.has("bones_of_the_earth") and not Contact.in_combat(figures, f)

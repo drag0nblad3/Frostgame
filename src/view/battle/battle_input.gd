@@ -92,6 +92,8 @@ func refresh() -> void:
 				available.append("exit")
 				break
 	for enemy in c.state.figures:
+		if c.can_fight_hand(enemy.id) and not available.has("fight_hand"):
+			available.append("fight_hand")
 		if c.can_fight(enemy.id) and not available.has("fight"):
 			available.append("fight")
 		if c.can_shoot(enemy.id) and not available.has("shoot"):
@@ -241,6 +243,12 @@ func preview() -> void:
 						nodes.append(n)
 						points.append(MoveGrid.to_pos(n))
 			hint = "Tap a marked destination." if mode == "move" else "Tap a marked table edge to retreat."
+		"fight_hand":
+			for t in c.state.figures:
+				if c.can_fight_hand(t.id):
+					targets.append(t)
+			radius = 0.65
+			hint = "Attack the skeletal hand holding this figure."
 		"fight", "shoot":
 			for t in c.state.figures:
 				if (c.can_fight(t.id) if mode == "fight" else c.can_shoot(t.id)):
@@ -394,7 +402,7 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
@@ -423,6 +431,7 @@ func tap(screen: Vector2) -> bool:
 				preview()
 				return false
 			"select": return c.activate(id)
+			"fight_hand": return c.fight_hand(id)
 			"fight": return c.fight(id)
 			"shoot": return c.shoot(id)
 	var hit: Variant = _surface_at(screen)

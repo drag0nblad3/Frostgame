@@ -201,3 +201,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Additional bases
 
 - p.106: Temple (+3 Miraculous Cure and 16+ healing potion), Crypt (+2 Raise Zombie/Animate Skull including battle casts), Tower (+2 Awareness, future Reveal Secret) and Library (15–18 scroll, 19–20 grimoire) join the existing Brewery, Treasury and Laboratory. The base selector describes each benefit. Inn reserves, purchased resources, and the Reveal Secret ritual remain pending. 
+
+## Immobilization and protective circles
+
+- pp.114–115: Bones of the Earth immobilizes a ground-level, nonlarge figure until a successful fight against its hand, cancellation or magical movement other than Leap. The hand is represented by a status and contextual fight target; adjacent allies can attack/support. Assumed Armour 10 for hand (not specified in spell description); no dedicated hand model. Circle of Protection is a visible 3-inch diameter area, one per caster, blocks demon/undead pathing and forced-movement landings, expires on 1–3 at turn end and can be dispelled. Circle uses ground-projected geometry and excludes creation overlapping affected figures; voluntary end-turn cancellation and creature summoning/pushback edge cases pending.
