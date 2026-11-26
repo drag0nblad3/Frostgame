@@ -199,6 +199,7 @@ func shoot(target_id: int) -> bool:
 func _shoot_authorized(f: Figure, t: Figure) -> void:
 	if not f.in_play() or not t.in_play():
 		return
+	_magic.illusions.reveal(f)
 	var declared := t.id
 	t = ShotTarget.randomize(dice, state.figures, t)
 	var res := Shooting.resolve(dice, state.board, f, t, state.critical_hits, state.storm_penalty)

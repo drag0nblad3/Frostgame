@@ -82,7 +82,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 		return false
 	var used := 0
 	var info: Dictionary = catalog()[item_id(item)]
-	if item["kind"] == "gear" and PowerPool.CAPACITY.has(item_id(item)) and unit["type"] not in ["wizard", "apprentice"]:
+	if item.get("gear", "") == "gear_ring_transference" and unit["type"] not in ["wizard", "apprentice"]:
 		return false
 	if item["kind"] == "gear" and not MagicEquipment.compatible(db.get_def(unit["type"]), info):
 		return false

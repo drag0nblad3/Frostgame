@@ -221,7 +221,7 @@
     "buy": 400,
     "sell": 150,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_ring_power1": {
     "name": "Ring of Power (1)",

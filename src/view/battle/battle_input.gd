@@ -23,6 +23,8 @@ var spell_first := -1
 var counter_index := 0
 var counter_choices: Array[Dictionary] = []
 var empower := 0
+var transfer_target := -1
+var transfer_amount := 1
 
 
 func _init(controller: GameController, command_bar: BattleHud, cam: Camera3D, overlay: BattleMarkers) -> void:
@@ -78,6 +80,10 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	for t in c.state.figures:
+		if GearActions.transfer_max(c, t) > 0:
+			available.append("gear_ring_transference")
+			break
 	for item in f.items:
 		var id := str(item.get("potion", ""))
 		for t in c.state.figures:
@@ -167,6 +173,19 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"gear_transfer_target":
+			for t in c.state.figures:
+				if GearActions.transfer_max(c, t) > 0:
+					targets.append(t)
+			radius = 0.65
+			hint = "Choose a wounded ally in sight."
+		"gear_transfer_amount":
+			var t := c.state.figure(transfer_target)
+			points.append(t.pos)
+			radius = 0.65
+			hint = "Transfer %d Health to %s (maximum %d)." % [transfer_amount, t.label(), GearActions.transfer_max(c, t)]
+			if transfer_amount == f.health:
+				hint += " Warning: caster will be knocked out."
 		"gear_teleport":
 			points.assign(GearActions.teleport_points(c))
 			hint = "Choose a destination within 8 inches."
@@ -338,6 +357,11 @@ func action(key: String) -> bool:
 		GearActions.arm(c, key)
 		preview()
 		return false
+	if key == "gear_ring_transference":
+		mode = "gear_transfer_target"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
 	if key == "gear_ring_teleportation":
 		mode = "gear_teleport"
 		available.assign(["potion_cancel"])
@@ -410,6 +434,13 @@ func action(key: String) -> bool:
 		preview()
 		return false
 	match key:
+		"transfer_plus", "transfer_minus":
+			transfer_amount = clampi(transfer_amount + (1 if key == "transfer_plus" else -1), 1, GearActions.transfer_max(c, c.state.figure(transfer_target)))
+			_transfer_buttons()
+			preview()
+			return false
+		"transfer_confirm":
+			return GearActions.transfer(c, c.state.figure(transfer_target), transfer_amount)
 		"cancel_bridge":
 			return c._magic.terrain.cancel_bridge(c.state.active())
 		"use_stored_action":
@@ -509,11 +540,18 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
+			"gear_transfer_target":
+				transfer_target = id
+				transfer_amount = 1
+				mode = "gear_transfer_amount"
+				_transfer_buttons()
+				preview()
+				return false
 			"breathe_fire":
 				return c._potions.breathe(c.state.figure(id))
 			"potion_target":
@@ -659,3 +697,11 @@ func _declared(ok: bool) -> bool:
 		available.assign([key])
 		action(key)
 	return ok
+
+
+func _transfer_buttons() -> void:
+	available.assign(["potion_cancel", "transfer_confirm"])
+	if transfer_amount > 1:
+		available.append("transfer_minus")
+	if transfer_amount < GearActions.transfer_max(c, c.state.figure(transfer_target)):
+		available.append("transfer_plus")

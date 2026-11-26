@@ -6,7 +6,7 @@ static func can_use(c: GameController, id: String) -> bool:
 	var f := c.state.active()
 	if not c.can_act() or not ActiveGear.ready(f, id) or Contact.in_combat(c.state.figures, f) or FuryRules.target(c.state, f) != null:
 		return false
-	if id in ["gear_gloves_casting", "gear_wand_light"]:
+	if id in ["gear_gloves_casting", "gear_wand_light", "gear_ring_transference"]:
 		return f.def.role in ["wizard", "apprentice"]
 	return true
 
@@ -62,3 +62,29 @@ static func horn(c: GameController, p: TerrainPiece) -> bool:
 			c.emit("gear_used", {"id": f.id, "gear": "gear_horn_destruction"})
 			return true
 	return false
+
+
+static func transfer_max(c: GameController, t: Figure) -> int:
+	if not can_use(c, "gear_ring_transference"):
+		return 0
+	var f := c.state.active()
+	if t == null or t == f or not t.in_play() or t.side != f.side or not IllusionRules.visible_to(c.state.figures, f, t) or Shooting.distance(f, t) > 24.0 or not LineOfSight.check(c.state.board, f.pos, t.pos).clear:
+		return 0
+	return maxi(0, mini(5, mini(f.health, t.def.health - t.health)))
+
+
+static func transfer(c: GameController, t: Figure, amount: int) -> bool:
+	if amount <= 0 or amount > transfer_max(c, t):
+		return false
+	var f := c.state.active()
+	ActiveGear.spend(f, "gear_ring_transference")
+	c._spend(f)
+	c._hurt(f, amount, f, false)
+	# Unlike Heal, the ring transfers Health rather than casting a healing spell.
+	var old := t.health
+	t.health = mini(t.def.health, t.health + amount)
+	if t.health > old:
+		t.poisoned = false
+	c.emit("heal", {"id": t.id, "amount": t.health - old, "health": t.health})
+	c.emit("gear_used", {"id": f.id, "target": t.id, "gear": "gear_ring_transference", "amount": amount})
+	return true

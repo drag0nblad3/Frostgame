@@ -265,3 +265,7 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ## Shatterstar Draught
 
 - p.93: a spellcaster drinks the draught and declares two attempts at the same known spell within that activation. Both complete declarations (including placement, counter selection and movement destinations) precede any rolls. Players may instead resolve the first declaration only. Casts use the same action, independent casting rolls/empowerment and sequential resistance; a dead caster or removed second target prevents the second attempt. Complex targets can become invalid between attempts (e.g. two copies of a unique summoned object); this first implementation does not fully revalidate all such effects. AI does not use Shatterstar yet.
+
+## Ring of Transference and errata
+
+- Official Second Edition errata (https://www.ospreypublishing.com/media/sygpbj4n/fgv-errata-and-faq-v2.pdf, p.1): the missing Ring of Transference description limits it to spellcasters and permits once-per-game, one-action Health transfer up to five points to a visible ally, without exceeding recipient starting Health. UI selects ally and exact amount; self-knockout is permitted and warned. Shooting now reveals an invisible shooter. Ordinary soldiers may carry power items (inert unless a caster). Other errata, including control replacement and Wizard Eye origin restrictions, require additional audit. All 40 standard magic equipment identities have initial implementations; Fate Stone remains partial.
