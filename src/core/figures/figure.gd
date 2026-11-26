@@ -9,6 +9,7 @@ var id := 0
 var campaign_id := -1
 var injury_types := {}
 var familiar := false
+var battle_ref: WeakRef
 var original_side := 0
 var controller_id := -1
 var control_spell := ""
@@ -80,6 +81,9 @@ func effective_fight() -> int:
 		return 0
 	var value := def.fight - (1 if treasure_id >= 0 and treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
 	value += 1 if spell_effects.has("potion_strength") else 0
+	value += 2 if spell_effects.has("possess") else 0
+	if affected_by_insects():
+		value = maxi(0, value - 4)
 	if spell_effects.has("petrify"):
 		value = maxi(0, value - 3)
 	return value
@@ -88,6 +92,7 @@ func effective_fight() -> int:
 func effective_armour() -> int:
 	var total := def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0) + (1 if spell_effects.has("enchant_armour") else 0)
 	total += (1 if spell_effects.has("potion_toughness") else 0) + MagicEquipment.bonus(self, "armour")
+	total += 1 if spell_effects.has("possess") else 0
 	return total if def.role == "creature" else mini(total, 15)
 
 
@@ -101,7 +106,7 @@ func effective_move() -> int:
 
 
 func effective_will() -> int:
-	return def.will + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0)
+	return def.will + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
 
 
 func action_limit() -> int:
@@ -115,7 +120,8 @@ func roll_penalty() -> int:
 
 
 func effective_shoot() -> int:
-	return def.shoot - (4 if spell_effects.has("furious_quill") else 0)
+	var value := def.shoot - (4 if spell_effects.has("furious_quill") else 0)
+	return maxi(0, value - 4) if affected_by_insects() else value
 
 
 func immune_to_poison() -> bool:
@@ -132,3 +138,27 @@ func early_limit() -> int:
 
 func shooting_defence_penalty() -> int:
 	return -int(injury_types.get("lost_eye", 0))
+
+
+func is_demon() -> bool:
+	return def.traits.has("demon") or spell_effects.has("possess")
+
+
+func insects_immune() -> bool:
+	return def.traits.has("large") or def.traits.has("undead") or def.traits.has("construct")
+
+
+func affected_by_insects() -> bool:
+	if insects_immune():
+		return false
+	if spell_effects.has("plague_of_insects"):
+		return true
+	if battle_ref == null:
+		return false
+	var s: GameState = battle_ref.get_ref()
+	if s == null:
+		return false
+	for other in s.figures:
+		if other.in_play() and other.spell_effects.has("plague_of_insects") and Shooting.distance(self, other) <= 1.0 + BASE_RADIUS:
+			return true
+	return false

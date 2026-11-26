@@ -65,6 +65,15 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t.side != f.side
 	if id == "fast_act":
 		return t != f and not t.activated and not s.is_fast(t) and (t.side == f.side or t.side < 0) and not s.group.members.has(t.id)
+	if id == "possess":
+		if t.side != f.side or t.def.role in ["wizard", "apprentice"] or t.is_demon() or s.group.members.has(t.id):
+			return false
+		for other in s.figures:
+			if other.in_play() and int(other.spell_effects.get("possess", -1)) == f.id:
+				return false
+		return true
+	if id == "plague_of_insects":
+		return not t.insects_immune() and not t.spell_effects.has(id)
 	if id == "suggestion":
 		return t != f and not t.spell_effects.has("mind_lock")
 	if id == "leap":
@@ -214,7 +223,7 @@ func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll := not known and ScrollActions.consume(f, id)
 	var raw := 14 if scroll else c.dice.d20()
-	var total := 14 if scroll else CastingRoll.modified(raw, f.roll_penalty() + WordMagic.modifier(c.state, id) - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
+	var total := 14 if scroll else CastingRoll.modified(raw, f.roll_penalty() + WordMagic.modifier(c.state, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	c._spend(f)
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll}
@@ -339,7 +348,7 @@ func finish(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.def.traits.has("demon") and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.is_demon() and LineOfSight.check(s.board, f.pos, other.pos).clear:
 					_banish(f, other, int(result["roll"]), 4)
 		"scatter_shot":
 			for other in s.figures:
@@ -349,7 +358,9 @@ func finish(health: int) -> bool:
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
 					_direct_attack(f, other, 5)
-		"slow", "curse", "furious_quill":
+		"possess":
+			t.spell_effects[id] = f.id
+		"slow", "curse", "furious_quill", "plague_of_insects":
 			t.spell_effects[id] = int(result["roll"])
 			if id == "slow" and t == s.active():
 				t.actions_left = 0
@@ -422,6 +433,7 @@ func on_activate(f: Figure) -> void:
 func on_end_activation(f: Figure) -> void:
 	f.petrified_skip = false
 	_resist_effect(f, "slow")
+	_resist_effect(f, "plague_of_insects")
 	if f.in_play() and f.control_spell == "mind_control" and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty(), f.control_roll):
 		summons.release(f)
 

@@ -33,7 +33,7 @@ func begin(s: GameState, owner: int, ids: Array[int]) -> bool:
 	var candidates := s.early.waiting(s, owner)
 	var seen: Array[int] = []
 	for id in ids:
-		if seen.has(id) or not candidates.has(s.figure(id)):
+		if seen.has(id) or not candidates.has(s.figure(id)) or s.figure(id).spell_effects.has("possess"):
 			return false
 		seen.append(id)
 	side = owner

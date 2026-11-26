@@ -33,7 +33,7 @@ func can_control(f: Figure, t: Figure, id: String) -> bool:
 		return false
 	if id == "mind_control":
 		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless") and not t.spell_effects.has("mind_lock")
-	return t.def.traits.has(CONTROL[id])
+	return t.is_demon() if id == "control_demon" else t.def.traits.has(CONTROL[id])
 
 
 func can_place(f: Figure, id: String, at: Vector2) -> bool:

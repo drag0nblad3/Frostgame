@@ -364,7 +364,7 @@
     "name": "Plague of Insects",
     "school": "summoner",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "planar_tear": {
     "name": "Planar Tear",
@@ -382,7 +382,7 @@
     "name": "Possess",
     "school": "summoner",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "summon_demon": {
     "name": "Summon Demon",

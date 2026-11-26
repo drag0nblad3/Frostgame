@@ -85,7 +85,7 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14) ->
 			if not t.in_play() or Vector2(t.pos.distance_to(at), t.elevation - c.state.board.height_at(at)).length() > 2.0 + Figure.BASE_RADIUS:
 				continue
 			if not StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty(), roll):
-				c._hurt(t, roll if t.def.traits.has("demon") else 2, f, false)
+				c._hurt(t, roll if t.is_demon() else 2, f, false)
 		return
 	var kind := TerrainKind.new()
 	kind.id = "spell_" + id

@@ -73,6 +73,7 @@ func _spawn_at(type: String, at: Vector2, side: int = -1) -> Figure:
 		id = maxi(id, f.id + 1)
 	var creature := Figure.new(id, s.creature_db.get_def(type), side, at, s.creature_db.unarmed())
 	creature.elevation = s.board.height_at(at)
+	creature.battle_ref = weakref(s)
 	s.figures.append(creature)
 	c.emit("creature_spawn", {"id": id})
 	return creature

@@ -193,3 +193,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Treasure manipulation
 
 - pp.122,132–133: Telekinesis chooses uncarried treasure within 16 inches and a destination within 6 inches, excluding special Museum treasure and the untouched central token. The heightfield checks sampled sight and rejects obscured routes rather than simulating a midair drop. Fool's Gold selects a carrier and a legal destination within 4 inches, with Will resistance. Suggestion selects a figure and a safe destination within 3 inches (or its present location), drops carried treasure on failed resistance, and respects Mind Lock. Endpoints use the existing half-inch lattice; forced movement is approximate.
+
+## Possession and mobile insect clouds
+
+- pp.127–128: Possess adds +2 Fight/+1 Armour/-2 Will, counts the subject as a demon for Banish, Control Demon and Planar Tear, and prevents group activation. One living possessed subject per caster; targets already declared in a group are excluded to avoid altering its staged action order. Plague of Insects is a moving radius effect, recalculated directly from current figure positions; nonimmune figures suffer -4 Fight/Shoot (minimum 0), -2 casting, without stacking. Large, undead and construct figures are immune; the original host rolls to end the effect after activation. The radius is measured using exposed-surface distances and the base radius; cloud graphics and optional interactive repeat resistance remain pending.

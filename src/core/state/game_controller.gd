@@ -18,6 +18,8 @@ var _potions: PotionActions
 
 func _init(s: GameState, d: Dice) -> void:
 	state = s
+	for f in s.figures:
+		f.battle_ref = weakref(s)
 	dice = d
 	_flow = TurnFlow.new(self)
 	_loot = TreasureActions.new(self)
