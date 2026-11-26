@@ -3,12 +3,27 @@ extends RefCounted
 ## Uncontrolled creatures prioritize combat, the closest visible warband
 ## member and finally random movement. A pack uses its leader's pursuit.
 
-static func weakest(s: GameState, f: Figure) -> Figure:
+static func weakest(s: GameState, f: Figure,avoid_mask: bool=true) -> Figure:
 	var target: Figure = null
+	var alternative: Figure=null
 	for enemy in Contact.enemies_of(s.figures, f):
 		if target == null or enemy.health < target.health or (enemy.health == target.health and enemy.id < target.id):
 			target = enemy
-	return target
+		if not masked(enemy) and (alternative==null or enemy.health<alternative.health or (enemy.health==alternative.health and enemy.id<alternative.id)):
+			alternative=enemy
+	return alternative if avoid_mask and f.side<0 and alternative!=null else target
+
+
+static func masked(f: Figure) -> bool:
+	return ActiveGear.has(f,"gear_rk_creature_mask") and not MagicEquipment.suppressed(f)
+
+
+static func apply_mask_cost(s: GameState,f: Figure,target: Figure) -> void:
+	if f.side>=0:
+		return
+	var original := weakest(s,f,false)
+	if original!=null and original!=target and masked(original) and not masked(target):
+		original.used_gear["rk_mask_will"]=int(original.used_gear.get("rk_mask_will",0))+1
 
 
 static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:

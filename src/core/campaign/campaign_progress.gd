@@ -20,7 +20,7 @@ func deployment() -> Dictionary:
 	var units: Array = []
 	var ragged := RaggedWarbands.active(data)
 	var locked := RedKingCampaign.economy_locked(data)
-	var reserve := -1 if locked else BaseResources.reserve_id(data, FigureDb.load_files())
+	var reserve := -1 if locked else BaseResources.reserve_id(data, FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data)))
 	for unit: Dictionary in data["units"]:
 		if unit["dead"] or unit.get("dismissed", false) or (ragged and unit.get("ragged_absent",false)) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
 			continue
@@ -69,6 +69,8 @@ func can_deploy() -> bool:
 	if RedKingCampaign.active(data) and RedKingCampaign.next_id(data).is_empty():
 		return false
 	if not data.get("pending_treasure", []).is_empty():
+		return false
+	if not BaseResources.fits(data,FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
 		return false
 	if RaggedWarbands.active(data) and RaggedWarbands.has_unassigned(data):
 		return false
@@ -400,7 +402,7 @@ func choose_base(id: String) -> bool:
 	var proposed := data.duplicate(true)
 	proposed["base"] = id
 	proposed["resources"] = []
-	if not BaseResources.fits(proposed, FigureDb.load_files()):
+	if not BaseResources.fits(proposed, FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
 		return false
 	data["base"] = id
 	data["resources"] = []
@@ -446,6 +448,8 @@ func learn_grimoire(index: int, db: FigureDb) -> bool:
 
 
 func recruitment_cost(id: String, db: FigureDb) -> int:
+	if id == "foulhorn":
+		return 200
 	if id == "apprentice":
 		return 100 + 10 * int(data["level"])
 	var discount := 10 if BaseResources.owns(data, "carrier_pigeons") else 0
@@ -458,6 +462,17 @@ func can_hire(id: String, db: FigureDb) -> bool:
 	if not CampaignSuccession.living_wizard(data) or not db.available(id) or not ContentProfile.from_campaign(data).allows("figures",id) or int(data["gold"]) < recruitment_cost(id, db):
 		return false
 	var d := db.get_def(id)
+	if id=="foulhorn":
+		var book := false
+		for item: Dictionary in data["loot"]:
+			if item.get("gear","")=="gear_rk_book_of_the_foulhorn" and int(item.get("owner",-1))<0:
+				book=true
+		if not book:
+			return false
+		for member: Dictionary in data["units"]:
+			if member["type"]=="foulhorn" and not member["dead"] and not member.get("dismissed",false):
+				return false
+		return BaseResources.fits(data,db,id)
 	for unit: Dictionary in data["units"]:
 		if id == "apprentice" and unit["type"] == "apprentice" and CampaignPotions.preserved(data, unit):
 			return false
@@ -473,7 +488,7 @@ func hire(id: String, db: FigureDb) -> bool:
 	if not can_hire(id, db):
 		return false
 	data["gold"] = int(data["gold"]) - recruitment_cost(id, db)
-	data["units"].append({"type": id, "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false})
+	data["units"].append({"type": id, "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false,"permanent_summon":id=="foulhorn"})
 	return true
 
 
@@ -484,9 +499,13 @@ func dismiss(index: int) -> bool:
 	if unit["dead"] or unit["type"] == "wizard" or unit.get("dismissed", false):
 		return false
 	unit["dismissed"] = true
-	for item: Dictionary in data["loot"]:
+	for i in range(data["loot"].size()-1,-1,-1):
+		var item: Dictionary=data["loot"][i]
 		if int(item.get("owner", -1)) == index:
-			item["owner"] = -1
+			if item.get("gear","") in ["gear_rk_construct_spikes","gear_construct_hammer"]:
+				data["loot"].remove_at(i)
+			else:
+				item["owner"] = -1
 	return true
 
 

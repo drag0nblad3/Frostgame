@@ -115,3 +115,32 @@ func test_equipment_traits() -> void:
 	var construct := fig("medium_construct",0,Vector2(14,10))
 	construct.items.append({"gear":"gear_rk_construct_spikes","gear_info":catalog["gear_rk_construct_spikes"]})
 	check(construct.has_horns())
+
+
+func test_creature_mask_cost_is_only_paid_on_redirection() -> void:
+	var catalog := RedKingRewards.catalog()
+	var wizard := fig("wizard",0,Vector2(10,10))
+	var other := fig("thug",0,Vector2(12,10))
+	var creature := fig("wolf",-1,Vector2(11,10))
+	var c := make_game(make_board(),[wizard,other,creature],Dice.new(3))
+	wizard.health=3
+	wizard.items.append({"gear":"gear_rk_creature_mask","gear_info":catalog["gear_rk_creature_mask"]})
+	check_eq(CreatureBot.weakest(c.state,creature),other)
+	check_eq(wizard.effective_will(),wizard.def.will)
+	CreatureBot.apply_mask_cost(c.state,creature,other)
+	check_eq(wizard.effective_will(),wizard.def.will-1)
+	other.out_of_action=true
+	check_eq(CreatureBot.weakest(c.state,creature),wizard)
+	CreatureBot.apply_mask_cost(c.state,creature,wizard)
+	check_eq(wizard.effective_will(),wizard.def.will-1)
+
+
+func test_charisma_specialist_cap() -> void:
+	var d := {"units":[{"type":"wizard","id":0,"dead":false}],"loot":[]}
+	for i in 5:
+		d["units"].append({"type":"archer","id":i+1,"dead":false})
+	check(not BaseResources.fits(d,db()))
+	d["loot"].append({"gear":"gear_rk_amulet_of_charisma","kind":"gear","owner":0,"unlocked":true})
+	check_eq(BaseResources.specialist_limit(d),5)
+	check(BaseResources.fits(d,db()))
+	check(not CampaignInventory.assign_item(d,0,-1,db()))

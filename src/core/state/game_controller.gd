@@ -40,6 +40,7 @@ func emit(type: String, data: Dictionary = {}) -> void:
 
 
 func start_game() -> void:
+	RedKingGear.foulhorn_brawl(self)
 	RedKingInvestigations.prepare(self)
 	RedKingVeil.prepare(self)
 	RedKingMind.prepare(self)
@@ -243,6 +244,7 @@ func fight(target_id: int) -> bool:
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
+	CreatureBot.apply_mask_cost(state,f,t)
 	_spend(f)
 	_fate_combat.start(f, t, "fight")
 	return true

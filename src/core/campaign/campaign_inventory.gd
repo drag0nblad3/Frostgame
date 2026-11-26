@@ -98,7 +98,11 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 		item["owner"] = owner
 		return true
 	if owner == -1:
+		var previous := int(item.get("owner",-1))
 		item["owner"] = -1
+		if item.get("gear","") in ["gear_rk_amulet_of_charisma","gear_rk_book_of_wisdom"] and not BaseResources.fits(d,db):
+			item["owner"]=previous
+			return false
 		return true
 	if item.get("potion", "") in CampaignPotions.VAULT_ONLY:
 		return false
@@ -112,6 +116,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var used := 0
 	var info: Dictionary = catalog()[item_id(item)]
 	if info.get("expansion","")=="red_king" and (not info["live"] or not item.get("unlocked",true)):
+		return false
+	if info.get("vault_only",false):
 		return false
 	if info.get("wizard_only",false) and unit["type"]!="wizard":
 		return false

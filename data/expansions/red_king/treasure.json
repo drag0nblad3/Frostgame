@@ -392,8 +392,9 @@
       "buy": 300,
       "sell": 100,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "vault_only": true
     },
     "gear_rk_ivory_hand": {
       "name": "Ivory Hand",
@@ -430,19 +431,23 @@
       "buy": 500,
       "sell": 150,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "wizard_only": true
     },
     "gear_rk_amulet_of_charisma": {
       "name": "Amulet of Charisma",
       "type": "item",
       "buy": 0,
       "sell": 300,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "will": -1
+      },
+      "live": true,
       "artefact": true,
       "unlock_tn": 18,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "wizard_only": true
     },
     "gear_rk_scroll_shield": {
       "name": "Scroll Shield",
@@ -517,10 +522,11 @@
       "buy": 0,
       "sell": 250,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 16,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_pulsing_gem": {
       "name": "Pulsing Gem",

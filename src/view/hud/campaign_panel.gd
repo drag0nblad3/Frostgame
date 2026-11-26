@@ -108,7 +108,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 			changed())
 	recruit = OptionButton.new()
 	for id: String in db.figures:
-		if db.available(id) and db.get_def(id).role in ["soldier", "apprentice"]:
+		if db.available(id) and (db.get_def(id).role in ["soldier", "apprentice"] or id=="foulhorn"):
 			recruit.add_item(db.get_def(id).name)
 			recruit.set_item_metadata(recruit.item_count - 1, id)
 	col.add_child(recruit)

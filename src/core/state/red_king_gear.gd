@@ -84,3 +84,19 @@ static func puppet(f: Figure) -> bool:
 
 static func puppet_penalty(f: Figure,t: Figure) -> int:
 	return -2 if puppet(f) and Shooting.distance(f,t)<=8.0 else 0
+
+
+static func foulhorn_brawl(c: GameController) -> void:
+	for f in c.state.figures:
+		if f.def.id!="foulhorn" or f.side<0 or f.campaign_id<0 or not f.in_play():
+			continue
+		if c.dice.d20()<16:
+			continue
+		var allies: Array[Figure]=[]
+		for other in c.state.figures:
+			if other!=f and other.original_side==f.original_side and other.campaign_id>=0 and other.in_play():
+				allies.append(other)
+		if not allies.is_empty():
+			var victim: Figure=allies[c.dice.pick(allies.size())]
+			victim.health=maxi(1,victim.health-3)
+			c.emit("foulhorn_brawl",{"id":f.id,"target":victim.id,"damage":3})
