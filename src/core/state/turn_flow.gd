@@ -46,6 +46,7 @@ func _settle() -> void:
 	var s := _c.state
 	while not s.over and s.waiting(s.current_side()).is_empty():
 		if s.phase == Phase.CREATURE:
+			_c._magic.on_end_turn()
 			start_turn()
 			return
 		s.order_index += 1

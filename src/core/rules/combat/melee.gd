@@ -31,8 +31,8 @@ static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 static func resolve(dice: Dice, figures: Array[Figure], a: Figure, b: Figure, critical_hits: bool = false) -> Dictionary:
 	var ar := dice.d20()
 	var br := dice.d20()
-	var at := ar + fight_mod(figures, a, b)
-	var bt := br + fight_mod(figures, b, a)
+	var at := ar + fight_mod(figures, a, b) + a.roll_penalty()
+	var bt := br + fight_mod(figures, b, a) + b.roll_penalty()
 	var out := {"a_roll": ar, "b_roll": br, "a_total": at, "b_total": bt, "a_dmg": 0, "b_dmg": 0}
 	var ac := critical_hits and ar == 20
 	var bc := critical_hits and br == 20

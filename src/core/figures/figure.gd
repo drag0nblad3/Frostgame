@@ -16,6 +16,7 @@ var treasure_id := -1
 var disengaged := {}
 var spell_effects := {}
 var elemental_shield := 0
+var poisoned := false
 ## Turn bookkeeping, reset by the controller each turn.
 var activated := false
 var actions_left := 0
@@ -51,17 +52,33 @@ func in_play() -> bool:
 
 
 func effective_fight() -> int:
-	return def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0)
+	return def.fight - (1 if treasure_id >= 0 and def.treasure_encumbered() else 0) + (2 if spell_effects.has("strength") else 0) + (1 if spell_effects.has("combat_awareness") else 0) - (2 if spell_effects.has("furious_quill") else 0)
 
 
 func effective_armour() -> int:
-	var total := def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0)
+	var total := def.armour + (2 if spell_effects.has("shield") else 0) + (1 if spell_effects.has("combat_awareness") else 0) + (1 if spell_effects.has("enchant_armour") else 0)
 	return total if def.role == "creature" else mini(total, 15)
 
 
 func effective_move() -> int:
-	return def.move + (2 if spell_effects.has("fleet_feet") else 0)
+	return maxi(1, def.move + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0))
 
 
 func effective_will() -> int:
 	return def.will + (2 if spell_effects.has("mind_lock") else 0)
+
+
+func action_limit() -> int:
+	return 1 if poisoned or spell_effects.has("slow") else 2
+
+
+func roll_penalty() -> int:
+	return -2 if spell_effects.has("curse") else 0
+
+
+func effective_shoot() -> int:
+	return def.shoot - (4 if spell_effects.has("furious_quill") else 0)
+
+
+func immune_to_poison() -> bool:
+	return def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")

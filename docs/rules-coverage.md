@@ -83,3 +83,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Integration refinements
 
 - pp. 36, 57–59, 65, 197: permanent warband Armour cap 15 (core rules), Glow correctly increases attack total, hasty-shot modifier on spell attacks, random targeting among connected melee participants for mundane and single-target spell shots. AI avoids uncertain friendly-fire shots where possible. Strong and Powerful creature melee traits are functional. Roster dialog construction and deployment smoke coverage added. Existing flat line of sight and cover approximations remain.
+
+## Ongoing magic and poison
+
+- pp. 60, 118, 120, 124, 131: Slow, Curse, Furious Quill, Enchant Armour, Elemental Ball and Destroy Undead now execute. Ongoing effects modify live stats and rolls, with automatic resistance rolls at their specified timing. Poison reduces activations to one action, cannot stack, is cured by actual healing, and does not affect undead/constructs/demons. Elemental Ball uses connected melee expansion, but the existing flat LOS/cover model does not yet fully account for intervening figures. Resistance empowerment and armour-equipment distinctions remain partial.

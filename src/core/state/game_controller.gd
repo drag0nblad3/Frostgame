@@ -48,11 +48,13 @@ func activate(id: int) -> bool:
 	if state.active_id != -1 or f == null or not activatable().has(f):
 		return false
 	state.active_id = id
+	if not state.group.in_progress() or state.group.movement_pass():
+		_magic.on_activate(f)
 	if state.group.in_progress():
 		state.group.start_member(state, f)
 	else:
 		state.early.record_activation(state, f)
-		f.actions_left = 2
+		f.actions_left = f.action_limit()
 		f.moves_taken = 0
 		f.acted = false
 	emit("activate", {"id": id})
@@ -177,6 +179,8 @@ func end_activation() -> void:
 	emit("end_activation", {"id": f.id})
 	if state.group.in_progress():
 		var before := state.group.stage
+		if before == GroupActivation.SECOND:
+			_magic.on_end_activation(f)
 		var complete := state.group.finish_member(state, f)
 		if complete:
 			emit("group_complete", {"side": f.side})
@@ -185,6 +189,7 @@ func end_activation() -> void:
 			emit("group_second", {"side": f.side})
 		return
 	f.activated = true
+	_magic.on_end_activation(f)
 	_flow.after_activation()
 
 
@@ -205,6 +210,11 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		if dmg == 0:
 			return
 	var out := Damage.apply(f, dmg)
+	if combat and not out and by != f and by.def.traits.has("poison") and not f.immune_to_poison() and not f.poisoned:
+		f.poisoned = true
+		if state.active() == f:
+			f.actions_left = mini(f.actions_left, 0 if f.acted or f.moves_taken > 0 else 1)
+		emit("poison", {"id": f.id})
 	emit("damage", {"id": f.id, "by": by.id, "amount": dmg, "health": f.health})
 	if out:
 		_loot.drop_on_death(f)

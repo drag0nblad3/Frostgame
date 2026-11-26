@@ -74,7 +74,8 @@
     "name": "Elemental Ball",
     "school": "elementalist",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "area_shot",
+    "range": 16
   },
   "raise_zombie": {
     "name": "Raise Zombie",
@@ -86,7 +87,7 @@
     "name": "Slow",
     "school": "chronomancer",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "buff"
   },
   "fast_act": {
     "name": "Fast Act",
@@ -98,7 +99,7 @@
     "name": "Enchant Armour",
     "school": "enchanter",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "buff"
   },
   "enchant_weapon": {
     "name": "Enchant Weapon",
@@ -134,7 +135,7 @@
     "name": "Furious Quill",
     "school": "sigilist",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "buff"
   },
   "mind_control": {
     "name": "Mind Control",
@@ -170,7 +171,7 @@
     "name": "Curse",
     "school": "witch",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "buff"
   },
   "fog": {
     "name": "Fog",
@@ -183,5 +184,11 @@
     "school": "witch",
     "number": 10,
     "kind": "unimplemented"
+  },
+  "destroy_undead": {
+    "name": "Destroy Undead",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "special"
   }
 }
