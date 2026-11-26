@@ -14,7 +14,7 @@ func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0) -> void:
 	var mod := t.effective_will() + t.roll_penalty() + bonus
 	var success := StatRoll.succeeds(raw, mod, tn)
 	var caster := t.def.role in ["wizard", "apprentice"]
-	var max_health := t.health if caster and raw != 1 and raw != 20 and t.in_play() else 0
+	var max_health := t.health + PowerPool.available(t) if caster and raw != 1 and raw != 20 and t.in_play() else 0
 	var needed := maxi(0, tn - raw - mini(mod, 10))
 	var data := {"id": t.id, "raw": raw, "mod": mini(mod, 10), "tn": tn, "max": max_health}
 	if not success and max_health > 0 and t.side == c.state.reaction_side:
@@ -23,7 +23,7 @@ func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0) -> void:
 		c.emit("resistance_offer", data.duplicate())
 		return
 	var spend := 0
-	if not success and needed <= mini(2, max_health) and needed < t.health:
+	if not success and needed <= mini(2, max_health) and needed < t.health + PowerPool.available(t):
 		spend = needed
 	_resolve(data, spend, done)
 
@@ -42,7 +42,8 @@ func answer(spend: int) -> bool:
 func _resolve(p: Dictionary, spend: int, done: Callable) -> void:
 	var t := c.state.figure(p["id"])
 	var success := StatRoll.succeeds(p["raw"], p["mod"], p["tn"], spend)
-	if spend > 0:
-		c._hurt(t, spend, t, false)
-	c.emit("resistance_result", {"id": t.id, "raw": p["raw"], "mod": p["mod"], "tn": p["tn"], "spent": spend, "success": success})
+	var power := PowerPool.spend(t, spend)
+	if spend > power:
+		c._hurt(t, spend - power, t, false)
+	c.emit("resistance_result", {"id": t.id, "raw": p["raw"], "mod": p["mod"], "tn": p["tn"], "spent": spend - power, "power": power, "success": success})
 	done.call(success)

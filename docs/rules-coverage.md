@@ -163,3 +163,7 @@ Inventory follow-up: renamed the UI owner selector to avoid a native Node proper
 ## Weapon destruction
 
 - p. 118: Decay selects one visible mundane weapon, never natural/unarmed weapons or magic/enhanced weapons. Destroyed weapons remain unavailable for the battle; a figure falls back to another standard melee weapon or unarmed combat. Ranged destruction disables shooting and reloading. Original definitions and campaign equipment are unchanged so mundane weapons are restored on deployment. Weapon choice outside destruction, caster mundane customization and duplicate weapons are pending.
+
+## Power items
+
+- pp. 64–65, 102: staffs of power (1/2/3), ring and wand of power (1), and orb of power (6) add an empowerment pool shared by casting and supported Will resistance. Empowerment consumes rechargeable power first, then orb charges, then Health; the UI displays both costs. Staff/ring/wand charges reset between battles; orb remaining power persists and a depleted orb is removed. Automatic source priority is a digital simplification; choosing a specific resource to spend remains pending.

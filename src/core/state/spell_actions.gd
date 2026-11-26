@@ -186,9 +186,11 @@ func max_empowerment() -> int:
 	var p := c.state.pending_cast
 	if p.is_empty() or p.get("scroll", false):
 		return 0
+	var f := c.state.figure(p["caster"])
+	var resources := maxi(0, f.health) + PowerPool.available(f)
 	if p["id"] == "summon_demon":
-		return 0 if int(p["raw"]) == 1 else c.state.figure(p["caster"]).health
-	return CastingRoll.max_empowerment(p["total"], c.state.figure(p["caster"]).health)
+		return 0 if int(p["raw"]) == 1 else resources
+	return CastingRoll.max_empowerment(p["total"], resources)
 
 
 func finish(health: int) -> bool:
@@ -199,14 +201,16 @@ func finish(health: int) -> bool:
 	var f := s.figure(p["caster"])
 	var t := s.figure(p["target"])
 	var id: String = p["id"]
-	var result := CastingRoll.resolve(p["total"], p["tn"], health, f.health, false, 100 if id == "summon_demon" else 18)
+	var result := CastingRoll.resolve(p["total"], p["tn"], health, maxi(0, f.health) + PowerPool.available(f), false, 100 if id == "summon_demon" else 18)
 	if p.get("scroll", false):
 		result = {"success": true, "roll": 14, "health_spent": 0, "failure_damage": 0}
 	elif id == "summon_demon" and int(p["raw"]) == 1:
 		result["success"] = false
 	s.pending_cast = {}
-	c._hurt(f, int(result["health_spent"]) + int(result["failure_damage"]), f, false)
-	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": health, "tn": p["tn"], "failure_damage": result["failure_damage"], "scroll": p.get("scroll", false)})
+	var power := PowerPool.spend(f, int(result["health_spent"]))
+	var hp := int(result["health_spent"]) - power
+	c._hurt(f, hp + int(result["failure_damage"]), f, false)
+	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": hp, "power": power, "tn": p["tn"], "failure_damage": result["failure_damage"], "scroll": p.get("scroll", false)})
 	if id == "summon_demon" and int(p["raw"]) == 1 and not p.get("scroll", false):
 		summons.miscast_demon(f)
 		return true

@@ -49,6 +49,8 @@ func refresh() -> void:
 		var info: Dictionary = catalog[CampaignInventory.item_id(item)]
 		var assigned := int(item.get("owner", -1))
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
+		if CampaignInventory.item_id(item) == PowerPool.ORB:
+			suffix += " · %d power" % PowerPool.remaining(item)
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
 		loot.set_item_metadata(loot.item_count - 1, i)
 	recipient_choice.add_item("Vault")

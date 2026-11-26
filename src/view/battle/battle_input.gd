@@ -191,10 +191,12 @@ func preview() -> void:
 			var t := c.state.figure(p["id"])
 			points.append(t.pos)
 			radius = 0.65
-			hint = "%s resists: rolled %d + %d Will, needs %d. Spend %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], empower, int(p["raw"]) + int(p["mod"]) + empower]
+			var power := mini(empower, PowerPool.available(t))
+			hint = "%s resists: %d + %d Will, needs %d. Spend %d power + %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], power, empower - power, int(p["raw"]) + int(p["mod"]) + empower]
 		"empower":
 			var p := c.state.pending_cast
-			hint = "%s: rolled %d (modified %d), needs %d. Spend %d HP → %d. Confirm to resolve." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], empower, int(p["total"]) + empower]
+			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"])))
+			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
 		"intercept":

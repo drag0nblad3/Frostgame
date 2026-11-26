@@ -66,6 +66,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 		return false
 	var used := 0
 	var info: Dictionary = catalog()[item_id(item)]
+	if item["kind"] == "gear" and PowerPool.CAPACITY.has(item_id(item)) and unit["type"] not in ["wizard", "apprentice"]:
+		return false
 	if item["kind"] == "gear" and not MagicEquipment.compatible(db.get_def(unit["type"]), info):
 		return false
 	for i in d["loot"].size():
@@ -128,7 +130,10 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 		elif item["kind"] == "scroll":
 			items.append({"scroll": item["scroll"], "campaign_item": true})
 		elif item["kind"] == "gear":
-			items.append({"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true})
+			var gear := {"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true}
+			if item["gear"] == PowerPool.ORB:
+				gear["power_left"] = PowerPool.remaining(item)
+			items.append(gear)
 	return items
 
 
@@ -137,19 +142,24 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 		if f.original_side != side or f.campaign_id < 0:
 			continue
 		var remaining := {}
+		var orb_left := -1
 		for item: Dictionary in f.items:
 			if item.get("campaign_item", false):
 				var id := item_id(item)
+				if id == PowerPool.ORB:
+					orb_left = PowerPool.remaining(item)
 				remaining[id] = int(remaining.get(id, 0)) + 1
 		for i in range(d["loot"].size() - 1, -1, -1):
 			var item: Dictionary = d["loot"][i]
 			if not is_item(item) or int(item.get("owner", -1)) != f.campaign_id:
 				continue
 			var id := item_id(item)
-			if int(remaining.get(id, 0)) <= 0:
+			if int(remaining.get(id, 0)) <= 0 or (id == PowerPool.ORB and orb_left == 0):
 				d["loot"].remove_at(i)
 			else:
 				remaining[id] = int(remaining[id]) - 1
+				if id == PowerPool.ORB:
+					item["power_left"] = orb_left
 
 
 static func lose_owned(d: Dictionary, owner: int) -> void:

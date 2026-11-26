@@ -205,7 +205,7 @@
     "buy": 300,
     "sell": 150,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_staff_power2": {
     "name": "Staff of Power (2)",
@@ -213,7 +213,7 @@
     "buy": 400,
     "sell": 200,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_ring_transference": {
     "name": "Ring of Transference",
@@ -229,7 +229,7 @@
     "buy": 200,
     "sell": 100,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_orb_power6": {
     "name": "Orb of Power (6)",
@@ -237,7 +237,7 @@
     "buy": 500,
     "sell": 200,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_staff_casting": {
     "name": "Staff of Casting",
@@ -359,7 +359,7 @@
     "buy": 300,
     "sell": 150,
     "bonus": {},
-    "live": false
+    "live": true
   },
   "gear_staff_power3": {
     "name": "Staff of Power (3)",
@@ -367,6 +367,6 @@
     "buy": 1200,
     "sell": 300,
     "bonus": {},
-    "live": false
+    "live": true
   }
 }
