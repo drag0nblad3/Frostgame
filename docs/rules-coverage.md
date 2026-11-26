@@ -50,3 +50,8 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 
 - Pages 38–39, 49, 68, 71: fixed five-token scenario, pickup/contact/enemy exclusion, carrying penalties, drop, death drop, extraction as a movement action, secured/lost status, non-campaign scoring and remaining-warband recovery rolls implemented. Gold boxes, carrier attachment, score display and objective-first bot added. Original combat-only scenario remains for regression tests.
 - Digital approximations: fixed hand-authored token positions; base/token radii and half-inch grid; retreat requires enough movement to cross the edge; 12-turn safety limit retained (unresolved treasure is not scored at timeout). Bot exit heuristic may stall at terrain. No random encounter rolls, Run For It, forced combat, or vertical distance yet. No manual player input yet.
+
+## Interactive skirmish
+
+- Human side 0 and automatic rival; legal activation/target previews and contextual Move, Fight, Shoot, Reload, Collect, Drop, Exit and End commands. The same controller validates both bot and human actions; view only emits intents.
+- Explicit movement and retreat previews use the current lattice; tap hit testing uses projected figure locations and a flat table ray. Phone gesture/layout checks still required on a physical device. Watch mode retained for debugging.

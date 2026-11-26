@@ -25,7 +25,7 @@ func pick_up(id: int) -> bool:
 	return true
 
 
-func drop(at: Vector2) -> bool:
+func can_drop(at: Vector2) -> bool:
 	var f := _c.state.active()
 	if f == null or not f.in_play() or f.treasure_id < 0 or f.actions_left <= 0:
 		return false
@@ -38,9 +38,14 @@ func drop(at: Vector2) -> bool:
 	for other in _c.state.figures:
 		if other.in_play() and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
 			return false
+	return f.moves_taken == 0 or _c.can_act()
+
+
+func drop(at: Vector2) -> bool:
+	if not can_drop(at):
+		return false
+	var f := _c.state.active()
 	if f.moves_taken > 0:
-		if not _c.can_act():
-			return false
 		_c._spend(f)
 	else:
 		f.actions_left -= 1
@@ -61,11 +66,12 @@ func _drop(f: Figure, at: Vector2) -> void:
 	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at})
 
 
-func exit_table(node: Vector2i) -> bool:
+func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if not _c.can_move():
 		return false
 	var f := _c.state.active()
-	var r := _c.reach()
+	if r == null:
+		r = _c.reach()
 	var at := MoveGrid.to_pos(node)
 	if not r.can_reach(node) or TreasureRules.edge_distance(_c.state.board, at) > Figure.BASE_RADIUS + 0.01:
 		return false
@@ -75,6 +81,13 @@ func exit_table(node: Vector2i) -> bool:
 	for enemy in _c.state.figures:
 		if enemy.in_play() and enemy.side != f.side and Contact.touching(enemy.pos, at):
 			return false
+	return true
+
+
+func exit_table(node: Vector2i) -> bool:
+	if not can_exit(node):
+		return false
+	var f := _c.state.active()
 	if not _c.move_to(node):
 		return false
 	if f.treasure_id >= 0:

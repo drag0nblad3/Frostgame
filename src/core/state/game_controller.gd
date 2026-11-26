@@ -82,11 +82,16 @@ func can_act() -> bool:
 	return f != null and f.in_play() and f.actions_left > 0 and not f.acted
 
 
+func can_fight(target_id: int) -> bool:
+	var t := state.figure(target_id)
+	return can_act() and t != null and Contact.enemies_of(state.figures, state.active()).has(t)
+
+
 func fight(target_id: int) -> bool:
+	if not can_fight(target_id):
+		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	if not can_act() or t == null or not Contact.enemies_of(state.figures, f).has(t):
-		return false
 	var res := Melee.resolve(dice, state.figures, f, t, state.critical_hits)
 	_spend(f)
 	res["id"] = f.id
@@ -119,15 +124,16 @@ func shoot(target_id: int) -> bool:
 
 
 ## Reload may replace the movement action (p. 34); never while engaged.
-func reload() -> bool:
+func can_reload() -> bool:
 	var f := state.active()
-	if f == null or f.actions_left <= 0 or f.ranged == null or not f.ranged.needs_reload or f.loaded:
+	return f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
+
+
+func reload() -> bool:
+	if not can_reload():
 		return false
-	if Contact.in_combat(state.figures, f):
-		return false
+	var f := state.active()
 	if f.moves_taken > 0:
-		if not can_act():
-			return false
 		_spend(f)
 	else:
 		f.actions_left -= 1
@@ -175,3 +181,11 @@ func drop_treasure(at: Vector2) -> bool:
 
 func exit_table(node: Vector2i) -> bool:
 	return _loot.exit_table(node)
+
+
+func can_drop_treasure(at: Vector2) -> bool:
+	return _loot.can_drop(at)
+
+
+func can_exit_table(node: Vector2i, r: MoveReach = null) -> bool:
+	return _loot.can_exit(node, r)

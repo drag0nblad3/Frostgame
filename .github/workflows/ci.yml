@@ -21,6 +21,11 @@ jobs:
         run: godot --headless --import
       - name: Unit tests
         run: godot --headless -s tests/run_tests.gd
+      - name: Player interaction smoke test
+        run: |
+          set -o pipefail
+          godot --headless -s tests/player_smoke.gd 2>&1 | tee player-smoke.log
+          ! grep -E "SCRIPT ERROR|Parse Error" player-smoke.log
       - name: Smoke run main scene
         run: |
           set -o pipefail

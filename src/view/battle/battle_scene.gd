@@ -1,6 +1,5 @@
 extends Node3D
-## Composition root for watching a game: loads the scenario, wires the
-## controller to the views, and lets the bot play both warbands.
+## Composition root for human-vs-bot play or optional bot-vs-bot observation.
 
 const SCENARIO := "treasure_skirmish"
 ## Pause between bot activations in Auto mode (seconds).
@@ -10,6 +9,11 @@ var controller: GameController
 var player: EventPlayer
 var hud: BattleHud
 var auto_play := false
+var watch_mode := false
+var player_side := 0
+var _input: BattleInput
+var _markers: BattleMarkers
+var _dirty := true
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
@@ -27,15 +31,26 @@ func _ready() -> void:
 	add_child(_rig)
 	hud = BattleHud.new()
 	add_child(hud)
-	hud.step_pressed.connect(step)
+	hud.step_pressed.connect(func() -> void:
+		if watch_mode:
+			step())
 	hud.auto_toggled.connect(func(on: bool) -> void: auto_play = on)
+	hud.watch_toggled.connect(set_watch_mode)
+	hud.action_pressed.connect(_on_action)
 	hud.new_game_pressed.connect(func() -> void: new_game(0))
+	_rig.tapped.connect(_on_tap)
+	_markers = BattleMarkers.new()
+	add_child(_markers)
 	new_game(0)
 
 
 func new_game(seed_value: int) -> void:
 	if player != null:
 		player.queue_free()
+	_markers.clear()
+	auto_play = false
+	hud.set_auto(false)
+	_wait = 0.0
 	var state := ScenarioLoader.load_id(SCENARIO, _figures, _terrain)
 	controller = GameController.new(state, Dice.new(seed_value))
 	_board_view.build(state.board)
@@ -52,20 +67,29 @@ func new_game(seed_value: int) -> void:
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
 	controller.event_emitted.connect(player.push)
+	controller.event_emitted.connect(_on_event)
+	_input = BattleInput.new(controller, hud, _rig.camera, _markers)
 	controller.start_game()
 	_update_status()
+	_dirty = true
 
 
 ## Plays one bot activation for whichever side is to move.
 func step() -> void:
-	if controller.state.over or not player.idle():
+	if controller.state.over or not player.idle() or controller.state.active() != null:
 		return
 	Bot.play_activation(controller)
 	_update_status()
 
 
 func _process(delta: float) -> void:
-	if not auto_play or controller.state.over or not player.idle():
+	if controller == null or not player.idle():
+		_wait = 0.0
+		return
+	if _dirty:
+		_refresh()
+	var s := controller.state
+	if s.over or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side):
 		_wait = 0.0
 		return
 	_wait += delta
@@ -74,13 +98,61 @@ func _process(delta: float) -> void:
 		step()
 
 
+func set_watch_mode(on: bool) -> void:
+	if controller.state.active() != null or not player.idle():
+		hud.set_watch(watch_mode, false, false)
+		return
+	watch_mode = on
+	auto_play = false
+	hud.set_auto(false)
+	_dirty = true
+
+
+func _human_turn() -> bool:
+	return not watch_mode and not controller.state.over and controller.state.current_side() == player_side
+
+
+func _on_event(_event: GameEvent) -> void:
+	_dirty = true
+
+
+func _refresh() -> void:
+	_dirty = false
+	_update_status()
+	hud.set_watch(watch_mode, controller.state.active() == null, true)
+	if _human_turn():
+		_input.refresh()
+	else:
+		_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
+
+
+func _lock_after_action() -> void:
+	_input.lock("Resolving action…")
+	hud.set_watch(watch_mode, false, false)
+	_update_status()
+	_dirty = true
+
+
+func _on_action(key: String) -> void:
+	if _human_turn() and player.idle() and not _dirty:
+		if _input.action(key):
+			_lock_after_action()
+
+
+func _on_tap(at: Vector2) -> void:
+	if _human_turn() and player.idle() and not _dirty and not hud.blocks_tap(at):
+		if _input.tap(at):
+			_lock_after_action()
+
+
 func _update_status() -> void:
 	var s := controller.state
 	var score := ""
 	for side in s.side_count():
 		score += "  |  %s: %d" % [s.side_names[side], s.secured_count(side)]
 	if s.over:
-		hud.set_status("Turn %d — game over%s" % [s.turn, score])
+		var result := "Draw" if s.winner < 0 else "%s win" % s.side_names[s.winner]
+		hud.set_status("Turn %d — %s%s" % [s.turn, result, score])
 		return
 	hud.set_status("Turn %d · %s · %s%s" % [s.turn, Phase.name_of(s.phase), s.side_names[s.current_side()], score])
 

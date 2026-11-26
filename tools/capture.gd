@@ -17,6 +17,7 @@ func _initialize() -> void:
 		_left = int(args[1])
 	_scene = load("res://scenes/main.tscn").instantiate()
 	root.add_child(_scene)
+	_scene.watch_mode = true
 
 
 func _process(_delta: float) -> bool:
