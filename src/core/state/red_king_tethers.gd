@@ -47,6 +47,7 @@ static func destroyed(c: GameController,f: Figure,by: Figure) -> void:
 	if by!=null and by.side>=0:
 		c.emit("tether_xp",{"side":by.side,"xp":50})
 	if remaining(s)==0:
+		s.board.edge_links.clear()
 		s.board.set_boundaries([])
 		c.emit("boundary_changed",{})
 		c.emit("tethers_restored",{})
@@ -100,6 +101,7 @@ static func transform(c: GameController) -> void:
 	for i in [1,2]:
 		var x := s.board.size.x*float(i)/3.0
 		lines.append({"a":Vector2(x,0),"b":Vector2(x,s.board.size.y),"movement":true,"sight":true,"allow_spells":["plane_walk"]})
+	s.board.edge_links=BoardTopology.mobius(s.board.size,s.order[0] if not s.order.is_empty() else 0)
 	s.board.set_boundaries(lines)
 	c.emit("boundary_changed",{})
 	c.emit("tethers_crack",{})

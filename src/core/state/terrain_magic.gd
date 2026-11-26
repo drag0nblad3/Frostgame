@@ -211,6 +211,18 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var orb_contact := false
 	for i in range(1, path.size()):
 		var at := path[i]
+		if BoardTopology.is_transfer(c.state.board,path[i-1],at):
+			if chunk.size()>1:
+				c.emit("move",{"id":f.id,"path":chunk,"cost":cost})
+			var old := path[i-1]
+			f.pos=at
+			f.elevation=c.state.board.height_at(at)
+			c.emit("forced_relocation",{"id":f.id,"from":old,"at":at,"height":f.elevation})
+			chunk=PackedVector2Array([at])
+			trigger_landing(f)
+			if not f.in_play():
+				return false
+			continue
 		if RedKingSinkhole.active(c.state):
 			var touches := RedKingSinkhole.touches(c.state,at)
 			if touches and not orb_contact and not RedKingSinkhole.touches(c.state,path[i-1]):

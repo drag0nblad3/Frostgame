@@ -35,6 +35,12 @@ static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 				r.cost[m] = nc
 				r.prev[m] = n
 				heap.push(nc, m)
+		for m: Vector2i in BoardTopology.destinations(grid.board,n):
+			var nc := c+Figure.BASE_RADIUS
+			if grid.open(m) and nc<=allowance+0.001 and nc<r.cost.get(m,INF):
+				r.cost[m]=nc
+				r.prev[m]=n
+				heap.push(nc,m)
 	return r
 
 
@@ -78,6 +84,11 @@ static func distance_field(board: Board, target: Vector2) -> Dictionary:
 			if nc < field.get(m, INF):
 				field[m] = nc
 				heap.push(nc, m)
+		for m: Vector2i in BoardTopology.sources(board,n):
+			var nc := c+Figure.BASE_RADIUS
+			if grid.open(m) and nc<field.get(m,INF):
+				field[m]=nc
+				heap.push(nc,m)
 	return field
 
 

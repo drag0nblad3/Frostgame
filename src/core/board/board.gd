@@ -11,6 +11,8 @@ var pieces: Array[TerrainPiece] = []
 var floor_layout := {}
 ## Serialized rule boundaries; ordinary battlefields have none.
 var boundaries: Array[Dictionary]=[]
+## Directed links between edge segments and their destination centers.
+var edge_links: Array[Dictionary]=[]
 
 
 func contains(p: Vector2, margin: float = 0.0) -> bool:

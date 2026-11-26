@@ -1,0 +1,48 @@
+class_name BoardTopology
+extends RefCounted
+## Directed, costed edge connections. Sight is deliberately independent.
+## Source ranges are half-open; arriving figures appear at destination centers.
+static func mobius(size: Vector2,priority: int) -> Array[Dictionary]:
+	var links: Array[Dictionary]=[]
+	var width := size.x/3.0
+	for strip in 3:
+		var next := (strip+1)%3
+		var previous := (strip+2)%3
+		# The priority side determines which end is numbered odd.
+		var odd_y := Figure.BASE_RADIUS if priority==0 else size.y-Figure.BASE_RADIUS
+		var even_y := size.y-odd_y
+		var direction := 1 if priority==0 else -1
+		var next_strip := next if direction==1 else previous
+		var previous_strip := previous if direction==1 else next
+		links.append({"y":even_y,"min_x":strip*width,"max_x":(strip+1)*width,"to":Vector2((next_strip+0.5)*width,odd_y)})
+		links.append({"y":odd_y,"min_x":strip*width,"max_x":(strip+1)*width,"to":Vector2((previous_strip+0.5)*width,even_y)})
+	return links
+
+
+static func destinations(board: Board,node: Vector2i) -> Array[Vector2i]:
+	var out: Array[Vector2i]=[]
+	if board.edge_links.is_empty():
+		return out
+	var at := MoveGrid.to_pos(node)
+	for link in board.edge_links:
+		if is_equal_approx(at.y,float(link["y"])) and at.x>=float(link["min_x"]) and at.x<float(link["max_x"]):
+			out.append(MovePlanner.node_at(link["to"]))
+	return out
+
+
+static func sources(board: Board,node: Vector2i) -> Array[Vector2i]:
+	var out: Array[Vector2i]=[]
+	if board.edge_links.is_empty():
+		return out
+	for link in board.edge_links:
+		if MovePlanner.node_at(link["to"])!=node:
+			continue
+		for x in range(ceili(float(link["min_x"])/MoveGrid.STEP),ceili(float(link["max_x"])/MoveGrid.STEP)):
+			out.append(Vector2i(x,roundi(float(link["y"])/MoveGrid.STEP)))
+	return out
+
+
+static func is_transfer(board: Board,a: Vector2,b: Vector2) -> bool:
+	if board.edge_links.is_empty() or a.distance_to(b)<=MoveGrid.STEP*1.5:
+		return false
+	return destinations(board,MovePlanner.node_at(a)).has(MovePlanner.node_at(b))
