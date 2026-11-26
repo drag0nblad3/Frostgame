@@ -227,6 +227,7 @@ func _open_campaign() -> void:
 		_campaign_dialog.setup(_campaign, _figures)
 		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
 		_campaign_dialog.start_requested.connect(_create_campaign)
+		_campaign_dialog.restart_requested.connect(_restart_campaign)
 	_campaign_dialog.refresh(_campaign_battle)
 	_campaign_dialog.popup_centered_ratio(0.85)
 
@@ -242,6 +243,13 @@ func _create_campaign() -> void:
 	_campaign.start(roster)
 	_campaign.save()
 	_campaign_dialog.refresh(false)
+
+
+func _restart_campaign() -> void:
+	if _campaign_battle:
+		return
+	_campaign.data = {}
+	_create_campaign()
 
 
 func _begin_campaign_battle() -> void:

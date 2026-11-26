@@ -216,7 +216,7 @@ static func treasure_result(roll: int, dice: Dice) -> Dictionary:
 
 
 func improve_spell(id: String) -> bool:
-	if data.is_empty() or bool(data["spell_improved"]) or int(data["xp"]) < 100 or not data["spells"].has(id) or int(data["spells"][id]) <= 5:
+	if not CampaignSuccession.living_wizard(data) or bool(data["spell_improved"]) or int(data["xp"]) < 100 or not data["spells"].has(id) or int(data["spells"][id]) <= 5:
 		return false
 	data["spells"][id] = int(data["spells"][id]) - 1
 	data["xp"] = int(data["xp"]) - 100
@@ -277,7 +277,7 @@ func choose_base(id: String) -> bool:
 
 
 func can_improve_stat(id: String, db: FigureDb) -> bool:
-	if data.is_empty() or not STAT_CAPS.has(id) or data.get("stat_improved", false) or int(data["xp"]) < 100:
+	if not CampaignSuccession.living_wizard(data) or not STAT_CAPS.has(id) or data.get("stat_improved", false) or int(data["xp"]) < 100:
 		return false
 	return int(db.get_def("wizard").get(id)) + int(data.get("advances", {}).get(id, 0)) < int(STAT_CAPS[id])
 
@@ -295,7 +295,7 @@ func improve_stat(id: String, db: FigureDb) -> bool:
 
 
 func learn_grimoire(index: int, db: FigureDb) -> bool:
-	if data.is_empty() or int(data["xp"]) < 100 or index < 0 or index >= data["loot"].size():
+	if not CampaignSuccession.living_wizard(data) or int(data["xp"]) < 100 or index < 0 or index >= data["loot"].size():
 		return false
 	var item: Dictionary = data["loot"][index]
 	var id: String = item.get("spell", "")
@@ -320,7 +320,7 @@ func recruitment_cost(id: String, db: FigureDb) -> int:
 
 
 func can_hire(id: String, db: FigureDb) -> bool:
-	if data.is_empty() or not db.figures.has(id) or int(data["gold"]) < recruitment_cost(id, db):
+	if not CampaignSuccession.living_wizard(data) or not db.figures.has(id) or int(data["gold"]) < recruitment_cost(id, db):
 		return false
 	var d := db.get_def(id)
 	for unit: Dictionary in data["units"]:

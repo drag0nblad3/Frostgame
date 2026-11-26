@@ -6,7 +6,7 @@ belongs to Osprey Games and Joseph A. McCullough, and no rulebook text is includ
 
 ![Bot vs bot game](docs/screenshot.png)
 
-**Status:** milestone 2 — playable human-vs-bot treasure skirmish, with movement and combat, optional bot-vs-bot observation, and automated rules tests. Magic and campaign play are still in development.
+**Status:** playable human-vs-bot skirmishes with initial implementations of the core spell, potion and magic gear catalogs, persistent between-battle campaigns, base resources and progression. Rules fidelity, scenario variety and battle save/resume are still in development.
 
 ## Run it
 1. Install [Godot 4.5+](https://godotengine.org/download) (standard build, not .NET).

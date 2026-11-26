@@ -10,11 +10,14 @@ static func catalog() -> Dictionary:
 	result.merge(JsonFile.read("res://data/magic_equipment.json"))
 	var spells: Dictionary = JsonFile.read("res://data/spells.json")
 	for id: String in spells:
-		result["scroll_" + id] = {"name": "Scroll: " + str(spells[id]["name"]), "buy": 250, "sell": 30, "live": spells[id]["kind"] not in ["unimplemented", "ritual"]}
+		result["scroll_" + id] = {"name": "Scroll: " + str(spells[id]["name"]), "buy": 250, "sell": 30, "live": spells[id]["kind"] != "unimplemented"}
+		result["grimoire_" + id] = {"name": "Grimoire: " + str(spells[id]["name"]), "buy": 500, "sell": 200, "live": true}
 	return result
 
 
 static func item_id(item: Dictionary) -> String:
+	if item.get("kind", "") == "grimoire":
+		return "grimoire_" + str(item["spell"])
 	if item.has("scroll"):
 		return "scroll_" + str(item["scroll"])
 	return str(item.get("gear", item.get("potion", "")))
@@ -116,7 +119,9 @@ static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 	if price <= 0 or int(d["gold"]) < price:
 		return false
 	d["gold"] = int(d["gold"]) - price
-	if id.begins_with("scroll_"):
+	if id.begins_with("grimoire_"):
+		d["loot"].append({"kind": "grimoire", "spell": id.trim_prefix("grimoire_")})
+	elif id.begins_with("scroll_"):
 		d["loot"].append({"kind": "scroll", "scroll": id.trim_prefix("scroll_"), "owner": -1})
 	elif id.begins_with("gear_"):
 		var item := {"kind": "gear", "gear": id, "owner": -1}
@@ -128,11 +133,17 @@ static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 	return true
 
 
+static func can_sell(d: Dictionary, item: Dictionary) -> bool:
+	if item["kind"] == "grimoire":
+		return d.get("spells", {}).has(item.get("spell", ""))
+	return is_item(item) and int(item.get("owner", -1)) < 0
+
+
 static func sell(d: Dictionary, index: int) -> bool:
 	if d.is_empty() or index < 0 or index >= d["loot"].size():
 		return false
 	var item: Dictionary = d["loot"][index]
-	if not is_item(item) or int(item.get("owner", -1)) >= 0:
+	if not can_sell(d, item):
 		return false
 	d["gold"] = int(d["gold"]) + int(catalog()[item_id(item)]["sell"])
 	d["loot"].remove_at(index)

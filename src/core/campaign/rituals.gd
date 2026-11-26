@@ -78,7 +78,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 					var member: Dictionary = d["units"][i]
 					if member.get("dismissed", false):
 						continue
-					if CampaignPotions.recently_dead(d, member) or (not member["dead"] and (int(member["injuries"]) > 0 or int(member["miss"]) > 0)):
+					if CampaignPotions.can_revive(d, member, FigureDb.load_files()) or (not member["dead"] and (int(member["injuries"]) > 0 or int(member["miss"]) > 0)):
 						out.append(str(i))
 	return out
 
