@@ -10,7 +10,7 @@ func _init(controller: GameController) -> void:
 
 func landing(t: Figure, at: Vector2, allow_combat: bool = false) -> bool:
 	var b := c.state.board
-	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at):
+	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or BattleBoundary.blocks_position(b.boundaries,at,t):
 		return false
 	for other in c.state.figures:
 		if other == t or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
@@ -89,7 +89,7 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var highest := t.elevation
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
-		if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
+		if BattleBoundary.blocks_segment(b.boundaries,origin,at,"movement",t) or ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
 			break
 		# Other figures don't interrupt the trajectory; choose a legal final base.
 		if landing(t, at, true):

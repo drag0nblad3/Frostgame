@@ -60,6 +60,8 @@ func push(own: bool) -> bool:
 func _clear_path(moving: Figure, dest: Vector2) -> bool:
 	for i in range(1, 5):
 		var p := moving.pos.lerp(dest, i / 4.0)
+		if BattleBoundary.blocks_segment(c.state.board.boundaries,moving.pos,p,"movement",moving) or BattleBoundary.blocks_position(c.state.board.boundaries,p,moving):
+			return false
 		if not c.state.board.can_stand(p, Figure.BASE_RADIUS):
 			return false
 		for f in c.state.figures:

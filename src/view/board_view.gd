@@ -18,6 +18,8 @@ var _pieces := {}
 var _decoration: Node3D
 var _ground: Node3D
 var _floor: MeshInstance3D
+var _boundary_view: Node3D
+var _boundary_key := ""
 var _ground_key := ""
 var _decoration_key := ""
 var _camera_at := Vector3(INF,INF,INF)
@@ -40,6 +42,8 @@ func build(board: Board) -> void:
 	_pieces.clear()
 	_board=board
 	_ground=null
+	_boundary_view=null
+	_boundary_key=""
 	_floor=null
 	_decoration=null
 	_ground_key=""
@@ -58,6 +62,12 @@ func sync_terrain(board: Board) -> void:
 		build(board)
 		return
 	var scenario := board.id if scenario_id.is_empty() else scenario_id
+	var boundary_key := str(board.boundaries)
+	if _boundary_view==null or _boundary_key!=boundary_key:
+		_remove(_boundary_view)
+		_boundary_view=BoundaryView.build(board)
+		add_child(_boundary_view)
+		_boundary_key=boundary_key
 	var ground_parts: Array[String]=[]
 	var static_parts: Array[String]=[]
 	var live := {}

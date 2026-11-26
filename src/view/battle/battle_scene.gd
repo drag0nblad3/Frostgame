@@ -362,7 +362,7 @@ func _human_turn() -> bool:
 
 
 func _on_event(event: GameEvent) -> void:
-	if event.type == "terrain_changed" and not _terrain_pending:
+	if event.type in ["terrain_changed","boundary_changed"] and not _terrain_pending:
 		_terrain_pending=true
 		call_deferred("_sync_terrain")
 	_dirty = true

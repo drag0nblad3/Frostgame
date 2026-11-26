@@ -29,5 +29,16 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 			piece.ramp_start = float(profile.get("start",0.0))
 			piece.ramp_end = float(profile.get("end",0.0))
 		b.pieces.append(piece)
-	b.invalidate_terrain()
+	var boundaries: Array[Dictionary]=[]
+	for entry: Dictionary in d.get("boundaries",[]):
+		var a: Array=entry.get("a",[])
+		var z: Array=entry.get("b",[])
+		if a.size()!=2 or z.size()!=2:
+			continue
+		var line := entry.duplicate(true)
+		line["a"]=Vector2(a[0],a[1])
+		line["b"]=Vector2(z[0],z[1])
+		if line["a"]!=line["b"]:
+			boundaries.append(line)
+	b.set_boundaries(boundaries)
 	return b
