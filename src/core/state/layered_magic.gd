@@ -12,7 +12,14 @@ static func can_teleport(c: GameController,n: Vector3i) -> bool:
 	if not c._magic.available_spell(f,"teleport") or Contact.in_combat(s.figures,f) or f.spell_effects.has("blinding_light") or s.group.in_progress():
 		return false
 	var layout := FloorLayout.from_dict(s.board.floor_layout)
-	if not layout.errors.is_empty() or not LayeredGrid.new(layout,f,s.figures).open(n):
+	return can_teleport_with(c,n,layout,LayeredGrid.new(layout,f,s.figures))
+
+
+## Reuses geometry for UI preview. Commit still runs complete action checks.
+static func can_teleport_with(c: GameController,n: Vector3i,layout: FloorLayout,grid: LayeredGrid) -> bool:
+	var s := c.state
+	var f := s.active()
+	if f==null or not layout.errors.is_empty() or not grid.open(n):
 		return false
 	var to := layout.world(n)
 	var from := Vector3(f.pos.x,f.elevation,f.pos.y)

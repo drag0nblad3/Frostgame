@@ -69,7 +69,7 @@ func _ready() -> void:
 	_button("warband","Create a warband")
 	_button("campaign","Campaign headquarters")
 	_button("training","Training yard")
-	_button("gatehouse","Gatehouse · floor lab")
+	_button("gatehouse","Gatehouse · experimental battle")
 	_button("guide","Field guide")
 	_label("A fan-made tactical tabletop simulator",13,Color(0.65,0.73,0.79))
 	var space := Control.new()
@@ -105,7 +105,7 @@ func _launch(key: String) -> void:
 	get_tree().root.set_meta(LAUNCH_KEY,key)
 	if key=="gatehouse":
 		get_tree().root.remove_meta(LAUNCH_KEY)
-		if get_tree().change_scene_to_file("res://scenes/layered_demo.tscn")!=OK:
+		if get_tree().change_scene_to_file("res://scenes/layered_skirmish.tscn")!=OK:
 			_launching=false
 		return
 	if get_tree().change_scene_to_file(BATTLE) != OK:

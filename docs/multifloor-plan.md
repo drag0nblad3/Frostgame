@@ -28,8 +28,11 @@ on the correct level and extracts via authored ground edges. Same-floor pushback
 and floor-aware drops are supported; falling from a ledge is still pending.
 Teleport is explicitly targeted at a named surface and uses normal casting rolls,
 optional empowerment, line of sight and exhaustion. Other spells and group
-movement remain disabled for the experimental map. The battle core has an
-end-to-end simulation test; the title-screen lab remains a separate interface.
+movement remain disabled for the experimental map. The battle core has an end-to-end simulation test and a dedicated title-screen
+experimental skirmish with floor selection, activation, combat, collection,
+extraction, Teleport empowerment and stepwise rival activations. The original
+floor lab remains accessible from the skirmish toolbar. Campaign play remains
+separate.
 
 ## Current boundary
 
