@@ -9,6 +9,8 @@ var size := Vector2(36, 36)
 var pieces: Array[TerrainPiece] = []
 ## Authored experimental floor data. Legacy maps leave this empty.
 var floor_layout := {}
+## Serialized rule boundaries; ordinary battlefields have none.
+var boundaries: Array[Dictionary]=[]
 
 
 func contains(p: Vector2, margin: float = 0.0) -> bool:
@@ -152,3 +154,8 @@ func invalidate_terrain() -> void:
 	_height_cache.clear()
 	static_step_cache.clear()
 	field_cache.clear()
+
+
+func set_boundaries(lines: Array[Dictionary]) -> void:
+	boundaries.assign(lines.duplicate(true))
+	invalidate_terrain()

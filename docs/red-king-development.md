@@ -24,3 +24,7 @@ The registry and 12-stage campaign manifest are established; the pack remains lo
 6. Full campaign simulations, save/resume, mobile rendering and disabled-pack regression checks.
 
 Book references: reality events pp. 9–18; campaign restrictions and recruit tables pp. 18–22; scenarios pp. 24–60; treasure pp. 64–85; bestiary pp. 86–92.
+
+## Bestiary and boundaries pass
+
+Eleven creature definitions checked against the supplied bestiary stat blocks (pp. 86–91), with pack-gated loading. Implemented movement-only perception, poison immunity and mundane missile damage cap; existing compatible traits are reused. Sense Magic contact with invisible targets, Pain-Blink, combustion, elemental blast, aura/automatic damage, reflection, immunity variants and other special traits remain pending. Generic boundary segments now affect standard movement and LOS, invalidate path caches, and survive checkpoints; topology helper is not yet integrated into path search, and no boundary rendering or layered-surface support is claimed.

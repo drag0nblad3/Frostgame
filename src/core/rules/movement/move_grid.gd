@@ -40,7 +40,7 @@ func open(n: Vector2i) -> bool:
 	if not in_bounds(n):
 		return false
 	var p := to_pos(n)
-	if not board.can_stand(p, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, p):
+	if not board.can_stand(p, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, p) or BattleBoundary.blocks_position(board.boundaries,p,mover):
 		return false
 	var height := board.height_at(p)
 	for o in others:
@@ -80,6 +80,8 @@ func step_cost(a: Vector2i, b: Vector2i) -> float:
 
 
 func segment_cost(pa: Vector2, pb: Vector2) -> float:
+	if BattleBoundary.blocks_segment(board.boundaries,pa,pb,"movement",mover):
+		return INF
 	var mid := (pa + pb) * 0.5
 	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
