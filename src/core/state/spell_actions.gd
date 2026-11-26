@@ -215,7 +215,7 @@ func start_swap(first: int, second: int) -> bool:
 	return _roll("transpose", first, null, false, second)
 
 
-func placement_points(id: String, first_only: bool = false, rotated: bool = false) -> Array[Vector2]:
+func placement_points(id: String, first_only: bool = false, rotated: bool = false,extended: bool=false) -> Array[Vector2]:
 	var f := c.state.active()
 	var empty: Array[Vector2] = []
 	if not c.state.board.floor_layout.is_empty():
@@ -229,7 +229,7 @@ func placement_points(id: String, first_only: bool = false, rotated: bool = fals
 	if id == "teleport":
 		return movement.points(f, f, id, first_only)
 	if TerrainMagic.SPELLS.has(id):
-		return terrain.points(f, id, rotated, first_only)
+		return terrain.points(f,id,rotated,first_only,extended)
 	return summons.points(f, id, first_only)
 
 
@@ -237,19 +237,19 @@ func is_placement(id: String) -> bool:
 	return id == "teleport" or SummonActions.PLACEMENT.has(id) or TerrainMagic.SPELLS.has(id)
 
 
-func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
-	if placement_points(id, true, rotated).is_empty():
+func start_at(id: String, at: Vector2, rotated: bool = false,extended: bool=false) -> bool:
+	if placement_points(id,true,rotated,extended).is_empty():
 		return false
 	var f := c.state.active()
 	if id == "teleport":
 		if not movement.can_land(f, f, id, at):
 			return false
 	elif TerrainMagic.SPELLS.has(id):
-		if not terrain.can_place(f, id, at, rotated):
+		if not terrain.can_place(f,id,at,rotated,extended):
 			return false
 	elif not summons.can_place(f, id, at):
 		return false
-	return _roll(id, c.state.active_id, at, rotated)
+	return _roll(id,c.state.active_id,at,rotated,-1,{"extended_bridge":true} if extended else {})
 
 
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
@@ -385,10 +385,14 @@ func _finish_one(health: int) -> bool:
 		treasure_magic.apply(f, id, s.treasure(p["effect"]["token"]), p["at"], int(result["roll"]))
 		return true
 	if id=="bridge" and p.get("effect",{}).has("layered_bridge"):
-		LayeredBridge.apply(c,p["effect"]["layered_bridge"])
+		var bridge: Dictionary=p["effect"]["layered_bridge"]
+		if not bridge.get("extended",false) or ActiveGear.spend(f,TerrainMagic.EXTENDED):
+			LayeredBridge.apply(c,bridge)
 		return true
 	if TerrainMagic.SPELLS.has(id):
-		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))
+		var extended: bool=p.get("effect",{}).get("extended_bridge",false)
+		if not extended or ActiveGear.spend(f,TerrainMagic.EXTENDED):
+			terrain.apply(f,id,p["at"],p["rotated"],int(result["roll"]),extended)
 		return true
 	if SummonActions.PLACEMENT.has(id):
 		summons.spawn(f,id,p["at"],int(result["roll"]),int(p["tn"]),bool(p.get("golden_fang",false)))

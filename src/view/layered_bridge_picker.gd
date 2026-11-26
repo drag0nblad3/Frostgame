@@ -7,8 +7,11 @@ static func points(c: GameController,layout: FloorLayout,index: int,first: Varia
 	if index<0 or index>=layout.surfaces.size() or not LayeredBridge.eligible(c):
 		return out
 	var surface := layout.surfaces[index]
+	var offsets: Array[Vector2i]=[Vector2i(12,0),Vector2i(-12,0),Vector2i(0,12),Vector2i(0,-12)]
+	if ActiveGear.ready(c.state.active(),TerrainMagic.EXTENDED):
+		offsets.append_array([Vector2i(18,0),Vector2i(-18,0),Vector2i(0,18),Vector2i(0,-18)])
 	if first!=null:
-		for d: Vector2i in [Vector2i(12,0),Vector2i(-12,0),Vector2i(0,12),Vector2i(0,-12)]:
+		for d: Vector2i in offsets:
 			var n := Vector3i(first.x+d.x,first.y+d.y,index)
 			if not LayeredBridge.proposal(c,first,n,layout).is_empty():
 				out[n]=true
@@ -19,7 +22,7 @@ static func points(c: GameController,layout: FloorLayout,index: int,first: Varia
 			var a := Vector3i(x,y,index)
 			if not layout.standable(a):
 				continue
-			for d: Vector2i in [Vector2i(12,0),Vector2i(-12,0),Vector2i(0,12),Vector2i(0,-12)]:
+			for d: Vector2i in offsets:
 				for other in layout.surfaces.size():
 					if other==index:
 						continue

@@ -1,6 +1,7 @@
 class_name TerrainMagic
 extends RefCounted
 ## Dynamic terrain on the exposed-surface heightfield.
+const EXTENDED := "gear_rk_extended_scroll"
 const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection", "bridge"]
 var c: GameController
 
@@ -9,10 +10,11 @@ func _init(controller: GameController) -> void:
 	c = controller
 
 
-func footprint(id: String, at: Vector2, rotated: bool) -> Rect2:
+func footprint(id: String, at: Vector2, rotated: bool,extended: bool=false) -> Rect2:
 	var size := Vector2(6, 6) if id == "mud" else (Vector2(1, 6) if rotated else Vector2(6, 1))
 	if id == "bridge":
-		size = Vector2(2, 6) if rotated else Vector2(6, 2)
+		var length := 9.0 if extended else 6.0
+		size = Vector2(2,length) if rotated else Vector2(length,2)
 	if id == "circle_of_protection":
 		size = Vector2(3, 3)
 	if id in ["explosive_rune", "planar_tear", "grenade"]:
@@ -20,9 +22,11 @@ func footprint(id: String, at: Vector2, rotated: bool) -> Rect2:
 	return Rect2(at - size * 0.5, size)
 
 
-func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
+func can_place(f: Figure, id: String, at: Vector2, rotated: bool,extended: bool=false) -> bool:
+	if extended and (id!="bridge" or not ActiveGear.ready(f,EXTENDED)):
+		return false
 	var b := c.state.board
-	var rect := footprint(id, at, rotated)
+	var rect := footprint(id, at, rotated,extended)
 	if ScenarioNull.field_at(b, at, 0.0):
 		return false
 	if b.id == "silent_tower":
@@ -76,20 +80,20 @@ func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 	return true
 
 
-func points(f: Figure, id: String, rotated: bool, first_only: bool) -> Array[Vector2]:
+func points(f: Figure, id: String, rotated: bool, first_only: bool,extended: bool=false) -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	var b := c.state.board
 	for x in range(1, int(b.size.x)):
 		for y in range(1, int(b.size.y)):
 			var at := Vector2(x, y)
-			if can_place(f, id, at, rotated):
+			if can_place(f,id,at,rotated,extended):
 				out.append(at)
 				if first_only:
 					return out
 	return out
 
 
-func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14) -> void:
+func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,extended: bool=false) -> void:
 	if id == "grenade":
 		var affected: Array[Figure] = []
 		var s := c.state
@@ -117,7 +121,8 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14) ->
 	kind.blocks_move = id == "wall"
 	kind.walkable_top = id in ["wall", "bridge"]
 	kind.move_mult = 2.0 if id == "mud" else 1.0
-	var p := TerrainPiece.new(kind, footprint(id, at, rotated))
+	var p := TerrainPiece.new(kind, footprint(id, at, rotated,extended))
+	p.extended_bridge=extended
 	p.circular = id in ["mud", "explosive_rune", "circle_of_protection"]
 	if id == "bridge":
 		var ends := bridge_ends(p.rect, rotated)
@@ -140,7 +145,7 @@ func expire() -> void:
 		if p.cast_turn < 0:
 			continue
 		if p.kind.id == "spell_bridge":
-			if c.dice.d20() <= 2:
+			if c.dice.d20() <= (1 if p.extended_bridge else 2):
 				remove(p)
 			continue
 		if p.kind.id == "spell_circle_of_protection":
@@ -329,7 +334,8 @@ static func ward_blocks(b: Board, f: Figure, at: Vector2) -> bool:
 func bridge_ends(rect: Rect2, rotated: bool) -> Vector2:
 	var axis := Vector2.DOWN if rotated else Vector2.RIGHT
 	var b := c.state.board
-	return Vector2(b.height_at(rect.get_center() - axis * 2.99), b.height_at(rect.get_center() + axis * 2.99))
+	var half := (rect.size.y if rotated else rect.size.x)*0.5-0.01
+	return Vector2(b.height_at(rect.get_center()-axis*half),b.height_at(rect.get_center()+axis*half))
 
 
 func bridge_legal(f: Figure, rect: Rect2, rotated: bool) -> bool:
@@ -338,11 +344,13 @@ func bridge_legal(f: Figure, rect: Rect2, rotated: bool) -> bool:
 		if p.kind.id == "spell_bridge" and (p.caster_id == f.id or p.rect.intersects(rect)):
 			return false
 	var ends := bridge_ends(rect, rotated)
-	for i in range(13):
-		var ratio := float(i) / 12.0
+	var half := (rect.size.y if rotated else rect.size.x)*0.5-0.01
+	var steps := ceili(half*4.0)
+	for i in range(steps+1):
+		var ratio := float(i)/steps
 		var axis := Vector2.DOWN if rotated else Vector2.RIGHT
 		var across := Vector2.RIGHT if rotated else Vector2.DOWN
-		var at := rect.get_center() + axis * lerpf(-2.99, 2.99, ratio)
+		var at := rect.get_center() + axis * lerpf(-half,half,ratio)
 		var height := lerpf(ends.x, ends.y, ratio)
 		for j in [-0.9, 0.0, 0.9]:
 			var sample: Vector2 = at + across * float(j)

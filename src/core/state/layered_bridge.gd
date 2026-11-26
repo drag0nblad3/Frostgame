@@ -23,7 +23,9 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 	var p := layout.point(a)
 	var q := layout.point(b)
 	var delta := q-p
-	if a.z==b.z or not is_equal_approx(delta.length(),6.0) or (not is_zero_approx(delta.x) and not is_zero_approx(delta.y)):
+	var extended := is_equal_approx(delta.length(),9.0) and ActiveGear.ready(f,TerrainMagic.EXTENDED)
+	var length := 9.0 if extended else 6.0
+	if a.z==b.z or not is_equal_approx(delta.length(),length) or (not is_zero_approx(delta.x) and not is_zero_approx(delta.y)):
 		return {}
 	if layout.surface_id(a).begins_with("climb:") or layout.surface_id(b).begins_with("climb:") or layout.surface_id(a).begins_with("bridge:") or layout.surface_id(b).begins_with("bridge:"):
 		return {}
@@ -35,8 +37,9 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 	var start := layout.height(a)
 	var end := layout.height(b)
 	var eye := Vector3(f.pos.x,f.elevation+1.5,f.pos.y)
-	for i in range(25):
-		var ratio := float(i)/24.0
+	var steps := int(length*4)
+	for i in range(steps+1):
+		var ratio := float(i)/steps
 		var h := lerpf(start,end,ratio)
 		for offset: float in [-1.0,0.0,1.0]:
 			var at := p.lerp(q,ratio)+across*offset
@@ -46,14 +49,14 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 			if not layout.clearance(world,0.02,0.1):
 				return {}
 	var id := "bridge:"+str(f.id)
-	var rect := Rect2(p-across,Vector2(2,6) if axis_y else Vector2(6,2))
+	var rect := Rect2(p-across,Vector2(2,length) if axis_y else Vector2(length,2))
 	var surface := {"id":id,"rect":[rect.position.x,rect.position.y,rect.size.x,rect.size.y],"level":start,"end_level":end,"axis":"y" if axis_y else "x"}
 	var left := p+along*0.5
 	var right := q-along*0.5
 	var links := [
 		{"from":[layout.surface_id(a),p.x,p.y],"to":[id,left.x,left.y],"kind":"walk"},
 		{"from":[id,right.x,right.y],"to":[layout.surface_id(b),q.x,q.y],"kind":"walk"}]
-	var bridge := {"owner":f.id,"surface":surface,"links":links}
+	var bridge := {"owner":f.id,"surface":surface,"links":links,"extended":extended}
 	for other: Dictionary in c.state.board.floor_layout.get("bridges",[]):
 		var r: Array = other["surface"]["rect"]
 		if rect.intersects(Rect2(r[0],r[1],r[2],r[3])):
@@ -82,7 +85,7 @@ static func apply(c: GameController,bridge: Dictionary) -> void:
 
 static func expire(c: GameController) -> void:
 	for bridge: Dictionary in c.state.board.floor_layout.get("bridges",[]).duplicate():
-		if c.dice.d20()<=2:
+		if c.dice.d20()<=(1 if bridge.get("extended",false) else 2):
 			remove(c,str(bridge["surface"]["id"]))
 
 

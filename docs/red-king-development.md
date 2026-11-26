@@ -140,3 +140,7 @@ Self-withdrawal offers legal half-inch increments up to three inches on normal a
 ## Golden Fangs
 
 Found in six-unit lots and traded one at a time; a stack of up to six occupies one caster equipment slot. The inventory supports splitting one fang off and merging stacks within the cap. Select the optional fang toggle during Animate Skull resolution; a successful cast spends one and gives the new skull +1 Fight, recorded in checkpoints. No fang is spent on a failed cast. The UI currently limits each caster to one stack and the AI does not explicitly toggle fangs.
+
+## Extended Scroll
+
+Optional 9-inch bridge placement on flat and layered maps; extended bridges collapse only on 1. The flat interface toggles span, and layered endpoint selection includes both six- and nine-inch spans when the scroll is available. A successful extended cast spends the once-per-battle effect. Length and expiration status persist in battle saves. AI still plans ordinary six-inch bridges.

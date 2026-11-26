@@ -166,6 +166,8 @@ func refresh() -> void:
 			index=layout.index_of(f.surface_id)
 		destinations=LayeredBridgePicker.points(c,layout,index,bridge_start if mode=="bridge_end" else null)
 		hint.text="Choose the first bridge endpoint." if mode=="bridge" else "Choose another floor and the second endpoint."
+		if ActiveGear.ready(f,TerrainMagic.EXTENDED):
+			hint.text+=" A 9″ span uses the Extended Scroll on success."
 	elif mode=="leap":
 		hint.text="Choose a friendly figure visible to the caster."
 	elif mode=="leap_land":

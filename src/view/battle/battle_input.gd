@@ -20,6 +20,7 @@ var selected_spell := ""
 var selected_potion := ""
 var selected_drop := -1
 var spell_rotated := false
+var spell_extended := false
 var spell_first := -1
 var counter_index := 0
 var counter_choices: Array[Dictionary] = []
@@ -159,7 +160,7 @@ func refresh() -> void:
 		if not c._magic.counter_options(id).is_empty():
 			cast_options.append(id)
 			continue
-		if not c._magic.placement_points(id, true).is_empty() or (id in ["fog", "wall", "bridge"] and not c._magic.placement_points(id, true, true).is_empty()):
+		if not c._magic.placement_points(id,true).is_empty() or (id in ["fog","wall","bridge"] and not c._magic.placement_points(id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not c._magic.placement_points(id,true,false,true).is_empty() or not c._magic.placement_points(id,true,true,true).is_empty())):
 			cast_options.append(id)
 			continue
 		for t in c.state.figures:
@@ -292,10 +293,12 @@ func preview() -> void:
 			radius = 0.65
 			hint = "Choose the second figure to swap."
 		"spell_point":
-			points.assign(c._magic.placement_points(selected_spell, false, spell_rotated))
+			points.assign(c._magic.placement_points(selected_spell,false,spell_rotated,spell_extended))
 			hint = "Choose a marked spell location."
 			if selected_spell in ["fog", "wall", "bridge"]:
 				hint += " · " + ("North–south" if spell_rotated else "East–west")
+			if selected_spell=="bridge":
+				hint+=" · %d″ bridge" % (9 if spell_extended else 6)
 		"cancel_control":
 			for t in c.state.figures:
 				if c._magic.can_cancel(t.id):
@@ -505,6 +508,7 @@ func action(key: String) -> bool:
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false
+		spell_extended=false
 		if selected_spell in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"]:
 			counter_choices = c._magic.counter_options(selected_spell)
 			if counter_choices.is_empty():
@@ -528,6 +532,8 @@ func action(key: String) -> bool:
 			available.append("shatter_single")
 		if selected_spell in ["fog", "wall", "bridge"]:
 			available.append("rotate_spell")
+		if selected_spell=="bridge" and ActiveGear.ready(c.state.active(),TerrainMagic.EXTENDED):
+			available.append("extend_bridge")
 		preview()
 		return false
 	match key:
@@ -574,6 +580,10 @@ func action(key: String) -> bool:
 			if selected_spell == "horn":
 				return GearActions.horn(c, counter_choices[counter_index]["piece"])
 			return _declared(c._magic.start_counter(selected_spell, counter_index))
+		"extend_bridge":
+			spell_extended=not spell_extended
+			preview()
+			return false
 		"rotate_spell":
 			spell_rotated = not spell_rotated
 			preview()
@@ -710,7 +720,7 @@ func tap(screen: Vector2) -> bool:
 		return c._potions.use_at(selected_potion, at.round() if selected_potion == "explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return _declared(c._magic.start_at(selected_spell, destination, spell_rotated))
+		return _declared(c._magic.start_at(selected_spell,destination,spell_rotated,spell_extended))
 	if mode == "collect":
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:

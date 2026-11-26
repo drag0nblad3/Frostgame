@@ -390,8 +390,9 @@
       "buy": 200,
       "sell": 150,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "caster_only": true
     },
     "gear_rk_book_of_the_foulhorn": {
       "name": "Book of the Foulhorn",
