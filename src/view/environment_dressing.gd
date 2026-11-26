@@ -74,21 +74,19 @@ static func near_edge_or_terrain(board: Board,at: Vector2) -> bool:
 	return false
 
 
-static func outskirts(root: Node3D,board: Board,scenario: String,y: float) -> void:
+static func outskirts_side(root: Node3D,board: Board,scenario: String,y: float,side: int) -> void:
 	if scenario in ["underground_library","training_yard"]:
 		return
-	# Scenic ring lies well below the lowest playable street.
-	for side in 4:
-		var length := board.size.x if side%2==0 else board.size.y
-		for i in 6:
-			var u := (i+0.5)*length/6.0
-			var gap := 3.0+float(posmod(i*7+side,5))*0.4
-			var at := Vector2(u,-gap) if side==0 else (Vector2(board.size.x+gap,u) if side==1 else (Vector2(u,board.size.y+gap) if side==2 else Vector2(-gap,u)))
-			var pos := Vector3(at.x,y,at.y)
-			var seed := i*23+side*11
-			if i%3==0:
-				EnvironmentVegetation.tree(root,pos,seed,scenario!="mausoleum" and (i+side)%3==0)
-			elif i%3==1:
-				EnvironmentProps.landmark(root,pos,scenario,seed)
-			else:
-				EnvironmentVegetation.shrub(root,pos,seed)
+	var length := board.size.x if side%2==0 else board.size.y
+	for i in 6:
+		var u := (i+0.5)*length/6.0
+		var gap := 4.5+float(posmod(i*7+side,5))*0.4
+		var at := Vector2(u,-gap) if side==0 else (Vector2(board.size.x+gap,u) if side==1 else (Vector2(u,board.size.y+gap) if side==2 else Vector2(-gap,u)))
+		var pos := Vector3(at.x,y,at.y)
+		var seed := i*23+side*11
+		if i%3==0:
+			EnvironmentVegetation.tree(root,pos,seed,scenario!="mausoleum" and (i+side)%3==0)
+		elif i%3==1:
+			EnvironmentProps.landmark(root,pos,scenario,seed)
+		else:
+			EnvironmentVegetation.shrub(root,pos,seed)

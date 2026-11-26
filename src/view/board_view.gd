@@ -11,22 +11,31 @@ const COLORS := {
 
 var scenario_id := ""
 var cinematic := false
+var _scenery: Node3D
+var _board_size := Vector2.ZERO
+
+
+func _process(_delta: float) -> void:
+	if not is_instance_valid(_scenery):
+		return
+	var camera := get_viewport().get_camera_3d()
+	if camera!=null:
+		CityScenery.update_foreground(_scenery,camera.global_position,_board_size)
 
 
 func build(board: Board) -> void:
 	for c in get_children():
 		remove_child(c)
 		c.queue_free()
-	var top := MeshInstance3D.new()
-	var slab := BoxMesh.new()
-	slab.size = Vector3(board.size.x, 0.5, board.size.y)
-	top.mesh = slab
-	top.material_override = _mat(Color(0.74, 0.79, 0.86), 0.9)
-	top.position = TableSpace.to_world(board.size * 0.5, GroundMesh.bottom(board)-0.25)
-	add_child(top)
-	add_child(StoneFinish.floor_surface(board, scenario_id))
-	TerrainDressing.slab_frame(self, board)
-	add_child(CityScenery.build(board,board.id if scenario_id.is_empty() else scenario_id,cinematic))
+	var scenario := board.id if scenario_id.is_empty() else scenario_id
+	var floor_surface := StoneFinish.floor_surface(board,scenario)
+	var ground := DistrictGround.build(board,floor_surface.material_override)
+	add_child(ground)
+	add_child(floor_surface)
+	_scenery=CityScenery.build(board,scenario,cinematic)
+	add_child(_scenery)
+	_board_size=board.size
+	set_process(not cinematic)
 	for piece in board.pieces:
 		if piece.kind.ground_surface:
 			continue
