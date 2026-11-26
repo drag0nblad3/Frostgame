@@ -10,7 +10,7 @@ static func catalog() -> Dictionary:
 	result.merge(JsonFile.read("res://data/magic_equipment.json"))
 	var spells: Dictionary = JsonFile.read("res://data/spells.json")
 	for id: String in spells:
-		result["scroll_" + id] = {"name": "Scroll: " + str(spells[id]["name"]), "buy": 250, "sell": 30, "live": spells[id]["kind"] != "unimplemented"}
+		result["scroll_" + id] = {"name": "Scroll: " + str(spells[id]["name"]), "buy": 250, "sell": 30, "live": spells[id]["kind"] not in ["unimplemented", "ritual"]}
 	return result
 
 

@@ -8,7 +8,7 @@ static func options(s: GameState, f: Figure, id: String) -> Array[Dictionary]:
 		if word["caster"] == f.id and word["spell"] == id:
 			return out
 	for target: String in s.spell_catalog:
-		if s.spell_catalog[target]["kind"] == "unimplemented":
+		if s.spell_catalog[target]["kind"] in ["unimplemented", "ritual"]:
 			continue
 		var already := false
 		for word in s.words:

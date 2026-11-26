@@ -109,7 +109,7 @@ func _rebuild_spells() -> void:
 			var live: bool = info["kind"] != "unimplemented"
 			var suffix := "" if live else " · NOT PLAYABLE YET"
 			if Rituals.BEFORE.has(id) or Rituals.AFTER.has(id):
-				suffix = " · Campaign ritual" if not live else " · Battle / preparation"
+				suffix = " · Campaign ritual" if info["kind"] == "ritual" else " · Battle / preparation"
 			choice.add_item("%s · %s · TN%d%s" % [info["name"], str(info["school"]).capitalize(), draft.casting_number(id), suffix])
 			choice.set_item_metadata(choice.item_count - 1, id)
 			if draft.spells[slot] == id:
@@ -132,7 +132,7 @@ func _update() -> void:
 	for id in draft.spells:
 		if draft.catalog[id]["kind"] != "unimplemented" or Rituals.BEFORE.has(id) or Rituals.AFTER.has(id):
 			live += 1
-	_summary.text = "%d gc left | %d/8 soldiers | %d/4 specialists | %d/8 implemented spells\n%s" % [WarbandDraft.BUDGET - draft.cost(), draft.soldiers.size(), draft.specialists(), live, "Campaign rituals are available between battles. Other pending spells are marked." if problems.is_empty() else "\n".join(problems)]
+	_summary.text = "%d gc left | %d/8 soldiers | %d/4 specialists | %d/8 implemented spells\n%s" % [WarbandDraft.BUDGET - draft.cost(), draft.soldiers.size(), draft.specialists(), live, "Campaign rituals are available between battles." if problems.is_empty() else "\n".join(problems)]
 	_hire.disabled = not draft.can_hire(str(_recruits.get_selected_metadata()))
 	get_ok_button().disabled = not problems.is_empty()
 
