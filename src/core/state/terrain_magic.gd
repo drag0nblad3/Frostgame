@@ -23,6 +23,12 @@ func footprint(id: String, at: Vector2, rotated: bool) -> Rect2:
 func can_place(f: Figure, id: String, at: Vector2, rotated: bool) -> bool:
 	var b := c.state.board
 	var rect := footprint(id, at, rotated)
+	if ScenarioNull.field_at(b, at, 0.0):
+		return false
+	if b.id == "silent_tower":
+		for p in b.pieces:
+			if p.kind.id.begins_with("null_") and p.rect.intersects(rect):
+				return false
 	if not b.contains(rect.position) or not b.contains(rect.end):
 		return false
 	if id == "bridge":
@@ -221,12 +227,16 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 		var hits := triggered(f, at)
 		var hut := ScenarioSites.site_at(c.state, "haunted_floor", at) if c.state.scenario_special == "haunted_houses" and f.side >= 0 else null
 		var undiscovered := hut != null and not c.state.discovered_huts.has(hut.rect.position)
-		if hits.is_empty() and not undiscovered and not occupied:
+		var null_field := ScenarioNull.field_at(c.state.board, at)
+		if hits.is_empty() and not undiscovered and not occupied and not null_field:
 			continue
 		f.pos = at
 		f.elevation = c.state.board.height_at(at)
 		c.emit("move", {"id": f.id, "path": chunk, "cost": cost})
 		chunk = PackedVector2Array([at])
+		ScenarioNull.enter(c, f)
+		if not f.in_play():
+			return false
 		for p in hits:
 			explode(p)
 		if not f.in_play():

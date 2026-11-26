@@ -12,7 +12,7 @@ func options(f: Figure) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var b := c.state.board
 	for p in b.pieces:
-		if p.circular or p.ramp or p.kind.height < 0.5 or p.kind.id.begins_with("spell_") and p.kind.id != "spell_wall":
+		if p.kind.id.begins_with("null_") or p.kind.id == "temple_column" or p.circular or p.ramp or p.kind.height < 0.5 or p.kind.id.begins_with("spell_") and p.kind.id != "spell_wall":
 			continue
 		var center := p.rect.get_center()
 		for direction: Vector2 in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:

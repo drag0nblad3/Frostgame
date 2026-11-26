@@ -39,7 +39,7 @@ func can_control(f: Figure, t: Figure, id: String) -> bool:
 
 func can_place(f: Figure, id: String, at: Vector2) -> bool:
 	var s := c.state
-	if s.creature_db == null or not s.board.can_stand(at, Figure.BASE_RADIUS):
+	if s.creature_db == null or ScenarioNull.field_at(s.board, at) or not s.board.can_stand(at, Figure.BASE_RADIUS):
 		return false
 	if id == "animate_skull" and summoned(f, id) != null:
 		return false

@@ -36,7 +36,7 @@ func can_cast(id: String, target_id: int) -> bool:
 	var s := c.state
 	var f := s.active()
 	var t := s.figure(target_id)
-	if not c.can_act() or f == null or t == null or not t.in_play():
+	if not c.can_act() or f == null or t == null or not t.in_play() or ScenarioNull.muted(t):
 		return false
 	if f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(s.figures, f):
 		return false
@@ -424,7 +424,7 @@ func _finish_one(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
 					_banish(f, other, int(result["roll"]), 4)
 		"scatter_shot":
 			for other in s.figures:
@@ -483,7 +483,7 @@ func _heal(t: Figure, amount: int) -> void:
 
 
 func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true) -> void:
-	if not t.in_play() or t.spell_effects.has("plane_walk"):
+	if not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t):
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
@@ -551,6 +551,8 @@ func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
 
 
 func _direct_attack(f: Figure, t: Figure, power: int) -> void:
+	if ScenarioNull.muted(t):
+		return
 	var a := c.dice.d20() + power
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
 	if a > d:
@@ -591,6 +593,8 @@ func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
 
 
 func available_spell(f: Figure, id: String) -> bool:
+	if ScenarioNull.muted(f):
+		return false
 	if id in ["summon_demon", "control_demon"]:
 		for t in c.state.figures:
 			if t.in_play() and t.prepared_demon_caster == f.id:
@@ -600,6 +604,8 @@ func available_spell(f: Figure, id: String) -> bool:
 
 func available_spells(f: Figure) -> Array[String]:
 	var out: Array[String] = []
+	if ScenarioNull.muted(f):
+		return out
 	for id: String in c.state.spellbooks.get(f.side, {}):
 		out.append(id)
 	for item in f.items:

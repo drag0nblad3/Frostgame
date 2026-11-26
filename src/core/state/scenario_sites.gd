@@ -10,7 +10,7 @@ static func site_at(s: GameState, kind: String, at: Vector2) -> TerrainPiece:
 
 
 static func treasure_protected(s: GameState, at: Vector2) -> bool:
-	return s.scenario_special == "the_keep" and site_at(s, "arcane_disc", at) != null
+	return (s.scenario_special == "the_keep" and site_at(s, "arcane_disc", at) != null) or ScenarioNull.protected_treasure(s, at)
 
 
 static func discover(c: GameController, at: Vector2, side: int) -> bool:
@@ -48,6 +48,9 @@ static func enter(c: GameController, f: Figure) -> bool:
 
 
 static func end_move(c: GameController, f: Figure) -> void:
+	if not f.in_play():
+		return
+	ScenarioNull.enter(c, f)
 	if not f.in_play():
 		return
 	enter(c, f)

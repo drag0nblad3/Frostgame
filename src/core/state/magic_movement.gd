@@ -10,7 +10,7 @@ func _init(controller: GameController) -> void:
 
 func landing(t: Figure, at: Vector2, allow_combat: bool = false) -> bool:
 	var b := c.state.board
-	if not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at):
+	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at):
 		return false
 	for other in c.state.figures:
 		if other == t or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
@@ -89,7 +89,7 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var highest := t.elevation
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
-		if not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
+		if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
 			break
 		# Other figures don't interrupt the trajectory; choose a legal final base.
 		if landing(t, at, true):
@@ -127,7 +127,7 @@ func _blink_result(success: bool, t: Figure) -> void:
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:
-	return a != b and b.in_play() and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
+	return a != b and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
 
 
 func transpose(f: Figure, a: Figure, b: Figure, roll: int) -> void:
