@@ -61,6 +61,8 @@ func points(f: Figure, t: Figure, id: String, first_only: bool = false) -> Array
 
 
 func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, sites: bool = true) -> void:
+	if RedKingVeil.touch(c,t,at):
+		return
 	t.spell_effects.erase("bones_of_the_earth")
 	var old := t.pos
 	var height := t.elevation
@@ -89,6 +91,8 @@ func force(t: Figure, direction: Vector2, distance: float) -> void:
 	var highest := t.elevation
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
+		if RedKingVeil.touch(c,t,at):
+			return
 		if BattleBoundary.blocks_segment(b.boundaries,origin,at,"movement",t) or ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
 			break
 		# Other figures don't interrupt the trajectory; choose a legal final base.

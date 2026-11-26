@@ -3,6 +3,11 @@ extends RefCounted
 ## Objective-first bot policy. Combat remains the fallback if no route is usable.
 
 static func play(c: GameController, f: Figure) -> bool:
+	if RedKingVeil.active(c.state):
+		if f.side==1:
+			return false
+		if not Contact.in_combat(c.state.figures,f):
+			return _veil_progress(c,f)
 	if RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state) and not Contact.in_combat(c.state.figures,f):
 		return _escape(c,f)
 	if c.state.treasures.is_empty() or Contact.in_combat(c.state.figures, f):
@@ -113,3 +118,32 @@ static func _escape(c: GameController, f: Figure) -> bool:
 			best = n
 			score = d
 	return best != null and c.move_to(best)
+
+
+static func _veil_progress(c: GameController,f: Figure) -> bool:
+	# Do not deliberately enter the lethal band; prefer a nearby treasure when
+	# it is already accessible, then advance toward the eventual exit.
+	for token in c.state.treasures:
+		if c.can_pick_up(token.id) and c.pick_up(token.id):
+			return true
+	if not c.can_move():
+		return false
+	var r := c.reach()
+	var best: Variant=null
+	var score := f.pos.y
+	for node: Vector2i in r.nodes():
+		var at := MoveGrid.to_pos(node)
+		var safe := true
+		var path: PackedVector2Array=r.path_to(node)
+		for i in range(1,path.size()):
+			if RedKingVeil.lethal(c.state,path[i-1],path[i]):
+				safe=false
+				break
+		if not safe:
+			continue
+		if c.can_exit_table(node,r):
+			return c.exit_table(node)
+		if at.y>score+0.01:
+			score=at.y
+			best=node
+	return best!=null and c.move_to(best)

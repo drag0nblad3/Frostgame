@@ -117,6 +117,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					kills += 1
 	var secured := c.state.secured_count(side)
 	xp = maxi(0, mini(300, xp + secured * 40 + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
+	if RedKingVeil.active(c.state):
+		xp=RedKingVeil.xp(c,side)
 	data.erase("dreams_xp")
 	data["xp"] = int(data["xp"]) + xp
 	data["games"] = int(data["games"]) + 1

@@ -116,7 +116,7 @@ func effective_move() -> int:
 	var speed := def.move + MagicEquipment.bonus(self, "move") + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0)
 	if spell_effects.has("potion_speed"):
 		speed = mini(9, speed + 2)
-	return maxi(1, speed)
+	return maxi(1, speed-int(spell_effects.get("veil_move_penalty",0)))
 
 
 func effective_will() -> int:

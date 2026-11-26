@@ -209,6 +209,11 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var chunk := PackedVector2Array([f.pos])
 	for i in range(1, path.size()):
 		var at := path[i]
+		if RedKingVeil.active(c.state):
+			f.pos=path[i-1]
+			f.elevation=c.state.board.height_at(f.pos)
+			if RedKingVeil.touch(c,f,at):
+				return false
 		if RedKingSquatter.active(c.state):
 			# The last reached position is the door-side landing on a failed test.
 			f.pos=path[i-1]

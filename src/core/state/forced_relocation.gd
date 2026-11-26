@@ -31,6 +31,8 @@ static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 	if not f.in_play() or not c.state.board.floor_layout.is_empty():
 		return false
 	var at := destination(c.state,f,desired)
+	if RedKingVeil.touch(c,f,at):
+		return true
 	if at.is_equal_approx(f.pos):
 		return false
 	var old := f.pos
