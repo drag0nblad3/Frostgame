@@ -16,10 +16,10 @@ static func attach(root: Node3D, pivot: Node3D, first: int) -> void:
 	for child in children:
 		if not child is MeshInstance3D:
 			continue
-		var pos: Vector3 = child.position
+		var pose := child.transform
 		root.remove_child(child)
 		pivot.add_child(child)
-		child.position = pos - pivot.position
+		child.transform = _relative(root,pivot).affine_inverse()*pose
 
 
 static func arms(root: Node3D, right: float, left: float) -> void:
@@ -44,3 +44,42 @@ static func legs(root: Node3D,angles: Array[float]) -> void:
 		var pivot := root.get_node_or_null("Leg%d" % i) as Node3D
 		if pivot!=null:
 			pivot.rotation.x=angles[i]
+
+
+## Nested joints are authored in root-local coordinates, before entering the tree.
+static func joint(root: Node3D,parent: Node3D,label: String,at: Vector3) -> Node3D:
+	var pivot := Node3D.new()
+	pivot.name=label
+	pivot.position=_relative(root,parent).affine_inverse()*at
+	parent.add_child(pivot)
+	return pivot
+
+
+static func _relative(root: Node3D,node: Node3D) -> Transform3D:
+	var result := Transform3D.IDENTITY
+	var current := node
+	while current!=root:
+		result=current.transform*result
+		current=current.get_parent() as Node3D
+	return result
+
+
+static func hand_parent(arm: Node3D) -> Node3D:
+	if arm==null:
+		return null
+	var elbow := arm.get_node_or_null("Elbow") as Node3D
+	return elbow if elbow!=null else arm
+
+
+static func bend_arms(root: Node3D,right: float,left: float) -> void:
+	for side in [false,true]:
+		var path := "RightArm/Elbow" if side else "LeftArm/Elbow"
+		var elbow := root.get_node_or_null(path) as Node3D
+		if elbow!=null:
+			elbow.rotation.x=right if side else left
+
+
+static func bend_leg(root: Node3D,index: int,angle: float) -> void:
+	var knee := root.get_node_or_null("Leg%d/Knee"%index) as Node3D
+	if knee!=null:
+		knee.rotation.x=angle

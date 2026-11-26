@@ -131,7 +131,8 @@ func face_toward(at: Vector3) -> void:
 		return
 	_facing = atan2(-dir.x, -dir.z)
 	if _model != null:
-		_model.rotation.y = _facing
+		if not _moving:
+			_model.rotation.y = _facing
 
 
 func begin_move(distance: float=0.0) -> void:
@@ -149,11 +150,13 @@ func end_move() -> void:
 		_model.rotation.x = 0.0
 		_model.rotation.z = 0.0
 		MiniatureMotion.reset(_model)
+		_model.rotation.y=_facing
 
 
 func _process(delta: float) -> void:
 	if not _moving or _model == null:
 		return
+	_model.rotation.y=lerp_angle(_model.rotation.y,_facing,1.0-exp(-24.0*delta))
 	_stride += delta * MiniatureMotion.frequency(_profile)*(1.25 if _running else 1.0)
 	MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y,_running)
 

@@ -101,3 +101,34 @@ func test_windup_and_running_keep_motion_visual_only() -> void:
 	MiniatureMotion.travel(model,"walk",1.0,0.12,true)
 	check(absf((model.get_node("Leg0") as Node3D).rotation.x)>walk)
 	model.free()
+
+
+func test_nested_joint_preserves_geometry_and_weapon_attachment() -> void:
+	var root := Node3D.new()
+	var arm := MiniaturePose.arm(root,true)
+	var elbow := MiniaturePose.joint(root,arm,"Elbow",Vector3(0.34,0.95,0.015))
+	var first := root.get_child_count()
+	var mesh := MiniatureFactory.box(root,Vector3(0.37,0.75,-0.09),Vector3.ONE*0.1,Color.RED)
+	var before := mesh.position
+	MiniaturePose.attach(root,elbow,first)
+	check_eq(mesh.get_parent(),elbow)
+	check((arm.transform*elbow.transform*mesh.position).is_equal_approx(before))
+	elbow.rotation.x=-0.5
+	check(not (arm.transform*elbow.transform*mesh.position).is_equal_approx(before))
+	root.free()
+
+
+func test_nested_hinges_bend_and_reset() -> void:
+	var defs := db()
+	for id: String in ["wizard","knight","wolf"]:
+		var f := Figure.new(1,defs.get_def(id),0,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.BLUE)
+		check(model.has_node("Leg0/Knee"))
+		MiniatureMotion.travel(model,MiniatureMotion.profile(f),1.2,0.12,true)
+		if id!="wolf":
+			check(model.has_node("RightArm/Elbow"))
+			MiniatureMotion.action(model,"walk","attack",1.0,0.12,"staff")
+			check(absf((model.get_node("RightArm/Elbow") as Node3D).rotation.x)>0.1)
+		MiniatureMotion.reset(model)
+		check(is_zero_approx((model.get_node("Leg0/Knee") as Node3D).rotation.x))
+		model.free()

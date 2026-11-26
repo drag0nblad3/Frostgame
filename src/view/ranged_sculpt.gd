@@ -16,6 +16,8 @@ static func bow(root: Node3D) -> void:
 static func crossbow(root: Node3D) -> void:
 	MiniatureFactory.box(root,Vector3(-0.38,0.84,-0.26),Vector3(0.12,0.13,0.62),WOOD)
 	MiniatureFactory.box(root,Vector3(-0.38,0.88,-0.20),Vector3(0.065,0.045,0.49),STEEL)
+	var grip := MiniatureFactory.box(root,Vector3(-0.38,0.76,-0.09),Vector3(0.085,0.17,0.095),WOOD.darkened(0.22))
+	grip.rotation.x=-0.22
 	var center := Vector3(-0.38,0.88,-0.47)
 	for side: float in [-1.0,1.0]:
 		var elbow := center+Vector3(side*0.23,0,0.065)

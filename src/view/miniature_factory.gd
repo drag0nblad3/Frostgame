@@ -90,7 +90,7 @@ static func weapon(model: Node3D, f: Figure, school: String = "") -> void:
 			var length := 1.1 if id == "two_handed" else (0.35 if id == "dagger" else 0.76)
 			WeaponSculpt.sword(model, length, id == "two_handed")
 	if right != null:
-		MiniaturePose.attach(model, right, first)
+		MiniaturePose.attach(model, MiniaturePose.hand_parent(right), first)
 	first = model.get_child_count()
 	if f.ranged != null:
 		if f.ranged.id == "bow":
@@ -100,7 +100,7 @@ static func weapon(model: Node3D, f: Figure, school: String = "") -> void:
 	if f.def.shield:
 		WeaponSculpt.shield(model, f.def.id in ["knight", "templar"])
 	if left != null:
-		MiniaturePose.attach(model, left, first)
+		MiniaturePose.attach(model, MiniaturePose.hand_parent(left), first)
 
 
 static func construct(model: Node3D, faction: Color, size: float) -> void:
