@@ -98,6 +98,8 @@ static func exit_distance(s: GameState, at: Vector2) -> float:
 
 
 static func exit_allowed(s: GameState, at: Vector2,side: int=-1) -> bool:
+	if RedKingBridge.active(s):
+		return RedKingBridge.exit_allowed(s,at)
 	if RedKingTethers.active(s) and RedKingTethers.remaining(s)>0:
 		return false
 	if RedKingHerded.active(s):

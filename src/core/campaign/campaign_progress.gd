@@ -143,7 +143,9 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		data["red_king_secured_kalamon"]=rescue!=null and rescue.secured_by==side
 		if data["red_king_secured_kalamon"]:
 			secured-=1
-	var treasure_xp := 0 if RedKingTethers.active(c.state) else secured*40
+	var treasure_xp := 0 if RedKingTethers.active(c.state) or RedKingBridge.active(c.state) else secured*40
+	if RedKingBridge.active(c.state):
+		scenario_xp+=RedKingBridge.exit_xp(c.state,side)
 	if RedKingFire.active(c.state):
 		treasure_xp=0
 		for token in c.state.treasures:

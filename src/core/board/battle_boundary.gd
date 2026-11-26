@@ -5,9 +5,14 @@ extends RefCounted
 const EPS := 0.0001
 
 
-static func _exempt(line: Dictionary,figure: Figure) -> bool:
+static func _exempt(line: Dictionary,figure: Figure,kind: String="movement") -> bool:
 	if figure==null:
 		return false
+	if figure.def.id in line.get("allow_figures",[]):
+		return true
+	for spell: String in line.get("allow_"+kind+"_spells",[]):
+		if figure.spell_effects.has(spell):
+			return true
 	for trait_id: String in line.get("allow_traits",[]):
 		if figure.def.traits.has(trait_id):
 			return true
@@ -19,7 +24,7 @@ static func _exempt(line: Dictionary,figure: Figure) -> bool:
 
 static func blocks_segment(lines: Array[Dictionary],a: Vector2,b: Vector2,kind: String,figure: Figure=null) -> bool:
 	for line in lines:
-		if not line.get(kind,false) or _exempt(line,figure):
+		if not line.get(kind,false) or _exempt(line,figure,kind):
 			continue
 		if kind=="sight" and line.has("sight_exempt_center") and a.distance_to(line["sight_exempt_center"])<=float(line.get("sight_exempt_radius",0.0))+EPS:
 			continue

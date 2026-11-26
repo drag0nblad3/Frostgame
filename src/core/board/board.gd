@@ -13,6 +13,15 @@ var floor_layout := {}
 var boundaries: Array[Dictionary]=[]
 ## Directed links between edge segments and their destination centers.
 var edge_links: Array[Dictionary]=[]
+## Regions with no traversable surface at any elevation.
+var void_regions: Array[Rect2]=[]
+
+
+func over_void(at: Vector2,radius: float=0.0) -> bool:
+	for region in void_regions:
+		if region.has_point(at) or (radius>0.0 and Geom.point_rect_distance(at,region)<radius-0.001):
+			return true
+	return false
 
 
 func contains(p: Vector2, margin: float = 0.0) -> bool:
@@ -72,7 +81,7 @@ func _key(p: Vector2) -> Variant:
 
 
 func _can_stand(p: Vector2, radius: float) -> bool:
-	if not contains(p, radius):
+	if not contains(p, radius) or over_void(p,radius):
 		return false
 	for piece in pieces:
 		if piece.kind.id=="red_king_sinkhole_orb":

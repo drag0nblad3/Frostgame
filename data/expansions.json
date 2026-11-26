@@ -102,6 +102,11 @@
           "Ethereal Tethers",
           "Destroy five dimensional anchors guarded by berserkers.",
           "Each pylon can be destroyed in melee or by magical shooting. Hrut emerge from surviving pylons. At the end of turn two the table folds into three connected strips; destroy every pylon before escaping."
+        ],
+        "red_king_bridge": [
+          "The Bridge",
+          "Cross the dimensional void through a narrow bridge defended by Hrut.",
+          "The veil changes position each turn, blocking movement and sight for warbands but not Hrut. Forced movement into the void requires a Move test (TN16). Escape only from the bridge's far edge."
         ]
       }
     }
