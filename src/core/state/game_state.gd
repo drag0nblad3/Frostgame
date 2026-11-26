@@ -14,6 +14,9 @@ var group := GroupActivation.new()
 var push_winner := -1
 var push_loser := -1
 var forced_combat := false
+# -2 means no human reaction owner (headless / watch).
+var reaction_side := -2
+var pending_intercept := {}
 var random_encounters := false
 var creature_db: FigureDb
 var spellbooks := {}

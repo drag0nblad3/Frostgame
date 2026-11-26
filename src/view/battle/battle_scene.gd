@@ -58,6 +58,7 @@ func new_game(seed_value: int) -> void:
 	if not _roster.is_empty():
 		data["warbands"][0] = _roster.duplicate(true)
 	var state := ScenarioLoader.from_dict(data, _figures, _terrain)
+	state.reaction_side = -2 if watch_mode else player_side
 	controller = GameController.new(state, Dice.new(seed_value))
 	_board_view.build(state.board)
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
@@ -82,9 +83,12 @@ func new_game(seed_value: int) -> void:
 
 ## Plays one bot activation for whichever side is to move.
 func step() -> void:
-	if controller.state.over or not player.idle() or controller.state.active() != null:
+	if controller.state.over or not player.idle() or controller.awaiting_reaction():
 		return
-	Bot.play_activation(controller)
+	if controller.state.active() != null:
+		Bot.resume_activation(controller)
+	else:
+		Bot.play_activation(controller)
 	_update_status()
 
 
@@ -95,7 +99,7 @@ func _process(delta: float) -> void:
 	if _dirty:
 		_refresh()
 	var s := controller.state
-	if s.over or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side):
+	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side):
 		_wait = 0.0
 		return
 	_wait += delta
@@ -109,13 +113,14 @@ func set_watch_mode(on: bool) -> void:
 		hud.set_watch(watch_mode, false, false)
 		return
 	watch_mode = on
+	controller.state.reaction_side = -2 if on else player_side
 	auto_play = false
 	hud.set_auto(false)
 	_dirty = true
 
 
 func _human_turn() -> bool:
-	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and controller.state.current_side() == player_side
+	return (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and (controller.state.current_side() == player_side or controller.awaiting_reaction())
 
 
 func _on_event(_event: GameEvent) -> void:

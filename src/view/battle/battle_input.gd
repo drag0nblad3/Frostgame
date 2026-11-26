@@ -35,6 +35,11 @@ func refresh() -> void:
 	available.clear()
 	reach = null
 	var f := c.state.active()
+	if not c.state.pending_intercept.is_empty():
+		available.assign(["intercept_yes", "intercept_no"])
+		mode = "intercept"
+		preview()
+		return
 	if f == null:
 		if c.can_begin_group():
 			available.append("group")
@@ -49,7 +54,7 @@ func refresh() -> void:
 		_empower_buttons()
 		preview()
 		return
-	if c.state.push_winner >= 0 and c.state.figure(c.state.push_winner).side == f.side:
+	if c.state.push_winner >= 0 and (c.state.figure(c.state.push_winner).side == f.side or c.awaiting_reaction()):
 		available.append("stay")
 		if c.can_push(true):
 			available.append("push_self")
@@ -119,6 +124,12 @@ func preview() -> void:
 		"empower":
 			var p := c.state.pending_cast
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d HP → %d. Confirm to resolve." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], empower, int(p["total"]) + empower]
+		"intercept":
+			var choice: Dictionary = c.state.pending_intercept["choice"]
+			var guard: Figure = choice["guard"]
+			points.append(guard.pos)
+			radius = 0.65
+			hint = "%s can intercept the moving enemy. Force combat or let it pass?" % guard.label()
 		"push":
 			hint = "Won the fight. Stay engaged, move back, or push the opponent."
 		"group_select":
@@ -185,6 +196,8 @@ func action(key: String) -> bool:
 		preview()
 		return false
 	match key:
+		"intercept_yes", "intercept_no":
+			return c.answer_intercept(key == "intercept_yes")
 		"cast":
 			available.assign(["spell_cancel"])
 			for id in cast_options:

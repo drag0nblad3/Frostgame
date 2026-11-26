@@ -63,7 +63,7 @@ func activate(id: int) -> bool:
 
 func can_move() -> bool:
 	var f := state.active()
-	return state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and MoveRules.can_move(f, state.figures)
 
 
 ## Where the active figure could go with its next movement action.
@@ -81,13 +81,25 @@ func move_to(node: Vector2i) -> bool:
 		return false
 	var f := state.active()
 	var path := r.path_to(node)
-	var intercept := _displacement.intercept(f, path) if state.forced_combat else {}
+	return _commit_move(f, path, float(r.cost[node]), [])
+
+
+func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int]) -> bool:
+	var intercept := _displacement.intercept(f, path, ignored) if state.forced_combat else {}
+	if not intercept.is_empty() and int(intercept["guard"].side) == state.reaction_side:
+		state.pending_intercept = {"mover": f.id, "path": path, "cost": cost, "ignored": ignored, "choice": intercept}
+		emit("intercept_offer", {"id": intercept["guard"].id, "target": f.id})
+		return true
+	return _apply_move(f, path, cost, intercept)
+
+
+func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Dictionary) -> bool:
 	if not intercept.is_empty():
 		path.resize(int(intercept["index"]) + 1)
 	f.pos = path[path.size() - 1]
 	f.actions_left -= 1
 	f.moves_taken += 1
-	emit("move", {"id": f.id, "path": path, "cost": r.cost[node]})
+	emit("move", {"id": f.id, "path": path, "cost": cost})
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
 	return true
@@ -96,7 +108,7 @@ func move_to(node: Vector2i) -> bool:
 ## One non-move action (fight, shoot, reload) per activation.
 func can_act() -> bool:
 	var f := state.active()
-	return state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.acted and not state.group.movement_pass()
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.acted and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:
@@ -151,7 +163,7 @@ func shoot(target_id: int) -> bool:
 ## Reload may replace the movement action (p. 34); never while engaged.
 func can_reload() -> bool:
 	var f := state.active()
-	return state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
+	return not awaiting_reaction() and state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
 
 
 func reload() -> bool:
@@ -168,7 +180,7 @@ func reload() -> bool:
 
 
 func end_activation() -> void:
-	if not state.pending_cast.is_empty():
+	if not state.pending_cast.is_empty() or awaiting_reaction():
 		return
 	_displacement.clear()
 	var f := state.active()
@@ -300,3 +312,28 @@ func finish_cast(health: int) -> bool:
 
 func cast_max_empowerment() -> int:
 	return _magic.max_empowerment()
+
+
+func awaiting_reaction() -> bool:
+	if not state.pending_intercept.is_empty():
+		return true
+	if state.push_winner < 0:
+		return false
+	var winner := state.figure(state.push_winner)
+	return winner != null and winner.side == state.reaction_side and state.current_side() != state.reaction_side
+
+
+func answer_intercept(accept: bool) -> bool:
+	var p := state.pending_intercept
+	if p.is_empty():
+		return false
+	state.pending_intercept = {}
+	var mover := state.figure(p["mover"])
+	var choice: Dictionary = p["choice"]
+	var path: PackedVector2Array = p["path"]
+	if accept:
+		return _apply_move(mover, path, float(p["cost"]), choice)
+	var ignored: Array[int] = []
+	ignored.assign(p["ignored"])
+	ignored.append(choice["guard"].id)
+	return _commit_move(mover, path, float(p["cost"]), ignored)

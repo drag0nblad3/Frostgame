@@ -87,3 +87,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Ongoing magic and poison
 
 - pp. 60, 118, 120, 124, 131: Slow, Curse, Furious Quill, Enchant Armour, Elemental Ball and Destroy Undead now execute. Ongoing effects modify live stats and rolls, with automatic resistance rolls at their specified timing. Poison reduces activations to one action, cannot stack, is cured by actual healing, and does not affect undead/constructs/demons. Elemental Ball uses connected melee expansion, but the existing flat LOS/cover model does not yet fully account for intervening figures. Resistance empowerment and armour-equipment distinctions remain partial.
+
+## Human defensive reactions
+
+- pp. 47, 53: human guards can now accept or decline an interception during an AI move. Declining preserves the path and searches for other guards; accepting interrupts movement and moves the guard to contact. Human defenders who win melee can choose displacement before the rival activation continues. The watch mode retains automatic AI decisions. Interception is evaluated at half-inch path nodes; AI policies and reaction animation remain preliminary.

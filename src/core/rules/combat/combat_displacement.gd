@@ -57,11 +57,11 @@ func _clear_path(moving: Figure, dest: Vector2) -> bool:
 
 
 ## Current policy: eligible guards automatically intercept when enabled.
-func intercept(mover: Figure, path: PackedVector2Array) -> Dictionary:
+func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []) -> Dictionary:
 	for i in range(1, path.size()):
 		var p := path[i]
 		for guard in c.state.figures:
-			if not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard):
+			if ignored.has(guard.id) or not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard):
 				continue
 			var distance := p.distance_to(guard.pos)
 			if distance > 2.0 or distance <= Contact.CONTACT:

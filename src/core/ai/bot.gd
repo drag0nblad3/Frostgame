@@ -10,6 +10,13 @@ static func play_activation(c: GameController) -> bool:
 	var f := _pick(c)
 	if f == null or not c.activate(f.id):
 		return false
+	return resume_activation(c)
+
+
+static func resume_activation(c: GameController) -> bool:
+	var f := c.state.active()
+	if f == null or c.awaiting_reaction():
+		return false
 	if f.side < 0:
 		CreatureBot.play(c, f)
 	elif not MagicBot.play(c, f) and not TreasureBot.play(c, f):
@@ -17,6 +24,8 @@ static func play_activation(c: GameController) -> bool:
 			_play_shooter(c, f)
 		else:
 			_play_fighter(c, f)
+	if c.awaiting_reaction():
+		return true
 	if c.state.push_winner == f.id and f.treasure_id >= 0 and c.can_push(true):
 		c.resolve_push(true)
 	c.end_activation()
