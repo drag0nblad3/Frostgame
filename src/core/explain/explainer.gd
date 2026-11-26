@@ -21,6 +21,12 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Hrut hunting parties arrive."
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
+		"mind_event":
+			return "Mindscape event: %s of hearts."%d["card"]
+		"mind_memory":
+			return "%s recovers a memory."%name_of(s,d["id"])
+		"mind_rewards":
+			return "Memory reward cards: "+", ".join(d["cards"])
 		"artefact_unlock":
 			return "%s attempts to unlock the artefact: %s."%[name_of(s,d["id"]),"success" if d["success"] else "failed"]
 		"portal_contact":

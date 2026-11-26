@@ -73,6 +73,8 @@ func can_deploy() -> bool:
 func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	if data.is_empty() or not c.state.over or not data.get("pending_treasure", []).is_empty():
 		return false
+	if RedKingMind.active(c.state):
+		return RedKingMindRewards.settle(data,c,side)
 	CampaignInventory.settle(data, c, side)
 	var report: Array[String] = []
 	var xp := 0

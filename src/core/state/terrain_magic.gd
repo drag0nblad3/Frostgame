@@ -210,6 +210,8 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var portal_hits := {}
 	for i in range(1, path.size()):
 		var at := path[i]
+		if RedKingMind.active(c.state):
+			RedKingMind.collect(c,f,path[i-1],at)
 		if RedKingFire.active(c.state):
 			RedKingFire.portal_contact(c,f,path[i-1],at,portal_hits)
 			if not f.in_play():

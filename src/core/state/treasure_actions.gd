@@ -10,6 +10,8 @@ func _init(c: GameController) -> void:
 
 
 func can_pick_up(id: int) -> bool:
+	if RedKingMind.active(_c.state):
+		return false
 	var token := _c.state.treasure(id)
 	if RedKingFire.locked(_c.state,token):
 		return RedKingFire.can_unlock(_c,token)
@@ -138,7 +140,7 @@ func cancel_shrinking(f: Figure) -> void:
 
 
 func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
-	if not _c.can_move():
+	if RedKingMind.active(_c.state) or not _c.can_move():
 		return false
 	var f := _c.state.active()
 	if (RedKingVeil.active(_c.state) and f.side==1) or f.control_spell == "mind_control" or f.side < 0 or f.spell_effects.has("plane_walk") or FuryRules.target(_c.state, f) != null:

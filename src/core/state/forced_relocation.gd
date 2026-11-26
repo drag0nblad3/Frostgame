@@ -41,6 +41,7 @@ static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 	var old := f.pos
 	f.pos=at
 	f.elevation=c.state.board.height_at(at)
+	RedKingMind.collect(c,f,at,at)
 	f.disengaged.clear()
 	for other in c.state.figures:
 		other.disengaged.erase(f.id)

@@ -3,6 +3,8 @@ extends RefCounted
 ## Objective-first bot policy. Combat remains the fallback if no route is usable.
 
 static func play(c: GameController, f: Figure) -> bool:
+	if RedKingMind.active(c.state):
+		return _mind_move(c,f)
 	if RedKingMadMan.hunter(f):
 		return false
 	if RedKingVeil.active(c.state):
@@ -148,4 +150,22 @@ static func _veil_progress(c: GameController,f: Figure) -> bool:
 		if at.y>score+0.01:
 			score=at.y
 			best=node
+	return best!=null and c.move_to(best)
+
+
+static func _mind_move(c: GameController,f: Figure) -> bool:
+	if not RedKingMind.is_wizard(c.state,f) or not c.can_move():
+		return false
+	var token := _nearest(c,f)
+	if token==null:
+		return false
+	var r := c.reach()
+	var field := MovePlanner.distance_field(c.state.board,token.pos)
+	var best: Variant=null
+	var score: float=field.get(MovePlanner.node_at(f.pos),INF)
+	for n: Vector2i in r.nodes():
+		var d: float=field.get(n,INF)
+		if d<score-0.05:
+			score=d
+			best=n
 	return best!=null and c.move_to(best)

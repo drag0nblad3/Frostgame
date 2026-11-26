@@ -161,6 +161,9 @@ func move_to(node: Vector2i) -> bool:
 			for i in range(1, path.size()):
 				if ScenarioNull.field_at(state.board, path[i]):
 					return false
+		if RedKingMind.active(state):
+			for i in range(1,path.size()):
+				RedKingMind.collect(self,f,path[i-1],path[i])
 		f.pos = MoveGrid.to_pos(node)
 		f.elevation = state.board.height_at(f.pos)
 		f.actions_left -= 1
@@ -217,7 +220,7 @@ func can_act(for_fight: bool = false) -> bool:
 	var f := state.active()
 	if not for_fight and FuryRules.target(state, f) != null:
 		return false
-	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (not f.acted or (RedKingMind.is_wizard(state,f) and f.non_moves<2) or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (f.non_moves<2 if RedKingMind.is_wizard(state,f) else (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2)))) and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:

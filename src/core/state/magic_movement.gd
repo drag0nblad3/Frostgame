@@ -72,6 +72,7 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, 
 	var height := t.elevation
 	t.pos = at
 	t.elevation = c.state.board.height_at(at)
+	RedKingMind.collect(c,t,at,at)
 	if exhaust:
 		t.magic_exhausted = true
 		t.actions_left = 0

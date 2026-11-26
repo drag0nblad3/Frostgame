@@ -49,6 +49,8 @@ static func progress(s: GameState) -> String:
 			text+=" | Ryce fleeing"
 		elif rescue!=null:
 			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
+	if RedKingMind.active(s):
+		text="Mindscape · %d/8 memories · Turn %d/8"%[secured,mini(8,s.turn)]
 	if RedKingFire.active(s):
 		var artefact := s.treasure(0)
 		if artefact!=null and artefact.frozen:
