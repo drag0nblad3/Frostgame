@@ -1,0 +1,504 @@
+{
+  "crumble": {
+    "name": "Crumble",
+    "school": "chronomancer",
+    "number": 10,
+    "kind": "counter"
+  },
+  "decay": {
+    "name": "Decay",
+    "school": "chronomancer",
+    "number": 12,
+    "kind": "counter"
+  },
+  "fast_act": {
+    "name": "Fast Act",
+    "school": "chronomancer",
+    "number": 8,
+    "kind": "special"
+  },
+  "fleet_feet": {
+    "name": "Fleet Feet",
+    "school": "chronomancer",
+    "number": 10,
+    "kind": "buff"
+  },
+  "petrify": {
+    "name": "Petrify",
+    "school": "chronomancer",
+    "number": 10,
+    "kind": "buff"
+  },
+  "slow": {
+    "name": "Slow",
+    "school": "chronomancer",
+    "number": 10,
+    "kind": "buff"
+  },
+  "time_store": {
+    "name": "Time Store",
+    "school": "chronomancer",
+    "number": 14,
+    "kind": "special"
+  },
+  "time_walk": {
+    "name": "Time Walk",
+    "school": "chronomancer",
+    "number": 14,
+    "kind": "special"
+  },
+  "call_storm": {
+    "name": "Call Storm",
+    "school": "elementalist",
+    "number": 12,
+    "kind": "self_area"
+  },
+  "destructive_sphere": {
+    "name": "Destructive Sphere",
+    "school": "elementalist",
+    "number": 12,
+    "kind": "self_area"
+  },
+  "elemental_ball": {
+    "name": "Elemental Ball",
+    "school": "elementalist",
+    "number": 12,
+    "kind": "area_shot",
+    "range": 16
+  },
+  "elemental_bolt": {
+    "name": "Elemental Bolt",
+    "school": "elementalist",
+    "number": 12,
+    "range": 16,
+    "kind": "shot",
+    "power": 7
+  },
+  "elemental_hammer": {
+    "name": "Elemental Hammer",
+    "school": "elementalist",
+    "number": 10,
+    "kind": "buff"
+  },
+  "elemental_shield": {
+    "name": "Elemental Shield",
+    "school": "elementalist",
+    "number": 10,
+    "kind": "self"
+  },
+  "scatter_shot": {
+    "name": "Scatter Shot",
+    "school": "elementalist",
+    "number": 12,
+    "kind": "self_area"
+  },
+  "wall": {
+    "name": "Wall",
+    "school": "elementalist",
+    "number": 10,
+    "kind": "placement"
+  },
+  "animate_construct": {
+    "name": "Animate Construct",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "control_construct": {
+    "name": "Control Construct",
+    "school": "enchanter",
+    "number": 12,
+    "kind": "control"
+  },
+  "embed_enchantment": {
+    "name": "Embed Enchantment",
+    "school": "enchanter",
+    "number": 14,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "enchant_armour": {
+    "name": "Enchant Armour",
+    "school": "enchanter",
+    "number": 8,
+    "kind": "buff"
+  },
+  "enchant_weapon": {
+    "name": "Enchant Weapon",
+    "school": "enchanter",
+    "number": 8,
+    "kind": "buff"
+  },
+  "grenade": {
+    "name": "Grenade",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "placement"
+  },
+  "strength": {
+    "name": "Strength",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "buff"
+  },
+  "telekinesis": {
+    "name": "Telekinesis",
+    "school": "enchanter",
+    "number": 10,
+    "kind": "treasure"
+  },
+  "beauty": {
+    "name": "Beauty",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "special"
+  },
+  "blink": {
+    "name": "Blink",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "special",
+    "range": 12
+  },
+  "fools_gold": {
+    "name": "Fool's Gold",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "treasure"
+  },
+  "glow": {
+    "name": "Glow",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "buff"
+  },
+  "illusionary_soldier": {
+    "name": "Illusionary Soldier",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "placement",
+    "campaign": true
+  },
+  "invisibility": {
+    "name": "Invisibility",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "touch"
+  },
+  "teleport": {
+    "name": "Teleport",
+    "school": "illusionist",
+    "number": 10,
+    "kind": "placement"
+  },
+  "transpose": {
+    "name": "Transpose",
+    "school": "illusionist",
+    "number": 12,
+    "kind": "special"
+  },
+  "animate_skull": {
+    "name": "Animate Skull",
+    "school": "necromancer",
+    "number": 8,
+    "kind": "placement"
+  },
+  "bone_dart": {
+    "name": "Bone Dart",
+    "school": "necromancer",
+    "number": 10,
+    "range": 12,
+    "kind": "shot",
+    "power": 5
+  },
+  "bones_of_the_earth": {
+    "name": "Bones of the Earth",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "special",
+    "range": 18
+  },
+  "control_undead": {
+    "name": "Control Undead",
+    "school": "necromancer",
+    "number": 12,
+    "kind": "control"
+  },
+  "raise_zombie": {
+    "name": "Raise Zombie",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "placement",
+    "campaign": true
+  },
+  "spell_eater": {
+    "name": "Spell Eater",
+    "school": "necromancer",
+    "number": 12,
+    "kind": "counter"
+  },
+  "steal_health": {
+    "name": "Steal Health",
+    "school": "necromancer",
+    "number": 10,
+    "kind": "resist"
+  },
+  "strike_dead": {
+    "name": "Strike Dead",
+    "school": "necromancer",
+    "number": 18,
+    "kind": "special",
+    "range": 8
+  },
+  "absorb_knowledge": {
+    "name": "Absorb Knowledge",
+    "school": "sigilist",
+    "number": 12,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "bridge": {
+    "name": "Bridge",
+    "school": "sigilist",
+    "number": 10,
+    "kind": "placement"
+  },
+  "draining_word": {
+    "name": "Draining Word",
+    "school": "sigilist",
+    "number": 14,
+    "kind": "counter"
+  },
+  "explosive_rune": {
+    "name": "Explosive Rune",
+    "school": "sigilist",
+    "number": 10,
+    "kind": "placement"
+  },
+  "furious_quill": {
+    "name": "Furious Quill",
+    "school": "sigilist",
+    "number": 10,
+    "kind": "buff"
+  },
+  "power_word": {
+    "name": "Power Word",
+    "school": "sigilist",
+    "number": 14,
+    "kind": "counter"
+  },
+  "push": {
+    "name": "Push",
+    "school": "sigilist",
+    "number": 8,
+    "kind": "special"
+  },
+  "write_scroll": {
+    "name": "Write Scroll",
+    "school": "sigilist",
+    "number": 12,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "awareness": {
+    "name": "Awareness",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "combat_awareness": {
+    "name": "Combat Awareness",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "touch"
+  },
+  "mind_control": {
+    "name": "Mind Control",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "control"
+  },
+  "mind_lock": {
+    "name": "Mind Lock",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "buff"
+  },
+  "reveal_secret": {
+    "name": "Reveal Secret",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "suggestion": {
+    "name": "Suggestion",
+    "school": "soothsayer",
+    "number": 12,
+    "kind": "special"
+  },
+  "true_sight": {
+    "name": "True Sight",
+    "school": "soothsayer",
+    "number": 10,
+    "kind": "special"
+  },
+  "wizard_eye": {
+    "name": "Wizard Eye",
+    "school": "soothsayer",
+    "number": 8,
+    "kind": "counter"
+  },
+  "control_demon": {
+    "name": "Control Demon",
+    "school": "summoner",
+    "number": 10,
+    "kind": "control"
+  },
+  "imp": {
+    "name": "Imp",
+    "school": "summoner",
+    "number": 10,
+    "kind": "placement"
+  },
+  "leap": {
+    "name": "Leap",
+    "school": "summoner",
+    "number": 8,
+    "kind": "special"
+  },
+  "plague_of_insects": {
+    "name": "Plague of Insects",
+    "school": "summoner",
+    "number": 10,
+    "kind": "special"
+  },
+  "planar_tear": {
+    "name": "Planar Tear",
+    "school": "summoner",
+    "number": 12,
+    "kind": "placement"
+  },
+  "plane_walk": {
+    "name": "Plane Walk",
+    "school": "summoner",
+    "number": 10,
+    "kind": "special"
+  },
+  "possess": {
+    "name": "Possess",
+    "school": "summoner",
+    "number": 12,
+    "kind": "special"
+  },
+  "summon_demon": {
+    "name": "Summon Demon",
+    "school": "summoner",
+    "number": 12,
+    "kind": "placement"
+  },
+  "banish": {
+    "name": "Banish",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "self_area"
+  },
+  "blinding_light": {
+    "name": "Blinding Light",
+    "school": "thaumaturge",
+    "number": 8,
+    "kind": "buff"
+  },
+  "circle_of_protection": {
+    "name": "Circle of Protection",
+    "school": "thaumaturge",
+    "number": 12,
+    "kind": "placement"
+  },
+  "destroy_undead": {
+    "name": "Destroy Undead",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "special"
+  },
+  "dispel": {
+    "name": "Dispel",
+    "school": "thaumaturge",
+    "number": 12,
+    "kind": "counter"
+  },
+  "heal": {
+    "name": "Heal",
+    "school": "thaumaturge",
+    "number": 8,
+    "range": 6,
+    "kind": "heal"
+  },
+  "miraculous_cure": {
+    "name": "Miraculous Cure",
+    "school": "thaumaturge",
+    "number": 16,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "shield": {
+    "name": "Shield",
+    "school": "thaumaturge",
+    "number": 10,
+    "kind": "buff"
+  },
+  "animal_companion": {
+    "name": "Animal Companion",
+    "school": "witch",
+    "number": 10,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "brew_potion": {
+    "name": "Brew Potion",
+    "school": "witch",
+    "number": 12,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "control_animal": {
+    "name": "Control Animal",
+    "school": "witch",
+    "number": 12,
+    "kind": "control"
+  },
+  "curse": {
+    "name": "Curse",
+    "school": "witch",
+    "number": 8,
+    "kind": "buff"
+  },
+  "familiar": {
+    "name": "Familiar",
+    "school": "witch",
+    "number": 10,
+    "kind": "ritual",
+    "campaign": true
+  },
+  "fog": {
+    "name": "Fog",
+    "school": "witch",
+    "number": 8,
+    "kind": "placement"
+  },
+  "mud": {
+    "name": "Mud",
+    "school": "witch",
+    "number": 10,
+    "kind": "placement"
+  },
+  "poison_dart": {
+    "name": "Poison Dart",
+    "school": "witch",
+    "number": 10,
+    "kind": "shot",
+    "power": 3
+  }
+}

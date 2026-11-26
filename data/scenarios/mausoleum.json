@@ -1,0 +1,221 @@
+{
+  "id": "mausoleum",
+  "name": "The Mausoleum",
+  "board": "mausoleum",
+  "warbands": [
+    {
+      "name": "Elementalist",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            3
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            15,
+            3
+          ]
+        },
+        {
+          "type": "knight",
+          "at": [
+            20,
+            4.5
+          ]
+        },
+        {
+          "type": "man_at_arms",
+          "at": [
+            13,
+            4.5
+          ]
+        },
+        {
+          "type": "infantryman",
+          "at": [
+            22,
+            3
+          ]
+        },
+        {
+          "type": "archer",
+          "at": [
+            10,
+            3
+          ]
+        },
+        {
+          "type": "crossbowman",
+          "at": [
+            26,
+            3
+          ]
+        }
+      ],
+      "spells": {
+        "elemental_bolt": 12,
+        "elemental_shield": 10,
+        "fleet_feet": 12,
+        "strength": 12,
+        "heal": 12,
+        "combat_awareness": 16
+      }
+    },
+    {
+      "name": "Necromancer",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            33
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            21,
+            33
+          ]
+        },
+        {
+          "type": "barbarian",
+          "at": [
+            16,
+            31.5
+          ]
+        },
+        {
+          "type": "treasure_hunter",
+          "at": [
+            23,
+            31.5
+          ]
+        },
+        {
+          "type": "thug",
+          "at": [
+            19,
+            31.5
+          ]
+        },
+        {
+          "type": "ranger",
+          "at": [
+            12,
+            33
+          ]
+        },
+        {
+          "type": "marksman",
+          "at": [
+            26,
+            33
+          ]
+        }
+      ],
+      "spells": {
+        "bone_dart": 10,
+        "steal_health": 10,
+        "fleet_feet": 12,
+        "glow": 14,
+        "mind_lock": 16,
+        "strength": 14
+      }
+    }
+  ],
+  "treasures": [
+    [
+      14.4,
+      14.4
+    ],
+    [
+      21.6,
+      14.4
+    ],
+    [
+      14.4,
+      21.6
+    ],
+    [
+      21.6,
+      21.6
+    ],
+    [
+      18,
+      10
+    ],
+    [
+      18,
+      25
+    ]
+  ],
+  "random_encounters": false,
+  "forced_combat": true,
+  "reinforcements": [
+    [
+      18,
+      13.5
+    ],
+    [
+      22.5,
+      18
+    ],
+    [
+      18,
+      22.5
+    ],
+    [
+      13.5,
+      18
+    ]
+  ],
+  "creatures": [
+    {
+      "type": "skeleton",
+      "at": [
+        18,
+        13.5
+      ]
+    },
+    {
+      "type": "skeleton",
+      "at": [
+        22.5,
+        18
+      ]
+    },
+    {
+      "type": "skeleton",
+      "at": [
+        18,
+        22.5
+      ]
+    },
+    {
+      "type": "skeleton",
+      "at": [
+        13.5,
+        18
+      ]
+    },
+    {
+      "type": "skeleton",
+      "at": [
+        18,
+        11.2
+      ]
+    },
+    {
+      "type": "skeleton",
+      "at": [
+        18,
+        23.8
+      ]
+    }
+  ]
+}

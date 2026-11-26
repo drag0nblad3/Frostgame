@@ -1,0 +1,48 @@
+extends SceneTree
+## Exercise the actual campaign inventory and deployment with a temporary in-memory draft.
+
+var scene: Node
+var started := false
+
+
+func _initialize() -> void:
+	scene = load("res://scenes/main.tscn").instantiate()
+	root.add_child(scene)
+
+
+func _process(_delta: float) -> bool:
+	if started:
+		return false
+	started = true
+	if not scene.has_method("_open_campaign"):
+		quit(1)
+		return true
+	var draft := WarbandDraft.new(scene._figures)
+	draft.choose_defaults()
+	scene._campaign.start(draft.as_warband())
+	scene._campaign.data["gold"] = 1000
+	CampaignInventory.buy(scene._campaign.data, "healing")
+	CampaignInventory.buy(scene._campaign.data, "gear_hand_weapon_damage")
+	scene._open_campaign()
+	var panel: InventoryPanel = scene._campaign_dialog.inventory
+	if panel.loot.item_count != 2 or panel.recipient_choice.item_count < 4:
+		printerr("Inventory controls failed")
+		quit(1)
+		return true
+	if not CampaignInventory.assign_item(scene._campaign.data, 1, 2, scene._figures):
+		quit(1)
+		return true
+	panel.refresh()
+	scene._begin_campaign_battle()
+	var s: GameState = scene.controller.state
+	var found := false
+	for f in s.figures:
+		if f.campaign_id == 2:
+			found = MagicEquipment.bonus(f, "damage", "hand_weapon") == 1
+	if not found:
+		printerr("Inventory deployment failed")
+		quit(1)
+		return true
+	print("Inventory smoke passed")
+	quit(0)
+	return true

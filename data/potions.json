@@ -1,0 +1,212 @@
+{
+  "healing": {
+    "name": "Potion of Healing",
+    "buy": 75,
+    "sell": 50,
+    "live": true,
+    "greater": false
+  },
+  "strength": {
+    "name": "Potion of Strength",
+    "buy": 100,
+    "sell": 40,
+    "live": true,
+    "greater": false
+  },
+  "toughness": {
+    "name": "Potion of Toughness",
+    "buy": 50,
+    "sell": 30,
+    "live": true,
+    "greater": false
+  },
+  "speed": {
+    "name": "Elixir of Speed",
+    "buy": 50,
+    "sell": 30,
+    "live": true,
+    "greater": false
+  },
+  "invisibility": {
+    "name": "Potion of Invisibility",
+    "buy": 100,
+    "sell": 50,
+    "live": true,
+    "greater": false
+  },
+  "explosive_cocktail": {
+    "name": "Explosive Cocktail",
+    "buy": 100,
+    "sell": 30,
+    "live": true,
+    "greater": false
+  },
+  "teleportation": {
+    "name": "Potion of Teleportation",
+    "buy": 500,
+    "sell": 100,
+    "live": true,
+    "greater": false
+  },
+  "elemental_absorption": {
+    "name": "Potion of Elemental Absorption",
+    "buy": 200,
+    "sell": 80,
+    "live": true,
+    "greater": false
+  },
+  "clearsight": {
+    "name": "Cordial of Clearsight",
+    "buy": 200,
+    "sell": 80,
+    "live": true,
+    "greater": false
+  },
+  "poison": {
+    "name": "Poison",
+    "buy": 100,
+    "sell": 30,
+    "live": true,
+    "greater": false
+  },
+  "fury": {
+    "name": "Philtre of Fury",
+    "buy": 300,
+    "sell": 120,
+    "live": true,
+    "greater": false
+  },
+  "iron_mind": {
+    "name": "Potion of Iron Mind",
+    "buy": 50,
+    "sell": 30,
+    "live": true,
+    "greater": false
+  },
+  "burrowing": {
+    "name": "Bottle of Burrowing",
+    "buy": 200,
+    "sell": 80,
+    "live": true,
+    "greater": false
+  },
+  "fairy_dust": {
+    "name": "Philtre of Fairy Dust",
+    "buy": 50,
+    "sell": 30,
+    "live": true,
+    "greater": false
+  },
+  "construct_oil": {
+    "name": "Construct Oil",
+    "buy": 100,
+    "sell": 50,
+    "live": true,
+    "greater": false,
+    "campaign": true
+  },
+  "fire_breath": {
+    "name": "Potion of Fire Breath",
+    "buy": 200,
+    "sell": 80,
+    "live": true,
+    "greater": false
+  },
+  "preservation": {
+    "name": "Potion of Preservation",
+    "buy": 500,
+    "sell": 200,
+    "live": true,
+    "greater": false,
+    "campaign": true
+  },
+  "chameleon": {
+    "name": "Elixir of the Chameleon",
+    "buy": 400,
+    "sell": 140,
+    "live": true,
+    "greater": false
+  },
+  "empowerment": {
+    "name": "Cordial of Empowerment",
+    "buy": 500,
+    "sell": 200,
+    "live": true,
+    "greater": true,
+    "ingredients": 200
+  },
+  "shrinking": {
+    "name": "Shrinking Potion",
+    "buy": 500,
+    "sell": 200,
+    "live": true,
+    "greater": true,
+    "ingredients": 200
+  },
+  "restoration": {
+    "name": "Potion of Restoration",
+    "buy": 2000,
+    "sell": 300,
+    "live": true,
+    "greater": true,
+    "ingredients": 750
+  },
+  "dreams": {
+    "name": "Bottle of Dreams and Nightmares",
+    "buy": 2000,
+    "sell": 300,
+    "live": true,
+    "greater": true,
+    "ingredients": 500,
+    "campaign": true
+  },
+  "shatterstar": {
+    "name": "Shatterstar Draught",
+    "buy": 1500,
+    "sell": 200,
+    "live": false,
+    "greater": true,
+    "ingredients": 600
+  },
+  "darkness": {
+    "name": "Bottle of Darkness",
+    "buy": 1500,
+    "sell": 300,
+    "live": true,
+    "greater": true,
+    "ingredients": 600
+  },
+  "ethereal_vacuum": {
+    "name": "Ethereal Vacuum",
+    "buy": 2000,
+    "sell": 200,
+    "live": true,
+    "greater": true,
+    "ingredients": 800
+  },
+  "invulnerability": {
+    "name": "Potion of Invulnerability",
+    "buy": 0,
+    "sell": 400,
+    "live": true,
+    "greater": true,
+    "ingredients": 2000
+  },
+  "null": {
+    "name": "Bottle of Null",
+    "buy": 0,
+    "sell": 200,
+    "live": true,
+    "greater": true,
+    "ingredients": 1000
+  },
+  "life": {
+    "name": "Elixir of Life",
+    "buy": 0,
+    "sell": 1000,
+    "live": true,
+    "greater": true,
+    "ingredients": 3000,
+    "campaign": true
+  }
+}
