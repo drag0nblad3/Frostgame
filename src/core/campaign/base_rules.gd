@@ -7,7 +7,7 @@ const BENEFITS := {
 	"treasury": "Chance of extra gold or treasure after battle",
 	"temple": "+3 Miraculous Cure; chance of healing potion",
 	"crypt": "+2 Raise Zombie and Animate Skull",
-	"tower": "+2 Awareness and Reveal Secret (when implemented)",
+	"tower": "+2 Awareness and Reveal Secret",
 	"library": "Chance of a scroll or grimoire after battle"
 }
 

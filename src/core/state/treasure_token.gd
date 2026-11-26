@@ -8,11 +8,13 @@ var carrier_id := -1
 var secured_by := -1
 var lost := false
 var ever_collected := false
+var central := false
 
 
 func _init(token_id: int, at: Vector2) -> void:
 	id = token_id
 	pos = at
+	central = token_id == 0
 
 
 func unresolved() -> bool:

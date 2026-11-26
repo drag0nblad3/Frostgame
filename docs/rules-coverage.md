@@ -210,6 +210,10 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 
 - p.118: select a visible solid terrain feature, destroy a conjured Wall entirely or cut a 1.5-inch opening through the centre of a normal rectangular obstruction. Rebuilds the terrain meshes and movement caches. Elevated figures losing their footing make TN22 Move tests (including Lost Toes); a success relocates to an available nearby surface, otherwise falls. This is an exposed-heightfield approximation: arbitrary hole placement, multiple stacked floors, and Wizard Eye cancellation await later work.
 
+## Reveal Secret and central treasure
+
+- pp.85, 130: prebattle Reveal Secret stores one choice per successful cast. Eligible recovered noncentral tokens receive two table rolls, with the selected result resolved before gold dice or item subtables. Central treasure independently offers keep or mandatory-result reroll. Pending decisions persist in the save and block next deployment. The engine assigns Reveal Secret to the first recovered eligible tokens rather than allowing the player to designate them; ordinary treasure and base awards are resolved immediately. Central status is explicit on treasure tokens and disabled for Mausoleum/Museum.
+
 ## Embed Enchantment
 
 - p.120: surviving friendly campaign figures with active Enchant Weapon or Enchant Armour are recorded after battle as eligible enchantments. The postgame ritual selects a single candidate and, on success, creates its matching permanent equipment in the vault. Normal slot/compatibility rules apply when assigning the item. The extra heavy-armour variant is not part of the random equipment table; its sale price is provisionally matched to enchanted light armour. Current weapon enchantment targets the primary ranged weapon if present, otherwise the active melee weapon. Ownership of the embedded item is assigned manually; duplicate enchantments on already-magical gear, free dagger slots and armour eligibility still need audit.

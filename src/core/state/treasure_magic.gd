@@ -13,7 +13,7 @@ func can_target(f: Figure, id: String, token: TreasureToken) -> bool:
 	if not token.unresolved():
 		return false
 	if id == "telekinesis":
-		return token.on_ground() and not s.museum and (token.id != 0 or token.ever_collected) and Vector2(f.pos.distance_to(token.pos), f.elevation - s.board.height_at(token.pos)).length() <= 16.0 and LineOfSight.check(s.board, f.pos, token.pos).clear
+		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and Vector2(f.pos.distance_to(token.pos), f.elevation - s.board.height_at(token.pos)).length() <= 16.0 and LineOfSight.check(s.board, f.pos, token.pos).clear
 	if id == "fools_gold":
 		var carrier := s.figure(token.carrier_id)
 		return carrier != null and carrier.in_play() and IllusionRules.visible_to(s.figures, f, carrier) and LineOfSight.check(s.board, f.pos, carrier.pos).clear

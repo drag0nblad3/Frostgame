@@ -1,7 +1,7 @@
 class_name Rituals
 extends RefCounted
 ## Campaign-only spell attempts keyed by battle number, caster and spell.
-const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier"]
+const BEFORE := ["brew_potion", "familiar", "animal_companion", "animate_construct", "raise_zombie", "awareness", "illusionary_soldier", "reveal_secret"]
 const AFTER := ["absorb_knowledge", "write_scroll", "miraculous_cure", "embed_enchantment"]
 const ANIMALS := ["bear", "ice_toad", "snow_leopard", "wolf"]
 const CONSTRUCTS := ["small_construct", "medium_construct", "large_construct"]
@@ -25,7 +25,7 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 		"absorb_knowledge":
 			if wizard and not u.get("last_knocked_out", false):
 				out.append("")
-		"familiar", "awareness":
+		"familiar", "awareness", "reveal_secret":
 			out.append("")
 		"illusionary_soldier":
 			if not d.has("prepared_illusion") or d["prepared_illusion"] == "":
@@ -117,6 +117,8 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 			u["familiar"] = true
 		"awareness":
 			u["awareness"] = true
+		"reveal_secret":
+			d["revealed_secrets"] = int(d.get("revealed_secrets", 0)) + 1
 		"illusionary_soldier":
 			d["prepared_illusion"] = option
 		"brew_potion":

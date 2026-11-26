@@ -61,5 +61,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		s.figures.append(creature)
 		next_id += 1
 	for at: Array in d.get("treasures", []):
-		s.treasures.append(TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1])))
+		var token := TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1]))
+		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
+		s.treasures.append(token)
 	return s

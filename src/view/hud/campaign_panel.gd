@@ -26,6 +26,10 @@ var inventory: InventoryPanel
 var rituals: RitualPanel
 var niggle: OptionButton
 var niggle_button: Button
+var treasure_choice: Label
+var keep_treasure: Button
+var alternate_treasure: Button
+var treasure_dice := Dice.new(0)
 
 
 func setup(progress: CampaignProgress, figures: FigureDb) -> void:
@@ -42,6 +46,15 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	summary = Label.new()
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(summary)
+	treasure_choice = Label.new()
+	treasure_choice.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	col.add_child(treasure_choice)
+	keep_treasure = _command(col, "Keep first result", func() -> void:
+		if campaign.resolve_treasure(false, treasure_dice):
+			changed())
+	alternate_treasure = _command(col, "Choose second result", func() -> void:
+		if campaign.resolve_treasure(true, treasure_dice):
+			changed())
 	spells = OptionButton.new()
 	col.add_child(spells)
 	improve = Button.new()
@@ -119,8 +132,20 @@ func refresh(in_battle: bool) -> void:
 	begin.visible = not d.is_empty()
 	spells.visible = not d.is_empty()
 	improve.visible = not d.is_empty()
+	var pending: Array = d.get("pending_treasure", [])
+	var deciding := not pending.is_empty() and not in_battle
+	treasure_choice.visible = deciding
+	keep_treasure.visible = deciding
+	alternate_treasure.visible = deciding
+	if deciding:
+		var entry: Dictionary = pending[0]
+		treasure_choice.text = "Treasure %d: %s" % [int(entry["token"]) + 1, CampaignProgress.treasure_label(int(entry["first"]))]
+		if entry["central"]:
+			alternate_treasure.text = "Reroll central treasure (must accept)"
+		else:
+			alternate_treasure.text = "Choose: " + CampaignProgress.treasure_label(int(entry["second"]))
 	for control in controls:
-		control.visible = not d.is_empty() and not in_battle
+		control.visible = not d.is_empty() and not in_battle and not deciding
 	if d.is_empty():
 		summary.text = "Create a warband first, or start with a basic default draft. Campaign progress is saved between battles."
 		return
@@ -176,7 +201,7 @@ func refresh(in_battle: bool) -> void:
 			continue
 		spells.add_item("%s · TN%d" % [id.capitalize(), d["spells"][id]])
 		spells.set_item_metadata(spells.item_count - 1, id)
-	improve.disabled = in_battle or bool(d["spell_improved"]) or int(d["xp"]) < 100 or spells.item_count == 0
+	improve.disabled = deciding or in_battle or bool(d["spell_improved"]) or int(d["xp"]) < 100 or spells.item_count == 0
 	begin.disabled = in_battle or not campaign.can_deploy()
 
 
