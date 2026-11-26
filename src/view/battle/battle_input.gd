@@ -39,6 +39,12 @@ func refresh() -> void:
 	available.clear()
 	reach = null
 	var f := c.state.active()
+	if not c.state.pending_resistance.is_empty():
+		empower = 0
+		mode = "resist"
+		_resist_buttons()
+		preview()
+		return
 	if not c.state.pending_intercept.is_empty():
 		available.assign(["intercept_yes", "intercept_no"])
 		mode = "intercept"
@@ -163,6 +169,12 @@ func preview() -> void:
 					targets.append(t)
 			radius = 0.65
 			hint = "Choose a target for %s." % c.state.spell_catalog[selected_spell]["name"]
+		"resist":
+			var p := c.state.pending_resistance
+			var t := c.state.figure(p["id"])
+			points.append(t.pos)
+			radius = 0.65
+			hint = "%s resists: rolled %d + %d Will, needs %d. Spend %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], empower, int(p["raw"]) + int(p["mod"]) + empower]
 		"empower":
 			var p := c.state.pending_cast
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d HP → %d. Confirm to resolve." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], empower, int(p["total"]) + empower]
@@ -254,6 +266,13 @@ func action(key: String) -> bool:
 		preview()
 		return false
 	match key:
+		"resist_plus", "resist_minus":
+			empower = clampi(empower + (1 if key == "resist_plus" else -1), 0, int(c.state.pending_resistance["max"]))
+			_resist_buttons()
+			preview()
+			return false
+		"resist_confirm":
+			return c._magic.resistance.answer(empower)
 		"counter_previous", "counter_next":
 			counter_index = posmod(counter_index + (1 if key == "counter_next" else -1), counter_choices.size())
 			preview()
@@ -424,3 +443,11 @@ func _surface_at(screen: Vector2) -> Variant:
 			nearest = distance
 			best = point
 	return best
+
+
+func _resist_buttons() -> void:
+	available.assign(["resist_confirm"])
+	if empower < int(c.state.pending_resistance["max"]):
+		available.append("resist_plus")
+	if empower > 0:
+		available.append("resist_minus")

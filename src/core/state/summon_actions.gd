@@ -82,7 +82,11 @@ func points(f: Figure, id: String, first_only: bool = false) -> Array[Vector2]:
 
 
 func apply_control(f: Figure, t: Figure, id: String, roll: int) -> void:
-	if StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty(), roll):
+	c._magic.resistance.attempt(t, roll, _control_result.bind(f, t, id, roll))
+
+
+func _control_result(success: bool, f: Figure, t: Figure, id: String, roll: int) -> void:
+	if success or not t.in_play():
 		return
 	t.controller_id = f.id
 	t.control_spell = id

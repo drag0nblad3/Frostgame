@@ -110,9 +110,15 @@ func push(f: Figure, t: Figure) -> void:
 
 
 func blink(f: Figure, t: Figure, roll: int) -> void:
-	if t.side != f.side and StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty(), roll):
-		return
-	force(t, Vector2.RIGHT.rotated(TAU * c.dice.pick(20) / 20.0), 4.0)
+	if t.side != f.side:
+		c._magic.resistance.attempt(t, roll, _blink_result.bind(t))
+	else:
+		_blink_result(false, t)
+
+
+func _blink_result(success: bool, t: Figure) -> void:
+	if not success and t.in_play():
+		force(t, Vector2.RIGHT.rotated(TAU * c.dice.pick(20) / 20.0), 4.0)
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:
@@ -120,7 +126,17 @@ func can_swap(f: Figure, a: Figure, b: Figure) -> bool:
 
 
 func transpose(f: Figure, a: Figure, b: Figure, roll: int) -> void:
-	for t in [a, b]:
-		if t.side >= 0 and t.side != f.side and StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty(), roll):
-			return
-	swap(a, b)
+	_transpose_step(false, f, a, b, roll, 0)
+
+
+func _transpose_step(success: bool, f: Figure, a: Figure, b: Figure, roll: int, index: int) -> void:
+	if success or not a.in_play() or not b.in_play():
+		return
+	if index >= 2:
+		swap(a, b)
+		return
+	var t := a if index == 0 else b
+	if t.side >= 0 and t.side != f.side:
+		c._magic.resistance.attempt(t, roll, _transpose_step.bind(f, a, b, roll, index + 1))
+	else:
+		_transpose_step(false, f, a, b, roll, index + 1)

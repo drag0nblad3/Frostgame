@@ -8,6 +8,7 @@ var terrain: TerrainMagic
 var movement: MagicMovement
 var counter: CounterMagic
 var illusions: IllusionActions
+var resistance: ResistanceActions
 
 
 func _init(controller: GameController) -> void:
@@ -17,6 +18,7 @@ func _init(controller: GameController) -> void:
 	movement = MagicMovement.new(c)
 	counter = CounterMagic.new(c)
 	illusions = IllusionActions.new(c)
+	resistance = ResistanceActions.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -243,10 +245,8 @@ func finish(health: int) -> bool:
 			s.storm_penalty = mini(5, s.storm_penalty + 1)
 		"blinding_light", "petrify":
 			var bonus := 8 if id == "petrify" and t.def.traits.has("large") else 0
-			if not StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty() + bonus, result["roll"]):
-				t.spell_effects[id] = int(result["roll"])
-				if id == "petrify":
-					t.petrified_skip = true
+			resistance.attempt(t, int(result["roll"]), _resisted_status.bind(t, id, int(result["roll"])), bonus)
+			return true
 		"banish":
 			for other in s.figures:
 				if other.in_play() and other.def.traits.has("demon") and LineOfSight.check(s.board, f.pos, other.pos).clear:
@@ -278,10 +278,8 @@ func finish(health: int) -> bool:
 			if not StatRoll.succeeds(raw, t.effective_will() + t.roll_penalty(), result["roll"]):
 				c._hurt(t, t.health if t.effective_will() <= 2 else maxi(0, int(result["roll"]) - total) * 3, f, false)
 		"steal_health":
-			if not StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty(), result["roll"]):
-				c._hurt(t, 3, f, false)
-				if f.in_play():
-					_heal(f, 3)
+			resistance.attempt(t, int(result["roll"]), _resisted_steal.bind(f, t))
+			return true
 		_:
 			t.spell_effects[id] = true
 	c.emit("spell_effect", {"id": t.id, "spell": id})
@@ -367,3 +365,21 @@ func cancel(target: int) -> bool:
 	c._spend(f)
 	summons.cancel(f, c.state.figure(target))
 	return true
+
+
+func _resisted_status(success: bool, t: Figure, id: String, roll: int) -> void:
+	if success or not t.in_play():
+		return
+	t.spell_effects[id] = roll
+	if id == "petrify":
+		t.petrified_skip = true
+	c.emit("spell_effect", {"id": t.id, "spell": id})
+
+
+func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
+	if success or not t.in_play():
+		return
+	c._hurt(t, 3, f, false)
+	if f.in_play():
+		_heal(f, 3)
+	c.emit("spell_effect", {"id": t.id, "spell": "steal_health"})

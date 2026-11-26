@@ -137,3 +137,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Illusion effects
 
 - pp. 124–125, 134: Invisibility prevents targeted shots/spells and enemy entry into contact; casting, entering melee and collecting/dropping treasure reveal the figure. True Sight dispels nearby invisibility/phantoms and grants nearby allies detection. Illusionary Soldier currently summons a revealed illusory Thug (one per warband), able to engage/support but not inflict combat damage or collect treasure; any damage removes it. Models are translucent and labeled. Selection of other soldier types and pre-game casting are pending. True Sight creature-trait radius and some indirect area/forced-contact edge cases remain approximate.
+
+## Immediate resistance empowerment
+
+- p. 65: Blinding Light, Petrify, Steal Health, control spells, Blink and Transpose use a shared Will resistance resolver. Human spellcasters with a failed non-natural-1 roll may spend Health before the spell resolves, with no result cap; natural 1/20 are automatic. AI spends at most two Health to succeed and avoids lethal spending. The battle pauses across rival activations, and a two-target Transpose can request sequential resistance. Ongoing-effect expiration tests and other area/instant resistance spells still use automatic tests. Optional refusal to roll before rolling is not yet exposed.

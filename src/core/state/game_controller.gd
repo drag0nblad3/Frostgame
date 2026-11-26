@@ -325,7 +325,7 @@ func cast_max_empowerment() -> int:
 
 
 func awaiting_reaction() -> bool:
-	if not state.pending_intercept.is_empty():
+	if not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
 		return true
 	if state.push_winner < 0:
 		return false
