@@ -91,3 +91,7 @@ Next: treasure objective and extraction; selection of eligible early-phase soldi
 ## Human defensive reactions
 
 - pp. 47, 53: human guards can now accept or decline an interception during an AI move. Declining preserves the path and searches for other guards; accepting interrupts movement and moves the guard to contact. Human defenders who win melee can choose displacement before the rival activation continues. The watch mode retains automatic AI decisions. Interception is evaluated at half-inch path nodes; AI policies and reaction animation remain preliminary.
+
+## Campaign prototype
+
+- pp. 73–75, 82–85: explicit campaign mode, local versioned save, persistent warband roster with stable member IDs, soldier/caster survival outcomes and missed games, treasure gold and unresolved loot categories, experience from participation/spellcasts/creatures/treasure, 300 XP cap, one known-spell improvement per game (100 XP, minimum TN5). Report and next skirmish UI. Wizard survival +1 automatically applied; permanent injury rolls, medical treatment, loot identification, central treasure reroll, recruitment/level-stat advancement, wizard succession and active battle saves are pending. A dead wizard ends this prototype campaign.

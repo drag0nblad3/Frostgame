@@ -26,7 +26,9 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		for entry: Dictionary in wb.get("figures", []):
 			var at: Array = entry["at"]
 			var def := figures.get_def(entry["type"])
-			s.figures.append(Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed()))
+			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
+			unit.campaign_id = int(entry.get("campaign_id", -1))
+			s.figures.append(unit)
 			next_id += 1
 	for entry: Dictionary in d.get("creatures", []):
 		var at: Array = entry["at"]

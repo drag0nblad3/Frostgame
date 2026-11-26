@@ -7,6 +7,7 @@ signal auto_toggled(on: bool)
 signal watch_toggled(on: bool)
 signal new_game_pressed
 signal roster_pressed
+signal campaign_pressed
 signal action_pressed(action: String)
 
 const LOG_LINES := 4
@@ -49,6 +50,7 @@ func _ready() -> void:
 	_auto = _button("Auto", func() -> void: auto_toggled.emit(_auto.button_pressed))
 	_auto.toggle_mode = true
 	top.add_child(_auto)
+	top.add_child(_button("Campaign", func() -> void: campaign_pressed.emit()))
 	top.add_child(_button("Warband", func() -> void: roster_pressed.emit()))
 	top.add_child(_button("New game", func() -> void: new_game_pressed.emit()))
 	_blocks.append(top)

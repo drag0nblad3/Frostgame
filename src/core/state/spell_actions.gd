@@ -79,7 +79,7 @@ func finish(health: int) -> bool:
 	var result := CastingRoll.resolve(p["total"], p["tn"], health, f.health)
 	s.pending_cast = {}
 	c._hurt(f, int(result["health_spent"]) + int(result["failure_damage"]), f, false)
-	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": health})
+	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": health, "tn": p["tn"], "failure_damage": result["failure_damage"]})
 	if not result["success"] or not t.in_play():
 		return true
 	match id:

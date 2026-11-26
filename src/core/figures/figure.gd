@@ -6,6 +6,7 @@ extends RefCounted
 const BASE_RADIUS := 0.5
 
 var id := 0
+var campaign_id := -1
 var def: FigureDef
 var side := 0
 var pos := Vector2.ZERO

@@ -16,6 +16,9 @@ var _markers: BattleMarkers
 var _dirty := true
 var _roster: Dictionary = {}
 var _setup: WarbandSetup
+var _campaign := CampaignProgress.new()
+var _campaign_battle := false
+var _campaign_dialog: CampaignPanel
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
@@ -39,8 +42,12 @@ func _ready() -> void:
 	hud.auto_toggled.connect(func(on: bool) -> void: auto_play = on)
 	hud.watch_toggled.connect(set_watch_mode)
 	hud.action_pressed.connect(_on_action)
-	hud.new_game_pressed.connect(func() -> void: new_game(0))
+	hud.new_game_pressed.connect(func() -> void:
+		_campaign_battle = false
+		new_game(0))
 	hud.roster_pressed.connect(_open_roster)
+	hud.campaign_pressed.connect(_open_campaign)
+	_campaign.load_save()
 	_rig.tapped.connect(_on_tap)
 	_markers = BattleMarkers.new()
 	add_child(_markers)
@@ -55,7 +62,9 @@ func new_game(seed_value: int) -> void:
 	hud.set_auto(false)
 	_wait = 0.0
 	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + SCENARIO + ".json")
-	if not _roster.is_empty():
+	if _campaign_battle:
+		data["warbands"][0] = _campaign.deployment()
+	elif not _roster.is_empty():
 		data["warbands"][0] = _roster.duplicate(true)
 	var state := ScenarioLoader.from_dict(data, _figures, _terrain)
 	state.reaction_side = -2 if watch_mode else player_side
@@ -93,12 +102,17 @@ func step() -> void:
 
 
 func _process(delta: float) -> void:
-	if (_setup != null and _setup.visible) or controller == null or not player.idle():
+	if (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
 		return
 	if _dirty:
 		_refresh()
 	var s := controller.state
+	if s.over and _campaign_battle:
+		_campaign_battle = false
+		_campaign.settle(controller, controller.dice)
+		_campaign.save()
+		_open_campaign()
 	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side):
 		_wait = 0.0
 		return
@@ -192,6 +206,40 @@ func _open_roster() -> void:
 		_setup.setup(_figures)
 		_setup.drafted.connect(func(roster: Dictionary) -> void:
 			_roster = roster
+			_campaign_battle = false
 			watch_mode = false
 			new_game(0))
 	_setup.popup_centered_ratio(0.9)
+
+
+func _open_campaign() -> void:
+	if _campaign_dialog == null:
+		_campaign_dialog = CampaignPanel.new()
+		add_child(_campaign_dialog)
+		_campaign_dialog.setup(_campaign)
+		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
+		_campaign_dialog.start_requested.connect(_create_campaign)
+	_campaign_dialog.refresh(_campaign_battle)
+	_campaign_dialog.popup_centered_ratio(0.85)
+
+
+func _create_campaign() -> void:
+	if not _campaign.data.is_empty():
+		return
+	var roster := _roster
+	if roster.is_empty():
+		var draft := WarbandDraft.new(_figures)
+		draft.choose_defaults()
+		roster = draft.as_warband()
+	_campaign.start(roster)
+	_campaign.save()
+	_campaign_dialog.refresh(false)
+
+
+func _begin_campaign_battle() -> void:
+	if _campaign_battle or not _campaign.can_deploy():
+		return
+	_campaign_battle = true
+	watch_mode = false
+	_campaign_dialog.hide()
+	new_game(0)

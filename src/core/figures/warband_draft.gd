@@ -133,4 +133,4 @@ func as_warband() -> Dictionary:
 	var book := {}
 	for id in spells:
 		book[id] = casting_number(id)
-	return {"name": wizard_name, "school": school, "spells": book, "figures": units}
+	return {"name": wizard_name, "school": school, "spells": book, "figures": units, "gold": BUDGET - cost()}
