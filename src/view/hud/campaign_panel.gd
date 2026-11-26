@@ -23,6 +23,7 @@ var grimoire: OptionButton
 var learn_button: Button
 var controls: Array[Control] = []
 var inventory: InventoryPanel
+var rituals: RitualPanel
 
 
 func setup(progress: CampaignProgress, figures: FigureDb) -> void:
@@ -91,6 +92,10 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	col.add_child(inventory)
 	inventory.setup(campaign, db, changed)
 	controls.append(inventory)
+	rituals = RitualPanel.new()
+	col.add_child(rituals)
+	rituals.setup(campaign, changed)
+	controls.append(rituals)
 	start = Button.new()
 	start.text = "Start campaign with current drafted warband"
 	col.add_child(start)
@@ -113,6 +118,7 @@ func refresh(in_battle: bool) -> void:
 		summary.text = "Create a warband first, or start with a basic default draft. Campaign progress is saved between battles."
 		return
 	inventory.refresh()
+	rituals.refresh()
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
 	for unit: Dictionary in d["units"]:
 		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — resting" if int(unit["miss"]) > 0 else ""), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])

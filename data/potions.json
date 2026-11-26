@@ -130,69 +130,79 @@
     "buy": 500,
     "sell": 200,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 200
   },
   "shrinking": {
     "name": "Shrinking Potion",
     "buy": 500,
     "sell": 200,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 200
   },
   "restoration": {
     "name": "Potion of Restoration",
     "buy": 2000,
     "sell": 300,
     "live": true,
-    "greater": true
+    "greater": true,
+    "ingredients": 750
   },
   "dreams": {
     "name": "Bottle of Dreams and Nightmares",
     "buy": 2000,
     "sell": 300,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 500
   },
   "shatterstar": {
     "name": "Shatterstar Draught",
     "buy": 1500,
     "sell": 200,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 600
   },
   "darkness": {
     "name": "Bottle of Darkness",
     "buy": 1500,
     "sell": 300,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 600
   },
   "ethereal_vacuum": {
     "name": "Ethereal Vacuum",
     "buy": 2000,
     "sell": 200,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 800
   },
   "invulnerability": {
     "name": "Potion of Invulnerability",
     "buy": 0,
     "sell": 400,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 2000
   },
   "null": {
     "name": "Bottle of Null",
     "buy": 0,
     "sell": 200,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 1000
   },
   "life": {
     "name": "Elixir of Life",
     "buy": 0,
     "sell": 1000,
     "live": false,
-    "greater": true
+    "greater": true,
+    "ingredients": 3000
   }
 }

@@ -21,8 +21,17 @@ func deployment() -> Dictionary:
 			entry["stat_bonus"] = data.get("advances", {}).duplicate()
 		elif data.get("base", "") == "brewery":
 			entry["stat_bonus"] = {"will": 1}
+		var bonuses: Dictionary = entry.get("stat_bonus", {})
+		if unit.get("familiar", false):
+			bonuses["health"] = int(bonuses.get("health", 0)) + 2
+		if unit.has("companion_of"):
+			bonuses["will"] = int(bonuses.get("will", 0)) + 3
+		entry["stat_bonus"] = bonuses
+		entry["permanent_summon"] = unit.get("permanent_summon", false)
 		entry["items"] = CampaignInventory.loadout(data, int(unit["id"]))
 		units.append(entry)
+	if data.get("prepared_zombie", false):
+		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true})
 	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units}
 
 
@@ -63,6 +72,15 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data["games"] = int(data["games"]) + 1
 	data["spell_improved"] = false
 	data["stat_improved"] = false
+	data["ritual_attempts"] = {}
+	data["preparation_started"] = false
+	data["prepared_zombie"] = false
+	for unit: Dictionary in data["units"]:
+		unit["familiar"] = false
+		unit["last_knocked_out"] = false
+	for f in c.state.figures:
+		if f.original_side == side and f.campaign_id >= 0:
+			data["units"][f.campaign_id]["last_knocked_out"] = f.out_of_action
 	report.append("Battle %d: %d treasure, +%d XP." % [data["games"], secured, xp])
 	# Recover previously resting units after missing this game.
 	for unit: Dictionary in data["units"]:
@@ -79,6 +97,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			var outcome := "recovered"
 			if roll <= (2 if caster else 4):
 				unit["dead"] = true
+				unit["death_game"] = data["games"]
 				CampaignInventory.lose_owned(data, f.campaign_id)
 				outcome = "died"
 			elif caster and roll <= 4:
@@ -236,9 +255,9 @@ func can_hire(id: String, db: FigureDb) -> bool:
 		var other := db.get_def(unit["type"])
 		if id == "apprentice" and other.role == "apprentice":
 			return false
-		if other.role == "soldier":
+		if other.role == "soldier" or unit.get("permanent_summon", false):
 			soldiers += 1
-			if other.specialist:
+			if other.specialist or unit["type"] == "large_construct":
 				specialists += 1
 	return d.role == "apprentice" or (d.role == "soldier" and soldiers < 8 and (not d.specialist or specialists < 4))
 

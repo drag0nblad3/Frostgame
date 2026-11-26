@@ -167,3 +167,7 @@ Inventory follow-up: renamed the UI owner selector to avoid a native Node proper
 ## Power items
 
 - pp. 64–65, 102: staffs of power (1/2/3), ring and wand of power (1), and orb of power (6) add an empowerment pool shared by casting and supported Will resistance. Empowerment consumes rechargeable power first, then orb charges, then Health; the UI displays both costs. Staff/ring/wand charges reset between battles; orb remaining power persists and a depleted orb is removed. Automatic source priority is a digital simplification; choosing a specific resource to spend remains pending.
+
+## Campaign rituals
+
+- pp. 81, 87, 110, 112, 114, 121, 126, 130, 135: eight out-of-game options (Brew Potion, Familiar, Animal Companion, Animate Construct, Raise Zombie, Absorb Knowledge, Write Scroll, Miraculous Cure). Per-caster attempts persist in save and reset after battle; preparation closes post-game attempts. Lesser potions free, greater ingredients paid before rolling with wizard-only -4; no empowerment/failure damage. Familiar adds 2 Health for next battle. Permanent animals and constructs count against soldier limits; bear added from p.179. Prepared zombie is temporary. Cure supports recently dead, injured and resting members. Out-of-game scroll casting, exact postgame step order, familiar destruction midbattle, resurrection item recovery, other rituals and construct equipment remain pending.

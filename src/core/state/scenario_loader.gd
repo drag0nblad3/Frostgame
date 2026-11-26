@@ -30,7 +30,17 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			var def := figures.get_def(entry["type"])
 			if entry.has("stat_bonus"):
 				def = def.with_bonuses(entry["stat_bonus"])
+			if entry.get("permanent_summon", false):
+				def = def.with_bonuses({})
+				def.role = "soldier"
+				def.specialist = def.id == "large_construct"
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
+			if entry.get("prepared_zombie", false):
+				unit.summon_spell = "raise_zombie"
+				for caster in s.figures:
+					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
+						unit.summoned_by = caster.id
+						break
 			for item: Dictionary in entry.get("items", []):
 				unit.items.append(item.duplicate(true))
 			unit.campaign_id = int(entry.get("campaign_id", -1))
