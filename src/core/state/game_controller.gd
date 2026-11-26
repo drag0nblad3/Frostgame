@@ -96,12 +96,11 @@ func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Arr
 func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Dictionary) -> bool:
 	if not intercept.is_empty():
 		path.resize(int(intercept["index"]) + 1)
-	f.pos = path[path.size() - 1]
-	f.elevation = state.board.height_at(f.pos)
 	f.spell_effects.erase("petrify")
 	f.actions_left -= 1
 	f.moves_taken += 1
-	emit("move", {"id": f.id, "path": path, "cost": cost})
+	if not _magic.terrain.travel(f, path, cost):
+		return true
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)
 	return true

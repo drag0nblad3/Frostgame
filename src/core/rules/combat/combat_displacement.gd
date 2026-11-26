@@ -44,6 +44,7 @@ func push(own: bool) -> bool:
 	other.disengaged[moving.id] = moving.disengaged[other.id]
 	clear()
 	c.emit("push_back", {"id": moving.id, "path": PackedVector2Array([from, moving.pos])})
+	c._magic.terrain.trigger_landing(moving)
 	var fall := ElevationRules.fall_damage(old_height - moving.elevation)
 	if fall > 0:
 		c._hurt(moving, fall, other, false)
@@ -87,3 +88,4 @@ func force_contact(info: Dictionary) -> void:
 	guard.pos = info["dest"]
 	guard.elevation = c.state.board.height_at(guard.pos)
 	c.emit("force_combat", {"id": guard.id, "path": PackedVector2Array([from, guard.pos])})
+	c._magic.terrain.trigger_landing(guard)

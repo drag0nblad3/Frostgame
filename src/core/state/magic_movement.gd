@@ -69,6 +69,7 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false) 
 		t.magic_exhausted = true
 		t.actions_left = 0
 	c.emit("move", {"id": t.id, "path": PackedVector2Array([old, at]), "cost": 0.0})
+	c._magic.terrain.trigger_landing(t)
 	if falling:
 		var dmg := ElevationRules.fall_damage(height - t.elevation)
 		if dmg > 0:

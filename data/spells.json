@@ -267,7 +267,7 @@
     "name": "Explosive Rune",
     "school": "sigilist",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "furious_quill": {
     "name": "Furious Quill",
@@ -369,7 +369,7 @@
     "name": "Planar Tear",
     "school": "summoner",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "plane_walk": {
     "name": "Plane Walk",

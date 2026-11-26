@@ -195,7 +195,7 @@ func finish(health: int) -> bool:
 		counter.apply(p["effect"])
 		return true
 	if TerrainMagic.SPELLS.has(id):
-		terrain.apply(f, id, p["at"], p["rotated"])
+		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))
 		return true
 	if SummonActions.PLACEMENT.has(id):
 		summons.spawn(f, id, p["at"], int(p["total"]) + health, int(p["tn"]))

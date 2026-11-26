@@ -129,3 +129,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Counter-magic
 
 - pp. 65, 119, 131: Dispel and Spell Eater select one ongoing figure, control, terrain or Call Storm effect through a contextual effect selector. Spell Eater costs one additional Health on casting attempt. Canceling control restores original allegiance, not removing the summon. Terrain cancellation uses the existing terrain-removal/fall path. Global spell attribution and future effect types still need extensions; Will-roll empowerment remains pending.
+
+## Rune hazards and planar attacks
+
+- pp. 121, 127: Explosive Rune is a visible persistent marker within 4 inches, max three per caster. Ordinary movement checks every path node for a trigger; the blast resolves at that node and movement continues if the mover survives. Original allegiance determines triggering; the blast affects all nearby figures. Dispel/Spell Eater can remove runes, and orphaned runes roll to expire. Voluntary end-turn cancellation is pending; magically moved figures and pushbacks check their landing only. Planar Tear uses a selected point, area resistance and increased damage to demons. Both use exposed-surface point targeting; vertical walls are not yet valid rune locations.
