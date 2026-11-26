@@ -11,17 +11,11 @@ const SKIN := Color(0.78, 0.61, 0.46)
 static func create(f: Figure, faction: Color) -> Node3D:
 	var model := Node3D.new()
 	var color := faction
-	if CreatureSculpt.create(model, f, faction):
+	if CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
 		MiniatureBatch.bake(model)
 		return model
 	if f.def.traits.has("construct"):
-		construct(model, faction, 1.25 if f.def.traits.has("large") else 1.0)
-	elif f.def.id == "giant_worm":
-		worm(model)
-	elif f.def.id == "animated_skull":
-		sphere(model, Vector3(0, 1.0, 0), Vector3(0.48, 0.52, 0.46), BONE)
-		for x: float in [-0.10, 0.10]:
-			sphere(model, Vector3(x, 1.06, -0.21), Vector3.ONE * 0.10, Color(0.1, 0.12, 0.18))
+		GolemSculpt.create(model, f.def.id, faction)
 	elif f.def.traits.has("animal"):
 		animal(model, f.def.id)
 	else:

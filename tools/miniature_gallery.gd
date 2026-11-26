@@ -14,8 +14,12 @@ func _setup() -> void:
 	root.add_child(_scene)
 	var db := FigureDb.load_files()
 	var ids := ["wizard", "apprentice", "knight", "templar", "ranger", "archer", "apothecary", "barbarian", "skeleton", "armoured_skeleton", "wraith", "genie", "ice_spider", "ice_toad", "white_gorilla", "werewolf", "snow_troll", "frost_giant", "wolf", "boar", "bear", "snow_leopard", "giant_rat", "large_construct"]
+	var args := OS.get_cmdline_user_args()
+	if args.size() > 1 and args[1] == "bestiary":
+		ids = ["imp", "minor_demon", "major_demon", "small_construct", "medium_construct", "large_construct", "ghoul", "zombie", "vampire", "animated_skull", "giant_worm", "skeleton_archer", "thug", "thief", "crossbowman", "infantryman", "man_at_arms", "marksman", "treasure_hunter", "tracker", "war_hound", "wild_dog"]
 	for i in ids.size():
-		var f := Figure.new(i + 1, db.get_def(ids[i]), 0 if i < 8 else -1, Vector2(2 + i % 6 * 2.2, 2 + floori(i / 6.0) * 3.1), db.unarmed())
+		var def := db.get_def(ids[i])
+		var f := Figure.new(i + 1, def, 0 if def.role != "creature" else -1, Vector2(2 + i % 6 * 2.2, 2 + floori(i / 6.0) * 3.1), db.unarmed())
 		var v := FigureView.new()
 		_scene.add_child(v)
 		v.setup(f, "Gallery")

@@ -93,6 +93,12 @@ func refresh(f: Figure) -> void:
 	_height = 2.0 if f.def.traits.has("large") else (1.8 if f.def.role in ["wizard", "apprentice"] else 1.5)
 	if f.def.traits.has("animal") and f.def.id != "white_gorilla":
 		_height = 0.95 if not f.def.traits.has("large") else 1.3
+	if f.def.id in ["imp", "small_construct", "animated_skull"]:
+		_height = 1.15
+	elif f.def.id in ["giant_worm", "major_demon", "large_construct"]:
+		_height = 2.35
+	elif f.def.id == "genie":
+		_height = 1.85
 	_plate.position.y = _height + 0.42
 	var ratio := clampf(float(f.health) / maxf(1.0, float(f.def.health)), 0.0, 1.0)
 	_health_fill.scale.x = maxf(0.01, ratio)
