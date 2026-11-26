@@ -32,22 +32,39 @@ static func shelf(root: Node3D, p: TerrainPiece) -> void:
 	MiniatureFactory.box(root, TableSpace.to_world(c, h*0.5), Vector3(rect.size.x*0.50, h, rect.size.y), wood)
 	for z: float in [rect.position.y+0.07, rect.end.y-0.07]:
 		MiniatureFactory.box(root, Vector3(c.x, h*0.5, z), Vector3(rect.size.x, h, 0.14), wood.lightened(0.14))
+	var count := maxi(1, floori(rect.size.y / 0.38))
+	var mesh := BoxMesh.new()
+	mesh.size = Vector3.ONE
+	var mat := BoardView._mat(Color.WHITE, 0.85)
+	mat.vertex_color_use_as_albedo = true
+	mesh.material = mat
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	mm.use_colors = true
+	mm.mesh = mesh
+	mm.instance_count = count * 6
+	var index := 0
 	for level in 4:
-		var y := 0.10 + level * (h-0.10)/3.0
+		var y := 0.10 + level * (h-0.165)/3.0
 		MiniatureFactory.box(root, Vector3(c.x, y, c.y), Vector3(rect.size.x, 0.13, rect.size.y), wood.lightened(0.18))
 		if level == 3:
 			continue
 		for side: float in [-1.0,1.0]:
-			var n := floori(rect.size.y / 0.38)
-			for i in n:
+			for i in count:
 				var shade: Color = BOOKS[posmod(i*3+level*2+int(side),BOOKS.size())]
 				var tall := 0.43 + float(posmod(i*17+level,5))*0.035
 				var z := rect.position.y + 0.20 + i*0.38
 				var x := c.x + side * rect.size.x * 0.34
-				var book := MiniatureFactory.box(root, Vector3(x, y+0.065+tall*0.5, z), Vector3(rect.size.x*0.25,tall,0.27),shade)
-				book.rotation.x = 0.06 if i%7==0 else 0.0
+				var basis := Basis.IDENTITY.scaled(Vector3(rect.size.x*0.25,tall,0.27))
+				mm.set_instance_transform(index, Transform3D(basis, Vector3(x,y+0.065+tall*0.5,z)))
+				mm.set_instance_color(index, shade)
+				index += 1
 			# Slim continuous brass shelf-edge strip.
 			MiniatureFactory.box(root,Vector3(c.x+side*(rect.size.x*0.5-0.02),y+0.025,c.y),Vector3(0.025,0.04,rect.size.y-0.24),BRASS)
+	var books := MultiMeshInstance3D.new()
+	books.multimesh = mm
+	books.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	root.add_child(books)
 
 
 static func crypt(root: Node3D, p: TerrainPiece) -> void:

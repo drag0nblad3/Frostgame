@@ -3,6 +3,7 @@ render_mode diffuse_burley, specular_schlick_ggx;
 // World-space stonework: no stretched UVs, extra geometry or external texture assets.
 uniform vec4 stone_color : source_color = vec4(0.39, 0.43, 0.48, 1.0);
 uniform bool ground = false;
+uniform float snow_amount : hint_range(0.0, 1.0) = 1.0;
 uniform bool blind_arches = false;
 uniform vec2 footprint_origin = vec2(0.0);
 varying vec3 world_pos;
@@ -43,6 +44,7 @@ void fragment() {
 	rock += vec3(0.045, 0.058, 0.065) * (1.0 - smoothstep(0.045, 0.12, min(grain.x, grain.y))) * wide;
 	float drift = noise2(horizontal * 0.24) * 0.72 + noise2(horizontal * 1.3) * 0.28;
 	float snow = top ? smoothstep(ground ? 0.34 : 0.20, ground ? 0.68 : 0.58, drift) : 0.0;
+	snow *= snow_amount;
 	vec3 ice = mix(vec3(0.52, 0.64, 0.72), vec3(0.84, 0.89, 0.92), noise2(horizontal * 2.2));
 	if (ground) {
 		rock = mix(rock, rock * 0.8 + vec3(0.11, 0.13, 0.14), 0.4);
