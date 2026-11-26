@@ -3,17 +3,30 @@ extends RefCounted
 ## Target and position choices for the Bot. Reads state, never changes it.
 
 
-## Enemy in contact with the lowest Health.
+## Can a mundane/magical attack actually damage this target?
+static func can_harm(f: Figure, t: Figure, weapon: WeaponDef) -> bool:
+	if weapon == null:
+		return false
+	if t.def.traits.has("immune_normal") or t.spell_effects.has("potion_invulnerability"):
+		return not ScenarioNull.muted(t) and WeaponActions.magic_attack(f, weapon)
+	return true
+
+
+## Prefer opponents we can damage, then vulnerable high-value targets.
 static func weakest_contact(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	for e in Contact.enemies_of(s.figures, f):
-		if best == null or (float(e.health) / MagicTactics.importance(e)) < (float(best.health) / MagicTactics.importance(best)):
+		var score := float(e.health) / MagicTactics.importance(e) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
+		var previous := INF if best == null else float(best.health) / MagicTactics.importance(best) + (0.0 if can_harm(f, best, f.melee) else 1000.0)
+		if score < previous:
 			best = e
 	return best
 
 
 ## Odds the shot beats the target's roll, from where the shooter stands.
 static func shot_value(s: GameState, f: Figure, at: Vector2, t: Figure) -> float:
+	if not can_harm(f, t, f.ranged):
+		return 0.0
 	var mod := Shooting.target_mod(LineOfSight.check(s.board, at, t.pos))
 	mod += 1 if f.moves_taken > 0 or at != f.pos else 0
 	mod -= 2 if t.def.traits.has("large") else 0
@@ -64,9 +77,9 @@ static func charge_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 	for n: Vector2i in r.nodes():
 		var at := MoveGrid.to_pos(n)
 		for t in s.figures:
-			if t.side == f.side or not t.in_play() or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos):
+			if t.side == f.side or not t.in_play() or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos) or absf(s.board.height_at(at) - t.elevation) >= 0.5:
 				continue
-			var score: float = t.health * 10.0 + r.cost[n]
+			var score: float = t.health * 10.0 + r.cost[n] + (0.0 if can_harm(f, t, f.melee) else 1000.0)
 			if score < best_score:
 				best_score = score
 				best = {"node": n, "target": t}
@@ -75,7 +88,7 @@ static func charge_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 
 static func _touches_enemy(s: GameState, f: Figure, at: Vector2) -> bool:
 	for t in s.figures:
-		if t.side != f.side and t.in_play() and Contact.touching(at, t.pos):
+		if t.side != f.side and t.in_play() and absf(s.board.height_at(at) - t.elevation) < 0.5 and Contact.touching(at, t.pos):
 			return true
 	return false
 

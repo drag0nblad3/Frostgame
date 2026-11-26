@@ -16,6 +16,15 @@ static func play(c: GameController, f: Figure) -> bool:
 				break
 			acted = true
 			continue
+		# Collect an available token before spending time evaluating other routes.
+		var collected := false
+		for token in c.state.treasures:
+			if c.can_pick_up(token.id) and c.pick_up(token.id):
+				acted = true
+				collected = true
+				break
+		if collected:
+			continue
 		var target := _nearest(c, f)
 		if target == null:
 			break
@@ -66,10 +75,19 @@ static func _nearest(c: GameController, f: Figure) -> TreasureToken:
 	for token in c.state.treasures:
 		if not token.on_ground():
 			continue
-		var d := f.pos.distance_to(token.pos) + (3.0 if token.frozen else 0.0)
+		var field := MovePlanner.distance_field(c.state.board, token.pos)
+		var route: float = field.get(MovePlanner.node_at(f.pos), INF)
+		if not is_finite(route):
+			continue
+		var d := route + (3.0 if token.frozen else 0.0)
 		for ally in c.state.side_figures(f.side):
-			if ally != f and ally.treasure_id < 0 and not ally.def.traits.has("animal") and ally.pos.distance_to(token.pos) + 2.0 < f.pos.distance_to(token.pos):
+			if ally != f and ally.treasure_id < 0 and not ally.def.traits.has("animal") and float(field.get(MovePlanner.node_at(ally.pos), INF)) + 2.0 < route:
 				d += 2.0
+		for enemy in c.state.figures:
+			if not enemy.in_play() or enemy.side == f.side or enemy.spell_effects.has("plane_walk"):
+				continue
+			if Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
+				d += 4.0 if BotTargets.can_harm(f, enemy, f.melee) else 14.0
 		if d < distance:
 			distance = d
 			best = token

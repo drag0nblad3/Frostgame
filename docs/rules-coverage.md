@@ -305,3 +305,6 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 
 ### Bestiary expansion
 - All three random encounter tiers (pp. 176–177) and six additional creature definitions (boar, white gorilla, frost giant, werewolf, vampire, skeleton archer) added. Horns applies to the initiating melee fighter after movement; bounty gold for werewolf/boar kills, innate Mind Lock, True Sight illusion contact, elemental resistance and critical damage immunity. Levitate ignores rough-ground costs. Pack spawn placement uses existing near-edge placement, not synchronized pack activation. Climbing and special creature movement remain simplified.
+
+### Creature and objective AI refinement
+- Connected neutral Pack Hunters randomly select a leader, share pursuit/heading, and activate consecutively; state is checkpointed. Individual moves still use ordinary controller legality rather than simultaneous formation movement. Creatures in combat choose lowest Health exactly; missile creatures prioritize closest legal shot. Warband AI prefers damageable foes and avoids immune guards when other objectives are available, using terrain-distance fields rather than straight-line distance. Scenario simulation matrix now uses two seeds per map.

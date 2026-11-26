@@ -42,8 +42,12 @@ static func resume_activation(c: GameController) -> bool:
 			_play_fighter(c, f)
 	if c.awaiting_reaction():
 		return true
-	if c.state.push_winner == f.id and f.treasure_id >= 0 and c.can_push(true):
-		c.resolve_push(true)
+	if c.state.push_winner == f.id and f.side >= 0:
+		var loser := c.state.figure(c.state.push_loser)
+		if loser != null and (f.treasure_id >= 0 or not BotTargets.can_harm(f, loser, f.melee)) and c.can_push(true):
+			c.resolve_push(true)
+		elif loser != null and loser.treasure_id >= 0 and c.can_push(false):
+			c.resolve_push(false)
 	c.end_activation()
 	return true
 

@@ -51,13 +51,19 @@ static func distance_field(board: Board, target: Vector2) -> Dictionary:
 	var field := {}
 	board.field_cache[base] = field
 	var heap := MinHeap.new()
-	for dx in range(-2, 3):
-		for dy in range(-2, 3):
-			var n := base + Vector2i(dx, dy)
-			if grid.open(n):
-				var c := target.distance_to(MoveGrid.to_pos(n))
-				field[n] = c
-				heap.push(c, n)
+	# A free target seeds its own tile. Only inaccessible objectives
+	# (guardian columns, for example) need nearby edge seeds.
+	if grid.open(base):
+		field[base] = target.distance_to(MoveGrid.to_pos(base))
+		heap.push(field[base], base)
+	else:
+		for dx in range(-2, 3):
+			for dy in range(-2, 3):
+				var n := base + Vector2i(dx, dy)
+				if grid.open(n):
+					var c := target.distance_to(MoveGrid.to_pos(n))
+					field[n] = c
+					heap.push(c, n)
 	while not heap.is_empty():
 		var top := heap.pop()
 		var c: float = top[0]
