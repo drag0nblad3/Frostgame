@@ -8,15 +8,20 @@ const GREATER := ["empowerment","shrinking","restoration","dreams","shatterstar"
 static func catalog() -> Dictionary:
 	var result: Dictionary = JsonFile.read("res://data/potions.json")
 	result.merge(JsonFile.read("res://data/magic_equipment.json"))
+	var spells: Dictionary = JsonFile.read("res://data/spells.json")
+	for id: String in spells:
+		result["scroll_" + id] = {"name": "Scroll: " + str(spells[id]["name"]), "buy": 250, "sell": 30, "live": spells[id]["kind"] != "unimplemented"}
 	return result
 
 
 static func item_id(item: Dictionary) -> String:
+	if item.has("scroll"):
+		return "scroll_" + str(item["scroll"])
 	return str(item.get("gear", item.get("potion", "")))
 
 
 static func is_item(item: Dictionary) -> bool:
-	return item["kind"] in ["potion", "gear"]
+	return item["kind"] in ["potion", "gear", "scroll"]
 
 
 static func identify(d: Dictionary, reward: Dictionary, dice: Dice) -> void:
@@ -26,6 +31,9 @@ static func identify(d: Dictionary, reward: Dictionary, dice: Dice) -> void:
 			var roll := dice.d20()
 			var id: String = LESSER[roll - 1] if roll <= 18 else GREATER[floori((dice.d20() - 1) / 2.0)]
 			d["loot"].append({"kind": "potion", "potion": id, "owner": -1})
+	elif kind.ends_with("scroll") or kind.ends_with("scrolls"):
+		for i in int(kind.split(" ")[0]):
+			d["loot"].append({"kind": "scroll", "scroll": CampaignProgress.random_spell(dice), "owner": -1})
 	elif kind in ["magic arms/armour", "magic item"]:
 		var table := MagicEquipment.ARM_TABLE if kind == "magic arms/armour" else MagicEquipment.ITEM_TABLE
 		d["loot"].append({"kind": "gear", "gear": table[dice.d20() - 1], "owner": -1})
@@ -53,6 +61,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 		return false
 	var unit: Dictionary = d["units"][owner]
 	if unit["dead"] or unit.get("dismissed", false):
+		return false
+	if item["kind"] == "scroll" and unit["type"] not in ["wizard", "apprentice"]:
 		return false
 	var used := 0
 	var info: Dictionary = catalog()[item_id(item)]
@@ -88,7 +98,9 @@ static func buy(d: Dictionary, id: String) -> bool:
 	if price <= 0 or int(d["gold"]) < price:
 		return false
 	d["gold"] = int(d["gold"]) - price
-	if id.begins_with("gear_"):
+	if id.begins_with("scroll_"):
+		d["loot"].append({"kind": "scroll", "scroll": id.trim_prefix("scroll_"), "owner": -1})
+	elif id.begins_with("gear_"):
 		d["loot"].append({"kind": "gear", "gear": id, "owner": -1})
 	else:
 		d["loot"].append({"kind": "potion", "potion": id, "owner": -1})
@@ -113,6 +125,8 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 			continue
 		if item["kind"] == "potion":
 			items.append({"potion": item["potion"], "campaign_item": true})
+		elif item["kind"] == "scroll":
+			items.append({"scroll": item["scroll"], "campaign_item": true})
 		elif item["kind"] == "gear":
 			items.append({"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true})
 	return items

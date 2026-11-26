@@ -47,7 +47,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		var e := event.data
 		if event.type == "cast_result":
 			var caster := c.state.figure(e["id"])
-			if caster.side == side:
+			if caster.side == side and not e.get("scroll", false):
 				if e["success"] and int(e.get("tn", 7)) > 6:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:

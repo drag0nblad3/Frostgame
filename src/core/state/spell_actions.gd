@@ -29,7 +29,7 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	if f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(s.figures, f):
 		return false
-	if not s.spellbooks.get(f.side, {}).has(id) or not s.spell_catalog.has(id):
+	if not available_spell(f, id) or not s.spell_catalog.has(id):
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
@@ -98,7 +98,7 @@ func counter_options(id: String) -> Array[Dictionary]:
 	var empty: Array[Dictionary] = []
 	if id not in ["dispel", "spell_eater"] or not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
-	if not c.state.spellbooks.get(f.side, {}).has(id):
+	if not available_spell(f, id):
 		return empty
 	return counter.options(f)
 
@@ -128,7 +128,7 @@ func placement_points(id: String, first_only: bool = false, rotated: bool = fals
 	var empty: Array[Vector2] = []
 	if not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f):
 		return empty
-	if not c.state.spellbooks.get(f.side, {}).has(id) or not is_placement(id):
+	if not available_spell(f, id) or not is_placement(id):
 		return empty
 	if f.spell_effects.has("blinding_light") and id not in ["raise_zombie", "summon_demon", "illusionary_soldier"]:
 		return empty
@@ -161,11 +161,13 @@ func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
 	var f := c.state.active()
 	illusions.reveal(f)
-	var raw := c.dice.d20()
-	var total := CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
-	var tn := int(c.state.spellbooks[f.side][id])
+	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
+	var scroll := not known and ScrollActions.consume(f, id)
+	var raw := 14 if scroll else c.dice.d20()
+	var total := 14 if scroll else CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
+	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	c._spend(f)
-	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn}
+	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll}
 	if at != null:
 		c.state.pending_cast["at"] = at
 		c.state.pending_cast["rotated"] = rotated
@@ -180,7 +182,7 @@ func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false
 
 func max_empowerment() -> int:
 	var p := c.state.pending_cast
-	if p.is_empty():
+	if p.is_empty() or p.get("scroll", false):
 		return 0
 	if p["id"] == "summon_demon":
 		return 0 if int(p["raw"]) == 1 else c.state.figure(p["caster"]).health
@@ -196,12 +198,14 @@ func finish(health: int) -> bool:
 	var t := s.figure(p["target"])
 	var id: String = p["id"]
 	var result := CastingRoll.resolve(p["total"], p["tn"], health, f.health, false, 100 if id == "summon_demon" else 18)
-	if id == "summon_demon" and int(p["raw"]) == 1:
+	if p.get("scroll", false):
+		result = {"success": true, "roll": 14, "health_spent": 0, "failure_damage": 0}
+	elif id == "summon_demon" and int(p["raw"]) == 1:
 		result["success"] = false
 	s.pending_cast = {}
 	c._hurt(f, int(result["health_spent"]) + int(result["failure_damage"]), f, false)
-	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": health, "tn": p["tn"], "failure_damage": result["failure_damage"]})
-	if id == "summon_demon" and int(p["raw"]) == 1:
+	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": health, "tn": p["tn"], "failure_damage": result["failure_damage"], "scroll": p.get("scroll", false)})
+	if id == "summon_demon" and int(p["raw"]) == 1 and not p.get("scroll", false):
 		summons.miscast_demon(f)
 		return true
 	if not result["success"]:
@@ -404,3 +408,36 @@ func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
 	if f.in_play():
 		_heal(f, 3)
 	c.emit("spell_effect", {"id": t.id, "spell": "steal_health"})
+
+
+func available_spell(f: Figure, id: String) -> bool:
+	return c.state.spellbooks.get(f.side, {}).has(id) or ScrollActions.has_scroll(f, id)
+
+
+func available_spells(f: Figure) -> Array[String]:
+	var out: Array[String] = []
+	for id: String in c.state.spellbooks.get(f.side, {}):
+		out.append(id)
+	for item in f.items:
+		var id := str(item.get("scroll", ""))
+		if id != "" and not out.has(id):
+			out.append(id)
+	return out
+
+
+func can_insure() -> bool:
+	var p := c.state.pending_cast
+	if p.is_empty() or p.get("scroll", false):
+		return false
+	var failed: bool = int(p["total"]) < int(p["tn"]) or (p["id"] == "summon_demon" and int(p["raw"]) == 1)
+	return failed and ScrollActions.has_scroll(c.state.figure(p["caster"]), p["id"])
+
+
+func insure() -> bool:
+	if not can_insure():
+		return false
+	var p := c.state.pending_cast
+	ScrollActions.consume(c.state.figure(p["caster"]), p["id"])
+	p["scroll"] = true
+	p["total"] = 14
+	return finish(0)

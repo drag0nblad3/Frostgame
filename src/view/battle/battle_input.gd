@@ -101,7 +101,7 @@ func refresh() -> void:
 			available.append("collect")
 			break
 	cast_options.clear()
-	for id: String in c.state.spellbooks.get(f.side, {}):
+	for id: String in c._magic.available_spells(f):
 		if not c._magic.counter_options(id).is_empty():
 			cast_options.append(id)
 			continue
@@ -195,6 +195,8 @@ func preview() -> void:
 		"empower":
 			var p := c.state.pending_cast
 			hint = "%s: rolled %d (modified %d), needs %d. Spend %d HP → %d. Confirm to resolve." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], empower, int(p["total"]) + empower]
+			if p.get("scroll", false):
+				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
 		"intercept":
 			var choice: Dictionary = c.state.pending_intercept["choice"]
 			var guard: Figure = choice["guard"]
@@ -332,6 +334,8 @@ func action(key: String) -> bool:
 			_empower_buttons()
 			preview()
 			return false
+		"cast_scroll":
+			return c._magic.insure()
 		"cast_confirm":
 			return c.finish_cast(empower)
 		"stay":
@@ -447,6 +451,8 @@ func _group_buttons() -> void:
 
 func _empower_buttons() -> void:
 	available.assign(["cast_confirm"])
+	if c._magic.can_insure():
+		available.append("cast_scroll")
 	if empower < c.cast_max_empowerment():
 		available.append("empower_plus")
 	if empower > 0:
