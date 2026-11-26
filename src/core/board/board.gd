@@ -13,6 +13,8 @@ var floor_layout := {}
 var boundaries: Array[Dictionary]=[]
 ## Directed links between edge segments and their destination centers.
 var edge_links: Array[Dictionary]=[]
+var wrap_short_edges := false
+var ringworld := false
 ## Regions with no traversable surface at any elevation.
 var void_regions: Array[Rect2]=[]
 

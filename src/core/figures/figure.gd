@@ -25,6 +25,8 @@ var def: FigureDef
 var side := 0
 var pos := Vector2.ZERO
 var elevation := 0.0
+## Ringworld reality: outside (0) or inside (1).
+var ring_side := 0
 ## Stable ID for explicit layered surfaces; empty on legacy maps.
 var surface_id := ""
 var health := 0

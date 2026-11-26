@@ -44,7 +44,7 @@ func claim_free(f: Figure, token: TreasureToken) -> bool:
 	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
 		return false
 	for enemy in _c.state.figures:
-		if enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
+		if enemy.ring_side!=f.ring_side or enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
 			continue
 		if Shooting.distance(enemy, f) <= 1.0 or Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, _c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
 			return false
@@ -58,6 +58,7 @@ func _claim(f: Figure, token: TreasureToken) -> bool:
 	if f.treasure_id >= 0:
 		f.second_treasure_id = f.treasure_id
 	f.treasure_id = id
+	token.ring_side=f.ring_side
 	token.carrier_id = f.id
 	_c.emit("treasure_pickup", {"id": f.id, "treasure": id})
 	if not token.ever_collected:
@@ -89,7 +90,7 @@ func can_drop(at: Vector2) -> bool:
 	elif not _c.state.board.can_stand(at,TreasureRules.TOKEN_RADIUS) or not is_equal_approx(height,f.elevation):
 		return false
 	for other in _c.state.figures:
-		if other.in_play() and (f.surface_id.is_empty() or absf(other.elevation-height)<0.5) and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
+		if other.in_play() and other.ring_side==f.ring_side and (f.surface_id.is_empty() or absf(other.elevation-height)<0.5) and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
 			return false
 	return f.moves_taken == 0 or _c.can_act()
 
@@ -123,6 +124,7 @@ func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
 	_clear_carrier(token)
 	token.pos = at
 	token.surface_id = f.surface_id
+	token.ring_side=f.ring_side
 	var height := _c.state.board.height_at(at)
 	if not f.surface_id.is_empty():
 		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)

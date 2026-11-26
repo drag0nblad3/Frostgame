@@ -8,6 +8,8 @@ const TOKEN_RADIUS := 0.3
 static func can_pick_up(s: GameState, f: Figure, token: TreasureToken) -> bool:
 	if f == null or token == null or not f.in_play() or not token.on_ground() or token.frozen or token.investigation or f.surface_id.begins_with("climb:"):
 		return false
+	if f.ring_side!=token.ring_side:
+		return false
 	if RedKingHill.guarded(s,token):
 		return false
 	if RedKingMadMan.hunter(f) or (RedKingVeil.active(s) and f.side==1):
@@ -26,7 +28,7 @@ static func can_pick_up(s: GameState, f: Figure, token: TreasureToken) -> bool:
 	if absf(f.elevation - height) >= 0.5 or f.pos.distance_to(token.pos) > Figure.BASE_RADIUS + TOKEN_RADIUS + 0.01:
 		return false
 	for enemy in s.figures:
-		if enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
+		if enemy.ring_side!=f.ring_side or enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
 			continue
 		if not token.surface_id.is_empty() and enemy.surface_id!=token.surface_id and not LineOfSight.check_figures(s.board,enemy,f).clear:
 			continue

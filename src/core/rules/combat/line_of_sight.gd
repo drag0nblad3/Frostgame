@@ -19,6 +19,10 @@ class Result:
 
 ## The layered fixture uses physical floor volumes instead of a highest-surface ray.
 static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
+	if from.ring_side!=to.ring_side:
+		var blocked := Result.new()
+		blocked.clear=false
+		return blocked
 	if board.floor_layout.is_empty():
 		return check(board,from.pos,to.pos,from)
 	var result := Result.new()
@@ -31,6 +35,9 @@ static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 
 static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null) -> Result:
 	var r := Result.new()
+	if board.ringworld and (observer==null or observer.ring_side==0) and from.distance_to(to)>18.0:
+		r.clear=false
+		return r
 	if BattleBoundary.blocks_segment(board.boundaries,from,to,"sight",observer):
 		r.clear=false
 		return r

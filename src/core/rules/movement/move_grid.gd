@@ -23,7 +23,7 @@ func _init(b: Board, f: Figure = null, figures: Array[Figure] = []) -> void:
 	cols = int(b.size.x / STEP) + 1
 	rows = int(b.size.y / STEP) + 1
 	for o in figures:
-		if o.in_play() and o != f:
+		if o.in_play() and o != f and (f==null or o.ring_side==f.ring_side):
 			others.append(o)
 
 

@@ -21,9 +21,14 @@ static func mobius(size: Vector2,priority: int) -> Array[Dictionary]:
 
 static func destinations(board: Board,node: Vector2i) -> Array[Vector2i]:
 	var out: Array[Vector2i]=[]
+	var at := MoveGrid.to_pos(node)
+	if board.wrap_short_edges:
+		if is_equal_approx(at.y,Figure.BASE_RADIUS):
+			out.append(MovePlanner.node_at(Vector2(at.x,board.size.y-Figure.BASE_RADIUS)))
+		elif is_equal_approx(at.y,board.size.y-Figure.BASE_RADIUS):
+			out.append(MovePlanner.node_at(Vector2(at.x,Figure.BASE_RADIUS)))
 	if board.edge_links.is_empty():
 		return out
-	var at := MoveGrid.to_pos(node)
 	for link in board.edge_links:
 		if is_equal_approx(at.y,float(link["y"])) and at.x>=float(link["min_x"]) and at.x<float(link["max_x"]):
 			out.append(MovePlanner.node_at(link["to"]))
@@ -31,7 +36,7 @@ static func destinations(board: Board,node: Vector2i) -> Array[Vector2i]:
 
 
 static func sources(board: Board,node: Vector2i) -> Array[Vector2i]:
-	var out: Array[Vector2i]=[]
+	var out: Array[Vector2i]=destinations(board,node) if board.wrap_short_edges else []
 	if board.edge_links.is_empty():
 		return out
 	for link in board.edge_links:
@@ -43,6 +48,6 @@ static func sources(board: Board,node: Vector2i) -> Array[Vector2i]:
 
 
 static func is_transfer(board: Board,a: Vector2,b: Vector2) -> bool:
-	if board.edge_links.is_empty() or a.distance_to(b)<=MoveGrid.STEP*1.5:
+	if (board.edge_links.is_empty() and not board.wrap_short_edges) or a.distance_to(b)<=MoveGrid.STEP*1.5:
 		return false
 	return destinations(board,MovePlanner.node_at(a)).has(MovePlanner.node_at(b))

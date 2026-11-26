@@ -106,6 +106,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		var at: Array = entry["at"]
 		var creature := Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed())
 		creature.elevation = s.board.height_at(creature.pos)
+		creature.ring_side=int(entry.get("ring_side",0))
 		s.figures.append(creature)
 		next_id += 1
 	for at: Array in d.get("treasures", []):
@@ -118,6 +119,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		stand.central=false
 		stand.investigation=true
 		s.treasures.append(stand)
+	if RedKingRingworld.active(s):
+		RedKingRingworld.setup(s)
 	if RedKingTethers.active(s):
 		RedKingTethers.setup(s)
 	if RedKingHerded.active(s):
