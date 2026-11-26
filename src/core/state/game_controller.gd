@@ -92,6 +92,18 @@ func move_on_floor(node: Vector3i) -> bool:
 	return LayeredMovement.move(self,node)
 
 
+func floor_exit_nodes() -> Array[Vector3i]:
+	return LayeredLoot.exit_nodes(self)
+
+
+func exit_on_floor(node: Vector3i) -> bool:
+	return LayeredLoot.exit(self,node)
+
+
+func teleport_on_floor(node: Vector3i) -> bool:
+	return LayeredMagic.start_teleport(self,node)
+
+
 func reach() -> MoveReach:
 	if not state.board.floor_layout.is_empty():
 		return MoveReach.new()
@@ -379,6 +391,8 @@ func finish_early_phase() -> bool:
 
 
 func can_begin_group() -> bool:
+	if not state.board.floor_layout.is_empty():
+		return false
 	return not state.over and state.active_id == -1 and state.group.can_begin(state, state.current_side())
 
 
@@ -390,10 +404,14 @@ func begin_group(ids: Array[int]) -> bool:
 
 
 func can_push(own_figure: bool) -> bool:
+	if not state.board.floor_layout.is_empty():
+		return LayeredPush.destination(self,own_figure)!=null
 	return _displacement.destination(own_figure) != null
 
 
 func resolve_push(own_figure: bool) -> bool:
+	if not state.board.floor_layout.is_empty():
+		return LayeredPush.apply(self,own_figure)
 	return _displacement.push(own_figure)
 
 

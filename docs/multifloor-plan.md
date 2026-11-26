@@ -20,6 +20,17 @@ experimental layered_reach/move_on_floor methods which consume a normal move
 action, persist the selected surface and emit a 3D movement path. Unsupported
 reaction/magic cases are rejected, and legacy move_to cannot act on layered boards.
 
+## Experimental battle integration
+
+LayeredBattle builds two small rival groups with normal initiative, activations,
+melee and shooting. The bot uses controller-validated floor routes, collects loot
+on the correct level and extracts via authored ground edges. Same-floor pushback
+and floor-aware drops are supported; falling from a ledge is still pending.
+Teleport is explicitly targeted at a named surface and uses normal casting rolls,
+optional empowerment, line of sight and exhaustion. Other spells and group
+movement remain disabled for the experimental map. The battle core has an
+end-to-end simulation test; the title-screen lab remains a separate interface.
+
 ## Current boundary
 
 A Board stores one exposed walking height at each horizontal coordinate. A bridge or

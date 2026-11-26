@@ -7,6 +7,8 @@ extends RefCounted
 ## Activates the next figure for the side to play and plays it out.
 ## Returns false if there was nothing to do.
 static func play_activation(c: GameController) -> bool:
+	if not c.state.board.floor_layout.is_empty():
+		return LayeredBattleBot.play(c)
 	var f := _pick(c)
 	if f == null or not c.activate(f.id):
 		return false
@@ -14,6 +16,8 @@ static func play_activation(c: GameController) -> bool:
 
 
 static func resume_activation(c: GameController) -> bool:
+	if not c.state.board.floor_layout.is_empty():
+		return LayeredBattleBot.play(c)
 	var f := c.state.active()
 	if f == null or c.awaiting_reaction():
 		return false

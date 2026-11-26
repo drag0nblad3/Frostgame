@@ -61,6 +61,8 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Group activation complete."
 		"early_phase_finished":
 			return "%s pass their remaining early soldier activations." % s.side_names[d["side"]]
+		"layered_move":
+			return "%s moves to %s (%.1f inches)." % [name_of(s,d["id"]),str(d["surfaces"].back()).capitalize(),d["cost"]]
 		"move":
 			return "%s moves %.1f\"." % [name_of(s, d["id"]), d["cost"]]
 		"fight":

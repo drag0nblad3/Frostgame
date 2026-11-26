@@ -64,10 +64,19 @@ func can_drop(at: Vector2) -> bool:
 		return false
 	if f.pos.distance_to(at) < 0.85 or f.pos.distance_to(at) > 1.25:
 		return false
-	if not _c.state.board.can_stand(at, TreasureRules.TOKEN_RADIUS) or not is_equal_approx(_c.state.board.height_at(at), f.elevation):
+	var height := _c.state.board.height_at(at)
+	if not f.surface_id.is_empty():
+		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)
+		var index := layout.index_of(f.surface_id)
+		if index<0 or not layout.surfaces[index].contains(at,TreasureRules.TOKEN_RADIUS):
+			return false
+		height=layout.surfaces[index].height_at(at)
+		if not layout.clearance(Vector3(at.x,height,at.y),TreasureRules.TOKEN_RADIUS,0.5):
+			return false
+	elif not _c.state.board.can_stand(at,TreasureRules.TOKEN_RADIUS) or not is_equal_approx(height,f.elevation):
 		return false
 	for other in _c.state.figures:
-		if other.in_play() and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
+		if other.in_play() and (f.surface_id.is_empty() or absf(other.elevation-height)<0.5) and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
 			return false
 	return f.moves_taken == 0 or _c.can_act()
 
@@ -101,7 +110,13 @@ func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
 	_clear_carrier(token)
 	token.pos = at
 	token.surface_id = f.surface_id
-	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at})
+	var height := _c.state.board.height_at(at)
+	if not f.surface_id.is_empty():
+		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)
+		var index := layout.index_of(f.surface_id)
+		if index>=0:
+			height=layout.surfaces[index].height_at(at)
+	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at,"height":height})
 
 
 func cancel_shrinking(f: Figure) -> void:

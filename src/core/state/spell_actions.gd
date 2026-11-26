@@ -34,6 +34,8 @@ func _init(controller: GameController) -> void:
 
 func can_cast(id: String, target_id: int) -> bool:
 	var s := c.state
+	if not s.board.floor_layout.is_empty():
+		return false
 	var f := s.active()
 	var t := s.figure(target_id)
 	if not c.can_act() or f == null or t == null or not t.in_play() or ScenarioNull.muted(t):
@@ -207,6 +209,8 @@ func start_swap(first: int, second: int) -> bool:
 func placement_points(id: String, first_only: bool = false, rotated: bool = false) -> Array[Vector2]:
 	var f := c.state.active()
 	var empty: Array[Vector2] = []
+	if not c.state.board.floor_layout.is_empty():
+		return empty
 	if not c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(c.state.figures, f):
 		return empty
 	if not available_spell(f, id) or not is_placement(id):
@@ -392,7 +396,10 @@ func _finish_one(health: int) -> bool:
 			t.spell_effects[id] = true
 			illusions.sweep()
 		"teleport", "leap":
-			movement.move(t, p["at"], true)
+			if p.get("effect",{}).has("floor_destination"):
+				LayeredMagic.apply_teleport(c,t,p["effect"])
+			else:
+				movement.move(t, p["at"], true)
 		"suggestion":
 			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]))
 			return true
