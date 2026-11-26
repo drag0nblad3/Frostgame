@@ -377,7 +377,7 @@
     "name": "Plane Walk",
     "school": "summoner",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "possess": {
     "name": "Possess",

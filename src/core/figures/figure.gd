@@ -10,6 +10,8 @@ var campaign_id := -1
 var injury_types := {}
 var familiar := false
 var beauty_tests := {}
+var last_plane_attempt := -2
+var plane_attempts := 0
 var campaign_base := ""
 var battle_ref: WeakRef
 var original_side := 0

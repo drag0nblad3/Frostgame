@@ -12,7 +12,7 @@ func options(f: Figure) -> Array[Dictionary]:
 	var result: Array[Dictionary] = []
 	var s := c.state
 	for t in s.figures:
-		if not t.in_play() or Shooting.distance(f, t) > 24.0 or (t != f and not LineOfSight.check(s.board, f.pos, t.pos).clear):
+		if not t.in_play() or t.spell_effects.has("plane_walk") or Shooting.distance(f, t) > 24.0 or (t != f and not LineOfSight.check(s.board, f.pos, t.pos).clear):
 			continue
 		for id: String in t.spell_effects:
 			if s.spell_catalog.has(id) or id.begins_with("potion_"):

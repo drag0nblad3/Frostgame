@@ -225,3 +225,7 @@ Wizard creation recognizes campaign rituals separately from battle spells; group
 ## Bridge
 
 - p.115: one six-by-two-inch projected magical path per caster, oriented along either table axis; endpoint heights are sampled from existing exposed terrain, and the surface interpolates between them. The path is visually sloped, costs actual slope distance instead of climb multipliers, does not block sight, expires on 1–2, can be dispelled or dismissed by its active caster, and uses falling rules on removal. This implementation is constrained by the heightfield: no manually selected floating endpoints, true six-inch slope-length restriction, or under-bridge movement. Placement rejects occupied height changes and intersections rather than lifting figures.
+
+## Plane Walk
+
+- p.127: self spell drops carried treasure and grants direct terrain-ignoring movement until turn end; no ordinary combat, direct targeting, treasure collection, potion use, reload or other actions while phased. Consecutive attempts (even failures) incur -5/-10/-15. Endpoints must be legal exposed surfaces with no overlapping bases; movement is straight-line with height distance, no standing inside solid terrain. Exit while phased is conservatively disabled. Area damage from another figure is blocked; not all incidental non-damage area effects are filtered.

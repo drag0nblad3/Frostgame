@@ -3,6 +3,8 @@ extends RefCounted
 
 
 static func visible_to(figures: Array[Figure], observer: Figure, target: Figure) -> bool:
+	if target.spell_effects.has("plane_walk"):
+		return false
 	if observer == target:
 		return true
 	if target.spell_effects.has("potion_chameleon") and Shooting.distance(observer, target) > 12.0:

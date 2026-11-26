@@ -81,6 +81,8 @@ func can_move() -> bool:
 ## Where the active figure could go with its next movement action.
 func reach() -> MoveReach:
 	var f := state.active()
+	if f.spell_effects.has("plane_walk"):
+		return PlaneWalk.reach(state, f)
 	var grid := MoveGrid.new(state.board, f, state.figures)
 	return MovePlanner.reach(grid, f.pos, MoveRules.allowance(f))
 
@@ -93,6 +95,13 @@ func move_to(node: Vector2i) -> bool:
 		return false
 	var f := state.active()
 	var path := r.path_to(node)
+	if f.spell_effects.has("plane_walk"):
+		f.pos = MoveGrid.to_pos(node)
+		f.elevation = state.board.height_at(f.pos)
+		f.actions_left -= 1
+		f.moves_taken += 1
+		emit("move", {"id": f.id, "path": path, "cost": float(r.cost[node])})
+		return true
 	return _commit_move(f, path, float(r.cost[node]), [])
 
 
@@ -134,7 +143,7 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 ## One non-move action (fight, shoot, reload) per activation.
 func can_act() -> bool:
 	var f := state.active()
-	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
+	return not awaiting_reaction() and state.pending_cast.is_empty() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and (not f.acted or (f.used_stored_action and f.non_moves == 1 and (f.moves_taken > 0 or f.actions_left >= 2))) and not state.group.movement_pass()
 
 
 func can_fight(target_id: int) -> bool:
@@ -203,7 +212,7 @@ func _shoot_authorized(f: Figure, t: Figure) -> void:
 ## Reload may replace the movement action (p. 34); never while engaged.
 func can_reload() -> bool:
 	var f := state.active()
-	return not awaiting_reaction() and state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
+	return not awaiting_reaction() and state.pending_cast.is_empty() and not state.group.movement_pass() and f != null and f.in_play() and f.actions_left > 0 and not f.spell_effects.has("plane_walk") and f.ranged != null and f.ranged.needs_reload and not f.loaded and not Contact.in_combat(state.figures, f) and (f.moves_taken == 0 or can_act())
 
 
 func reload() -> bool:
@@ -253,7 +262,7 @@ func _spend(f: Figure) -> void:
 
 
 func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
-	if dmg <= 0 or not f.in_play() or (combat and by != f and IllusionRules.phantom(by)):
+	if dmg <= 0 or not f.in_play() or (f.spell_effects.has("plane_walk") and by != f) or (combat and by != f and IllusionRules.phantom(by)):
 		return
 	if IllusionRules.phantom(f):
 		_magic.summons.vanish(f)

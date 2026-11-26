@@ -47,6 +47,10 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t == f and f.elemental_shield == 0
 	if kind == "self_area":
 		return t == f
+	if t.spell_effects.has("plane_walk"):
+		return false
+	if id == "plane_walk":
+		return t == f and f.last_plane_attempt != s.turn
 	if id == "beauty":
 		return t == f and not f.spell_effects.has(id)
 	if BeautyActions.blocked(s, f, t):
@@ -248,7 +252,10 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll := not known and ScrollActions.consume(f, id)
 	var raw := 14 if scroll else c.dice.d20()
-	var total := 14 if scroll else CastingRoll.modified(raw, f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
+	var plane_penalty := PlaneWalk.penalty(f, c.state.turn) if id == "plane_walk" else 0
+	if id == "plane_walk":
+		PlaneWalk.record(f, c.state.turn)
+	var total := 14 if scroll else CastingRoll.modified(raw, plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	c._spend(f)
 	c.state.pending_cast = {"id": id, "caster": f.id, "target": target_id, "raw": raw, "total": total, "tn": tn, "scroll": scroll}
@@ -385,6 +392,10 @@ func finish(health: int) -> bool:
 			for other in s.figures:
 				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
 					_direct_attack(f, other, 5)
+		"plane_walk":
+			c._loot.drop_on_death(f)
+			f.spell_effects[id] = true
+			f.spell_effects.erase("bones_of_the_earth")
 		"beauty":
 			t.spell_effects[id] = int(result["roll"])
 		"bones_of_the_earth":
@@ -430,7 +441,7 @@ func _heal(t: Figure, amount: int) -> void:
 
 
 func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false) -> void:
-	if not t.in_play():
+	if not t.in_play() or t.spell_effects.has("plane_walk"):
 		return
 	var s := c.state
 	var from: Vector2 = f.pos if origin == null else origin
@@ -472,6 +483,8 @@ func on_end_activation(f: Figure) -> void:
 func on_end_turn() -> void:
 	terrain.expire()
 	for f in c.state.figures:
+		if f.spell_effects.erase("plane_walk"):
+			c.emit("spell_expired", {"id": f.id, "spell": "plane_walk"})
 		_resist_effect(f, "curse")
 		_resist_effect(f, "blinding_light")
 

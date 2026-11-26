@@ -79,7 +79,7 @@ func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if not _c.can_move():
 		return false
 	var f := _c.state.active()
-	if f.control_spell == "mind_control" or f.side < 0:
+	if f.control_spell == "mind_control" or f.side < 0 or f.spell_effects.has("plane_walk"):
 		return false
 	if r == null:
 		r = _c.reach()
