@@ -53,34 +53,18 @@ func _ready() -> void:
 	add_child(_snow)
 
 
-func configure(board: Board) -> void:
-	_outdoors = board.id != "underground_library"
-	var sky := Color(0.09, 0.14, 0.20)
-	var key := Color(1.0, 0.90, 0.75)
-	var fill := Color(0.57, 0.73, 1.0)
-	match board.id:
-		"underground_library":
-			sky = Color(0.075, 0.065, 0.055)
-			key = Color(1.0, 0.76, 0.49)
-			fill = Color(0.58, 0.67, 0.83)
-		"haunted_houses", "mausoleum":
-			sky = Color(0.08, 0.12, 0.17)
-			key = Color(0.80, 0.89, 1.0)
-			fill = Color(0.53, 0.75, 0.71)
-		"complex_temple", "the_keep", "dreams_well":
-			sky = Color(0.095, 0.10, 0.19)
-			key = Color(1.0, 0.87, 0.65)
-			fill = Color(0.58, 0.69, 1.0)
-		"silent_tower":
-			sky = Color(0.07, 0.10, 0.16)
-			key = Color(0.83, 0.89, 1.0)
-			fill = Color(0.53, 0.65, 0.84)
-	_environment.background_color = sky
-	_environment.ambient_light_color = fill.lightened(0.42)
-	_sun.light_color = key
-	_sun.light_energy = 1.25 if _outdoors else 1.05
-	_fill.light_color = fill
-	_fill.light_energy = 0.42
+func configure(board: Board, scenario: String = "") -> void:
+	var palette := VisualPalette.for_scenario(board.id if scenario.is_empty() else scenario)
+	var count := int(palette.get("flakes", 96))
+	_outdoors = count > 0
+	_environment.background_color = Color(str(palette.get("sky", "233849")))
+	_fill.light_color = Color(str(palette.get("fill", "9dc7ec")))
+	_environment.ambient_light_color = _fill.light_color.lightened(0.32)
+	_environment.ambient_light_energy = float(palette.get("ambient", 0.48))
+	_sun.light_color = Color(str(palette.get("key", "f2dfbd")))
+	_sun.light_energy = float(palette.get("energy", 1.25))
+	_fill.light_energy = 0.35
+	_snow.amount = maxi(1, count)
 	_snow.position = TableSpace.to_world(board.size * 0.5, 8.5)
 	_snow.emission_box_extents = Vector3(board.size.x * 0.52, 2.5, board.size.y * 0.52)
 	_snow.restart()

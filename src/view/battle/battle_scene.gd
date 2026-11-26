@@ -195,8 +195,9 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_wait = 0.0
 	controller = c
 	var state := c.state
+	_board_view.scenario_id = _active_scenario_id
 	_board_view.build(state.board)
-	_atmosphere.configure(state.board)
+	_atmosphere.configure(state.board, _active_scenario_id)
 	_sites.reset()
 	_sites.update_sites(state)
 	_markers.board = state.board

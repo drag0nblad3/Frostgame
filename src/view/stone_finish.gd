@@ -16,14 +16,15 @@ static func material(color: Color, ground: bool = false, arches: bool = false, o
 	return mat
 
 
-static func floor_surface(board: Board) -> MeshInstance3D:
+static func floor_surface(board: Board, scenario: String = "") -> MeshInstance3D:
 	var node := MeshInstance3D.new()
 	var slab := PlaneMesh.new()
 	slab.size = board.size
 	node.mesh = slab
 	node.position = TableSpace.to_world(board.size * 0.5, 0.008)
-	node.material_override = material(Color(0.39, 0.38, 0.34) if board.id == "underground_library" else Color(0.47, 0.54, 0.60), true)
-	if board.id == "underground_library":
-		(node.material_override as ShaderMaterial).set_shader_parameter("snow_amount", 0.15)
+	var palette := VisualPalette.for_scenario(board.id if scenario.is_empty() else scenario)
+	var mat := material(Color(str(palette.get("floor", "687781"))), true)
+	mat.set_shader_parameter("snow_amount", float(palette.get("snow", 0.86)))
+	node.material_override = mat
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return node

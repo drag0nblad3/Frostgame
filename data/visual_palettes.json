@@ -1,0 +1,146 @@
+{
+  "_note": "Original presentation palettes. RGB colors in sRGB. No gameplay values.",
+  "default": {
+    "name": "Winter daylight",
+    "sky": "233849",
+    "key": "f2dfbd",
+    "fill": "9dc7ec",
+    "energy": 1.25,
+    "ambient": 0.48,
+    "floor": "63717a",
+    "snow": 0.86,
+    "flakes": 96
+  },
+  "treasure_skirmish": {
+    "name": "Winter daylight",
+    "sky": "20374a",
+    "key": "f4e0c5",
+    "fill": "a2cbed",
+    "energy": 1.32,
+    "ambient": 0.48,
+    "floor": "687781",
+    "snow": 0.86,
+    "flakes": 96
+  },
+  "mausoleum": {
+    "name": "Crypt twilight",
+    "sky": "202b36",
+    "key": "c5d9ee",
+    "fill": "98c0be",
+    "energy": 1.16,
+    "ambient": 0.52,
+    "floor": "536268",
+    "snow": 0.62,
+    "flakes": 60
+  },
+  "living_museum": {
+    "name": "Museum of stone",
+    "sky": "302d31",
+    "key": "f3d9ac",
+    "fill": "b0bfcc",
+    "energy": 1.26,
+    "ambient": 0.52,
+    "floor": "777572",
+    "snow": 0.3,
+    "flakes": 16
+  },
+  "dreams_well": {
+    "name": "Arcane blue hour",
+    "sky": "172b43",
+    "key": "a7d6ed",
+    "fill": "b2bce8",
+    "energy": 1.27,
+    "ambient": 0.55,
+    "floor": "536d82",
+    "snow": 0.78,
+    "flakes": 80
+  },
+  "worm_hunts": {
+    "name": "Bleak ice field",
+    "sky": "344a59",
+    "key": "dceff5",
+    "fill": "a3c6e5",
+    "energy": 1.28,
+    "ambient": 0.52,
+    "floor": "657e8c",
+    "snow": 1,
+    "flakes": 128
+  },
+  "underground_library": {
+    "name": "Amber lamplight",
+    "sky": "30252a",
+    "key": "ffcf92",
+    "fill": "b8bdc9",
+    "energy": 1.25,
+    "ambient": 0.56,
+    "floor": "69616a",
+    "snow": 0.1,
+    "flakes": 0
+  },
+  "haunted_houses": {
+    "name": "Haunted dusk",
+    "sky": "29263a",
+    "key": "cbd0ee",
+    "fill": "b5b7cf",
+    "energy": 1.1,
+    "ambient": 0.58,
+    "floor": "5f6578",
+    "snow": 0.79,
+    "flakes": 80
+  },
+  "the_keep": {
+    "name": "Highland morning",
+    "sky": "354355",
+    "key": "f0d9be",
+    "fill": "b0c7e1",
+    "energy": 1.32,
+    "ambient": 0.48,
+    "floor": "6d7980",
+    "snow": 0.85,
+    "flakes": 72
+  },
+  "genie_in_the_bottle": {
+    "name": "Fading sun",
+    "sky": "3d3540",
+    "key": "ffe0a9",
+    "fill": "b9c1dc",
+    "energy": 1.32,
+    "ambient": 0.51,
+    "floor": "77767b",
+    "snow": 0.6,
+    "flakes": 48
+  },
+  "silent_tower": {
+    "name": "Silent blue twilight",
+    "sky": "1d2b42",
+    "key": "c1d3f0",
+    "fill": "a2bbdc",
+    "energy": 1.18,
+    "ambient": 0.56,
+    "floor": "53627e",
+    "snow": 0.7,
+    "flakes": 72
+  },
+  "complex_temple": {
+    "name": "Ancient sanctuary",
+    "sky": "343440",
+    "key": "f6dfb7",
+    "fill": "b1c4df",
+    "energy": 1.24,
+    "ambient": 0.54,
+    "floor": "78746e",
+    "snow": 0.47,
+    "flakes": 32
+  },
+  "training_yard": {
+    "name": "Clear morning",
+    "sky": "334b60",
+    "key": "ffe9c9",
+    "fill": "b5d3ec",
+    "energy": 1.38,
+    "ambient": 0.55,
+    "floor": "707e84",
+    "snow": 0.68,
+    "flakes": 32
+  }
+}

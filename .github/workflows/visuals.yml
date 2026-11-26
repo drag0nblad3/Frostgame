@@ -1,7 +1,7 @@
 name: Visual previews
 on:
   pull_request:
-    paths: ['src/view/**', 'data/boards/**', 'tools/capture.gd', 'tools/miniature_gallery.gd', '.github/workflows/visuals.yml']
+    paths: ['src/view/**', 'data/boards/**', 'data/visual_palettes.json', 'tools/capture.gd', 'tools/miniature_gallery.gd', '.github/workflows/visuals.yml']
   workflow_dispatch:
 concurrency:
   group: visual-${{ github.ref }}
