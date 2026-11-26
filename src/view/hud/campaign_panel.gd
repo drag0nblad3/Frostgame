@@ -19,6 +19,7 @@ var story_start: Button
 var story_veil: CheckBox
 var recruit_status: CheckBox
 var reality_option: CheckBox
+var secret_hrut: CheckBox
 var reconcile_button: Button
 var continue_skirmishes: Button
 var begin: Button
@@ -179,6 +180,12 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		campaign.data["red_king_recruit_status"]=on
 		campaign.save())
 	col.add_child(recruit_status)
+	secret_hrut=CheckBox.new()
+	secret_hrut.text="Use Secret of the Hrut in next battle (+1 Fight vs Hrut)"
+	secret_hrut.toggled.connect(func(on: bool) -> void:
+		campaign.data["red_king_use_secret_hrut"]=on
+		campaign.save())
+	col.add_child(secret_hrut)
 	reconcile_button=_command(col,"Reconcile warband after The Red King",func() -> void:
 		if RedKingCampaign.reconcile(campaign.data,db):
 			changed())
@@ -214,6 +221,8 @@ func refresh(in_battle: bool) -> void:
 	reality_option.set_pressed_no_signal(bool(d.get("reality_cracks",false)))
 	recruit_status.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty()
 	recruit_status.set_pressed_no_signal(bool(d.get("red_king_recruit_status",false)))
+	secret_hrut.visible=bool(d.get("red_king_secret_hrut",false)) and not in_battle and not stage.is_empty() and stage.get("id","")!="red_king_mind"
+	secret_hrut.set_pressed_no_signal(bool(d.get("red_king_use_secret_hrut",false)))
 	reconcile_button.visible=RedKingCampaign.active(d) and stage.is_empty() and RaggedWarbands.active(d) and not in_battle
 	reconcile_button.disabled=not d.get("pending_treasure",[]).is_empty()
 	continue_skirmishes.visible=bool(d.get("red_king_reconcile_pending",false)) and not in_battle

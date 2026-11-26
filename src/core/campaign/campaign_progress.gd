@@ -62,7 +62,7 @@ func deployment() -> Dictionary:
 	# Two deployment ranks prevent extra prepared figures from exceeding the table.
 	for i in units.size():
 		units[i]["at"] = [4.5 + 3.0 * (i % 10), 3.0 + 1.5 * floori(i / 10.0)]
-	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": BaseResources.owns(data, "celestial_telescope")}
+	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": not locked and BaseResources.owns(data, "celestial_telescope"), "red_king_artefact_recovered": bool(data.get("red_king_artefact_recovered",false)), "red_king_secret_hrut": RedKingMindRewards.secret_selected(data)}
 
 
 func can_deploy() -> bool:
@@ -88,6 +88,9 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		if ok:
 			RedKingCampaign.advance(data,c.state.scenario_special)
 		return ok
+	if c.state.scenario_data.get("secret_hrut_%d"%side,false):
+		data.erase("red_king_secret_hrut")
+		data.erase("red_king_use_secret_hrut")
 	CampaignInventory.settle(data, c, side)
 	var report: Array[String] = []
 	var xp := 0
@@ -205,6 +208,10 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				report.append("%s was lost in the Ringworld."%f.label())
 				break
 			var raw := dice.d20()
+			if f.def.role=="wizard" and data.get("red_king_survival_reroll",false):
+				var previous := raw
+				raw=RedKingMindRewards.survival_roll(data,raw,dice)
+				report.append("Mindscape survival protection: %d → %d."%[previous,raw])
 			var caster := f.def.role in ["wizard", "apprentice"]
 			if RaggedWarbands.active(data) and not caster:
 				RaggedWarbands.soldier_survival(unit,raw)

@@ -76,7 +76,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	var magic_shoot := 0 if null_target else MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id)
 	var magic_damage := 0 if null_target else MagicEquipment.bonus(shooter, "damage", shooter.ranged.id)
 	var st := sr - (2 if RealityCracks.low_gravity(shooter) else 0) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and shooter.spell_effects.has("enchant_weapon") else 0) + (3 if target.spell_effects.has("glow") else 0), 10) + shooter.roll_penalty()
-	var tt := tr + mini(target.effective_fight() + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
+	var tt := tr + mini(target.effective_fight() + Melee.secret_hrut_bonus(target,shooter) + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
 		dmg = Damage.amount(st, shooter.ranged.damage_mod + magic_damage, target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits and not target.def.traits.has("immune_critical"))

@@ -34,3 +34,16 @@ static func settle(data: Dictionary,c: GameController,side: int) -> bool:
 		RedKingRewards.award(data,id,c.dice)
 	data.erase("red_king_pending_rewards")
 	return true
+
+
+static func secret_selected(data: Dictionary) -> bool:
+	return bool(data.get("red_king_secret_hrut",false)) and bool(data.get("red_king_use_secret_hrut",false)) and RedKingCampaign.active(data) and RedKingCampaign.next_id(data)!="red_king_mind"
+
+
+## The next wizard survival check consumes the entitlement. Digital policy:
+## retain the original if already fully recovered; otherwise keep the higher roll.
+static func survival_roll(data: Dictionary,raw: int,dice: Dice) -> int:
+	if not data.get("red_king_survival_reroll",false):
+		return raw
+	data.erase("red_king_survival_reroll")
+	return maxi(raw,dice.d20()) if raw+1<=8 else raw

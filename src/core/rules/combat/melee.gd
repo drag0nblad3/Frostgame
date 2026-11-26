@@ -24,7 +24,7 @@ static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure, charging
 	if RedKingTethers.pylon(f):
 		return 0
 	var net := clampi(support(figures, f, enemy) - support(figures, enemy, f), 0, 6)
-	return mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + net + (2 if charging and f.def.traits.has("horns") else 0) + (1 if f.spell_effects.has("enchant_weapon") and f.ranged == null else 0), 10)
+	return mini(f.effective_fight() + secret_hrut_bonus(f,enemy) + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + net + (2 if charging and f.def.traits.has("horns") else 0) + (1 if f.spell_effects.has("enchant_weapon") and f.ranged == null else 0), 10)
 
 
 ## Rolls the fight. Returns {a_roll, b_roll, a_total, b_total, a_dmg, b_dmg}:
@@ -66,3 +66,11 @@ static func _damage(total: int, winner: Figure, loser: Figure, natural: int, cri
 	if dmg > 0 and winner.ranged == null and winner.spell_effects.has("elemental_hammer"):
 		dmg += 5
 	return dmg
+
+
+## The mindscape reward affects Fight against Hrut for one selected battle.
+static func secret_hrut_bonus(f: Figure,enemy: Figure) -> int:
+	var s := RedKingVeil.of(f)
+	if s==null or f.side<0 or not enemy.def.id.begins_with("hrut_"):
+		return 0
+	return 1 if s.scenario_data.get("secret_hrut_%d"%f.side,false) else 0

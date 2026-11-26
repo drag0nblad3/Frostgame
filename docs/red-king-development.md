@@ -102,3 +102,7 @@ All twenty table entries now have initial engine implementations, triggered once
 ## Deployment and item fidelity pass
 
 Moved obstructing ruins inward on Planar Sinkhole and King of the Hill after seed-17 simulations identified illegal starting placements. Added Feather Blade slot reduction, Armring of Strength and Surefoot Boots target-number bonuses (not combat or movement increases), Icon of the Sun melee damage/energy-drain immunity, and Burning Icon Banish resistance modifier. These effects use the existing anti-magic suppression paths. Armring and boots are connected to the current expansion-specific stat tests; other core stat-test paths need an audit. Remaining item powers and interactive scenario choices still prevent declaring the pack complete.
+
+## Mindscape reward integration
+
+A persistent opt-in checkbox spends the Secret of the Hrut in the selected next story encounter; melee and mundane shooting defence use its matchup-specific Fight bonus, and settlement consumes it only when the battle is completed. The flag survives checkpointing. The next wizard survival check automatically uses the better numerical roll if the first outcome is not full recovery; it does not reroll a full recovery. A manual choice between outcomes remains a UI refinement. Recovery of the Fire artefact is now passed into the Mad Man deployment, and locked intermissions suppress the telescope. Sinkhole ruins retain clearance around the treasure markers as well as starting positions.

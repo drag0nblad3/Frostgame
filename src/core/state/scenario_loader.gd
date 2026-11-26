@@ -37,6 +37,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		if schools.has(school):
 			s.side_schools[side] = school
 		s.spellbooks[side] = s.content_profile.filter("spells",wb.get("spells",{}))
+		if wb.get("red_king_secret_hrut",false) and s.content_profile.enabled.has("red_king"):
+			s.scenario_data["secret_hrut_%d"%side]=true
 		if wb.get("telescope", false):
 			s.telescope_ready[side] = true
 		var deploy_index := 0
