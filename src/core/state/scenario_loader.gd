@@ -48,6 +48,9 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				at = [position.x, position.y]
 			if RedKingVeil.active(s) and side==0:
 				at=[2.0+float(deploy_index%8)*2.7,1.0+1.5*floori(deploy_index/8.0)]
+			if RedKingFire.active(s):
+				var x := 1.0+1.1*float(deploy_index%4)
+				at=[x if side==0 else s.board.size.x-x,1.0+1.1*floori(deploy_index/4.0)]
 			deploy_index += 1
 			var def := figures.get_def(entry["type"])
 			if entry.has("stat_bonus"):
@@ -77,6 +80,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 						unit.summon_spell = "summon_demon"
 						unit.control_roll = int(demon["control_roll"])
 						break
+			if RedKingFire.active(s):
+				unit.spell_effects["invisibility"]=true
 			unit.campaign_base = str(entry.get("campaign_base", ""))
 			unit.familiar = entry.get("familiar", false)
 			if entry.get("awareness", false):
@@ -98,7 +103,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for at: Array in d.get("treasures", []):
 		var token := TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1]))
 		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
-		token.frozen = (s.scenario_special == "underground_library" and token.central) or s.scenario_special == "complex_temple"
+		token.frozen = (s.scenario_special == "underground_library" and token.central) or s.scenario_special == "complex_temple" or (RedKingFire.active(s) and token.central)
 		s.treasures.append(token)
 	for at: Array in d.get("investigation_stands",[]):
 		var stand := TreasureToken.new(s.treasures.size(),Vector2(at[0],at[1]))

@@ -41,6 +41,9 @@
           "red_king_key_master",
           "mindshrike",
           "nullman"
+        ],
+        "terrain": [
+          "red_king_portal"
         ]
       },
       "catalogs": {
@@ -61,6 +64,11 @@
           "The Veil of Unreality",
           "Escape through a receding dimensional barrier while hostile forces arrive from both sides.",
           "Touching the veil is fatal. Escape via the opposite short edge. Opposing creatures can return after defeat."
+        ],
+        "red_king_back_into_fire": [
+          "Back Into the Fire",
+          "Infiltrate a ruined temple and recover the locked artefact before Hrut emerge from its portals.",
+          "Begin invisible. Unlock the central stand with a Will test (TN16); thieves, treasure hunters and casters gain +5. Portal contact causes elemental damage. Exit through corner doors."
         ]
       }
     }

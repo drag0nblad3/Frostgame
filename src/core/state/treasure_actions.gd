@@ -11,6 +11,8 @@ func _init(c: GameController) -> void:
 
 func can_pick_up(id: int) -> bool:
 	var token := _c.state.treasure(id)
+	if RedKingFire.locked(_c.state,token):
+		return RedKingFire.can_unlock(_c,token)
 	if token!=null and token.investigation:
 		return RedKingInvestigations.can_investigate(_c,token)
 	return _c.can_act() and TreasureRules.can_pick_up(_c.state, _c.state.active(), token)
@@ -21,6 +23,8 @@ func pick_up(id: int) -> bool:
 		return false
 	var f := _c.state.active()
 	var token := _c.state.treasure(id)
+	if RedKingFire.locked(_c.state,token):
+		return RedKingFire.unlock(_c,f,token)
 	if token.investigation:
 		return RedKingInvestigations.investigate(_c,f,token)
 	_c._spend(f)

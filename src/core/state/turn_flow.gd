@@ -101,6 +101,7 @@ func _settle() -> void:
 			RedKingSquatter.end_turn(_c)
 			RedKingInvestigations.end_turn(_c)
 			RedKingVeil.end_turn(_c)
+			RedKingFire.end_turn(_c)
 			_c._encounters.on_end_turn()
 			start_turn()
 			return
