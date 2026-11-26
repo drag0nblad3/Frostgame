@@ -5,12 +5,14 @@ extends RefCounted
 var c: GameController
 var summons: SummonActions
 var terrain: TerrainMagic
+var movement: MagicMovement
 
 
 func _init(controller: GameController) -> void:
 	c = controller
 	summons = SummonActions.new(c)
 	terrain = TerrainMagic.new(c)
+	movement = MagicMovement.new(c)
 
 
 func can_cast(id: String, target_id: int) -> bool:
@@ -43,6 +45,17 @@ func can_cast(id: String, target_id: int) -> bool:
 		return t != f
 	if kind == "area_shot":
 		return t.side != f.side
+	if id == "leap":
+		return t.side == f.side and not movement.points(f, t, id, true).is_empty()
+	if id == "transpose":
+		for other in s.figures:
+			if movement.can_swap(f, t, other):
+				return true
+		return false
+	if id == "push":
+		return t != f
+	if id == "blink":
+		return true
 	if id == "enchant_armour":
 		return t.def.role == "soldier" and t.def.armour >= 11 and not t.spell_effects.has(id)
 	if SummonActions.CONTROL.has(id):
@@ -59,9 +72,21 @@ func can_cast(id: String, target_id: int) -> bool:
 
 
 func start(id: String, target_id: int) -> bool:
-	if not can_cast(id, target_id):
+	if not can_cast(id, target_id) or id in ["leap", "transpose"]:
 		return false
 	return _roll(id, target_id)
+
+
+func start_move(id: String, target_id: int, at: Vector2) -> bool:
+	if id != "leap" or not can_cast(id, target_id) or not movement.can_land(c.state.active(), c.state.figure(target_id), id, at):
+		return false
+	return _roll(id, target_id, at)
+
+
+func start_swap(first: int, second: int) -> bool:
+	if not can_cast("transpose", first) or not can_cast("transpose", second) or not movement.can_swap(c.state.active(), c.state.figure(first), c.state.figure(second)):
+		return false
+	return _roll("transpose", first, null, false, second)
 
 
 func placement_points(id: String, first_only: bool = false, rotated: bool = false) -> Array[Vector2]:
@@ -73,20 +98,25 @@ func placement_points(id: String, first_only: bool = false, rotated: bool = fals
 		return empty
 	if f.spell_effects.has("blinding_light") and id not in ["raise_zombie", "summon_demon"]:
 		return empty
+	if id == "teleport":
+		return movement.points(f, f, id, first_only)
 	if TerrainMagic.SPELLS.has(id):
 		return terrain.points(f, id, rotated, first_only)
 	return summons.points(f, id, first_only)
 
 
 func is_placement(id: String) -> bool:
-	return SummonActions.PLACEMENT.has(id) or TerrainMagic.SPELLS.has(id)
+	return id == "teleport" or SummonActions.PLACEMENT.has(id) or TerrainMagic.SPELLS.has(id)
 
 
 func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 	if placement_points(id, true, rotated).is_empty():
 		return false
 	var f := c.state.active()
-	if TerrainMagic.SPELLS.has(id):
+	if id == "teleport":
+		if not movement.can_land(f, f, id, at):
+			return false
+	elif TerrainMagic.SPELLS.has(id):
 		if not terrain.can_place(f, id, at, rotated):
 			return false
 	elif not summons.can_place(f, id, at):
@@ -94,7 +124,7 @@ func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
 	return _roll(id, c.state.active_id, at, rotated)
 
 
-func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false) -> bool:
+func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1) -> bool:
 	var f := c.state.active()
 	var raw := c.dice.d20()
 	var total := CastingRoll.modified(raw, f.roll_penalty() - (2 if f.spell_effects.has("furious_quill") else 0), f.def.role == "apprentice")
@@ -104,6 +134,7 @@ func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false
 	if at != null:
 		c.state.pending_cast["at"] = at
 		c.state.pending_cast["rotated"] = rotated
+	c.state.pending_cast["second"] = second
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
 	return true
 
@@ -148,6 +179,14 @@ func finish(health: int) -> bool:
 		summons.apply_control(f, t, id, int(result["roll"]))
 		return true
 	match id:
+		"teleport", "leap":
+			movement.move(t, p["at"], true)
+		"push":
+			movement.push(f, t)
+		"blink":
+			movement.blink(f, t, int(result["roll"]))
+		"transpose":
+			movement.transpose(f, t, s.figure(p["second"]), int(result["roll"]))
 		"heal":
 			_heal(t, 5)
 		"mind_lock":

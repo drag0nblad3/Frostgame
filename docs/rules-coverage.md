@@ -121,3 +121,7 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Dynamic terrain spells
 
 - pp. 122, 126, 134: Fog, Mud and Wall use point targets. Fog obstructs sight, Mud creates circular rough ground, Wall creates a climbable obstruction. Dynamic terrain invalidates path caches, expires through turn rolls and updates the 3D board. Wall and Fog use two axis-aligned orientations; placement excludes some terrain overlaps and uses 1-inch markers. Fog expiry is processed at the end-turn boundary. Wall removal can cause falling damage. Mind Lock now breaks and prevents Mind Control. 
+
+## Magical movement
+
+- pp. 114, 125, 130, 133–134: Teleport and Leap use selectable legal destinations; Leap has reduced range with treasure and a sampled arc for obstacle clearance. Both exhaust remaining actions this turn, including later group actions. Blink and Push move along a direction with legal landing and falling checks; Transpose selects two figures and checks enemy resistance before swapping. Resistance is automatic for enemies, waived for allies in Blink; no resistance empowerment yet. Forced movement uses quarter-inch samples; leap arc is a fixed approximation and vertical-only movement is not supported.

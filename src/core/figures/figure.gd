@@ -26,6 +26,7 @@ var spell_effects := {}
 var elemental_shield := 0
 var poisoned := false
 var petrified_skip := false
+var magic_exhausted := false
 ## Turn bookkeeping, reset by the controller each turn.
 var activated := false
 var actions_left := 0
@@ -86,7 +87,7 @@ func effective_will() -> int:
 
 
 func action_limit() -> int:
-	if petrified_skip:
+	if petrified_skip or magic_exhausted:
 		return 0
 	return 1 if poisoned or spell_effects.has("slow") else 2
 

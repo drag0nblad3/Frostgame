@@ -17,6 +17,7 @@ var group_selection: Array[int] = []
 var cast_options: Array[String] = []
 var selected_spell := ""
 var spell_rotated := false
+var spell_first := -1
 var empower := 0
 
 
@@ -123,6 +124,15 @@ func preview() -> void:
 	match mode:
 		"spell_menu":
 			hint = "Choose a spell."
+		"leap_destination":
+			points.assign(c._magic.movement.points(f, c.state.figure(spell_first), "leap"))
+			hint = "Choose a landing spot for the selected ally."
+		"swap_second":
+			for t in c.state.figures:
+				if c.can_cast("transpose", t.id) and c._magic.movement.can_swap(f, c.state.figure(spell_first), t):
+					targets.append(t)
+			radius = 0.65
+			hint = "Choose the second figure to swap."
 		"spell_point":
 			points.assign(c._magic.placement_points(selected_spell, false, spell_rotated))
 			hint = "Choose a marked spell location."
@@ -278,12 +288,19 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
+			"swap_second":
+				return c._magic.start_swap(spell_first, id)
 			"spell_target":
+				if selected_spell in ["leap", "transpose"]:
+					spell_first = id
+					mode = "leap_destination" if selected_spell == "leap" else "swap_second"
+					preview()
+					return false
 				return c.start_cast(selected_spell, id)
 			"cancel_control":
 				return c._magic.cancel(id)
@@ -304,6 +321,8 @@ func tap(screen: Vector2) -> bool:
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode == "leap_destination":
+		return c._magic.start_move("leap", spell_first, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return c._magic.start_at(selected_spell, destination, spell_rotated)

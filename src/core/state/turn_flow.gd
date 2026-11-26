@@ -25,6 +25,7 @@ func start_turn() -> void:
 		return
 	for f in s.figures:
 		f.activated = false
+		f.magic_exhausted = false
 		f.actions_left = 0
 	var ini := Initiative.roll(_c.dice, s.side_count())
 	s.order = ini["order"]

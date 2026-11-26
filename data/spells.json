@@ -156,7 +156,8 @@
     "name": "Blink",
     "school": "illusionist",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "special",
+    "range": 12
   },
   "fools_gold": {
     "name": "Fool's Gold",
@@ -186,13 +187,13 @@
     "name": "Teleport",
     "school": "illusionist",
     "number": 10,
-    "kind": "unimplemented"
+    "kind": "placement"
   },
   "transpose": {
     "name": "Transpose",
     "school": "illusionist",
     "number": 12,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "animate_skull": {
     "name": "Animate Skull",
@@ -284,7 +285,7 @@
     "name": "Push",
     "school": "sigilist",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "write_scroll": {
     "name": "Write Scroll",
@@ -356,7 +357,7 @@
     "name": "Leap",
     "school": "summoner",
     "number": 8,
-    "kind": "unimplemented"
+    "kind": "special"
   },
   "plague_of_insects": {
     "name": "Plague of Insects",
