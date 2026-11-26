@@ -13,6 +13,12 @@ func _run() -> void:
 		printerr("Title navigation missing")
 		quit(1)
 		return
+	title_scene._buttons["expansions"].pressed.emit()
+	if title_scene._expansions==null or not title_scene._expansions.visible or title_scene._expansions._slot!=WarbandSlots.active():
+		printerr("Per-slot rulebook settings missing")
+		quit(1)
+		return
+	title_scene._expansions.hide()
 	title_scene._buttons["guide"].pressed.emit()
 	if current_scene!=title_scene or title_scene._guide==null or not title_scene._guide.visible or root.has_meta("frostgame_launch"):
 		printerr("Field guide should open directly from home")

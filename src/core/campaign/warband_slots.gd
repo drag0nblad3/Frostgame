@@ -55,3 +55,31 @@ static func _write(path: String,data: Dictionary) -> bool:
 	file.store_string(JSON.stringify(data))
 	file.close()
 	return DirAccess.rename_absolute(path+".tmp",path)==OK
+
+
+static func content_path(slot: int=-1) -> String:
+	return path_for("user://frostgame_content_v1.json",slot)
+
+
+static func content_profile(slot: int=-1) -> ContentProfile:
+	var path := content_path(slot)
+	if not FileAccess.file_exists(path):
+		return ContentProfile.new()
+	var data: Variant=JSON.parse_string(FileAccess.get_file_as_string(path))
+	return ContentProfile.new(data.get("enabled",[])) if data is Dictionary and data.get("version",0)==1 and data.get("enabled") is Array else ContentProfile.new()
+
+
+static func change_content(ids: Array,slot: int=-1) -> Array[String]:
+	var before := content_profile(slot)
+	var after := ContentProfile.new(ids)
+	var campaign := CampaignProgress.new()
+	var campaign_path := path_for(CampaignProgress.PATH,slot)
+	var loaded := campaign.load_save(campaign_path)
+	if FileAccess.file_exists(campaign_path) and not loaded:
+		return ["Cannot safely inspect this campaign. Content settings were not changed."]
+	var errors := ExpansionSafety.conflicts(before,after,roster(slot),campaign.data)
+	if not errors.is_empty():
+		return errors
+	if not _write(content_path(slot),{"version":1,"enabled":after.enabled}):
+		return ["Could not save content settings."]
+	return []

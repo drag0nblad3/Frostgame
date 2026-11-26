@@ -13,6 +13,7 @@ var _editor: WarbandSetup
 var _notice: Label
 var _guide: FieldGuideDialog
 var _graphics: GraphicsDialog
+var _expansions: ExpansionDialog
 var _atmosphere: BattleAtmosphere
 var _title_board: Board
 
@@ -84,6 +85,7 @@ func _ready() -> void:
 	_button("campaign","Campaign headquarters")
 	_button("training","Training yard")
 	_button("guide","Field guide")
+	_button("expansions","Rulebook content")
 	_button("graphics","Graphics quality")
 	_notice=Label.new()
 	_notice.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
@@ -119,6 +121,14 @@ func _button(key: String, value: String, primary: bool = false) -> void:
 func _launch(key: String) -> void:
 	if _launching or ModalInput.blocked():
 		return
+	if key=="expansions":
+		_open_expansions()
+		return
+	if key in ["skirmish","warband","campaign","resume","training"]:
+		var errors := WarbandSlots.content_profile().errors()
+		if not errors.is_empty():
+			_notice.text="; ".join(errors)
+			return
 	if key=="skirmish":
 		_choose_scenario()
 		return
@@ -139,7 +149,7 @@ func _launch(key: String) -> void:
 
 
 func _process(delta: float) -> void:
-	if GraphicsQuality.mode()==0 or (_editor!=null and _editor.visible) or (_guide!=null and _guide.visible) or (_picker!=null and _picker.visible) or (_graphics!=null and _graphics.visible):
+	if ModalInput.blocked() or GraphicsQuality.mode()==0 or (_editor!=null and _editor.visible) or (_guide!=null and _guide.visible) or (_picker!=null and _picker.visible) or (_graphics!=null and _graphics.visible):
 		return
 	_elapsed += delta
 	_frame()
@@ -158,11 +168,15 @@ func _refresh_slots() -> void:
 	_slots.select(WarbandSlots.active())
 	var checkpoint := BattleSnapshot.read()
 	var meta: Dictionary=checkpoint.get("meta",{})
-	var compatible := not checkpoint.is_empty()
+	var profile := WarbandSlots.content_profile()
+	var compatible := not checkpoint.is_empty() and profile.same(meta.get("expansions",[])) and profile.errors().is_empty()
 	var path := WarbandSlots.path_for(CampaignProgress.PATH)
 	if meta.get("campaign",false):
 		compatible=compatible and FileAccess.file_exists(path) and FileAccess.get_sha256(path)==meta.get("campaign_hash","")
-	_buttons["resume"].visible=compatible
+	_buttons["resume"].visible=not checkpoint.is_empty()
+	_buttons["resume"].disabled=not compatible
+	_buttons["resume"].tooltip_text="Restore the saved battle's content selection or campaign state to resume." if not compatible else ""
+	_buttons["expansions"].text="Rulebook content · %d enabled"%profile.enabled.size()
 	_buttons["warband"].text="Create warband" if WarbandSlots.roster().is_empty() else "Edit saved warband"
 	var roster := WarbandSlots.roster()
 	_notice.text="Starting roster: %s. Each slot has separate saves."%roster.get("name","default expedition")
@@ -231,3 +245,16 @@ func _open_graphics() -> void:
 func _notification(what: int) -> void:
 	if what==NOTIFICATION_WM_GO_BACK_REQUEST and is_inside_tree():
 		ModalInput.close_top(get_tree().root)
+
+
+func _open_expansions() -> void:
+	if _expansions==null:
+		_expansions=ExpansionDialog.new()
+		add_child(_expansions)
+		_expansions.changed.connect(func() -> void:
+			if _guide!=null:
+				remove_child(_guide)
+				_guide.queue_free()
+				_guide=null
+			_refresh_slots())
+	_expansions.open(WarbandSlots.active())
