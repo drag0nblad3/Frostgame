@@ -50,7 +50,7 @@ func deployment() -> Dictionary:
 			entry["weapons"] = CasterLoadout.carried(data, unit)["weapons"]
 		units.append(entry)
 	if data.get("prepared_zombie", false):
-		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true})
+		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true,"prepared_zombie_caster":int(data.get("prepared_zombie_caster",-1)),"prepared_zombie_strong":bool(data.get("prepared_zombie_strong",false))})
 	if str(data.get("prepared_illusion", "")) != "":
 		units.append({"type": data["prepared_illusion"], "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_illusion": true})
 	var demon: Dictionary = data.get("prepared_demon", {})
@@ -187,6 +187,8 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data["ritual_attempts"] = {}
 	data["preparation_started"] = false
 	data["prepared_zombie"] = false
+	data.erase("prepared_zombie_caster")
+	data.erase("prepared_zombie_strong")
 	data["prepared_illusion"] = ""
 	data.erase("prepared_demon")
 	for unit: Dictionary in data["units"]:

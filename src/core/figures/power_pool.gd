@@ -12,7 +12,7 @@ static func remaining(item: Dictionary) -> int:
 
 
 static func available(f: Figure) -> int:
-	if f.def.role not in ["wizard", "apprentice"] or ScenarioNull.muted(f):
+	if f.def.role not in ["wizard", "apprentice"] or MagicEquipment.suppressed(f):
 		return 0
 	var total := 0
 	for item in f.items:

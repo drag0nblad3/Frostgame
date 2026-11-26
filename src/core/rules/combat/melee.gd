@@ -55,7 +55,7 @@ static func _damage(total: int, winner: Figure, loser: Figure, natural: int, cri
 		return 0
 	if (loser.spell_effects.has("potion_invulnerability") or loser.def.traits.has("immune_normal")) and not WeaponActions.magic_attack(winner, winner.melee):
 		return 0
-	var extra := (2 if winner.def.traits.has("strong") else 0) + (1 if winner.spell_effects.has("potion_fury") else 0)
+	var extra := (2 if winner.def.traits.has("strong") or winner.used_gear.get("rk_skull_strong",false) else 0) + (1 if winner.spell_effects.has("potion_fury") else 0)
 	if loser.def.traits.has("undead"):
 		extra += MagicEquipment.bonus(winner,"undead_damage")
 	var dmg := Damage.amount(total, winner.melee.damage_mod + (2 if winner.melee.id=="unarmed" and winner.def.traits.has("blood_marked") else 0) + MagicEquipment.bonus(winner, "damage", winner.melee.id) + MagicEquipment.bonus(winner, "melee_damage") + loser.melee.enemy_damage_mod + extra, RedKingGear.armour(winner,loser), natural, false)

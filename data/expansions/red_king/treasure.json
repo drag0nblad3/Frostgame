@@ -251,7 +251,7 @@
       "buy": 300,
       "sell": 175,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_enchanted_teetotum": {
@@ -627,10 +627,11 @@
       "buy": 0,
       "sell": 350,
       "bonus": {},
-      "live": false,
+      "live": true,
       "artefact": true,
       "unlock_tn": 16,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "wizard_only": true
     },
     "gear_rk_gloves_of_the_worm_rider": {
       "name": "Gloves of the Worm Rider",

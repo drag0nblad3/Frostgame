@@ -104,6 +104,8 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if not GearActions.bottle_points(c).is_empty():
+		available.append("gear_rk_bottle_imp")
 	for t in c.state.figures:
 		if GearActions.transfer_max(c, t) > 0:
 			available.append("gear_ring_transference")
@@ -218,6 +220,9 @@ func preview() -> void:
 			hint = "Transfer %d Health to %s (maximum %d)." % [transfer_amount, t.label(), GearActions.transfer_max(c, t)]
 			if transfer_amount == f.health:
 				hint += " Warning: caster will be knocked out."
+		"gear_bottle_imp":
+			points.assign(GearActions.bottle_points(c))
+			hint="Place the released uncontrolled imp within 1 inch."
 		"gear_teleport":
 			points.assign(GearActions.teleport_points(c))
 			hint = "Choose a destination within 8 inches."
@@ -427,6 +432,11 @@ func action(key: String) -> bool:
 		return false
 	if key == "gear_ring_transference":
 		mode = "gear_transfer_target"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key=="gear_rk_bottle_imp":
+		mode="gear_bottle_imp"
 		available.assign(["potion_cancel"])
 		preview()
 		return false
@@ -666,6 +676,8 @@ func tap(screen: Vector2) -> bool:
 		var t := c.state.figure(spell_first)
 		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return _declared(c._magic.start_move(selected_spell, spell_first, destination))
+	if mode=="gear_bottle_imp":
+		return GearActions.bottle_imp(c,MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "gear_teleport":
 		return GearActions.teleport(c, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "potion_point":

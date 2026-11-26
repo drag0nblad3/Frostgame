@@ -88,3 +88,49 @@ static func transfer(c: GameController, t: Figure, amount: int) -> bool:
 	c.emit("heal", {"id": t.id, "amount": t.health - old, "health": t.health})
 	c.emit("gear_used", {"id": f.id, "target": t.id, "gear": "gear_ring_transference", "amount": amount})
 	return true
+
+
+## The bottle is a consumable and can replace a movement action, even in melee.
+static func bottle_ready(c: GameController) -> bool:
+	var f := c.state.active()
+	return f!=null and f.in_play() and f.actions_left>0 and not c.awaiting_reaction() and c.state.pending_cast.is_empty() and c.state.push_winner<0 and not c.state.group.movement_pass() and not f.spell_effects.has("plane_walk") and FuryRules.target(c.state,f)==null and ActiveGear.ready(f,"gear_rk_bottle_imp") and (f.moves_taken==0 and not c.state.group.in_progress() or c.can_act()) and c.state.creature_db!=null and c.state.board.floor_layout.is_empty()
+
+
+static func bottle_legal(c: GameController,at: Vector2) -> bool:
+	if not bottle_ready(c):
+		return false
+	var f := c.state.active()
+	var height := c.state.board.height_at(at)
+	if Vector2(f.pos.distance_to(at),height-f.elevation).length()>1.001 or not c.state.board.can_stand(at,Figure.BASE_RADIUS) or ScenarioNull.field_at(c.state.board,at):
+		return false
+	for t in c.state.figures:
+		if t.in_play() and t.ring_side==f.ring_side and Vector2(t.pos.distance_to(at),t.elevation-height).length()<Contact.OVERLAP:
+			return false
+	return true
+
+
+static func bottle_points(c: GameController) -> Array[Vector2]:
+	var out: Array[Vector2]=[]
+	if not bottle_ready(c):
+		return out
+	var center := MovePlanner.node_at(c.state.active().pos)
+	for x in range(-2,3):
+		for y in range(-2,3):
+			var at := MoveGrid.to_pos(center+Vector2i(x,y))
+			if bottle_legal(c,at):
+				out.append(at)
+	return out
+
+
+static func bottle_imp(c: GameController,at: Vector2) -> bool:
+	if not bottle_legal(c,at):
+		return false
+	var f := c.state.active()
+	for i in f.items.size():
+		if f.items[i].get("gear","")=="gear_rk_bottle_imp":
+			f.items.remove_at(i)
+			break
+	c._potions._spend_drink(f)
+	c._encounters._spawn_at("imp",at,-1,f.ring_side)
+	c.emit("gear_used",{"id":f.id,"gear":"gear_rk_bottle_imp"})
+	return true

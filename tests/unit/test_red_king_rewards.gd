@@ -156,3 +156,35 @@ func test_incunabula_permanent_binding() -> void:
 	f.items.assign(CampaignInventory.loadout(d,0))
 	check_eq(ActiveGear.casting_bonus(f,"heal"),1)
 	check_eq(ActiveGear.casting_bonus(f,"push"),0)
+
+
+func test_bottle_imp_consumed_in_combat() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var enemy := fig("thug",1,Vector2(11,10))
+	var c := make_game(make_board(),[f,enemy],Dice.new(7))
+	c.state.creature_db=db()
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.items.append({"gear":"gear_rk_bottle_imp","gear_info":RedKingRewards.catalog()["gear_rk_bottle_imp"]})
+	check(GearActions.bottle_legal(c,Vector2(9,10)))
+	check(not GearActions.bottle_legal(c,Vector2(8,10)))
+	check(GearActions.bottle_imp(c,Vector2(9,10)))
+	check_eq(f.actions_left,1)
+	check(not ActiveGear.has(f,"gear_rk_bottle_imp"))
+	check_eq(c.state.figures.back().def.id,"imp")
+	check_eq(c.state.figures.back().side,-1)
+
+
+func test_skull_staff_limits_and_casting_cost() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],Dice.new(4))
+	c.state.creature_db=db()
+	f.items.append({"gear":"gear_rk_skull_staff","gear_info":RedKingRewards.catalog()["gear_rk_skull_staff"]})
+	check_eq(ActiveGear.casting_bonus(f,"animate_skull"),1)
+	c._magic.summons.spawn(f,"animate_skull",Vector2(12,10),15,8)
+	check(c.state.figures.back().used_gear.get("rk_skull_strong",false))
+	check(c._magic.summons.can_place(f,"animate_skull",Vector2(14,10)))
+	c._magic.summons.spawn(f,"animate_skull",Vector2(14,10),15,8)
+	check(not c._magic.summons.can_place(f,"animate_skull",Vector2(15,10)))
+	check_eq(ActiveGear.casting_bonus(f,"animate_skull"),-1)
+	check_eq(ActiveGear.casting_bonus(f,"heal"),-2)

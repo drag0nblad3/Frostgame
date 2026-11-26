@@ -108,6 +108,8 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 	attempts["%d:%s" % [caster, id]] = true
 	d["ritual_attempts"] = attempts
 	var raw := dice.d20()
+	if id=="raise_zombie" and u["type"]=="wizard" and BaseResources.wizard_item(d,"gear_rk_skull_staff"):
+		mod+=1
 	var total := CastingRoll.modified(raw, mod + CampaignInventory.incunabula_bonus(d,caster,id), u["type"] == "apprentice")
 	var tn := int(d["spells"][id])
 	var success := total >= tn
@@ -138,6 +140,8 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 			d["units"].append(member)
 		"raise_zombie":
 			d["prepared_zombie"] = true
+			d["prepared_zombie_caster"]=caster
+			d["prepared_zombie_strong"]=u["type"]=="wizard" and BaseResources.wizard_item(d,"gear_rk_skull_staff")
 		"miraculous_cure":
 			var member: Dictionary = d["units"][int(option)]
 			CampaignPotions.revive(member)

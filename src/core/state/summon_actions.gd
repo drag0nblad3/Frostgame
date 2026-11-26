@@ -43,9 +43,11 @@ func can_place(f: Figure, id: String, at: Vector2) -> bool:
 	var s := c.state
 	if s.creature_db == null or ScenarioNull.field_at(s.board, at) or not s.board.can_stand(at, Figure.BASE_RADIUS):
 		return false
-	if id == "animate_skull" and summoned(f, id) != null:
+	if id=="animate_skull" and count_summoned(c.state,f,id)>= (2 if skull_staff(f) else 1):
 		return false
-	if id in ["raise_zombie", "illusionary_soldier"] and summoned(f, id, true) != null:
+	if id=="raise_zombie" and count_summoned(c.state,f,id,true)>=(2 if skull_staff(f) else 1):
+		return false
+	if id=="illusionary_soldier" and summoned(f,id,true)!=null:
 		return false
 	if id == "summon_demon" and controlled(f, "control_demon") != null:
 		return false
@@ -154,7 +156,9 @@ func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int) -> void:
 			side = f.side
 		"animate_skull":
 			type = "animated_skull"
-	var t := c._encounters._spawn_at(type, at, side)
+	var t := c._encounters._spawn_at(type, at, side,f.ring_side)
+	if id in ["animate_skull","raise_zombie"] and skull_staff(f):
+		t.used_gear["rk_skull_strong"]=true
 	t.summoned_by = f.id
 	t.summon_spell = id
 	if id == "illusionary_soldier":
@@ -181,3 +185,28 @@ func miscast_demon(f: Figure) -> void:
 		if open:
 			c._encounters._spawn_at(type, at)
 			return
+
+
+static func skull_staff(f: Figure) -> bool:
+	return f.def.role=="wizard" and ActiveGear.has(f,"gear_rk_skull_staff") and not MagicEquipment.suppressed(f) and not f.destroyed_weapons.has("staff")
+
+
+static func count_summoned(s: GameState,f: Figure,id: String,whole_side: bool=false) -> int:
+	var count := 0
+	for t in s.figures:
+		if not t.in_play() or t.summon_spell!=id:
+			continue
+		var owner := s.figure(t.summoned_by)
+		if owner!=null and (owner==f or (whole_side and owner.side==f.side)):
+			count+=1
+	return count
+
+
+static func skull_cast_modifier(f: Figure,id: String) -> int:
+	if not skull_staff(f):
+		return 0
+	var result := 1 if id in ["animate_skull","raise_zombie"] else 0
+	var s := RedKingVeil.of(f)
+	if s!=null and (count_summoned(s,f,"animate_skull")>1 or count_summoned(s,f,"raise_zombie",true)>1):
+		result-=2
+	return result

@@ -80,9 +80,11 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if entry.get("prepared_zombie", false) or entry.get("prepared_illusion", false):
 				unit.summon_spell = "raise_zombie" if entry.get("prepared_zombie", false) else "illusionary_soldier"
 				for caster in s.figures:
-					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
+					if caster.side == side and caster.def.role in ["wizard", "apprentice"] and (int(entry.get("prepared_zombie_caster",-1))<0 or caster.campaign_id==int(entry["prepared_zombie_caster"])):
 						unit.summoned_by = caster.id
 						break
+				if entry.get("prepared_zombie_strong",false):
+					unit.used_gear["rk_skull_strong"]=true
 			if entry.has("prepared_demon"):
 				var demon: Dictionary = entry["prepared_demon"]
 				for caster in s.figures:
