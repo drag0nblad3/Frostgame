@@ -163,14 +163,14 @@
   "darkness": {
     "name": "Bottle of Darkness",
     "buy": 1500,
-    "sell": 600,
+    "sell": 300,
     "live": false,
     "greater": true
   },
   "ethereal_vacuum": {
     "name": "Ethereal Vacuum",
     "buy": 2000,
-    "sell": 800,
+    "sell": 200,
     "live": false,
     "greater": true
   },

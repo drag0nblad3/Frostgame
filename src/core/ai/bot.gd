@@ -17,6 +17,8 @@ static func resume_activation(c: GameController) -> bool:
 	var f := c.state.active()
 	if f == null or c.awaiting_reaction():
 		return false
+	if f.side >= 0 and f.def.health - f.health >= 4 and c._potions.can_drink("healing"):
+		c._potions.drink("healing")
 	if f.side < 0:
 		CreatureBot.play(c, f)
 	elif not MagicBot.play(c, f) and not TreasureBot.play(c, f):

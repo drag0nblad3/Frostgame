@@ -34,6 +34,11 @@ jobs:
           set -o pipefail
           timeout 30s godot --headless -s tests/roster_smoke.gd 2>&1 | tee roster-smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" roster-smoke.log
+      - name: Campaign inventory smoke test
+        run: |
+          set -o pipefail
+          timeout 30s godot --headless -s tests/inventory_smoke.gd 2>&1 | tee inventory-smoke.log
+          ! grep -E "SCRIPT ERROR|Parse Error" inventory-smoke.log
       - name: Smoke run main scene
         run: |
           set -o pipefail

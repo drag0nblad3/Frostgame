@@ -153,3 +153,5 @@ The default Frozen Ruins board now includes a two-inch raised platform and a fou
 ## Magic equipment vault
 
 - pp. 74–75, 97–101: all 20 arms/armour and 20 magic-item table records identified from treasure, with prices and implemented effects marked. Twenty weapon/armour entries and five passive items affect weapon rolls/damage, Will, Armour, Move, arrow protection, falling or elemental damage. Currently only matching standard weapon types are assignable (including caster staves); additional mundane loadout choices, magic dagger's free slot, two-handed caster slot costs and inactive alternative weapon selection are pending. Slot limits, same-type restrictions, sale and persistent ownership apply. Unused gear survives ordinary wounds; death and caster Close Call remove it. Elemental absorption applies to Elemental Bolt/Ball; other elemental effects and active-use items pending.
+
+Inventory follow-up: renamed the UI owner selector to avoid a native Node property clash, added a headless campaign inventory/deployment smoke test, corrected two greater potion sale prices, exposed apothecary recipient selection and basic AI self-healing. 

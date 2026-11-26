@@ -4,7 +4,7 @@ extends VBoxContainer
 var campaign: CampaignProgress
 var db: FigureDb
 var loot: OptionButton
-var owner: OptionButton
+var recipient_choice: OptionButton
 var shop: OptionButton
 var summary: Label
 var changed: Callable
@@ -19,10 +19,10 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	add_child(summary)
 	loot = OptionButton.new()
 	add_child(loot)
-	owner = OptionButton.new()
-	add_child(owner)
+	recipient_choice = OptionButton.new()
+	add_child(recipient_choice)
 	_button("Assign selected item", func() -> void:
-		if loot.item_count > 0 and CampaignInventory.assign_item(campaign.data, int(loot.get_selected_metadata()), int(owner.get_selected_metadata()), db):
+		if loot.item_count > 0 and CampaignInventory.assign_item(campaign.data, int(loot.get_selected_metadata()), int(recipient_choice.get_selected_metadata()), db):
 			changed.call())
 	_button("Sell selected unassigned item", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.sell(campaign.data, int(loot.get_selected_metadata())):
@@ -37,7 +37,7 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 func refresh() -> void:
 	var d := campaign.data
 	loot.clear()
-	owner.clear()
+	recipient_choice.clear()
 	shop.clear()
 	if d.is_empty():
 		return
@@ -51,15 +51,23 @@ func refresh() -> void:
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
 		loot.set_item_metadata(loot.item_count - 1, i)
-	owner.add_item("Vault")
-	owner.set_item_metadata(0, -1)
+	recipient_choice.add_item("Vault")
+	recipient_choice.set_item_metadata(0, -1)
 	for unit: Dictionary in d["units"]:
 		var capacity := CampaignInventory.slots(unit, db)
 		if unit["dead"] or unit.get("dismissed", false) or capacity == 0:
 			continue
-		var used := CampaignInventory.loadout(d, int(unit["id"])).size() + (1 if unit["type"] in ["wizard", "apprentice"] else 0)
-		owner.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
-		owner.set_item_metadata(owner.item_count - 1, int(unit["id"]))
+		var items := CampaignInventory.loadout(d, int(unit["id"]))
+		var used := items.size()
+		if unit["type"] in ["wizard", "apprentice"]:
+			var staff := false
+			for item: Dictionary in items:
+				if item.get("gear_info", {}).get("type", "") == "staff":
+					staff = true
+			if not staff:
+				used += 1
+		recipient_choice.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
+		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))
 	for id: String in catalog:
 		var info: Dictionary = catalog[id]
 		if not info["live"] or int(info["buy"]) <= 0:

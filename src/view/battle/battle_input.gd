@@ -16,6 +16,7 @@ var drops: Array[Vector2] = []
 var group_selection: Array[int] = []
 var cast_options: Array[String] = []
 var selected_spell := ""
+var selected_potion := ""
 var spell_rotated := false
 var spell_first := -1
 var counter_index := 0
@@ -74,10 +75,13 @@ func refresh() -> void:
 		preview()
 		return
 	for item in f.items:
-		if c._potions.can_drink(str(item.get("potion", ""))):
-			var key := "potion_" + str(item["potion"])
-			if not available.has(key):
-				available.append(key)
+		var id := str(item.get("potion", ""))
+		for t in c.state.figures:
+			if c._potions.can_drink(id, t):
+				var key := "potion_" + id
+				if not available.has(key):
+					available.append(key)
+				break
 	if c.can_use_stored_action():
 		available.append("use_stored_action")
 	if c.can_move():
@@ -140,6 +144,12 @@ func preview() -> void:
 	var hint := "Tap a highlighted figure to activate."
 	var f := c.state.active()
 	match mode:
+		"potion_target":
+			for t in c.state.figures:
+				if c._potions.can_drink(selected_potion, t):
+					targets.append(t)
+			radius = 0.65
+			hint = "Choose a recipient for the potion."
 		"spell_menu":
 			hint = "Choose a spell."
 		"counter_select":
@@ -250,8 +260,18 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key == "potion_cancel":
+		mode = ""
+		refresh()
+		return false
 	if key.begins_with("potion_"):
-		return c._potions.drink(key.trim_prefix("potion_"))
+		selected_potion = key.trim_prefix("potion_")
+		if c.state.active().def.id == "apothecary":
+			mode = "potion_target"
+			available.assign(["potion_cancel"])
+			preview()
+			return false
+		return c._potions.drink(selected_potion)
 	if key.begins_with("spell_") and key != "spell_cancel":
 		selected_spell = key.trim_prefix("spell_")
 		spell_rotated = false
@@ -350,11 +370,13 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
 		match mode:
+			"potion_target":
+				return c._potions.drink(selected_potion, c.state.figure(id))
 			"swap_second":
 				return c._magic.start_swap(spell_first, id)
 			"spell_target":
