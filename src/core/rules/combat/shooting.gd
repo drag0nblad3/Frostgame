@@ -62,7 +62,7 @@ static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, c
 	var sr := dice.d20()
 	var tr := dice.d20()
 	var st := sr + mini(shooter.effective_shoot() + MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id) - storm_penalty + (1 if shooter.spell_effects.has("enchant_weapon") else 0) + (3 if target.spell_effects.has("glow") else 0), 10) + shooter.roll_penalty()
-	var tt := tr + mini(target.effective_fight() + mod, 10) + target.roll_penalty()
+	var tt := tr + mini(target.effective_fight() + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
 		dmg = Damage.amount(st, shooter.ranged.damage_mod + MagicEquipment.bonus(shooter, "damage", shooter.ranged.id), target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits)

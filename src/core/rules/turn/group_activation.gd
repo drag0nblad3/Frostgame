@@ -28,7 +28,7 @@ func can_begin(s: GameState, owner: int) -> bool:
 
 
 func begin(s: GameState, owner: int, ids: Array[int]) -> bool:
-	if not can_begin(s, owner) or ids.size() < 2 or ids.size() > 4 or not ids.has(s.early.leaders[owner]):
+	if not can_begin(s, owner) or ids.size() < 2 or ids.size() > s.figure(s.early.leaders[owner]).early_limit() + 1 or not ids.has(s.early.leaders[owner]):
 		return false
 	var candidates := s.early.waiting(s, owner)
 	var seen: Array[int] = []

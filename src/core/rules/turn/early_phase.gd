@@ -49,7 +49,7 @@ func waiting(s: GameState, side: int) -> Array[Figure]:
 		return out
 	if leader.in_play() and not leader.activated and not s.is_fast(leader):
 		out.append(leader)
-	if int(used[side]) >= MAX_SOLDIERS:
+	if int(used[side]) >= leader.early_limit():
 		return out
 	for id: int in eligible[side]:
 		var f := s.figure(id)

@@ -337,7 +337,7 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 	var ar := c.dice.d20()
 	var dr := c.dice.d20()
 	var a := ar + mini(power + (3 if t.spell_effects.has("glow") else 0), 10) + f.roll_penalty()
-	var d := dr + mini(t.effective_fight() + mod, 10) + t.roll_penalty()
+	var d := dr + mini(t.effective_fight() + mod, 10) + t.roll_penalty() + t.shooting_defence_penalty()
 	var won := a > d
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)

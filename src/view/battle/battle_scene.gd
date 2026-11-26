@@ -244,6 +244,11 @@ func _create_campaign() -> void:
 func _begin_campaign_battle() -> void:
 	if _campaign_battle or not _campaign.can_deploy():
 		return
+	for unit: Dictionary in _campaign.data["units"]:
+		if InjuryRules.blind(unit) and not unit["dead"]:
+			unit["dead"] = true
+			CampaignInventory.lose_owned(_campaign.data, int(unit["id"]))
+			_campaign.data["last_report"].append("%s retires after losing both eyes." % str(unit["type"]).capitalize())
 	_campaign_battle = true
 	watch_mode = false
 	_campaign_dialog.hide()

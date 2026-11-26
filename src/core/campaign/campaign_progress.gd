@@ -14,14 +14,16 @@ func start(roster: Dictionary) -> void:
 func deployment() -> Dictionary:
 	var units: Array = []
 	for unit: Dictionary in data["units"]:
-		if unit["dead"] or unit.get("dismissed", false) or int(unit["miss"]) > 0:
+		if unit["dead"] or unit.get("dismissed", false) or int(unit["miss"]) > 0 or InjuryRules.blind(unit):
 			continue
 		var entry := {"type": unit["type"], "campaign_id": unit["id"], "at": [4.5 + 3.0 * units.size(), 3.0]}
 		if unit["type"] in ["wizard", "apprentice"]:
 			entry["stat_bonus"] = data.get("advances", {}).duplicate()
 		elif data.get("base", "") == "brewery":
 			entry["stat_bonus"] = {"will": 1}
-		var bonuses: Dictionary = entry.get("stat_bonus", {})
+		var bonuses := InjuryRules.bonuses(unit, entry.get("stat_bonus", {}))
+		entry["injury_types"] = unit.get("injury_types", {}).duplicate(true)
+		entry["starting_loss"] = InjuryRules.starting_loss(unit)
 		if unit.get("familiar", false):
 			bonuses["health"] = int(bonuses.get("health", 0)) + 2
 		if unit.has("companion_of"):
@@ -37,7 +39,7 @@ func deployment() -> Dictionary:
 
 func can_deploy() -> bool:
 	for unit: Dictionary in data.get("units", []):
-		if unit["type"] == "wizard" and not unit["dead"]:
+		if unit["type"] == "wizard" and not unit["dead"] and not InjuryRules.blind(unit):
 			return not deployment()["figures"].is_empty()
 	return false
 
@@ -77,6 +79,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data["prepared_zombie"] = false
 	for unit: Dictionary in data["units"]:
 		unit["familiar"] = false
+		unit["niggle_paid"] = false
 		unit["last_knocked_out"] = false
 	for f in c.state.figures:
 		if f.original_side == side and f.campaign_id >= 0:
@@ -101,8 +104,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				CampaignInventory.lose_owned(data, f.campaign_id)
 				outcome = "died"
 			elif caster and roll <= 4:
-				unit["injuries"] = int(unit["injuries"]) + 1
-				outcome = "permanent injury (detail pending)"
+				outcome = "permanent injury: " + InjuryRules.roll(unit, dice)
 			elif roll <= (6 if caster else 8):
 				unit["miss"] = 1
 				outcome = "misses next battle"

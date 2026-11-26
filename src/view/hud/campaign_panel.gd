@@ -24,6 +24,8 @@ var learn_button: Button
 var controls: Array[Control] = []
 var inventory: InventoryPanel
 var rituals: RitualPanel
+var niggle: OptionButton
+var niggle_button: Button
 
 
 func setup(progress: CampaignProgress, figures: FigureDb) -> void:
@@ -74,6 +76,11 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	treat_button = _command(col, "Treat wounded caster (150gc; 50gc with apothecary)", func() -> void:
 		if members.item_count > 0 and campaign.treat(int(members.get_selected_metadata())):
 			changed())
+	niggle = OptionButton.new()
+	col.add_child(niggle)
+	niggle_button = _command(col, "Pay treatment for niggling injury", func() -> void:
+		if niggle.item_count > 0 and InjuryRules.treat(campaign.data, int(niggle.get_selected_metadata())):
+			changed())
 	base_choice = OptionButton.new()
 	for id in CampaignProgress.BASES:
 		base_choice.add_item(id.capitalize())
@@ -87,7 +94,7 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	learn_button = _command(col, "Learn grimoire spell (100 XP)", func() -> void:
 		if grimoire.item_count > 0 and campaign.learn_grimoire(int(grimoire.get_selected_metadata()), db):
 			changed())
-	controls.assign([stat, upgrade, recruit, hire_button, members, dismiss_button, treat_button, base_choice, base_button, grimoire, learn_button])
+	controls.assign([stat, upgrade, recruit, hire_button, members, dismiss_button, treat_button, niggle, niggle_button, base_choice, base_button, grimoire, learn_button])
 	inventory = InventoryPanel.new()
 	col.add_child(inventory)
 	inventory.setup(campaign, db, changed)
@@ -122,6 +129,18 @@ func refresh(in_battle: bool) -> void:
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
 	for unit: Dictionary in d["units"]:
 		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — resting" if int(unit["miss"]) > 0 else ""), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])
+	for unit: Dictionary in d["units"]:
+		for id: String in unit.get("injury_types", {}):
+			lines.append("  #%d: %s ×%d" % [int(unit["id"]) + 1, id.replace("_", " ").capitalize(), unit["injury_types"][id]])
+		if InjuryRules.blind(unit) and not unit["dead"]:
+			lines.append("  #%d: cannot deploy until cured." % [int(unit["id"]) + 1])
+	niggle.clear()
+	for unit: Dictionary in d["units"]:
+		var price := InjuryRules.treatment_price(d, unit)
+		if price >= 0:
+			niggle.add_item("%s #%d · %d gc" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, price])
+			niggle.set_item_metadata(niggle.item_count - 1, int(unit["id"]))
+	niggle_button.disabled = niggle.item_count == 0
 	lines.append("Base: %s | Stored loot: %d" % [str(d.get("base", "")).capitalize(), d["loot"].size()])
 	lines.append("Stat advances: %s" % str(d.get("advances", {})))
 	members.clear()

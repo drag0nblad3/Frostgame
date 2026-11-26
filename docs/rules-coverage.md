@@ -171,3 +171,7 @@ Inventory follow-up: renamed the UI owner selector to avoid a native Node proper
 ## Campaign rituals
 
 - pp. 81, 87, 110, 112, 114, 121, 126, 130, 135: eight out-of-game options (Brew Potion, Familiar, Animal Companion, Animate Construct, Raise Zombie, Absorb Knowledge, Write Scroll, Miraculous Cure). Per-caster attempts persist in save and reset after battle; preparation closes post-game attempts. Lesser potions free, greater ingredients paid before rolling with wizard-only -4; no empowerment/failure damage. Familiar adds 2 Health for next battle. Permanent animals and constructs count against soldier limits; bear added from p.179. Prepared zombie is temporary. Cure supports recently dead, injured and resting members. Out-of-game scroll casting, exact postgame step order, familiar destruction midbattle, resurrection item recovery, other rituals and construct equipment remain pending.
+
+## Persistent injuries
+
+- pp. 77–79: named injury table with repeated-result limits, persistent split-stat modifiers for Move/Fight/Shoot/Will, starting Health loss, Smashed Jaw early/group activation caps, Lost Eye shooting defence penalty, and optional paid Niggling Injury treatment with apothecary discounts. The printed table overlaps on roll 6; assigned 6 to Crushed Arm. Lost Toes is stored but its Move Roll penalty awaits Move tests. Double Lost Eye blocks wizard deployment pending a cure; blind apprentices retire on starting the next battle. Legacy anonymous injuries remain count-only until cured. Starting Health deficits do not alter advancement caps. 

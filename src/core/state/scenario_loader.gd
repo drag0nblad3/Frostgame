@@ -41,6 +41,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
 						unit.summoned_by = caster.id
 						break
+			unit.injury_types = entry.get("injury_types", {}).duplicate(true)
+			unit.health = maxi(1, unit.health - int(entry.get("starting_loss", 0)))
 			for item: Dictionary in entry.get("items", []):
 				unit.items.append(item.duplicate(true))
 			unit.campaign_id = int(entry.get("campaign_id", -1))

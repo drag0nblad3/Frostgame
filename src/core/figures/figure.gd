@@ -7,6 +7,7 @@ const BASE_RADIUS := 0.5
 
 var id := 0
 var campaign_id := -1
+var injury_types := {}
 var original_side := 0
 var controller_id := -1
 var control_spell := ""
@@ -122,3 +123,11 @@ func immune_to_poison() -> bool:
 
 func treasure_encumbered() -> bool:
 	return def.shield or ranged != null or melee.id in ["staff", "two_handed"]
+
+
+func early_limit() -> int:
+	return maxi(1, 3 - int(injury_types.get("smashed_jaw", 0)))
+
+
+func shooting_defence_penalty() -> int:
+	return -int(injury_types.get("lost_eye", 0))
