@@ -343,8 +343,11 @@
       "type": "item",
       "buy": 400,
       "sell": 150,
-      "bonus": {},
-      "live": false,
+      "bonus": {
+        "health_test": 8,
+        "vigour": 1
+      },
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_amulet_of_elemental_energy_absorption": {

@@ -180,3 +180,7 @@ A legal ordinary or layered movement into new melee contact offers an immediate 
 ## Wraith Bow
 
 Magic bow with +1 damage and an explicit once-per-game shot option through one terrain piece. Other blockers remain in effect; the bypassed piece contributes +1 target Fight. Fate combat carries the shot flag through rerolls, followed by a Will TN8 curse check. The special ray is restricted to ordinary non-wrapping boards; layered volume and reality-wrap sight are not yet integrated. When multiple pieces could be bypassed, the engine chooses the best legal line.
+
+## Bracelet of Vigour
+
+Adds eight to Health target tests via StatRoll.health_test and reduces the optional Wounded threshold to two. The optional core Wounded rule is disabled by default, selectable per campaign, and stored in checkpoints; existing stat, spell and combat paths using roll_penalty inherit the penalty. Raw special-purpose dice tables do not automatically receive the penalty.

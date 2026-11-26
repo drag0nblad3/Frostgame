@@ -64,7 +64,7 @@ func deployment() -> Dictionary:
 	# Two deployment ranks prevent extra prepared figures from exceeding the table.
 	for i in units.size():
 		units[i]["at"] = [4.5 + 3.0 * (i % 10), 3.0 + 1.5 * floori(i / 10.0)]
-	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": not locked and BaseResources.owns(data, "celestial_telescope"), "red_king_artefact_recovered": bool(data.get("red_king_artefact_recovered",false)), "red_king_secret_hrut": RedKingMindRewards.secret_selected(data)}
+	return {"name": data["name"], "wounded_rules":bool(data.get("wounded_rules",false)), "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": not locked and BaseResources.owns(data, "celestial_telescope"), "red_king_artefact_recovered": bool(data.get("red_king_artefact_recovered",false)), "red_king_secret_hrut": RedKingMindRewards.secret_selected(data)}
 
 
 func can_deploy() -> bool:

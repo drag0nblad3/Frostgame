@@ -125,14 +125,21 @@ func effective_will() -> int:
 	return def.will + SummonActions.illusion_will(self) + RedKingGear.woe_will(self) - int(used_gear.get("rk_soulchill_will",0)) - int(used_gear.get("rk_mask_will",0)) + RealityCracks.will_modifier(self) + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
 
 
+func wounded() -> bool:
+	if battle_ref == null or def.traits.has("undead") or def.traits.has("construct") or health <= 0 or health >= def.health:
+		return false
+	var s: GameState = battle_ref.get_ref()
+	return s != null and s.wounded_rules and health <= (2 if MagicEquipment.bonus(self,"vigour")>0 else 4)
+
+
 func action_limit() -> int:
 	if petrified_skip or magic_exhausted:
 		return 0
-	return 1 if poisoned or spell_effects.has("slow") else 2
+	return 1 if poisoned or wounded() or spell_effects.has("slow") else 2
 
 
 func roll_penalty() -> int:
-	return -2 if spell_effects.has("curse") else 0
+	return (-2 if spell_effects.has("curse") else 0) + (-2 if wounded() else 0)
 
 
 func effective_shoot() -> int:

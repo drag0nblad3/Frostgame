@@ -29,6 +29,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	s.spell_catalog = s.content_profile.filter("spells",JsonFile.read("res://data/spells.json"))
 	var next_id := 1
 	var warbands: Array = d.get("warbands", [])
+	s.wounded_rules=bool(d.get("wounded_rules",false)) or (not warbands.is_empty() and bool(warbands[0].get("wounded_rules",false)))
 	for side in warbands.size():
 		var wb: Dictionary = warbands[side]
 		s.side_names.append(wb.get("name", "Warband %d" % (side + 1)))

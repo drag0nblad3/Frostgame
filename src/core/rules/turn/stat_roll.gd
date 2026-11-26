@@ -8,3 +8,7 @@ static func succeeds(natural: int, modifier: int, target: int, empowerment: int 
 	if natural == 1:
 		return false
 	return natural + mini(modifier, 10) + maxi(empowerment, 0) >= target
+
+
+static func health_test(f: Figure,natural: int,target: int) -> bool:
+	return succeeds(natural,f.health+MagicEquipment.bonus(f,"health_test")+f.roll_penalty(),target)

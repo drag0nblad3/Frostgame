@@ -19,6 +19,7 @@ var story_start: Button
 var story_veil: CheckBox
 var recruit_status: CheckBox
 var reality_option: CheckBox
+var wounded_option: CheckBox
 var secret_hrut: CheckBox
 var reconcile_button: Button
 var continue_skirmishes: Button
@@ -174,6 +175,12 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		campaign.data["reality_cracks"]=on
 		campaign.save())
 	col.add_child(reality_option)
+	wounded_option=CheckBox.new()
+	wounded_option.text="Optional Wounded rule (all figures)"
+	wounded_option.toggled.connect(func(on: bool) -> void:
+		campaign.data["wounded_rules"]=on
+		campaign.save())
+	col.add_child(wounded_option)
 	recruit_status=CheckBox.new()
 	recruit_status.text="Roll optional status for random recruits"
 	recruit_status.toggled.connect(func(on: bool) -> void:
@@ -219,6 +226,8 @@ func refresh(in_battle: bool) -> void:
 	var stage := RedKingCampaign.next_stage(d)
 	reality_option.visible=not d.is_empty() and not in_battle and db.content_profile.rule("red_king_reality_cracks")
 	reality_option.set_pressed_no_signal(bool(d.get("reality_cracks",false)))
+	wounded_option.visible=not d.is_empty() and not in_battle
+	wounded_option.set_pressed_no_signal(bool(d.get("wounded_rules",false)))
 	recruit_status.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty()
 	recruit_status.set_pressed_no_signal(bool(d.get("red_king_recruit_status",false)))
 	secret_hrut.visible=bool(d.get("red_king_secret_hrut",false)) and not in_battle and not stage.is_empty() and stage.get("id","")!="red_king_mind"

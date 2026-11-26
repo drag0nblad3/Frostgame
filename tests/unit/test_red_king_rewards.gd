@@ -293,3 +293,22 @@ func test_gutter_flail_free_attack_after_charge() -> void:
 	check_eq(f.actions_left,1)
 	check(not f.acted)
 	check_eq(c.state.pending_gutter,-1)
+
+
+func test_bracelet_wounded_rules() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],Dice.new(1))
+	c.state.wounded_rules=true
+	f.health=4
+	check(f.wounded())
+	check_eq(f.action_limit(),1)
+	check_eq(f.roll_penalty(),-2)
+	var id := "gear_rk_bracelet_of_vigour"
+	f.items.append({"gear":id,"gear_info":RedKingRewards.catalog()[id]})
+	check(not f.wounded())
+	check_eq(f.action_limit(),2)
+	check(StatRoll.health_test(f,8,18))
+	f.health=2
+	check(f.wounded())
+	c.state.wounded_rules=false
+	check(not f.wounded())

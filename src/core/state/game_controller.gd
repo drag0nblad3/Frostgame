@@ -445,7 +445,10 @@ func _hurt(f: Figure, dmg: int, by: Figure, combat: bool = true) -> void:
 		emit("shield_absorb", {"id": f.id, "amount": absorbed})
 		if dmg == 0:
 			return
+	var was_wounded := f.wounded()
 	var out := Damage.apply(f, dmg)
+	if not was_wounded and f.wounded() and state.active()==f:
+		f.actions_left=mini(f.actions_left,0 if f.acted or f.moves_taken>0 else 1)
 	if f.familiar and f.health <= 1:
 		f.familiar = false
 		f.def = f.def.with_bonuses({"health": -2})
