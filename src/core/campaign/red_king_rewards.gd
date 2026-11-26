@@ -62,7 +62,10 @@ static func award(d: Dictionary,id: String,dice: Dice) -> bool:
 		d["loot"]=[]
 	if not d.has("last_report"):
 		d["last_report"]=[]
-	d["loot"].append({"kind":"gear","gear":chosen,"owner":-1,"unlocked":not info.get("artefact",false)})
+	if RedKingMaterials.is_supply(chosen):
+		RedKingMaterials.add(d,chosen,6)
+	else:
+		d["loot"].append({"kind":"gear","gear":chosen,"owner":-1,"unlocked":not info.get("artefact",false)})
 	d["last_report"].append("Red King reward: "+str(info["name"])+(" (locked)" if info.get("artefact",false) else ""))
 	return true
 

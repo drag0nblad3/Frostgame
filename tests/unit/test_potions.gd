@@ -35,3 +35,16 @@ func test_potion_treasure_identification() -> void:
 	check_eq(d["loot"].size(), 2)
 	check_eq(d["loot"][0]["potion"], "healing")
 	check_eq(d["loot"][1]["potion"], "life")
+
+
+func test_enchanted_vial_retained_once() -> void:
+	var c := make_game(make_board(),[fig("thug",0,Vector2(10,10)),fig("thug",1,Vector2(20,20))],LoadedDice.new([19]))
+	var f := c.state.figure(1)
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.items.append({"potion":"strength","enchanted":true})
+	check(c._potions.drink("strength"))
+	check_eq(f.items.size(),1)
+	check(not f.items[0].get("enchanted",false))
+	check(c._potions.drink("strength"))
+	check(f.items.is_empty())

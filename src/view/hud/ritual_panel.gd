@@ -4,6 +4,7 @@ extends VBoxContainer
 var campaign: CampaignProgress
 var choices: OptionButton
 var cast_button: Button
+var enchant_supply: CheckButton
 var callback: Callable
 var dice := Dice.new(0)
 
@@ -16,6 +17,11 @@ func setup(p: CampaignProgress, changed: Callable) -> void:
 	add_child(label)
 	choices = OptionButton.new()
 	add_child(choices)
+	enchant_supply=CheckButton.new()
+	enchant_supply.custom_minimum_size.y=44
+	enchant_supply.hide()
+	add_child(enchant_supply)
+	choices.item_selected.connect(func(_index: int) -> void: _refresh_supply())
 	cast_button = Button.new()
 	cast_button.text = "Attempt selected ritual"
 	add_child(cast_button)
@@ -23,12 +29,13 @@ func setup(p: CampaignProgress, changed: Callable) -> void:
 		if choices.item_count == 0:
 			return
 		var option: Dictionary = choices.get_selected_metadata()
-		if Rituals.attempt(campaign.data, option["caster"], option["id"], option["option"], dice):
+		if Rituals.attempt(campaign.data, option["caster"], option["id"], option["option"], dice,enchant_supply.visible and enchant_supply.button_pressed):
 			callback.call())
 
 
 func refresh() -> void:
 	choices.clear()
+	enchant_supply.hide()
 	var d := campaign.data
 	if d.is_empty():
 		return
@@ -46,3 +53,18 @@ func refresh() -> void:
 				choices.add_item(text)
 				choices.set_item_metadata(choices.item_count - 1, {"caster": i, "id": id, "option": option})
 	cast_button.disabled = choices.item_count == 0
+
+	_refresh_supply()
+
+
+func _refresh_supply() -> void:
+	enchant_supply.hide()
+	enchant_supply.set_pressed_no_signal(false)
+	if choices.item_count==0:
+		return
+	var option: Dictionary=choices.get_selected_metadata()
+	var id := RedKingMaterials.for_ritual(str(option["id"]))
+	var amount := RedKingMaterials.available(campaign.data,id)
+	if amount>0:
+		enchant_supply.text="Use %s (%d left)" % ["scroll wax" if id==RedKingMaterials.WAX else "enchanted vial",amount]
+		enchant_supply.show()

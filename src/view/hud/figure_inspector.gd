@@ -117,6 +117,8 @@ static func describe(s: GameState, f: Figure) -> String:
 		if key.is_empty():
 			continue
 		var name := str(item.get("gear_info", {}).get("name", key.trim_prefix("gear_").replace("_", " ").capitalize()))
+		if item.get("enchanted",false):
+			name+=" (Enchanted)"
 		if f.used_gear.has(key):
 			name += " (used)"
 		gear.append(name)

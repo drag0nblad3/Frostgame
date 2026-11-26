@@ -50,7 +50,9 @@ static func use(d: Dictionary, index: int, unit_id: int, db: FigureDb, dice: Dic
 		return false
 	var id: String = d["loot"][index]["potion"]
 	var u: Dictionary = d["units"][unit_id]
-	d["loot"].remove_at(index)
+	var vial_roll := RedKingMaterials.use_potion(d["loot"],index,dice)
+	if vial_roll>0:
+		d["last_report"].append("Enchanted vial: %d; %s."%[vial_roll,"potion retained" if vial_roll>=19 else "potion consumed"])
 	match id:
 		"construct_oil":
 			u["construct_oiled"] = true

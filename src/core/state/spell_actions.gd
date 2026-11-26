@@ -281,8 +281,9 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 		return
 	illusions.reveal(f)
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
-	var scroll := not known and ScrollActions.consume(f, id)
-	var raw := 14 if scroll else c.dice.d20()
+	var scroll_roll := 0 if known else ScrollActions.consume_roll(f,id)
+	var scroll := scroll_roll>0
+	var raw := scroll_roll if scroll else c.dice.d20()
 	var gear_bonus := ActiveGear.casting_bonus(f, id)
 	var puppet_miscast := not scroll and raw==1 and id in ["mind_control","suggestion"] and RedKingGear.puppet(f)
 	if not scroll and f.next_cast_gear == "gear_gloves_casting" and ActiveGear.spend(f, f.next_cast_gear):
@@ -296,7 +297,7 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	if id == "plane_walk":
 		PlaneWalk.record(f, c.state.turn)
 	var empowered := not scroll and f.spell_effects.erase("potion_empowerment")
-	var total := 14 if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + RealityCracks.casting_modifier(c.state,id) + RedKingSinkhole.casting_modifier(c.state,f) + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
+	var total := scroll_roll if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + RealityCracks.casting_modifier(c.state,id) + RedKingSinkhole.casting_modifier(c.state,f) + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	if not shatter.spent:
 		c._spend(f)
@@ -348,7 +349,7 @@ func _finish_one(health: int) -> bool:
 	var id: String = p["id"]
 	var result := CastingRoll.resolve(p["total"], p["tn"], health, maxi(0, f.health) + PowerPool.available(f), false, 100 if id == "summon_demon" else 18)
 	if p.get("scroll", false):
-		result = {"success": true, "roll": 14, "health_spent": 0, "failure_damage": 0}
+		result = {"success": true, "roll": int(p["total"]), "health_spent": 0, "failure_damage": 0}
 	elif id == "summon_demon" and int(p["raw"]) == 1:
 		result["success"] = false
 	s.pending_cast = {}
@@ -670,9 +671,11 @@ func insure() -> bool:
 	if not can_insure():
 		return false
 	var p := c.state.pending_cast
-	ScrollActions.consume(c.state.figure(p["caster"]), p["id"])
+	var roll := ScrollActions.consume_roll(c.state.figure(p["caster"]),p["id"])
+	if roll<=0:
+		return false
 	p["scroll"] = true
-	p["total"] = 14
+	p["total"] = roll
 	return finish(0)
 
 

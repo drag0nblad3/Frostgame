@@ -188,3 +188,25 @@ func test_skull_staff_limits_and_casting_cost() -> void:
 	check(not c._magic.summons.can_place(f,"animate_skull",Vector2(15,10)))
 	check_eq(ActiveGear.casting_bonus(f,"animate_skull"),-1)
 	check_eq(ActiveGear.casting_bonus(f,"heal"),-2)
+
+
+func test_enchanted_supply_awards_and_rituals() -> void:
+	var draft := WarbandDraft.new(db())
+	draft.choose_defaults()
+	var p := CampaignProgress.new()
+	p.start(draft.as_warband())
+	var d := p.data
+	d["games"]=1
+	d["spells"]={"write_scroll":12,"brew_potion":12,"heal":8}
+	check(RedKingRewards.award(d,RedKingMaterials.WAX,Dice.new(1)))
+	check(RedKingRewards.award(d,RedKingMaterials.VIAL,Dice.new(1)))
+	check_eq(RedKingMaterials.available(d,RedKingMaterials.WAX),6)
+	check(Rituals.attempt(d,0,"write_scroll","heal",LoadedDice.new([20]),true))
+	check_eq(RedKingMaterials.available(d,RedKingMaterials.WAX),5)
+	check(d["loot"].back().get("enchanted",false))
+	check(Rituals.attempt(d,0,"brew_potion","healing",LoadedDice.new([1]),true))
+	check_eq(RedKingMaterials.available(d,RedKingMaterials.VIAL),6)
+	var before := int(d["gold"])
+	check(CampaignInventory.sell(d,0))
+	check_eq(int(d["gold"]),before+10)
+	check_eq(RedKingMaterials.available(d,RedKingMaterials.WAX),4)

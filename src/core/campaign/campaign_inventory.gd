@@ -170,6 +170,8 @@ static func buy(d: Dictionary, id: String, dice: Dice = null) -> bool:
 		d["loot"].append({"kind": "grimoire", "spell": id.trim_prefix("grimoire_")})
 	elif id.begins_with("scroll_"):
 		d["loot"].append({"kind": "scroll", "scroll": id.trim_prefix("scroll_"), "owner": -1})
+	elif RedKingMaterials.is_supply(id):
+		RedKingMaterials.add(d,id,1)
 	elif id.begins_with("gear_"):
 		var item := {"kind": "gear", "gear": id, "owner": -1}
 		if id == "gear_staff_casting":
@@ -196,6 +198,11 @@ static func sell(d: Dictionary, index: int) -> bool:
 		return false
 	var info: Dictionary=catalog()[item_id(item)]
 	var price := int(info["sell"])
+	if RedKingMaterials.is_supply(item_id(item)):
+		if not RedKingMaterials.consume_at(d,index):
+			return false
+		d["gold"]=int(d["gold"])+price
+		return true
 	if info.get("artefact",false) and not item.get("unlocked",false):
 		price=floori(float(price)/2.0)
 	d["gold"] = int(d["gold"]) + price
@@ -209,9 +216,9 @@ static func loadout(d: Dictionary, owner: int) -> Array:
 		if int(item.get("owner", -1)) != owner:
 			continue
 		if item["kind"] == "potion":
-			items.append({"potion": item["potion"], "campaign_item": true})
+			items.append({"potion": item["potion"], "campaign_item": true,"enchanted":bool(item.get("enchanted",false))})
 		elif item["kind"] == "scroll":
-			items.append({"scroll": item["scroll"], "campaign_item": true})
+			items.append({"scroll": item["scroll"], "campaign_item": true,"enchanted":bool(item.get("enchanted",false))})
 		elif item["kind"] == "gear":
 			var gear := {"gear": item["gear"], "gear_info": catalog()[item["gear"]].duplicate(true), "campaign_item": true}
 			if item["gear"] in ["gear_staff_casting","gear_rk_golden_incunabula"]:
@@ -227,6 +234,7 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 		if f.original_side != side or f.campaign_id < 0:
 			continue
 		var remaining := {}
+		var enchanted := {}
 		var orb_left := -1
 		for item: Dictionary in f.items:
 			if item.get("campaign_item", false):
@@ -234,6 +242,8 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 				if id == PowerPool.ORB:
 					orb_left = PowerPool.remaining(item)
 				remaining[id] = int(remaining.get(id, 0)) + 1
+				if item.get("enchanted",false):
+					enchanted[id]=int(enchanted.get(id,0))+1
 		for i in range(d["loot"].size() - 1, -1, -1):
 			var item: Dictionary = d["loot"][i]
 			if not is_item(item) or int(item.get("owner", -1)) != f.campaign_id:
@@ -243,6 +253,11 @@ static func settle(d: Dictionary, c: GameController, side: int) -> void:
 				d["loot"].remove_at(i)
 			else:
 				remaining[id] = int(remaining[id]) - 1
+				if item.has("potion") or item.has("scroll"):
+					item.erase("enchanted")
+					if int(enchanted.get(id,0))>0:
+						item["enchanted"]=true
+						enchanted[id]=int(enchanted[id])-1
 				if id == PowerPool.ORB:
 					item["power_left"] = orb_left
 

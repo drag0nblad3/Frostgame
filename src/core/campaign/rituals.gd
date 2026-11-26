@@ -85,8 +85,11 @@ static func choices(d: Dictionary, caster: int, id: String) -> Array[String]:
 	return out
 
 
-static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice) -> bool:
+static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false) -> bool:
 	if not choices(d, caster, id).has(option):
+		return false
+	var supply := RedKingMaterials.for_ritual(id)
+	if enchant and RedKingMaterials.available(d,supply)<=0:
 		return false
 	if id == "summon_demon":
 		return BaseDemonRitual.attempt(d, caster, dice)
@@ -126,11 +129,17 @@ static func attempt(d: Dictionary, caster: int, id: String, option: String, dice
 		"illusionary_soldier":
 			d["prepared_illusion"] = option
 		"brew_potion":
-			d["loot"].append({"kind": "potion", "potion": option, "owner": -1})
+			var brewed := {"kind":"potion","potion":option,"owner":-1}
+			if enchant and RedKingMaterials.consume(d,supply):
+				brewed["enchanted"]=true
+			d["loot"].append(brewed)
 		"embed_enchantment":
 			EnchantmentRewards.embed(d, int(option))
 		"write_scroll":
-			d["loot"].append({"kind": "scroll", "scroll": option, "owner": -1})
+			var written := {"kind":"scroll","scroll":option,"owner":-1}
+			if enchant and RedKingMaterials.consume(d,supply):
+				written["enchanted"]=true
+			d["loot"].append(written)
 		"absorb_knowledge":
 			d["xp"] = int(d["xp"]) + 40
 		"animal_companion", "animate_construct":

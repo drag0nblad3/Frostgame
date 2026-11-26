@@ -124,3 +124,7 @@ Golden Incunabula now has a one-time spell binding in the inventory, preserved i
 ## Active summoning equipment
 
 Bottle Imp adds a contextual equipment action and legal placement preview; it consumes the bottle, allows melee use, and creates an independent uncontrolled imp on the same plane. The current implementation uses the flat-board placement interface; layered placement is not yet exposed. Skull Staff expands the wizard’s skull/zombie limits, supplies the Strong damage trait through a checkpoint-safe battle counter, and applies the casting bonus and cumulative-summon penalty. Prepared zombies remember their original caster and Strong status. Power pool charges now honor all anti-magic suppression sources.
+
+## Enchanted crafting supplies
+
+Wax and vials now award six charges, trade individually at the prose-rule prices (30gc/10gc), and are vault supplies rather than carried equipment. Ritual UI lets players opt in before casting; failure spends no material. Waxed scrolls resolve at 15. Enchanted vials roll once upon use in battle or campaign: 19–20 retains an ordinary potion. Enhanced copies are selected first when otherwise identical consumables coexist. Settlement persists the remaining enchanted count, including a retained potion whose enchantment was spent. Sealed vault supplies are inaccessible during Ragged Warbands.

@@ -115,6 +115,10 @@ func refresh() -> void:
 			suffix += " · " + str(item.get("casting_spell", "unknown")).replace("_", " ").capitalize()
 		if CampaignInventory.item_id(item) == PowerPool.ORB:
 			suffix += " · %d power" % PowerPool.remaining(item)
+		if RedKingMaterials.is_supply(CampaignInventory.item_id(item)):
+			suffix+=" · %d uses" % RedKingMaterials.amount(item)
+		if item.get("enchanted",false):
+			suffix+=" · Enchanted"
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
 		loot.set_item_metadata(loot.item_count - 1, i)
 		for unit_id in CampaignPotions.choices(d, i, db):
@@ -150,7 +154,7 @@ func refresh() -> void:
 		var info: Dictionary = catalog[id]
 		if RedKingCampaign.economy_locked(d) or not info["live"] or int(info["buy"]) <= 0 or not ContentProfile.from_campaign(d).item_allowed(id):
 			continue
-		shop.add_item("%s · %d gc" % [info["name"], info["buy"]])
+		shop.add_item("%s · %d gc%s" % [info["name"],info["buy"]," per use" if info.get("material",false) else ""])
 		shop.set_item_metadata(shop.item_count - 1, id)
 		shop.set_item_disabled(shop.item_count - 1, int(d["gold"]) < int(info["buy"]))
 

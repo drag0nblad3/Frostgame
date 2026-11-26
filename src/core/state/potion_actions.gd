@@ -98,10 +98,11 @@ func drink(id: String, target: Figure = null) -> bool:
 
 
 func _consume(f: Figure, id: String) -> void:
-	for i in f.items.size():
-		if f.items[i].get("potion", "") == id:
-			f.items.remove_at(i)
-			break
+	var index := RedKingMaterials.item_index(f.items,"potion",id)
+	if index>=0:
+		var roll := RedKingMaterials.use_potion(f.items,index,c.dice)
+		if roll>0:
+			c.emit("enchanted_vial",{"id":f.id,"roll":roll,"retained":roll>=19})
 
 
 func _spend_drink(f: Figure) -> void:

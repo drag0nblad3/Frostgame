@@ -219,13 +219,15 @@
       "expansion": "red_king"
     },
     "gear_rk_enchanted_scroll_wax_6": {
-      "name": "Enchanted Scroll Wax (6)",
+      "name": "Enchanted Scroll Wax",
       "type": "item",
-      "buy": 210,
-      "sell": 60,
+      "buy": 30,
+      "sell": 10,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "vault_only": true,
+      "material": true
     },
     "gear_rk_slippery_boots": {
       "name": "Slippery Boots",
@@ -273,13 +275,15 @@
       "expansion": "red_king"
     },
     "gear_rk_enchanted_vials_6": {
-      "name": "Enchanted Vials (6)",
+      "name": "Enchanted Vials",
       "type": "item",
-      "buy": 210,
-      "sell": 60,
+      "buy": 30,
+      "sell": 10,
       "bonus": {},
-      "live": false,
-      "expansion": "red_king"
+      "live": true,
+      "expansion": "red_king",
+      "vault_only": true,
+      "material": true
     },
     "gear_rk_gutter_flail": {
       "name": "Gutter Flail",
