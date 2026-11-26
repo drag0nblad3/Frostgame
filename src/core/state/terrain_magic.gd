@@ -203,16 +203,24 @@ func travel(f: Figure, path: PackedVector2Array, cost: float) -> bool:
 	var chunk := PackedVector2Array([f.pos])
 	for i in range(1, path.size()):
 		var at := path[i]
+		var occupied := false
+		if c.state.scenario_special == "haunted_houses" and not c.state.discovered_huts.is_empty():
+			for other in c.state.figures:
+				if other == f or not other.in_play() or absf(other.elevation - c.state.board.height_at(at)) >= 0.5:
+					continue
+				if other.pos.distance_to(at) < Contact.OVERLAP:
+					# A creature appeared after planning; keep the last safe position.
+					f.pos = path[i - 1]
+					f.elevation = c.state.board.height_at(f.pos)
+					if chunk.size() > 1:
+						c.emit("move", {"id": f.id, "path": chunk, "cost": cost})
+					return false
+				if other.side != f.side and Contact.touching(other.pos, at):
+					occupied = true
 		chunk.append(at)
 		var hits := triggered(f, at)
 		var hut := ScenarioSites.site_at(c.state, "haunted_floor", at) if c.state.scenario_special == "haunted_houses" and f.side >= 0 else null
 		var undiscovered := hut != null and not c.state.discovered_huts.has(hut.rect.position)
-		var occupied := false
-		if c.state.scenario_special == "haunted_houses" and not c.state.discovered_huts.is_empty():
-			for other in c.state.figures:
-				if other != f and other.in_play() and other.side != f.side and absf(other.elevation - c.state.board.height_at(at)) < 0.5 and Contact.touching(other.pos, at):
-					occupied = true
-					break
 		if hits.is_empty() and not undiscovered and not occupied:
 			continue
 		f.pos = at

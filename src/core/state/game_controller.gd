@@ -139,6 +139,8 @@ func _apply_move(f: Figure, path: PackedVector2Array, cost: float, intercept: Di
 	f.actions_left -= 1
 	f.moves_taken += 1
 	if not _magic.terrain.travel(f, path, cost):
+		if f.in_play():
+			_magic.illusions.after_move(f)
 		return true
 	if not intercept.is_empty():
 		_displacement.force_contact(intercept)

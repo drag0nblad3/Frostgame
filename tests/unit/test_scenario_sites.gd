@@ -73,3 +73,17 @@ func test_hut_discovered_on_real_movement() -> void:
 	check(c.move_to(MovePlanner.node_at(Vector2(18, 11))))
 	check_eq(s.discovered_huts.size(), 1)
 	check_eq(f.pos, Vector2(18, 11))
+
+
+func test_hut_interrupts_stale_path_without_overlapping() -> void:
+	var s := ScenarioLoader.load_id("haunted_houses", db(), terrain())
+	var c := GameController.new(s, LoadedDice.new([12]))
+	var f := s.figure(1)
+	f.pos = Vector2(18, 8)
+	# A valid path into the hut may become obstructed by its hidden occupant.
+	var path := PackedVector2Array([Vector2(18, 8), Vector2(18, 8.5), Vector2(18, 9), Vector2(18, 9.5), Vector2(18, 10), Vector2(18, 10.5), Vector2(18, 11), Vector2(18, 11.5), Vector2(18, 12), Vector2(18, 12.5), Vector2(18, 13)])
+	c._magic.terrain.travel(f, path, 5.0)
+	var occupant := s.figures.back()
+	check_eq(occupant.def.id, "ghoul")
+	check(f.pos.distance_to(occupant.pos) >= Contact.OVERLAP)
+	check(Contact.in_combat(s.figures, f))

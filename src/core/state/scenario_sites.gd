@@ -89,3 +89,5 @@ static func end_move(c: GameController, f: Figure) -> void:
 		xp = 30 if f.def.role == "wizard" else (20 if f.def.role == "apprentice" else 0)
 	c.emit("disc_transport", {"id": f.id, "side": f.side, "roll": roll, "xp": xp})
 	c._magic.terrain.trigger_landing(f)
+	if f.in_play():
+		c._magic.illusions.after_move(f)
