@@ -18,6 +18,7 @@ var _frames: Array[Dictionary]=[]
 var _map: ReplayMap
 var _map_panel: VBoxContainer
 var _map_label: Label
+var _figure_label: Label
 var _floor: OptionButton
 var _review_body: BoxContainer
 var _map_frame: Dictionary={}
@@ -48,6 +49,10 @@ func _ready() -> void:
 	_map.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_map.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	_map_panel.add_child(_map)
+	_figure_label=WorkshopUI.label(_map_panel,"Tap a figure for details",18,WorkshopUI.MUTED)
+	_figure_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_map.figure_selected.connect(func(value: String) -> void:
+		_figure_label.text=value if not value.is_empty() else "Tap a figure for details")
 	_map_panel.hide()
 	_toggle=WorkshopUI.button(body,"Review recorded turns",_toggle_mode)
 	_controls=WorkshopUI.column(body)
