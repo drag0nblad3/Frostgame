@@ -11,7 +11,7 @@ const SUPPORT := 2
 static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 	var bonus := 0
 	for o in figures:
-		if RedKingTethers.pylon(o) or o == f or not o.in_play() or o.side != f.side or RedKingMadMan.hunter(o):
+		if RuleHooks.any("objective_figure", [o]) or o == f or not o.in_play() or o.side != f.side or RuleHooks.any("no_support", [o]):
 			continue
 		if not Contact.figures_touch(o, enemy):
 			continue
@@ -21,7 +21,7 @@ static func support(figures: Array[Figure], f: Figure, enemy: Figure) -> int:
 
 
 static func fight_mod(figures: Array[Figure], f: Figure, enemy: Figure, charging: bool = false) -> int:
-	if RedKingTethers.pylon(f):
+	if RuleHooks.any("objective_figure", [f]):
 		return 0
 	var net := clampi(support(figures, f, enemy) - support(figures, enemy, f), 0, 6)
 	return mini(f.effective_fight() + secret_hrut_bonus(f,enemy) + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + net + (2 if charging and f.has_horns() else 0) + (1 if f.spell_effects.has("enchant_weapon") and f.ranged == null else 0), 10)
@@ -49,7 +49,7 @@ static func resolve_rolls(figures: Array[Figure], a: Figure, b: Figure, ar: int,
 
 
 static func _damage(total: int, winner: Figure, loser: Figure, natural: int, critical_hits: bool) -> int:
-	if RedKingTethers.pylon(winner):
+	if RuleHooks.any("objective_figure", [winner]):
 		return 0
 	if loser.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(winner,winner.melee) and winner.melee.id=="natural":
 		return 0
@@ -58,7 +58,7 @@ static func _damage(total: int, winner: Figure, loser: Figure, natural: int, cri
 	var extra := (2 if winner.def.traits.has("strong") or winner.used_gear.get("rk_skull_strong",false) else 0) + (1 if winner.spell_effects.has("potion_fury") else 0)
 	if loser.is_undead():
 		extra += MagicEquipment.bonus(winner,"undead_damage")
-	var dmg := Damage.amount(total, winner.melee.damage_mod + (2 if winner.melee.id=="unarmed" and winner.def.traits.has("blood_marked") else 0) + MagicEquipment.bonus(winner, "damage", winner.melee.id) + MagicEquipment.bonus(winner, "melee_damage") + loser.melee.enemy_damage_mod + extra, RedKingGear.armour(winner,loser), natural, false)
+	var dmg := Damage.amount(total, winner.melee.damage_mod + (2 if winner.melee.id=="unarmed" and winner.def.traits.has("blood_marked") else 0) + MagicEquipment.bonus(winner, "damage", winner.melee.id) + MagicEquipment.bonus(winner, "melee_damage") + loser.melee.enemy_damage_mod + extra, _armour(winner,loser), natural, false)
 	if winner.def.traits.has("powerful") or (winner.def.traits.has("energy_drain") and MagicEquipment.bonus(loser,"energy_drain_immunity")==0 and not loser.is_undead() and not loser.def.traits.has("construct")):
 		dmg *= 2
 	if critical_hits and natural == 20 and not loser.def.traits.has("immune_critical"):
@@ -66,13 +66,15 @@ static func _damage(total: int, winner: Figure, loser: Figure, natural: int, cri
 	if dmg > 0 and winner.ranged == null and winner.spell_effects.has("elemental_hammer"):
 		dmg += 5
 	if dmg > 0 and natural != 1:
-		dmg += RedKingGear.fire_damage(winner,loser)
+		dmg += RuleHooks.total("melee_damage_bonus", [winner, loser])
 	return dmg
 
 
-## The mindscape reward affects Fight against Hrut for one selected battle.
+## Expansion Fight bonuses against a particular enemy (rule hook "fight_bonus").
 static func secret_hrut_bonus(f: Figure,enemy: Figure) -> int:
-	var s := RedKingVeil.of(f)
-	if s==null or f.side<0 or not enemy.def.id.begins_with("hrut_"):
-		return 0
-	return 1 if s.scenario_data.get("secret_hrut_%d"%f.side,false) else 0
+	return RuleHooks.total("fight_bonus", [f, enemy])
+
+
+static func _armour(winner: Figure, loser: Figure) -> int:
+	var override: Variant = RuleHooks.first("melee_armour", [winner, loser])
+	return int(override) if override != null else loser.effective_armour()

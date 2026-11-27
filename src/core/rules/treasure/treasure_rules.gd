@@ -10,9 +10,9 @@ static func can_pick_up(s: GameState, f: Figure, token: TreasureToken) -> bool:
 		return false
 	if f.ring_side!=token.ring_side:
 		return false
-	if RedKingHill.guarded(s,token):
+	if RuleHooks.any("treasure_guarded", [s, token]):
 		return false
-	if RedKingMadMan.hunter(f) or (RedKingVeil.active(s) and f.side==1):
+	if RuleHooks.any("cannot_carry_treasure", [s, f]):
 		return false
 	if (f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0)) or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false

@@ -21,6 +21,39 @@ data/*.json ──► loaders ──► GameState ◄── GameController ◄�
   are cached per target node.
 - **Bot.** `Bot.play_activation` picks a figure and plays it out through controller calls
   only. `BotTargets` holds the read-only choices (charge spots, shooting spots, advancing).
+  In the battle scene, `BotRunner` plays the activation on a `WorkerThreadPool` task and
+  buffers its events until it finishes, so the table keeps drawing while the bot thinks.
+
+## Rule hooks
+Core rules (`src/core/rules/`) don't name expansion classes. They ask `RuleHooks`, and each
+content set registers callables in one installer (`RedKingHooks.install()`, listed in
+`RuleHooks._install()`). Hooks run in registration order.
+
+| Hook | Arguments | Asked with | Meaning |
+|---|---|---|---|
+| `objective_figure` | figure | `any` | An objective, not a combatant: no fighting, support or ordinary shots |
+| `no_support` | figure | `any` | Never lends fight support |
+| `fight_bonus` | figure, enemy | `total` | Extra Fight against that enemy |
+| `melee_armour` | attacker, target | `first` | Armour to use instead of the target's own |
+| `melee_damage_bonus` | winner, loser | `total` | Extra melee damage |
+| `range` | shooter, target | `first` | Range override (float), e.g. across reality cracks |
+| `shoot_modifier` | shooter | `total` | Shooting roll modifier |
+| `sight` | board, from, to, observer | `first` | `LineOfSight.Result` override |
+| `treasure_no_slowdown` | figure | `any` | Carrying treasure costs no movement |
+| `treasure_light_slowdown` | figure | `any` | Carrying treasure costs 1" instead of half Move |
+| `treasure_guarded` | state, token | `any` | Token can't be picked up yet |
+| `cannot_carry_treasure` | state, figure | `any` | Figure may never pick up treasure |
+| `group_blocked` | state, figure | `any` | Figure can't join a group activation |
+| `forced_move_void` | controller, figure, from, to | `any` | A push was resolved by a void (figure fell or stopped) |
+| `forced_move_blocked` | controller, figure, to | `any` | A forced move was resolved by a hazard at the destination |
+| `forced_contact` | controller, figure, from, to | `run` | Side effects of a forced move's path |
+| `forced_path_void` | controller, point | `any` | A forced path may end over this void |
+
+Combat, movement, sight, treasure and turn rules use hooks only. These still call Red King
+classes directly and should move to hooks when next touched: `rules/magic/`, `rules/equipment/`,
+`rules/creatures/creature_effects.gd`, `rules/combat/forced_relocation.gd`,
+`rules/treasure/treasure_actions.gd`, `rules/movement/run_for_it.gd`, the `Controller*`
+helpers and the campaign code.
 
 ## Activation model (current)
 Each figure gets two actions per activation. At most one is a non-move action (fight, shoot,
