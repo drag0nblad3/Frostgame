@@ -136,6 +136,7 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 
 
 static func _apply_shot(sa: SpellActions, f: Figure,t: Figure,dmg: int,event: Dictionary) -> void:
+	event["dmg"]=dmg
 	sa.c.emit("spell_shot",event)
 	var old_health := t.health
 	sa.c._hurt(t,dmg,f)

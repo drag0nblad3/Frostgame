@@ -96,7 +96,7 @@ func _play(e: GameEvent) -> void:
 			BattleEffects.restore(self, healed.position + Vector3.UP * 0.15)
 			_float_text(healed, "+%d" % d["amount"], Color(0.45, 1.0, 0.63))
 		"shoot", "spell_shot":
-			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot",str(d.get("spell","")),d.get("origin",null),int(d.get("dmg",1))>0)
+			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot",str(d.get("spell","")),d.get("origin",null),int(d.get("dmg",int(d.get("attack",1))>int(d.get("defence",0))))>0)
 		"fight":
 			var a := _view(d["id"])
 			var b := _view(d["target"])
