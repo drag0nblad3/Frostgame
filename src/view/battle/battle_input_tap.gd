@@ -53,10 +53,10 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 		return false
 	if bi.mode=="veil_target":
 		var choice := bi._figure_at(screen)
-		return choice>=0 and RedKingVeil.answer_target(bi.c,choice)
+		return choice>=0 and BattleScenarioAction.execute(bi.c,"veil",{"target":choice})
 	if bi.mode=="secret_exchange":
 		var choice := bi._figure_at(screen)
-		return choice>=0 and RealityCracks.answer_exchange(bi.c,choice)
+		return choice>=0 and BattleScenarioAction.execute(bi.c,"exchange",{"target":choice})
 	if bi.mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight","wraith_shot","ammo_shot"]:
 		var id := bi._figure_at(screen)
 		if id < 0:
@@ -111,7 +111,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RealityConvergence.answer(bi.c,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"convergence",{"at":best})
 	if bi.mode in ["hunt_corner","hunt_place"]:
 		var best := Vector2(INF,INF)
 		var distance := 1.5 if bi.mode=="hunt_corner" else 0.55
@@ -119,7 +119,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RedKingHunt.answer(bi.c,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"hunt",{"at":best})
 	if bi.mode=="worm_relocation":
 		var at_grid := at.round()
 		return BattleEquipmentAction.execute(bi.c,"worm_relocation",{"at":at_grid})
@@ -131,7 +131,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RedKingHill.answer_seam(bi.c,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"hill_seam",{"at":best})
 	if bi.mode=="ruins_piece":
 		for index: int in bi.c.state.scenario_data["rk_priority_choice"]["options"]:
 			if bi.c.state.board.pieces[index].rect.has_point(at):
@@ -147,7 +147,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RealityCrackTerrain.answer_shift(bi.c,bi.spell_first,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"shift_ruin",{"piece":bi.spell_first,"at":best})
 	if bi.mode=="mind_token":
 		for token in bi.tokens:
 			if at.distance_to(token.pos)<=0.9:
@@ -157,7 +157,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				bi.preview()
 				return false
 	if bi.mode=="mind_destination":
-		return RedKingMind.answer_memory(bi.c,bi.spell_first,MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return BattleScenarioAction.execute(bi.c,"memory",{"target":bi.spell_first,"at":MoveGrid.to_pos(MovePlanner.node_at(at))})
 	if bi.mode == "treasure_spell":
 		for token in bi.tokens:
 			if at.distance_to(bi.c._magic.treasure_magic.origin(token)) <= 0.9 and (not bi.is_layered() or BattleFloorInput.visible(bi,bi.c._magic.treasure_magic.origin_surface(token))):
