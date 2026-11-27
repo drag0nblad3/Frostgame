@@ -22,7 +22,7 @@ static func probability(c: GameController, f: Figure, id: String) -> float:
 	if not c.state.spellbooks.get(f.side, {}).has(id):
 		return 1.0 if ScrollActions.has_scroll(f, id) else 0.0
 	var tn := int(c.state.spellbooks[f.side][id])
-	var mod := f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) + ActiveGear.casting_bonus(f, id)
+	var mod := f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) + ActiveGear.casting_bonus(f, id) + RealityCracks.casting_modifier(c.state,id)
 	if f.def.role == "apprentice":
 		mod -= 2
 	return clampf((21.0 - tn + mod + mini(2, maxi(0, f.health - 2))) / 20.0, 0.05, 1.0)
@@ -54,6 +54,10 @@ static func value(c: GameController, f: Figure, t: Figure, id: String) -> float:
 		score = (4.0 + 5.0 / maxf(t.health, 1.0)) * priority
 		if t.def.traits.has("immune_normal"):
 			score += 4.0
+		if RedKingTethers.pylon(t) or RedKingRingworld.key_master(t):
+			score+=6.0
+		if t.def.traits.has("antithetical_magic") or t.def.traits.has("spell_reflection"):
+			score*=0.45
 		if id == "steal_health" and f.health < f.def.health:
 			score += 2.0
 		if id == "strike_dead":

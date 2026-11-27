@@ -4,7 +4,7 @@ extends RefCounted
 
 static func play(c: GameController, f: Figure) -> bool:
 	if RedKingRingworld.active(c.state):
-		if f.treasure_id>=0 and RedKingRingworld.escape(c,f):
+		if f.treasure_id>=0 and RedKingRingworld.remaining(c.state)>1 and RedKingRingworld.escape(c,f):
 			return true
 		var same_plane := false
 		for key in c.state.figures:
@@ -13,7 +13,7 @@ static func play(c: GameController, f: Figure) -> bool:
 		if not same_plane and RedKingRingworld.switch(c,f):
 			return true
 		# Do not use ordinary table-edge retreat logic here.
-		if f.treasure_id>=0:
+		if f.treasure_id>=0 or same_plane:
 			return false
 	if RedKingMind.active(c.state):
 		return _mind_move(c,f)

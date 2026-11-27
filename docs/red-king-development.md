@@ -262,3 +262,6 @@ Equipment study now happens on the selected item rather than a separate catalogu
 
 ### Interactive end-turn decisions
 The Mindscape 7/8 event permits selecting any remaining memory, a marked half-inch-grid destination up to four inches away, or declining. Secret Exchange (19) presents eligible warband figures after the rival has privately committed its selection. These decisions suspend end-turn flow until resolved, are represented by plain scenario checkpoint data, and resolve automatically in headless/watch mode. They do not introduce suspended callbacks. Other synchronous reactions retain the documented pre-arm approximation.
+
+### Rival tactical pass
+Rivals now consider Dazzling Cape to rescue vulnerable treasure carriers and casters, Talisman runs when ordinary movement cannot cover as much exit progress, Holy Lantern against nearby enemy demons/undead, Wraith Bow/enchanted ammunition when ordinary shots are blocked or ineffective, and Mindscape's additional non-move action. Objective scoring favors pylons, Key-Masters and melee capture of Ryce; target searches respect Ringworld planes. Spell scoring includes current reality modifiers and discounts spell-reflecting or antithetical targets. These are heuristics rather than a full strategic search; autonomous vampire sacrifices and layered specialist tactics remain deferred.

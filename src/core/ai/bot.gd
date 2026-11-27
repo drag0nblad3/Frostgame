@@ -27,7 +27,14 @@ static func resume_activation(c: GameController) -> bool:
 			return true
 	if f.side >= 0:
 		_use_healing(c, f)
-	if FuryRules.target(c.state, f) != null:
+		if c.awaiting_reaction():
+			return true
+		if RedKingBot.prepare(c,f):
+			if c.awaiting_reaction() or c.state.active()!=f:
+				return true
+	if RedKingMind.is_wizard(c.state,f):
+		RedKingBot.mind(c,f)
+	elif FuryRules.target(c.state, f) != null:
 		FuryRules.play(c, f)
 	elif f.side < 0:
 		CreatureBot.play(c, f)
@@ -107,6 +114,8 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 		if not c.reload() or not c.can_act():
 			return
 	var t := BotTargets.best_shot(c.state, f)
+	if RedKingBot.special_shot(c,f,t):
+		return
 	if t != null:
 		c.shoot(t.id,false,c.can_shoot(t.id,false,true))
 		return
