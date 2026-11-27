@@ -8,6 +8,7 @@ signal event_emitted(e: GameEvent)
 var state: GameState
 var dice: Dice
 var history: Array[GameEvent] = []
+var command_history: Array[Dictionary] = []
 var _flow: TurnFlow
 var _loot: TreasureActions
 var _displacement: CombatDisplacement
