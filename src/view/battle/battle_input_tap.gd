@@ -74,7 +74,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			"potion_target":
 				return BattleEquipmentAction.execute(bi.c,"drink",{"id":bi.selected_potion,"target":id})
 			"swap_second":
-				return bi._declared(bi.c._magic.start_swap(bi.spell_first, id))
+				return bi._declared(BattleSpellAction.execute(bi.c,"swap",{"target":bi.spell_first,"second":id}))
 			"spell_target":
 				if bi.selected_spell in ["leap", "transpose", "suggestion"]:
 					bi.spell_first = id
@@ -83,7 +83,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 					return false
 				return bi._declared(BattleAction.execute(bi.c,"cast",id,bi.selected_spell,bi.spell_ammo))
 			"cancel_control":
-				return bi.c._magic.cancel(id)
+				return BattleSpellAction.execute(bi.c,"cancel_control",{"target":id})
 			"group_select":
 				if id == int(bi.c.state.early.leaders[bi.c.state.current_side()]):
 					return false
@@ -166,11 +166,11 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				bi.preview()
 				return false
 	if bi.mode == "treasure_destination":
-		return bi._declared(bi.c._magic.start_treasure(bi.selected_spell, bi.spell_first, MoveGrid.to_pos(MovePlanner.node_at(at))))
+		return bi._declared(BattleSpellAction.execute(bi.c,"treasure",{"spell":bi.selected_spell,"target":bi.spell_first,"at":MoveGrid.to_pos(MovePlanner.node_at(at))}))
 	if bi.mode == "leap_destination":
 		var t := bi.c.state.figure(bi.spell_first)
 		var destination := t.pos if bi.selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return bi._declared(bi.c._magic.start_move(bi.selected_spell, bi.spell_first, destination))
+		return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":bi.selected_spell,"target":bi.spell_first,"at":destination}))
 	if bi.mode=="gear_tiger_point":
 		return BattleEquipmentAction.execute(bi.c,"tiger_eye_move",{"at":at})
 	if bi.mode=="gear_worm_point":
@@ -183,7 +183,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 		return BattleEquipmentAction.execute(bi.c,"potion_"+bi.selected_potion,{"at":at.round() if bi.selected_potion=="explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at))})
 	if bi.mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(bi.selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return bi._declared(bi.c._magic.start_at(bi.selected_spell,destination,bi.spell_rotated,bi.spell_extended))
+		return bi._declared(BattleSpellAction.execute(bi.c,"place",{"spell":bi.selected_spell,"at":destination,"rotated":bi.spell_rotated,"extended":bi.spell_extended}))
 	if bi.mode == "collect":
 		for token in bi.tokens:
 			if at.distance_to(token.pos) <= 0.9 and (not bi.is_layered() or BattleFloorInput.visible(bi,token.surface_id)):
