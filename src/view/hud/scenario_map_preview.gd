@@ -12,8 +12,13 @@ func setup(id: String) -> void:
 	queue_redraw()
 
 
-func setup_scenario(data: Dictionary) -> void:
-	setup(str(data["board"]))
+func setup_scenario(data: Dictionary, board: Board=null) -> void:
+	if board==null:
+		setup(str(data["board"]))
+	else:
+		_board=board
+		_treasures.clear()
+		mouse_filter=Control.MOUSE_FILTER_IGNORE
 	for token: Variant in data.get("treasures",[]):
 		var at: Array=token.get("at",[]) if token is Dictionary else (token if token is Array else [])
 		if at.size()>=2:
@@ -22,11 +27,13 @@ func setup_scenario(data: Dictionary) -> void:
 
 
 func _draw() -> void:
-	if _board==null:
+	if _board==null or size.x<=8 or size.y<=8:
 		return
 	var scale_factor := minf((size.x-8)/_board.size.x,(size.y-8)/_board.size.y)
 	var origin := (size-_board.size*scale_factor)*0.5
 	draw_rect(Rect2(origin,_board.size*scale_factor),Color("b1c6cf"))
+	for region in _board.void_regions:
+		draw_rect(Rect2(origin+region.position*scale_factor,region.size*scale_factor),Color("243345"))
 	for piece in _board.pieces:
 		var tint := Color("61747e")
 		if piece.kind.ground_surface:

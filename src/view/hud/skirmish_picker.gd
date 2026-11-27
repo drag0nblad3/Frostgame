@@ -17,6 +17,11 @@ var _name: Label
 var _category: Label
 var _edit: Button
 var _filter: OptionButton
+var _terrain: TerrainDb
+var _boards := {}
+var _board_order: Array[String]=[]
+var _scenarios := {}
+var _roster := {}
 
 
 func _ready() -> void:
@@ -52,6 +57,7 @@ func _ready() -> void:
 	visual.size_flags_stretch_ratio=1.7
 	_category=WorkshopUI.label(visual,"",18,WorkshopUI.GOLD)
 	_name=WorkshopUI.label(visual,"",30)
+	WorkshopUI.label(visual,"TACTICAL TERRAIN · SCHEMATIC",16,WorkshopUI.MUTED)
 	_table=ScenarioTablePreview.new()
 	_table.custom_minimum_size.y=170
 	_table.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -72,6 +78,7 @@ func open(from_home: bool=false) -> void:
 	if _filter.is_item_disabled(_filter.selected):
 		_filter.select(0)
 	_entries=ScenarioBriefing.available_entries(WarbandSlots.content_profile())
+	_roster=WarbandSlots.roster()
 	_populate()
 	show_screen()
 
@@ -101,30 +108,46 @@ func _populate() -> void:
 func _inspect(index: int) -> void:
 	_chosen=_ids[index]
 	var entry: Array=_entries[_chosen]
-	var data: Dictionary=JsonFile.read(ScenarioLoader.DIR+_chosen+".json")
+	if not _scenarios.has(_chosen):
+		_scenarios[_chosen]=JsonFile.read(ScenarioLoader.DIR+_chosen+".json")
+	var data: Dictionary=_scenarios[_chosen]
+	var board := _preview_board(str(data["board"]))
 	_name.text=str(entry[0])
 	_category.text="THE RED KING · EXPANSION" if _chosen.begins_with("red_king_") else "CORE · SKIRMISH"
-	_table.setup(str(data["board"]),_chosen)
-	_map.setup_scenario(data)
+	_table.setup(board)
+	_map.setup_scenario(data,board)
 	WorkshopUI.clear(_detail)
 	WorkshopUI.label(_detail,"OBJECTIVE",18,WorkshopUI.GOLD)
 	WorkshopUI.label(_detail,str(entry[1]),26)
 	WorkshopUI.label(_detail,"BATTLEFIELD RULES",18,WorkshopUI.GOLD)
 	WorkshopUI.label(_detail,str(entry[2]),24)
 	WorkshopUI.label(_detail,"EXPEDITION",18,WorkshopUI.GOLD)
-	var roster := WarbandSlots.roster()
+	var roster := _roster
 	if roster.is_empty():
 		var bands: Array=data.get("warbands",[])
 		var fallback: Dictionary=bands[0] if not bands.is_empty() else {}
 		WorkshopUI.label(_detail,"Scenario's preset warband · %s"%fallback.get("name","Default"),23)
 	else:
 		WorkshopUI.label(_detail,"%s · %d members"%[roster.get("name","Warband"),roster.get("figures",[]).size()],24)
-	var board := BoardLoader.load_id(str(data["board"]),TerrainDb.load_file())
 	WorkshopUI.label(_detail,"%d″ × %d″ board · %d initial treasure markers"%[board.size.x,board.size.y,data.get("treasures",[]).size()],21,WorkshopUI.MUTED)
 	WorkshopUI.label(_detail,"Gold dots show initial treasure locations. Special objectives may change during play.",19,WorkshopUI.MUTED)
 	subtitle.text="Standalone battle · Campaign progression is unchanged." if _from_home else "Starting a new battle replaces unsaved progress."
 	action.text="Start "+str(entry[0])
 	action.disabled=false
+
+
+## Read-only preview boards are separate from the active battle. Bound the
+## cache because BoardLoader also allocates movement lattice arrays.
+func _preview_board(id: String) -> Board:
+	if _terrain==null:
+		_terrain=TerrainDb.load_file()
+	if not _boards.has(id):
+		_boards[id]=BoardLoader.load_id(id,_terrain)
+	_board_order.erase(id)
+	_board_order.append(id)
+	if _board_order.size()>4:
+		_boards.erase(_board_order.pop_front())
+	return _boards[id]
 
 
 func _start() -> void:
