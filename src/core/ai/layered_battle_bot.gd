@@ -14,12 +14,14 @@ static func play(c: GameController) -> bool:
 			return false
 		f=c.state.active()
 	for i in 2:
-		if not f.in_play() or f.actions_left<=0:
+		if not f.in_play() or f.actions_left<=0 or c.awaiting_reaction():
 			break
 		if _act(c,f):
 			continue
 		if not _move(c,f):
 			break
+	if c.awaiting_reaction():
+		return true
 	if c.state.push_winner>=0:
 		if not c.resolve_push(c.state.figure(c.state.push_winner).treasure_id>=0):
 			c.stay_in_combat()
@@ -40,6 +42,8 @@ static func _act(c: GameController,f: Figure) -> bool:
 		if c.can_reload():
 			return c.reload()
 		for enemy in c.state.figures:
+			if c.can_shoot(enemy.id,false,true):
+				return c.shoot(enemy.id,false,true)
 			if c.can_shoot(enemy.id):
 				return c.shoot(enemy.id)
 	return false

@@ -233,3 +233,6 @@ Deployment repairs crowded or obstructed Red King campaign starts within their s
 
 ### Ragged campaign continuity
 Random recruitment is a visible preparation step after permanent summoning rituals and before deployment; returned wounded members above ten enter a deterministic reserve (casters first, then roster order). An eligible promotion retains the story, and a replacement wizard drawn from the current draft can continue the invasion with a new roster, zero spendable starting gold and no apprentice. The story stage and global artefact discovery history are retained; old personal possessions are discarded. Recruitment and story changes are persisted before departure.
+
+### Shared equipment controls on layered maps
+Layered spell selection exposes enchanted ammunition; firing uses the same shot validation as flat maps. Bottle Imp can spawn on an explicit legal floor node and creates the new figure with its correct surface and elevation before the spawn event. The layered cast and resistance panel now exposes Vampire Staff selection and empowerment, scroll insurance, amulet and Fate Stone reactions. Creature and warband bots can use enchanted shots. Other advanced floor-specific hazards and targeting still require separate migration.

@@ -73,13 +73,14 @@ func on_end_turn() -> void:
 			return
 
 
-func _spawn_at(type: String, at: Vector2, side: int = -1, ring_side: int=0) -> Figure:
+func _spawn_at(type: String, at: Vector2, side: int = -1, ring_side: int=0,surface: String="",height: float=0.0) -> Figure:
 	var s := c.state
 	var id := 1
 	for f in s.figures:
 		id = maxi(id, f.id + 1)
 	var creature := Figure.new(id, s.creature_db.get_def(type), side, at, s.creature_db.unarmed())
-	creature.elevation = s.board.height_at(at)
+	creature.elevation = s.board.height_at(at) if surface.is_empty() else height
+	creature.surface_id=surface
 	creature.ring_side=ring_side
 	creature.battle_ref = weakref(s)
 	s.figures.append(creature)

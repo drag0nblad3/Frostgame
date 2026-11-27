@@ -13,7 +13,7 @@ static func donors(s: GameState,f: Figure) -> Array[Figure]:
 	if not eligible(f):
 		return result
 	for t in s.figures:
-		if t!=f and t.in_play() and t.original_side==f.original_side and t.side==f.side and not t.is_undead() and not t.def.traits.has("construct") and not IllusionRules.phantom(t) and t.ring_side==f.ring_side and Shooting.distance(f,t)<=1.001 and t.health>=3:
+		if t!=f and t.in_play() and t.side==f.side and not t.is_undead() and not t.def.traits.has("construct") and not IllusionRules.phantom(t) and t.ring_side==f.ring_side and Shooting.distance(f,t)<=1.001 and t.health>=3:
 			result.append(t)
 	return result
 

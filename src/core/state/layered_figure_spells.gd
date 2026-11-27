@@ -27,4 +27,11 @@ static func options(c: GameController) -> Dictionary:
 				ids.append(t.id)
 		if not ids.is_empty():
 			out[id]=ids
+		if id=="enchant_weapon":
+			var ammo: Array[int]=[]
+			for t in c.state.figures:
+				if c.can_cast(id,t.id,true):
+					ammo.append(t.id)
+			if not ammo.is_empty():
+				out["enchant_ammo"]=ammo
 	return out

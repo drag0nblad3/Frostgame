@@ -34,7 +34,8 @@ static func choose(parent: Control,c: GameController,refresh: Callable) -> void:
 	spells.select(0)
 	populate.call(0)
 	dialog.confirmed.connect(func() -> void:
-		c.start_cast(str(spells.get_selected_metadata()),int(targets.get_selected_metadata()))
+		var id := str(spells.get_selected_metadata())
+		c.start_cast("enchant_weapon" if id=="enchant_ammo" else id,int(targets.get_selected_metadata()),id=="enchant_ammo")
 		refresh.call()
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)

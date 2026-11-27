@@ -108,7 +108,7 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 			return
 	var t := BotTargets.best_shot(c.state, f)
 	if t != null:
-		c.shoot(t.id)
+		c.shoot(t.id,false,c.can_shoot(t.id,false,true))
 		return
 	if not c.can_move():
 		return
@@ -117,7 +117,7 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 	if not spot.is_empty():
 		c.move_to(spot["node"])
 		if c.can_shoot(spot["target"].id):
-			c.shoot(spot["target"].id)
+			c.shoot(spot["target"].id,false,c.can_shoot(spot["target"].id,false,true))
 		return
 	_advance(c, f, r)
 

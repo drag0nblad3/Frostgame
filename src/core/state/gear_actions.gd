@@ -91,9 +91,9 @@ static func transfer(c: GameController, t: Figure, amount: int) -> bool:
 
 
 ## The bottle is a consumable and can replace a movement action, even in melee.
-static func bottle_ready(c: GameController) -> bool:
+static func bottle_ready(c: GameController,layered: bool=false) -> bool:
 	var f := c.state.active()
-	return f!=null and f.in_play() and f.actions_left>0 and not c.awaiting_reaction() and c.state.pending_cast.is_empty() and c.state.push_winner<0 and not c.state.group.movement_pass() and not f.spell_effects.has("plane_walk") and FuryRules.target(c.state,f)==null and ActiveGear.ready(f,"gear_rk_bottle_imp") and (f.moves_taken==0 and not c.state.group.in_progress() or c.can_act()) and c.state.creature_db!=null and c.state.board.floor_layout.is_empty()
+	return f!=null and f.in_play() and f.actions_left>0 and not c.awaiting_reaction() and c.state.pending_cast.is_empty() and c.state.push_winner<0 and not c.state.group.movement_pass() and not f.spell_effects.has("plane_walk") and FuryRules.target(c.state,f)==null and ActiveGear.ready(f,"gear_rk_bottle_imp") and (f.moves_taken==0 and not c.state.group.in_progress() or c.can_act()) and c.state.creature_db!=null and (not c.state.board.floor_layout.is_empty() if layered else c.state.board.floor_layout.is_empty())
 
 
 static func bottle_legal(c: GameController,at: Vector2) -> bool:
@@ -201,4 +201,37 @@ static func gutter_skip(c: GameController) -> bool:
 	if c.state.pending_gutter<0:
 		return false
 	c.state.pending_gutter=-1
+	return true
+
+
+static func bottle_floor_points(c: GameController) -> Dictionary:
+	var out := {}
+	if not bottle_ready(c,true):
+		return out
+	var f := c.state.active()
+	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var grid := LayeredGrid.new(layout,null,c.state.figures)
+	var center := MovePlanner.node_at(f.pos)
+	var origin := Vector3(f.pos.x,f.elevation,f.pos.y)
+	for i in layout.surfaces.size():
+		for dx in range(-2,3):
+			for dy in range(-2,3):
+				var n := Vector3i(center.x+dx,center.y+dy,i)
+				if grid.open(n) and layout.world(n).distance_to(origin)<=1.001 and not ScenarioNull.field_at(c.state.board,layout.point(n)):
+					out[n]=true
+	return out
+
+
+static func bottle_on_floor(c: GameController,n: Vector3i) -> bool:
+	if not bottle_floor_points(c).has(n):
+		return false
+	var f := c.state.active()
+	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	for i in f.items.size():
+		if f.items[i].get("gear","")=="gear_rk_bottle_imp":
+			f.items.remove_at(i)
+			break
+	c._potions._spend_drink(f)
+	c._encounters._spawn_at("imp",layout.point(n),-1,f.ring_side,layout.surface_id(n),layout.height(n))
+	c.emit("gear_used",{"id":f.id,"gear":"gear_rk_bottle_imp"})
 	return true
