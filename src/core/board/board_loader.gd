@@ -16,7 +16,7 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 	b.name = d.get("name", b.id)
 	var s: Array = d.get("size", [36, 36])
 	b.size = Vector2(s[0], s[1])
-	b.floor_layout = d.get("floor_layout",{}).duplicate(true)
+	b.floor_layout = FloorAssembly.expand(d)
 	for region: Array in d.get("void_regions",[]):
 		if region.size()==4:
 			b.void_regions.append(Rect2(region[0],region[1],region[2],region[3]))
