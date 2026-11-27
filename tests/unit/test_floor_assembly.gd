@@ -42,7 +42,7 @@ func test_authored_tower_preserves_surface_order_and_connections() -> void:
 		check(layout.standable(roof))
 		if layout.standable(roof):
 			check_eq(layout.height(roof),10.0)
-		check_eq(board.floor_layout["tower_region"],[14,14,8,8])
+		check_eq(board.floor_layout["tower_region"],[14.0,14.0,8.0,8.0])
 		check(layout.links.has(layout.node("stair_lower",Vector2(14.5,11.5))))
 
 
