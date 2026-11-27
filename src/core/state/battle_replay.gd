@@ -45,6 +45,18 @@ static func apply(c: GameController,key: String,args: Dictionary) -> bool:
 		"answer_initiative": return c.answer_initiative(args["use"])
 		"answer_fate_combat": return c.answer_fate_combat(args["use"])
 		"stay_in_combat": return c.stay_in_combat()
+		"finish_early_phase": return c.finish_early_phase()
+		"begin_group":
+			var ids: Array[int]=[]
+			ids.assign(args["ids"])
+			return c.begin_group(ids)
+		"resolve_push": return c.resolve_push(args["own"],args.get("distance",1.0))
+		"answer_elemental_combat": return c.answer_elemental_combat(args["use"])
+		"use_stored_action": return c.use_stored_action()
+		"fight_hand": return c.fight_hand(args["id"])
+		"select_melee": return c.select_melee(args["id"])
+		"drink_well": return c.drink_well()
+		"break_ice": return c.break_ice()
 		"end_activation":
 			if not c.can_end_activation():
 				return false
