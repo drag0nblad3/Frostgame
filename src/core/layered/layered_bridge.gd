@@ -106,6 +106,9 @@ static func remove(c: GameController,id: String) -> void:
 	for i in range(entries.size()-1,-1,-1):
 		if entries[i]["surface"]["id"]==id:
 			entries.remove_at(i)
+	for p in s.board.pieces.duplicate():
+		if p.surface_id==id:
+			c._magic.terrain.remove(p)
 	s.board.floor_layout["bridges"]=entries
 	var layout := s.board.floor_geometry()
 	c.emit("terrain_changed",{"spell":"bridge","created":false})
@@ -133,5 +136,4 @@ static func remove(c: GameController,id: String) -> void:
 		if n==null:
 			c._loot.lose(token)
 		else:
-			token.surface_id=layout.surface_id(n)
-			c.emit("treasure_moved",{"treasure":token.id,"at":token.pos,"height":layout.height(n)})
+			c._loot.relocate_ground(token,layout.point(n),layout.surface_id(n))
