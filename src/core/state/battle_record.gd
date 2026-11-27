@@ -23,7 +23,10 @@ static func unpack(records: Array) -> Array[GameEvent]:
 ## Nested commands belong to the outer transaction rather than a duplicate record.
 static func run(c: GameController,key: String,args: Dictionary,apply: Callable) -> bool:
 	if c.recording_command:
-		return bool(apply.call())
+		var nested := bool(apply.call())
+		if nested:
+			BattleFrame.record(c)
+		return nested
 	c.recording_command=true
 	var rng_before := c.dice._rng.state
 	var first := c.history.size()
