@@ -9,6 +9,7 @@ static func preview(bi: BattleInput) -> void:
 	bi.nodes.clear()
 	var s := State.new()
 	var f := bi.c.state.active()
+	bi.hud.set_active_summary(f)
 	if not BattleInputActionPreview.actions(bi, f, s):
 		BattleInputReactionPreview.reactions(bi, f, s)
 	var selected: Array[Vector2] = []
@@ -33,7 +34,7 @@ static func preview(bi: BattleInput) -> void:
 			s.hint="Full elemental absorption armed. "+s.hint
 		if f.next_cast_gear != "":
 			s.hint = "Armed: %s. " % f.next_cast_gear.trim_prefix("gear_").replace("_", " ").capitalize() + s.hint
-		s.hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", s.hint]
+
 	if bi.c.state.group.in_progress():
 		s.hint = ("GROUP: Movement · " if bi.c.state.group.movement_pass() else "GROUP: Second action · ") + s.hint
 	bi.hud.set_actions(bi.available, bi.mode, s.hint)

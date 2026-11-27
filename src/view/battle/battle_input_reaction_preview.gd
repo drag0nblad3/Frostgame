@@ -131,7 +131,7 @@ static func reactions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -
 					if (bi.mode == "move" and float(bi.reach.cost[n]) > 0.001) or (bi.mode == "exit" and bi.c.can_exit_table(n, bi.reach)):
 						bi.nodes.append(n)
 						s.points.append(MoveGrid.to_pos(n))
-			s.hint = "Tap a marked destination." if bi.mode == "move" else "Tap a marked table edge to retreat."
+			s.hint = ("Tap or drag within the marked area. %.1f″ movement available. Confirm before spending an action."%MoveRules.allowance(f)) if bi.mode == "move" else "Tap a marked table edge to retreat."
 		"fight_hand":
 			for t in bi.c.state.figures:
 				if bi.c.can_fight_hand(t.id):
@@ -160,7 +160,7 @@ static func reactions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -
 					bi.targets.append(t)
 			s.radius = 0.65
 			s.color = Color(1.0, 0.35, 0.25)
-			s.hint = "Tap a marked enemy."
+			s.hint = "Choose one of %d marked targets to review the attack before rolling."%bi.targets.size()
 		"collect":
 			for token in bi.c.state.treasures:
 				if bi.c.can_pick_up(token.id):
@@ -174,6 +174,5 @@ static func reactions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -
 			s.hint = "Tap a marked place to drop " + ("shrunk treasure." if bi.mode == "drop_shrunk" else "treasure.")
 		_:
 			s.hint = "Choose Reload or End."
-		_:
 			return false
 	return true

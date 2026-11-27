@@ -5,6 +5,10 @@ extends Node3D
 ## Touch: one-finger drag orbit, two-finger drag pan, pinch zoom.
 
 signal tapped(at: Vector2)
+signal plan_drag(at: Vector2)
+var can_plan_drag: Callable
+var _mouse_plan := false
+var _touch_plan := false
 
 const TAP_SLOP := 12.0
 var _mouse_down := false
@@ -89,10 +93,12 @@ func _unhandled_input(event: InputEvent) -> void:
 				_mouse_down = true
 				_mouse_start = event.position
 				_mouse_dragged = false
+				_mouse_plan=can_plan_drag.is_valid() and can_plan_drag.call(event.position)
 			else:
 				if _mouse_down and not _mouse_dragged and event.position.distance_to(_mouse_start) <= TAP_SLOP:
 					tapped.emit(event.position)
 				_mouse_down = false
+				_mouse_plan=false
 		elif event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			distance *= 0.9
 			_apply()
@@ -104,9 +110,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _mouse_down and event.position.distance_to(_mouse_start) > TAP_SLOP:
 				_mouse_dragged = true
 			if _mouse_dragged:
-				yaw -= event.relative.x * 0.008
-				pitch += event.relative.y * 0.006
-				_apply()
+				if _mouse_plan:
+					plan_drag.emit(event.position)
+				else:
+					yaw -= event.relative.x * 0.008
+					pitch += event.relative.y * 0.006
+					_apply()
 		elif event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 			_pan(event.relative)
 	elif event is InputEventScreenTouch:
@@ -114,13 +123,17 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _touches.is_empty():
 				_touch_start = event.position
 				_touch_dragged = false
+				_touch_plan=can_plan_drag.is_valid() and can_plan_drag.call(event.position)
 			else:
 				_touch_dragged = true
+				_touch_plan=false
 			_touches[event.index] = event.position
 		else:
 			if _touches.has(event.index) and _touches.size() == 1 and not _touch_dragged and event.position.distance_to(_touch_start) <= TAP_SLOP and not event.canceled:
 				tapped.emit(event.position)
 			_touches.erase(event.index)
+			if _touches.is_empty():
+				_touch_plan=false
 		if _touches.size() == 2:
 			_pinch_start = _touch_span()
 			_pinch_distance = distance
@@ -132,9 +145,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.position.distance_to(_touch_start) > TAP_SLOP:
 				_touch_dragged = true
 			if _touch_dragged:
-				yaw -= event.relative.x * 0.008
-				pitch += event.relative.y * 0.006
-				_apply()
+				if _touch_plan:
+					plan_drag.emit(event.position)
+				else:
+					yaw -= event.relative.x * 0.008
+					pitch += event.relative.y * 0.006
+					_apply()
 		elif _touches.size() == 2:
 			_pan(event.relative * 0.5)
 			var span := _touch_span()
@@ -154,3 +170,5 @@ func cancel_gesture() -> void:
 	_touches.clear()
 	_touch_dragged=false
 	_pinch_start=0.0
+	_mouse_plan=false
+	_touch_plan=false

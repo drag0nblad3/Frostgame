@@ -108,6 +108,8 @@ func _ready() -> void:
 			_scenario_id=SCENARIO
 		hud.select_scenario(_scenario_id)
 	_rig.tapped.connect(_on_tap)
+	_rig.plan_drag.connect(_on_plan_drag)
+	_rig.can_plan_drag=_can_plan_drag
 	_markers = BattleMarkers.new()
 	add_child(_markers)
 	_sites = ScenarioMarkers.new()
@@ -264,6 +266,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player.roll_resolved.connect(hud.show_roll)
 	controller.event_emitted.connect(_relay)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
+	player_input.move_preview_changed.connect(_move_preview)
 	if start:
 		controller.start_game()
 	else:
@@ -396,6 +399,26 @@ func _on_tap(at: Vector2) -> void:
 	if _human_turn() and player.idle() and not _dirty and not hud.blocks_tap(at):
 		if player_input.tap(at):
 			_lock_after_action()
+
+
+func _can_plan_drag(at: Vector2) -> bool:
+	return controller!=null and player_input!=null and player.idle() and not _dirty and _human_turn() and not hud.blocks_tap(at) and player_input.move_plan.can_begin_drag(player_input,at)
+
+
+func _on_plan_drag(at: Vector2) -> void:
+	if controller!=null and player_input!=null and player.idle() and not _dirty and _human_turn() and not hud.blocks_tap(at):
+		player_input.plan_drag(at)
+
+
+func _move_preview(id: int,at: Vector2,active: bool) -> void:
+	if not player.views.has(id):
+		return
+	var f := controller.state.figure(id)
+	if f==null:
+		return
+	var view: FigureView=player.views[id]
+	# Only the presentation node moves; undo snaps it back before any event.
+	view.position=TableSpace.to_world(at,controller.state.board.height_at(at)) if active else TableSpace.to_world(f.pos,f.elevation)
 
 
 func _update_status() -> void:

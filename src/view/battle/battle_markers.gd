@@ -4,9 +4,11 @@ extends Node3D
 
 var _layers: Array[MultiMeshInstance3D] = []
 var board: Board
+var _plan: Node3D
 
 
 func clear() -> void:
+	clear_move_plan()
 	for layer in _layers:
 		layer.visible = false
 		layer.queue_free()
@@ -53,3 +55,50 @@ func show_points(points: Array[Vector2], color: Color, radius: float, append: bo
 	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(marker)
 	_layers.append(marker)
+
+
+## Keep the expensive reachable-area multimesh intact while the finger moves.
+func clear_move_plan() -> void:
+	if is_instance_valid(_plan):
+		remove_child(_plan)
+		_plan.queue_free()
+	_plan=null
+
+
+func show_move_plan(path: PackedVector2Array) -> void:
+	clear_move_plan()
+	if path.is_empty():
+		return
+	_plan=Node3D.new()
+	add_child(_plan)
+	var gold := Color("f6d487")
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color=gold
+	var ring := TorusMesh.new()
+	ring.inner_radius=0.52
+	ring.outer_radius=0.66
+	ring.rings=24
+	ring.ring_segments=6
+	var end := MeshInstance3D.new()
+	end.mesh=ring
+	end.material_override=mat
+	end.position=TableSpace.to_world(path[-1],board.height_at(path[-1])+0.10)
+	end.scale.y=0.28
+	end.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_plan.add_child(end)
+	if path.size()<2:
+		return
+	var shape := ImmediateMesh.new()
+	shape.surface_begin(Mesh.PRIMITIVE_LINES,mat)
+	for i in range(1,path.size()):
+		# A linked edge can jump across the board: do not draw a false route.
+		if path[i-1].distance_to(path[i])>1.5:
+			continue
+		for p in [path[i-1],path[i]]:
+			shape.surface_add_vertex(TableSpace.to_world(p,board.height_at(p)+0.12))
+	shape.surface_end()
+	var line := MeshInstance3D.new()
+	line.mesh=shape
+	line.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_plan.add_child(line)

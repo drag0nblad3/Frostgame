@@ -37,7 +37,12 @@ var _step: Button
 var _watch: Button
 var _buttons := {}
 var _blocks: Array[Control] = []
-var _action_row: HFlowContainer
+var _action_row: GridContainer
+var _combat_body: BoxContainer
+var _dock: PanelContainer
+var _summary: Label
+var _mode := ""
+var _last_actions: Array[String]=[]
 var _action_scroll: ScrollContainer
 var _safe: PhoneSafeArea
 var _log_panel: PanelContainer
@@ -73,7 +78,7 @@ func _ready() -> void:
 	var top := HFlowContainer.new()
 	top.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	col.add_child(top)
-	_status = _label(20)
+	_status = _label(23)
 	_status.modulate = Color(1.0, 0.94, 0.80)
 	_status.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
@@ -90,8 +95,7 @@ func _ready() -> void:
 	_menu=_button("Menu",_open_commands)
 	_menu.custom_minimum_size=Vector2(100,48)
 	top.add_child(_menu)
-	var home := _button("Home",func() -> void: title_requested.emit())
-	top.add_child(home)
+	# Home and Maps remain in the full command menu; keep the board header compact.
 	var scenarios := OptionButton.new()
 	_scenarios = scenarios
 	scenarios.fit_to_longest_item=false
@@ -106,13 +110,11 @@ func _ready() -> void:
 	top.add_child(scenarios)
 	# New skirmish uses the visible map browser; retain this selector for campaign choice.
 	scenarios.hide()
-	var map := _button("Maps",func() -> void:new_game_pressed.emit())
-	top.add_child(map)
 	var inspect := _button("Inspect", func() -> void: inspect_pressed.emit())
 	ActionArt.apply(inspect,"inspect",_spell_catalog)
 	top.add_child(inspect)
 	_blocks.append(top)
-	_objective = _label(16)
+	_objective = _label(20)
 	_objective.modulate = Color(0.85, 0.90, 0.94)
 	_objective.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_objective)
@@ -139,17 +141,35 @@ func _ready() -> void:
 	_toast_timer.one_shot = true
 	_toast_timer.timeout.connect(func() -> void: _toast.hide())
 	add_child(_toast_timer)
+	_combat_body=BoxContainer.new()
+	_combat_body.vertical=true
+	_combat_body.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_combat_body.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	col.add_child(_combat_body)
 	var spacer := Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	spacer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	col.add_child(spacer)
+	spacer.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	spacer.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	spacer.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	_combat_body.add_child(spacer)
+	_dock=PanelContainer.new()
+	_dock.mouse_filter=Control.MOUSE_FILTER_STOP
+	_combat_body.add_child(_dock)
+	_blocks.append(_dock)
+	var dock_col := VBoxContainer.new()
+	dock_col.add_theme_constant_override("separation",8)
+	_dock.add_child(dock_col)
+	_summary=_label(22)
+	_summary.modulate=Color("e5c58a")
+	_summary.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_summary.hide()
+	dock_col.add_child(_summary)
 	var panel := PanelContainer.new()
 	_log_panel = panel
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	panel.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	panel.custom_minimum_size = Vector2(360, 0)
+	panel.custom_minimum_size = Vector2(0, 0)
 	panel.visible = false
-	col.add_child(panel)
+	dock_col.add_child(panel)
 	_log = _label(16)
 	_log.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	panel.add_child(_log)
@@ -158,30 +178,33 @@ func _ready() -> void:
 	_roll_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_roll_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_roll_panel.hide()
-	col.add_child(_roll_panel)
+	dock_col.add_child(_roll_panel)
 	_roll_label = _label(17)
 	_roll_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_roll_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_roll_label.custom_minimum_size.x = 330
+	_roll_label.custom_minimum_size.x = 0
 	_roll_panel.add_child(_roll_label)
 	_roll_timer = Timer.new()
 	_roll_timer.one_shot = true
 	_roll_timer.timeout.connect(func() -> void: _roll_panel.hide())
 	add_child(_roll_timer)
-	_hint = _label(20)
+	_hint = _label(22)
 	_hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_hint)
+	dock_col.add_child(_hint)
 	_blocks.append(_hint)
-	_context_tip = _label(15)
+	_context_tip = _label(18)
 	_context_tip.modulate = Color(0.72, 0.87, 0.94)
 	_context_tip.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_context_tip.hide()
-	col.add_child(_context_tip)
+	dock_col.add_child(_context_tip)
 	_action_scroll=ScrollContainer.new()
 	_action_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 	_action_scroll.vertical_scroll_mode=ScrollContainer.SCROLL_MODE_AUTO
-	col.add_child(_action_scroll)
-	_action_row = HFlowContainer.new()
+	dock_col.add_child(_action_scroll)
+	_action_row = GridContainer.new()
+	_action_row.columns=2
+	_action_row.add_theme_constant_override("h_separation",10)
+	_action_row.add_theme_constant_override("v_separation",10)
 	_action_row.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_action_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_action_scroll.add_child(_action_row)
@@ -191,7 +214,15 @@ func _ready() -> void:
 	for key: String in action_labels:
 		var button := _button(action_labels[key], func() -> void: action_pressed.emit(key))
 		ActionArt.apply(button,key,_spell_catalog)
-		button.toggle_mode = key not in ["reload", "end", "pass_phase", "group", "group_begin", "group_cancel", "items", "items_back"]
+		button.custom_minimum_size=Vector2(0,72)
+		button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		button.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		button.tooltip_text=action_labels[key]
+		button.toggle_mode = key in ["move","fight","shoot","collect","drop","exit","run_for_it","run_talisman","fight_hand","ammo_shot","wraith_shot"]
+		if key in ["move_confirm","attack_confirm"]:
+			button.add_theme_stylebox_override("normal",BattleTheme.panel(Color("305664"),Color("e5c58a")))
+		elif key in ["move_undo","attack_cancel"]:
+			button.add_theme_stylebox_override("normal",BattleTheme.panel(Color("493e36"),Color("c9a17e")))
 		_action_row.add_child(button)
 		_buttons[key] = button
 
@@ -242,8 +273,29 @@ func set_auto(on: bool) -> void:
 	_auto.set_pressed_no_signal(on)
 
 
+func set_hint(hint: String) -> void:
+	_hint.text=hint
+
+
+func set_active_summary(f: Figure) -> void:
+	_summary.visible=f!=null
+	if f==null:
+		return
+	var text := "%s  ·  HP %d/%d\n%d ACTIONS  ·  MOVE %.1f″\nF %+d   S %+d   A %d   W %+d"%[f.label(),f.health,f.def.health,f.actions_left,MoveRules.allowance(f),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
+	if f.ranged!=null:
+		text+="\n%s · %.0f″%s"%[f.ranged.name,f.ranged.range_in," · RELOAD" if f.ranged.needs_reload and not f.loaded else ""]
+	if f.treasure_id>=0:
+		text+=" · LOOT %d"%f.carried_treasures().size()
+	if f.poisoned:
+		text+=" · POISONED"
+	_summary.text=text
+
+
 func set_actions(available: Array[String], mode: String, hint: String) -> void:
 	_hint.text = hint
+	var changed := _mode!=mode or _last_actions!=available
+	_mode=mode
+	_last_actions.assign(available)
 	_context_tip.text = FieldGuide.tip(mode)
 	_context_tip.visible = _tips_enabled and not _context_tip.text.is_empty()
 	for key: String in _buttons:
@@ -251,8 +303,12 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 		b.disabled = not available.has(key)
 		b.visible = available.has(key)
 		b.set_pressed_no_signal(key == mode and b.toggle_mode)
-	_action_scroll.scroll_vertical=0
-	call_deferred("_fit_actions")
+	if changed:
+		for i in available.size():
+			if _buttons.has(available[i]):
+				_action_row.move_child(_buttons[available[i]],i)
+		_action_scroll.scroll_vertical=0
+		call_deferred("_fit_actions")
 
 
 func blocks_tap(at: Vector2) -> bool:
@@ -288,8 +344,8 @@ func _label(size: int) -> Label:
 func _button(text: String, on_press: Callable) -> Button:
 	var b := Button.new()
 	b.text = text
-	b.custom_minimum_size = Vector2(88, 48)
-	b.add_theme_font_size_override("font_size", 18)
+	b.custom_minimum_size = Vector2(108, 62)
+	b.add_theme_font_size_override("font_size", 22)
 	b.pressed.connect(on_press)
 	return b
 
@@ -339,11 +395,13 @@ func _fit_actions() -> void:
 	if not is_inside_tree() or get_viewport()==null:
 		return
 	var bounds := PhoneSafeArea.safe_rect(get_viewport(),10)
-	# Constrain long spell/item lists to a scrollable dock rather than letting
-	# them occupy the entire battlefield. Short lists use one row.
-	var visible_count := 0
-	for button in _action_row.get_children():
-		if button.visible:
-			visible_count+=1
-	var rows := maxi(1,ceili(float(visible_count)/maxf(1.0,floorf(bounds.size.x/150.0))))
-	_action_scroll.custom_minimum_size.y=minf(float(rows)*54.0,bounds.size.y*0.26)
+	var wide := bounds.size.x>=bounds.size.y*1.25
+	_combat_body.vertical=not wide
+	_dock.custom_minimum_size.x=clampf(bounds.size.x*0.29,310.0,420.0) if wide else 0.0
+	_dock.size_flags_vertical=Control.SIZE_EXPAND_FILL if wide else Control.SIZE_FILL
+	_dock.size_flags_horizontal=Control.SIZE_FILL
+	_action_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL if wide else Control.SIZE_FILL
+	var long_list := _mode in ["spell_menu","items_menu"] or _last_actions.size()>8
+	_action_row.columns=1 if wide and long_list else (2 if wide else maxi(2,mini(4,floori(bounds.size.x/190.0))))
+	var rows := maxi(1,ceili(float(_last_actions.size())/float(_action_row.columns)))
+	_action_scroll.custom_minimum_size.y=0.0 if wide else minf(float(rows)*82.0,bounds.size.y*0.30)

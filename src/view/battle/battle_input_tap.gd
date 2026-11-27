@@ -50,10 +50,11 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			"select": return bi.c.activate(id)
 			"fight_hand": return bi.c.fight_hand(id)
 			"gutter_fight": return GearActions.gutter_fight(bi.c,id)
-			"fight": return bi.c.fight(id)
+			"fight", "shoot":
+				bi.plan_attack(id)
+				return false
 			"ammo_shot": return bi.c.shoot(id,false,true)
 			"wraith_shot": return bi.c.shoot(id,true)
-			"shoot": return bi.c.shoot(id)
 	var hit: Variant = bi._surface_at(screen)
 	if hit == null:
 		return false
@@ -155,7 +156,10 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 	if bi.mode in ["move", "exit"]:
 		var n := MovePlanner.node_at(at)
 		if bi.nodes.has(n):
-			return bi.c.move_to(n) if bi.mode == "move" else bi.c.exit_table(n)
+			if bi.mode=="move":
+				bi.move_plan.choose(bi,at)
+				return false
+			return bi.c.exit_table(n)
 	return false
 
 

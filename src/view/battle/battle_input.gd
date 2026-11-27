@@ -2,6 +2,11 @@ class_name BattleInput
 extends RefCounted
 ## Player intents and legal-target previews. All mutations go through GameController.
 
+signal move_preview_changed(id: int,at: Vector2,active: bool)
+
+var move_plan := BattleMovePlan.new()
+var attack_target := -1
+
 var c: GameController
 var hud: BattleHud
 var camera: Camera3D
@@ -38,11 +43,15 @@ func _init(controller: GameController, command_bar: BattleHud, cam: Camera3D, ov
 
 
 func lock(hint: String) -> void:
+	move_plan.clear(self)
+	attack_target=-1
 	hud.set_actions([], "", hint)
 	markers.clear()
 
 
 func refresh() -> void:
+	move_plan.clear(self)
+	attack_target=-1
 	BattleInputMenu.refresh(self)
 
 
@@ -51,7 +60,50 @@ func preview() -> void:
 
 
 func action(key: String) -> bool:
+	if key=="move_confirm":
+		return available.has(key) and move_plan.confirm(self)
+	if key=="move_undo" and available.has(key):
+		refresh()
+		return false
+	if key=="attack_cancel" and available.has(key):
+		refresh()
+		return false
+	if key=="attack_confirm" and available.has(key):
+		var target := attack_target
+		attack_target=-1
+		var ok := c.fight(target) if mode=="fight" else c.shoot(target)
+		if not ok:
+			refresh()
+		return ok
 	return BattleInputActions.action(self, key)
+
+
+func plan_attack(id: int) -> void:
+	var f := c.state.active()
+	var t := c.state.figure(id)
+	if f==null or t==null:
+		return
+	if not (c.can_fight(id) if mode=="fight" else c.can_shoot(id)):
+		return
+	attack_target=id
+	available.assign(["attack_confirm","attack_cancel"])
+	var info := "%s · HP %d/%d · Fight %+d · Armour %d"%[t.label(),t.health,t.def.health,t.effective_fight(),t.effective_armour()]
+	if mode=="shoot":
+		info+="\nRange %.1f″ / %.0f″ · %s"%[Shooting.distance(f,t),f.ranged.range_in,f.ranged.name]
+		var los := LineOfSight.check_figures(c.state.board,f,t)
+		info+=" · cover %+d"%Shooting.target_mod(los)
+	else:
+		info+="\nOpposed Fight rolls · weapon %s"%f.melee.name
+	markers.show_move_plan(PackedVector2Array([t.pos]))
+	hud.set_actions(available,mode,info+"\nConfirm attack to roll, or tap another legal target.")
+
+
+func plan_drag(screen: Vector2) -> void:
+	if mode!="move":
+		return
+	var hit: Variant=_surface_at(screen)
+	if hit!=null:
+		move_plan.choose(self,hit)
 
 
 func tap(screen: Vector2) -> bool:
