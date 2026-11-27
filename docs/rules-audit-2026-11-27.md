@@ -1,0 +1,5 @@
+# Superseded initial rule-audit branch
+
+The earlier rules-fidelity-deployment implementation (PR #29) overlapped with PR #30. The consolidated implementation uses PR #30's controller-owned deployment, live deployment panel, physical tower, shared weapon/spell figure cover, and newer scenario data and tests. Do not reintroduce the competing DeploymentPlan, screen, or figure-screening classes. See [the current rulebook audit](rulebook-audit-2026-11-27.md) and [scenario layout review](scenario-layout-audit.md).
+
+Retained review findings: ordinary melee ties deal simultaneous damage and retain contact (Slippery Boots is an exception); shots into combat already randomize participants; haunted-house printed encounter roll ranges overlap at 17, and the existing 7–16 / 17–20 interpretation is retained. Verify figure screening through topology-altered rays and Plane Walk independently. Authored treasure placement, optional corner deployment, partial visibility, and tabletop choices remain outstanding.
