@@ -132,6 +132,8 @@ static func hoof(c: GameController,initial: bool) -> void:
 	elif not s.board.floor_layout.is_empty():
 		if not RealityFloorTerrain.move_disc(c,piece,target):
 			return
+		s.board.invalidate_terrain()
+		c.emit("terrain_changed",{"spell":"reality_hoof","created":true})
 	else:
 		piece.rect.position=target-Vector2.ONE*1.5
 		s.board.invalidate_terrain()

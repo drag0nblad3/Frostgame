@@ -36,6 +36,8 @@ static func _act(c: GameController,f: Figure) -> bool:
 		if f.side<0:
 			PackRules.remember(c.state,f,enemy)
 		return c.fight(enemy.id)
+	if f.side>=0 and RealityCracks.exit_center(c):
+		return true
 	if f.side>=0 and c.can_drink_well():
 		return c.drink_well()
 	if f.side>=0 and c.break_ice():
@@ -69,6 +71,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 	if reach.cost.is_empty():
 		return false
 	var extracting:=f.treasure_id>=0 or (f.side>=0 and RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state)) or (f.side==0 and RedKingVeil.active(c.state)) or (f.side>=0 and RedKingHerded.active(c.state) and f.pos.y-float(c.state.scenario_data.get("herd_veil",0.0))<8.0)
+	var center_escape:=f.side>=0 and RealityCracks.id(c.state)==12
 	var safe_route:=RedKingVeil.active(c.state) or RedKingHerded.active(c.state)
 	if extracting:
 		var exits := c.floor_exit_nodes()
@@ -97,7 +100,11 @@ static func _move(c: GameController,f: Figure) -> bool:
 		var distance: float = long_route.cost[n]
 		if distance>=best:
 			continue
-		if extracting:
+		if center_escape:
+			if layout.point(n).distance_to(c.state.board.size*0.5)<=Figure.BASE_RADIUS+0.01:
+				goal=n
+				best=distance
+		elif extracting:
 			if LayeredLoot.is_exit(c.state,layout,n,f.side):
 				goal=n
 				best=distance

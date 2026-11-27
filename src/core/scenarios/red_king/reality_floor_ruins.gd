@@ -39,6 +39,8 @@ static func valid(s: GameState,p: TerrainPiece,offset: Vector2) -> bool:
 			return false
 	var box:=AABB(Vector3(target.position.x,p.base_height+0.002,target.position.y),Vector3(target.size.x,maxf(0.01,p.kind.height-0.002),target.size.y))
 	var original:=FloorWall.solid_for(row) if not row.is_empty() else AABB()
+	if p.kind.blocks_move and RealityFloorTerrain.blocks_connection(layout,box,original):
+		return false
 	for solid in layout.solids:
 		if solid!=original and solid.intersects(box):
 			return false

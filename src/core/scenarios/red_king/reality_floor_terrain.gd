@@ -22,7 +22,7 @@ static func place_disc(c: GameController,p: TerrainPiece) -> bool:
 	candidates.sort_custom(func(a: FloorSurface,b: FloorSurface) -> bool: return a.level<b.level)
 	for deck in candidates:
 		var box:=AABB(Vector3(p.rect.position.x,deck.level+0.002,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height-0.002,p.rect.size.y))
-		var blocked:=false
+		var blocked:=blocks_connection(layout,box,AABB())
 		for solid in layout.solids:
 			if solid.intersects(box):
 				blocked=true
@@ -94,3 +94,19 @@ static func relocate_touching(c: GameController,p: TerrainPiece) -> void:
 				best=n
 		if best!=null:
 			c._loot.relocate_ground(t,layout.point(best),t.surface_id)
+
+
+## Keep existing walk/stair/climb links usable when dynamic obstacles
+## materialize. Links that belong to the moved solid are regenerated.
+static func blocks_connection(layout: FloorLayout,volume: AABB,original: AABB) -> bool:
+	var padding:=Vector3(Figure.BASE_RADIUS,1.6,Figure.BASE_RADIUS)
+	var expanded:=AABB(volume.position-padding,volume.size+Vector3(padding.x*2,padding.y,padding.z*2))
+	for n: Vector3i in layout.links:
+		var start:=layout.world(n)
+		for edge: Dictionary in layout.links[n]:
+			var end:=layout.world(edge["to"])
+			if original.has_volume() and (original.grow(Figure.BASE_RADIUS+0.001).has_point(start) or original.grow(Figure.BASE_RADIUS+0.001).has_point(end)):
+				continue
+			if LayeredSight.intersects(start+Vector3.UP*0.01,end+Vector3.UP*0.01,expanded):
+				return true
+	return false

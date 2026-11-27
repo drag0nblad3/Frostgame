@@ -47,7 +47,7 @@ static func teleport_legal(s: GameState,f: Figure,n: Vector3i,limit: float=24.0)
 		return false
 	var to:=layout.world(n)
 	var from:=Vector3(f.pos.x,f.elevation,f.pos.y)
-	return from.distance_to(to)>=0.1 and LineOfSight.floor_point_visible(s.board,layout,f,to,limit)
+	return RealityCrackGeometry.world_distance(s.board,from,to)>=0.1 and LineOfSight.floor_point_visible(s.board,layout,f,to,limit)
 
 
 static func teleports(s: GameState,f: Figure,limit: float=24.0,index: int=-1,first_only: bool=false) -> Array[Vector3i]:
