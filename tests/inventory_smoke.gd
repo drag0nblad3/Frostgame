@@ -53,6 +53,13 @@ func _process(_delta: float) -> bool:
 		printerr("Inventory controls failed")
 		quit(1)
 		return true
+	var before := JSON.stringify(scene._campaign.data)
+	panel.loot.select(1)
+	panel._refresh_item_buttons()
+	if panel.item_detail.text.is_empty() or JSON.stringify(scene._campaign.data)!=before:
+		printerr("Equipment selection changed the save or lacks a description")
+		quit(1)
+		return true
 	if not CampaignInventory.assign_item(scene._campaign.data, 1, 2, scene._figures):
 		quit(1)
 		return true

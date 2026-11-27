@@ -71,7 +71,8 @@
       "sell": 150,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Create a mobile Glow ward that forces nearby demons and undead to retreat. May go out at turn end."
     },
     "gear_rk_cloak_of_tattered_shadows": {
       "name": "Cloak of Tattered Shadows",
@@ -82,7 +83,8 @@
         "shoot_defence": 2
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Improves defence against shooting by 2."
     },
     "gear_rk_golden_incunabula": {
       "name": "Golden Incunabula",
@@ -92,7 +94,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "apprentice_only": true
+      "apprentice_only": true,
+      "help": "Bind to a spell permanently; the apprentice gains +1 when casting that spell."
     },
     "gear_rk_the_feather_blade": {
       "name": "The Feather Blade",
@@ -102,7 +105,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "slot_discount": 1
+      "slot_discount": 1,
+      "help": "A two-handed weapon that occupies one fewer equipment slot."
     },
     "gear_rk_talisman_of_speed": {
       "name": "Talisman of Speed",
@@ -111,7 +115,8 @@
       "sell": 100,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Once per battle, double the distance of a Run For It action."
     },
     "gear_rk_armring_of_strength": {
       "name": "Armring of Strength",
@@ -122,7 +127,8 @@
         "fight_test": 5
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Adds 5 to Fight stat tests, not ordinary combat rolls."
     },
     "gear_rk_mask_of_many_faces": {
       "name": "Mask of Many Faces",
@@ -133,7 +139,8 @@
         "support_reduction": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Reduces the opponent's advantage from supporting fighters."
     },
     "gear_rk_dazzling_cape": {
       "name": "Dazzling Cape",
@@ -142,7 +149,8 @@
       "sell": 100,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Once per battle, escape melee with a normal movement action."
     },
     "gear_rk_blood_beetle": {
       "name": "Blood Beetle",
@@ -153,7 +161,8 @@
         "poison_immunity": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Prevents poisoning while its magic is active."
     },
     "gear_rk_quiver_of_the_hunter": {
       "name": "Quiver of the Hunter",
@@ -162,7 +171,8 @@
       "sell": 75,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Holds up to four enchanted missiles instead of one. Use the enchanted shot option to spend a missile."
     },
     "gear_rk_bronze_star_of_the_apprentice": {
       "name": "Bronze Star of the Apprentice",
@@ -173,7 +183,8 @@
         "cast_failure_cap": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Limits damage from failed spellcasting."
     },
     "gear_rk_mind_lock_collar": {
       "name": "Mind Lock Collar",
@@ -182,7 +193,8 @@
       "sell": 50,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Animal equipment; protects against Mind Control and Suggestion."
     },
     "gear_rk_lightning_brooch": {
       "name": "Lightning Brooch",
@@ -193,7 +205,8 @@
         "elemental_resistance": 2
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Reduces elemental damage by 2. Incompatible with heavy armour and other elemental resistance."
     },
     "gear_rk_mindguard_shield": {
       "name": "Mindguard Shield",
@@ -204,7 +217,8 @@
         "resistance": 4
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Adds 4 to applicable spell resistance rolls."
     },
     "gear_rk_icon_of_the_sun": {
       "name": "Icon of the Sun",
@@ -216,7 +230,8 @@
         "energy_drain_immunity": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Helps against undead in melee and prevents energy drain."
     },
     "gear_rk_enchanted_scroll_wax_6": {
       "name": "Enchanted Scroll Wax",
@@ -227,7 +242,8 @@
       "live": true,
       "expansion": "red_king",
       "vault_only": true,
-      "material": true
+      "material": true,
+      "help": "Crafting supply. Spend one use on a successful Write Scroll ritual to create a scroll cast at 15."
     },
     "gear_rk_slippery_boots": {
       "name": "Slippery Boots",
@@ -236,7 +252,8 @@
       "sell": 50,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Offers a withdrawal of up to three inches after melee, including ties."
     },
     "gear_rk_potion_drinker_staff": {
       "name": "Potion Drinker Staff",
@@ -247,7 +264,8 @@
         "damage": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Adds 1 weapon damage. Sacrifice a potion before battle to store its effect for one use."
     },
     "gear_rk_bottle_imp": {
       "name": "Bottle Imp",
@@ -256,7 +274,8 @@
       "sell": 175,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Consume the bottle to release an uncontrolled imp at a legal nearby position."
     },
     "gear_rk_enchanted_teetotum": {
       "name": "Enchanted Teetotum",
@@ -265,7 +284,8 @@
       "sell": 100,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Once per battle, pre-arm a binding reroll of the next random heading."
     },
     "gear_rk_sticky_finger_gloves": {
       "name": "Sticky Finger Gloves",
@@ -274,7 +294,8 @@
       "sell": 50,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Helps recover treasure during ordinary end-of-battle settlement."
     },
     "gear_rk_enchanted_vials_6": {
       "name": "Enchanted Vials",
@@ -285,7 +306,8 @@
       "live": true,
       "expansion": "red_king",
       "vault_only": true,
-      "material": true
+      "material": true,
+      "help": "Crafting supply. Potions brewed with a vial may survive their first use on a 19 or 20."
     },
     "gear_rk_gutter_flail": {
       "name": "Gutter Flail",
@@ -294,7 +316,8 @@
       "sell": 100,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Offers a free fight immediately after moving into new melee contact."
     },
     "gear_rk_hypnotic_puppet": {
       "name": "Hypnotic Puppet",
@@ -304,7 +327,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Nearby targets suffer a penalty to initial spell resistance; failed casting carries an additional risk."
     },
     "gear_rk_lifelong_plant": {
       "name": "Lifelong Plant",
@@ -314,7 +338,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "vault_only": true
+      "vault_only": true,
+      "help": "Choose a non-wizard casualty to receive +1 on survival. The plant withers on a natural 20."
     },
     "gear_rk_surefoot_boots": {
       "name": "Surefoot Boots",
@@ -325,7 +350,8 @@
         "move_test": 5
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Adds 5 to Move stat tests, not movement distance."
     },
     "gear_rk_golden_fangs_6": {
       "name": "Golden Fangs",
@@ -336,7 +362,8 @@
       "live": true,
       "expansion": "red_king",
       "caster_only": true,
-      "material": true
+      "material": true,
+      "help": "Use one on a successful Animate Skull cast to give the skull +1 Fight. Up to six occupy one slot."
     },
     "gear_rk_bracelet_of_vigour": {
       "name": "Bracelet of Vigour",
@@ -348,7 +375,8 @@
         "vigour": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Adds 8 to Health tests and reduces the optional Wounded threshold to 2."
     },
     "gear_rk_amulet_of_elemental_energy_absorption": {
       "name": "Amulet of Elemental Energy Absorption",
@@ -357,7 +385,8 @@
       "sell": 150,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Reduces elemental damage by 1. Arm it to risk absorbing a whole hit; failure destroys it and increases damage."
     },
     "gear_rk_mantle_of_the_bear_or_leopard": {
       "name": "Mantle of the Bear (or Leopard)",
@@ -366,7 +395,8 @@
       "sell": 200,
       "bonus": {},
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Bind to bear or snow leopard. Under the optional companion classification rule, a matching companion counts as a standard soldier."
     },
     "gear_rk_construct_spikes": {
       "name": "Construct Spikes",
@@ -376,7 +406,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "permanent": true
+      "permanent": true,
+      "help": "Permanently graft onto a construct to grant the charging Horns trait."
     },
     "gear_rk_burning_icon": {
       "name": "Burning Icon",
@@ -388,7 +419,8 @@
       },
       "live": true,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Makes the wearer's Banish resistance test harder by 2."
     },
     "gear_rk_extended_scroll": {
       "name": "Extended Scroll",
@@ -398,7 +430,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Once per battle, extend a conjured Bridge to nine inches; that bridge collapses only on a 1."
     },
     "gear_rk_book_of_the_foulhorn": {
       "name": "Book of the Foulhorn",
@@ -408,7 +441,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "vault_only": true
+      "vault_only": true,
+      "help": "Vault item. Permits one permanent Foulhorn specialist for 200 gc; it may injure an ally before battle."
     },
     "gear_rk_ivory_hand": {
       "name": "Ivory Hand",
@@ -418,7 +452,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Improves Push attacks and damages targets stopped by obstacles. Can be permanently grafted to a magic staff for 500 gc."
     },
     "gear_rk_ring_of_elemental_fire": {
       "name": "Ring of Elemental Fire",
@@ -428,7 +463,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Conjured Walls inflict elemental damage on contact."
     },
     "gear_rk_ice_crystal_pin": {
       "name": "Ice-Crystal Pin",
@@ -439,7 +475,8 @@
         "elemental_resistance": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Reduces elemental damage by 1."
     },
     "gear_rk_book_of_wisdom": {
       "name": "Book of Wisdom",
@@ -449,7 +486,8 @@
       "bonus": {},
       "live": true,
       "expansion": "red_king",
-      "wizard_only": true
+      "wizard_only": true,
+      "help": "Reduces specialist usage for one eligible monk or mystic warrior when their content is available."
     },
     "gear_rk_amulet_of_charisma": {
       "name": "Amulet of Charisma",
@@ -463,7 +501,8 @@
       "artefact": true,
       "unlock_tn": 18,
       "expansion": "red_king",
-      "wizard_only": true
+      "wizard_only": true,
+      "help": "Raises the specialist limit by one when worn by the wizard, but reduces Will by 1."
     },
     "gear_rk_scroll_shield": {
       "name": "Scroll Shield",
@@ -474,7 +513,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 14,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Roll its spell during preparation. Nearby friendly casters can consume it as a scroll; the bearer starts with 1 less Health."
     },
     "gear_rk_ring_of_destiny": {
       "name": "Ring of Destiny",
@@ -486,7 +526,8 @@
       "artefact": true,
       "unlock_tn": 20,
       "expansion": "red_king",
-      "wizard_only": true
+      "wizard_only": true,
+      "help": "Awards the wizard 20 extra XP after a game, but worsens some survival results."
     },
     "gear_rk_soulchill_blade": {
       "name": "Soulchill Blade",
@@ -497,7 +538,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 12,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Uses the target's Will to determine effective armour; successful damage can weaken Fight, and kills can penalize the wielder's Will."
     },
     "gear_rk_wraith_bow": {
       "name": "Wraith Bow",
@@ -510,7 +552,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 16,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Adds 1 damage. Once per battle, shoot through one obstacle and then test against the bow's curse."
     },
     "gear_rk_vampire_staff": {
       "name": "Vampire Staff",
@@ -522,7 +565,8 @@
       "artefact": true,
       "unlock_tn": 18,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Sacrifice a nearby eligible ally's Health to empower casting or resistance. Surviving donors desert."
     },
     "gear_rk_mystic_shears": {
       "name": "Mystic Shears",
@@ -534,7 +578,8 @@
       "artefact": true,
       "unlock_tn": 18,
       "expansion": "red_king",
-      "vault_only": true
+      "vault_only": true,
+      "help": "Once per preparation, injure an eligible specialist to add 2 to a pre-battle cast; a permanent injury is possible."
     },
     "gear_rk_creature_mask": {
       "name": "Creature Mask",
@@ -546,7 +591,8 @@
       "artefact": true,
       "unlock_tn": 16,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Can redirect an uncontrolled creature's melee attack to an unmasked target at a cumulative Will cost."
     },
     "gear_rk_pulsing_gem": {
       "name": "Pulsing Gem",
@@ -558,7 +604,8 @@
       "artefact": true,
       "unlock_tn": 18,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Four rechargeable power points for Blink only, with optional extra distance and direction reroll. Use weakens shooting defence."
     },
     "gear_rk_staff_of_the_illusionist": {
       "name": "Staff of the Illusionist",
@@ -570,7 +617,8 @@
       "artefact": true,
       "unlock_tn": 18,
       "expansion": "red_king",
-      "wizard_only": true
+      "wizard_only": true,
+      "help": "Allows two illusions in a warband at the cost of 2 wizard Will; increases Fool's Gold range."
     },
     "gear_rk_wand_of_brilliant_power_3": {
       "name": "Wand of Brilliant Power (3)",
@@ -582,7 +630,8 @@
       "artefact": true,
       "unlock_tn": 12,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Three rechargeable power points. Adds 2 to both Word spells; only wand power can empower those casts."
     },
     "gear_rk_tiger_eye_ring": {
       "name": "Tiger Eye Ring",
@@ -594,7 +643,8 @@
       "artefact": true,
       "unlock_tn": 20,
       "expansion": "red_king",
-      "wizard_only": true
+      "wizard_only": true,
+      "help": "Extends targeted sight around some obstacles and moves a Wizard Eye along its host. Each use risks damage."
     },
     "gear_rk_circlet_of_defence": {
       "name": "Circlet of Defence",
@@ -606,7 +656,8 @@
       "artefact": true,
       "unlock_tn": 22,
       "expansion": "red_king",
-      "wizard_only": true
+      "wizard_only": true,
+      "help": "Bind to one eligible spell for immunity. The wizard cannot cast that spell and starts with 2 less Health."
     },
     "gear_rk_sword_of_woe": {
       "name": "Sword of Woe",
@@ -619,7 +670,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 18,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Adds 2 Fight and 1 Will, but losses harm the bearer and a natural 1 can harm a supporting ally."
     },
     "gear_rk_mask_of_death": {
       "name": "Mask of Death",
@@ -630,7 +682,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 14,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Toggle undead status in place of a move. Wearing it at any point removes the wizard's usual survival bonus."
     },
     "gear_rk_ring_of_levitation": {
       "name": "Ring of Levitation",
@@ -643,7 +696,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 16,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Grants levitation movement benefits but reduces Will by 3."
     },
     "gear_rk_skull_staff": {
       "name": "Skull Staff",
@@ -655,7 +709,8 @@
       "artefact": true,
       "unlock_tn": 16,
       "expansion": "red_king",
-      "wizard_only": true
+      "wizard_only": true,
+      "help": "Expands skull and zombie limits, strengthens summons and modifies their casting rolls."
     },
     "gear_rk_gloves_of_the_worm_rider": {
       "name": "Gloves of the Worm Rider",
@@ -667,7 +722,8 @@
       "artefact": true,
       "unlock_tn": 20,
       "expansion": "red_king",
-      "caster_only": true
+      "caster_only": true,
+      "help": "Uncontrolled worms avoid the wearer. Once per battle, place a delayed worm arrival marker; survival rolls carry an extra risk."
     },
     "gear_rk_golden_bottle_of_yens": {
       "name": "Golden Bottle of Yens",
@@ -678,7 +734,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 16,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Brew two doses into the bottle. Drinking requires a Will test; failure poisons the drinker."
     },
     "gear_rk_sword_of_elemental_fire": {
       "name": "Sword of Elemental Fire",
@@ -689,7 +746,8 @@
       "live": true,
       "artefact": true,
       "unlock_tn": 16,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "Charges when Elementalist spells are cast. Releases stored elemental damage on a successful hit; a natural 1 can injure the bearer."
     },
     "gear_rk_recruit_staff": {
       "name": "Recruit's magical staff",
@@ -700,7 +758,8 @@
         "fight": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "A magical staff granting +1 Fight when used."
     },
     "gear_rk_recruit_hand_weapon": {
       "name": "Recruit's magical hand weapon",
@@ -711,7 +770,8 @@
         "fight": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "A magical hand weapon granting +1 Fight when used."
     },
     "gear_rk_recruit_two_handed": {
       "name": "Recruit's magical two handed",
@@ -722,7 +782,8 @@
         "fight": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "A magical two-handed weapon granting +1 Fight when used."
     },
     "gear_rk_recruit_dagger": {
       "name": "Recruit's magical dagger",
@@ -733,7 +794,8 @@
         "fight": 1
       },
       "live": true,
-      "expansion": "red_king"
+      "expansion": "red_king",
+      "help": "A magical dagger granting +1 Fight when used."
     }
   }
 }

@@ -254,3 +254,6 @@ The installed-catalog regression caught a second status gate in FigureDb that st
 
 ### Campaign headquarters navigation
 The campaign dialog is now divided into Expedition, Warband, Equipment, Rituals, Base, and Rules & chronicle. Pending reward decisions and in-progress battles return to the read-only/settlement overview. The expedition page places objectives, blockers, departure and contextual preparation shortcuts together. The chronicle tracks chapter status; base art labels inaccessible benefits, and stand-alone expansion briefings no longer assert generic treasure victory rules. Touch targets and bounded controls support smaller safe areas. Inventory smoke exercises section navigation; device rendering remains to be verified.
+
+### Equipment and player guidance
+The equipment page now displays original summaries for all 62 registered expansion gear entries, including random recruit weapons, and shows the selected item's availability. Recipient choices are checked against the existing assignment rules on a deep copy of the campaign. Shopping controls hide when supplies are inaccessible; the current item stays selected when possible. The field guide adds expansion-specific campaign and equipment topics only when enabled. The optional recruitment status toggle sits with recruitment on the Expedition page.

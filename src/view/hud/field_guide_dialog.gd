@@ -27,7 +27,11 @@ func _ready() -> void:
 			_pages.append({"title":lines[0].capitalize(),"text":lines[1]})
 	_pages.append({"title":"Warbands & campaign","text":"Create and save a wizard, spellbook and recruits from the home screen. Select the warband slot before starting a battle. Each slot keeps separate campaign and battle progress. Starting rosters have a 400 gc budget, up to eight soldiers and up to four specialists. Apprentice recruitment costs 100 gc. Campaign headquarters handles recruitment, treasure, injuries, equipment, experience and improvements."})
 	_pages.append({"title":"Scenarios","text":"Choose a battlefield from New Skirmish. Each scenario has its own treasure and special rules. Read its briefing before playing. The Scenarios section below describes the current digital implementation."})
-	for id: String in ScenarioBriefing.available_entries(WarbandSlots.content_profile()):
+	var profile := WarbandSlots.content_profile()
+	if profile.enabled.has("red_king") and profile.allows("campaigns","red_king"):
+		_pages.append({"title":"The Red King campaign","text":"Select the book under Rulebook content on Home. Start its ordered storyline in a fresh campaign. The Expedition page shows the next encounter and any departure blockers. Resolve treasure, prepare rituals, recruit and assign gear before leaving. The optional Veil and rescue-linked Mindscape can be skipped. In Act III, regular hiring and the base are unavailable; roll replacements and carry or discard new loot. The chronicle shows chapter progress."})
+		_pages.append({"title":"Red King equipment","text":"Select an item in Equipment to read its implemented effects and available recipients. Artefacts must be studied before equipping; some items require a permanent spell or animal binding. Look for contextual battle actions and preparation options. Equipment in a sealed vault or carried by separated figures cannot be reassigned until reconciliation."})
+	for id: String in ScenarioBriefing.available_entries(profile):
 		_pages.append({"title":ScenarioBriefing.title(id),"text":ScenarioBriefing.description(id)})
 	for page in _pages:
 		_topics.add_item(str(page["title"]))

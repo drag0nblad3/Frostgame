@@ -332,6 +332,7 @@ func refresh(in_battle: bool) -> void:
 	for control in controls:
 		control.visible = not d.is_empty() and not in_battle and not deciding
 	_section_picker.visible=not d.is_empty() and not deciding and not in_battle
+	_briefing.visible=_briefing.visible and not deciding and not in_battle
 	_quick_prepare.visible=_section_picker.visible and not stage.is_empty() and RaggedWarbands.active(d)
 	_quick_gear.visible=_section_picker.visible and RaggedWarbands.has_unassigned(d) and RaggedWarbands.active(d)
 	if not _section_picker.visible:
@@ -483,7 +484,7 @@ func _build_sections(col: VBoxContainer) -> void:
 	_sections[0].add_child(_depart_status)
 	_sections[1].add_child(_roster_summary)
 	_sections[5].add_child(_history_summary)
-	_move_controls(0,[summary,start,story_veil,story_strict_pursuit,story_start,treasure_choice,keep_treasure,alternate_treasure,exchange_treasure,_scenario,begin,secret_hrut,skip_mind_button,roll_recruits,reconcile_button,continue_skirmishes])
+	_move_controls(0,[summary,start,story_veil,story_strict_pursuit,story_start,treasure_choice,keep_treasure,alternate_treasure,exchange_treasure,_scenario,begin,secret_hrut,skip_mind_button,recruit_status,roll_recruits,reconcile_button,continue_skirmishes])
 	_sections[0].move_child(summary,0)
 	_sections[0].move_child(_scenario,1)
 	_sections[0].move_child(_briefing,2)
@@ -493,7 +494,7 @@ func _build_sections(col: VBoxContainer) -> void:
 	_move_controls(2,[artefact_choice,study_button,inventory])
 	_move_controls(3,[rituals])
 	_move_controls(4,[base_banner,base_choice,base_button,base_upgrades])
-	_move_controls(5,[reality_option,wounded_option,mantle_option,recruit_status])
+	_move_controls(5,[reality_option,wounded_option,mantle_option])
 	_touch_controls(col)
 	_show_section(0)
 
