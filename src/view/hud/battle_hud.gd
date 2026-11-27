@@ -33,6 +33,8 @@ var _status: Label
 var _hint: Label
 var _log: Label
 var _lines: Array[String] = []
+var _history: Array[String] = []
+var _journal: BattleJournal
 var _auto: Button
 var _step: Button
 var _watch: Button
@@ -242,6 +244,7 @@ func _ready() -> void:
 func show_roll(text: String) -> void:
 	if text.is_empty():
 		return
+	BattleJournal.record(_history,text)
 	_roll_label.text = text
 	_roll_panel.show()
 	_roll_timer.start(6.0)
@@ -373,6 +376,9 @@ func blocks_tap(at: Vector2) -> bool:
 
 
 func add_line(text: String) -> void:
+	if text.is_empty():
+		return
+	BattleJournal.record(_history,text)
 	_lines.append(text)
 	while _lines.size() > LOG_LINES:
 		_lines.pop_front()
@@ -381,6 +387,7 @@ func add_line(text: String) -> void:
 
 func clear_log() -> void:
 	_lines.clear()
+	_history.clear()
 	_log.text = ""
 	_toast.hide()
 	_toast_timer.stop()
@@ -438,6 +445,16 @@ func _menu_action(id: int) -> void:
 		13: camera_requested.emit(2)
 		14: title_requested.emit()
 		15: graphics_requested.emit()
+		16: _open_journal()
+
+
+func _open_journal() -> void:
+	if ModalInput.blocked():
+		return
+	if _journal==null:
+		_journal=BattleJournal.new()
+		add_child(_journal)
+	_journal.open(_history)
 
 
 func select_scenario(id: String) -> void:
