@@ -87,9 +87,7 @@ func _roll_initiative(use: bool) -> void:
 	s.phase = Phase.WIZARD
 	s.early.capture(s)
 	_c.emit("turn_start", {"turn": s.turn, "order": s.order, "rolls": ini["rolls"]})
-	RedKingHill.priority(_c,ini["rolls"])
-	if not s.scenario_data.has("rk_priority_choice"):
-		RealityCracks.on_priority(_c,ini["rolls"])
+	RuleHooks.run("turn_priority",[_c,ini["rolls"]])
 	resume_priority()
 
 
@@ -113,18 +111,7 @@ func _settle() -> void:
 		if s.phase == Phase.CREATURE:
 			_c._magic.on_end_turn()
 			CreatureEffects.end_turn(_c)
-			RedKingSquatter.end_turn(_c)
-			RedKingInvestigations.end_turn(_c)
-			RedKingVeil.end_turn(_c)
-			RedKingFire.end_turn(_c)
-			RedKingMadMan.end_turn(_c)
-			RedKingMind.end_turn(_c)
-			RedKingHerded.end_turn(_c)
-			RedKingSinkhole.end_turn(_c)
-			RedKingTethers.end_turn(_c)
-			RedKingBridge.end_turn(_c)
-			RedKingRingworld.end_turn(_c)
-			RealityCracks.on_end_turn(_c)
+			RuleHooks.run("turn_end",[_c])
 			if s.scenario_data.has("rk_end_choice") or s.scenario_data.has("rk_direction_choice"):
 				return
 			resume_end_turn()
@@ -138,7 +125,7 @@ func _settle() -> void:
 			start_turn()
 			return
 		s.phase = Phase.ORDER[i]
-		RedKingVeil.before_phase(_c)
+		RuleHooks.run("before_phase",[_c])
 		s.fast_acts.clear()
 		s.early.capture(s)
 		if s.phase == Phase.CREATURE:
@@ -154,8 +141,7 @@ func resume_end_turn() -> void:
 		return
 	if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
 		return
-	HolyLantern.end_turn(_c)
-	WormRider.end_turn(_c)
+	RuleHooks.run("turn_end_resume",[_c])
 	_c._encounters.on_end_turn()
 	start_turn()
 
