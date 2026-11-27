@@ -40,6 +40,21 @@ func emit(type: String, data: Dictionary = {}) -> void:
 		RedKingInvestigations.observe_event(self,type,data)
 
 
+func apply_deployment(plan: DeploymentPlan) -> bool:
+	if state.turn!=0 or plan.state!=state or not plan.finalize():
+		return false
+	for f in state.figures:
+		if not plan.placements.has(f.id):
+			continue
+		var p: Dictionary=plan.placements[f.id]
+		f.pos=p["at"]
+		f.elevation=float(p["height"])
+		f.surface_id=str(p["surface"])
+	state.scenario_data["deployment_edges"]=plan.edge.duplicate()
+	state.scenario_data["deployment_rolls"]=plan.rolls.duplicate()
+	return true
+
+
 func start_game() -> void:
 	DeathMask.prepare(self)
 	CircletDefence.prepare(self)
