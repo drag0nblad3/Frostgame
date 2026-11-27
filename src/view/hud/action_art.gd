@@ -34,8 +34,24 @@ static func school(school_id: String) -> Texture2D:
 
 
 static func command(key: String, catalog: Dictionary) -> Texture2D:
-	if key == "spell_cancel" or key.ends_with("_cancel"):
+	if key.ends_with("_confirm") or key=="group_begin":
+		return MenuSymbols.ICONS["save"]
+	if key=="move_undo" or key.ends_with("_back") or key=="counter_previous":
+		return MenuSymbols.ICONS["back"]
+	if key.begins_with("cancel_") or key.ends_with("_cancel"):
 		return ICONS["cancel"]
+	if key in ["jump","run_for_it","run_talisman","push_self","push_enemy","ring_switch","stay"] or key.begins_with("push_self_"):
+		return ICONS["move"]
+	if key=="fight_hand":
+		return ICONS["fight"]
+	if key in ["ammo_shot","wraith_shot"]:
+		return ICONS["shoot"]
+	if key in ["pass_phase","use_stored_action"]:
+		return ICONS["end"]
+	if key in ["ring_escape","reality_exit"]:
+		return ICONS["exit"]
+	if key in ["break_ice","drop_shrunk"]:
+		return ICONS["collect"] if key=="break_ice" else ICONS["drop"]
 	if key.begins_with("spell_"):
 		var info: Dictionary = catalog.get(key.trim_prefix("spell_"),{})
 		return school(str(info.get("school","")))
