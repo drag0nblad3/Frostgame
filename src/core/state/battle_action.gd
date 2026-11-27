@@ -16,14 +16,9 @@ static func legal(c: GameController,key: String,target: int=-1,spell: String="")
 static func execute(c: GameController,key: String,target: int=-1,spell: String="") -> bool:
 	if not legal(c,key,target,spell):
 		return false
-	var rng_before := c.dice._rng.state
-	var first := c.history.size()
-	var accepted := false
 	match key:
-		"fight": accepted=c.fight(target)
-		"shoot","ammo_shot","wraith_shot": accepted=c.shoot(target,key=="wraith_shot",key=="ammo_shot")
-		"cast": accepted=c.start_cast(spell,target)
-		"reload": accepted=c.reload()
-	if accepted:
-		c.command_history.append({"key":key,"target":target,"spell":spell,"rng_before":rng_before,"rng_after":c.dice._rng.state,"event_start":first,"event_end":c.history.size()})
-	return accepted
+		"fight": return c.fight(target)
+		"shoot","ammo_shot","wraith_shot": return c.shoot(target,key=="wraith_shot",key=="ammo_shot")
+		"cast": return c.start_cast(spell,target)
+		"reload": return c.reload()
+	return false
