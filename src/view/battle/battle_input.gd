@@ -120,7 +120,16 @@ func drag_move(screen: Vector2) -> void:
 		return
 	var hit: Variant=_surface_at(screen)
 	if hit!=null:
-		plan_move(MovePlanner.node_at(hit))
+		plan_move_at(hit)
+
+
+func plan_move_at(at: Vector2) -> void:
+	var f := c.state.active()
+	if f!=null and at.distance_to(f.pos)<0.32:
+		clear_move_preview()
+		update_move_controls()
+	else:
+		plan_move(MovePlanner.node_at(at))
 
 
 func tap(screen: Vector2) -> bool:

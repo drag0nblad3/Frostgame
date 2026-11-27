@@ -14,6 +14,7 @@ var _mouse_start := Vector2.ZERO
 var _mouse_dragged := false
 var _touch_start := Vector2.ZERO
 var _touch_dragged := false
+var _touch_multi := false
 
 var yaw := PI
 var pitch := deg_to_rad(55.0)
@@ -119,8 +120,10 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _touches.is_empty():
 				_touch_start = event.position
 				_touch_dragged = false
+				_touch_multi=false
 			else:
 				_touch_dragged = true
+				_touch_multi=true
 			_touches[event.index] = event.position
 		else:
 			if _touches.has(event.index) and _touches.size() == 1 and not _touch_dragged and event.position.distance_to(_touch_start) <= TAP_SLOP and not event.canceled:
@@ -134,6 +137,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		_touches[event.index] = event.position
 		if _touches.size() == 1:
+			if _touch_multi:
+				return
 			if event.position.distance_to(_touch_start) > TAP_SLOP:
 				_touch_dragged = true
 			if _touch_dragged:
@@ -161,4 +166,5 @@ func cancel_gesture() -> void:
 	_mouse_dragged=false
 	_touches.clear()
 	_touch_dragged=false
+	_touch_multi=false
 	_pinch_start=0.0

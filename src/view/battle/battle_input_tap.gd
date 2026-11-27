@@ -152,12 +152,12 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 	if bi.mode=="gear_cape_move":
 		var n := MovePlanner.node_at(at)
 		return bi.nodes.has(n) and bi.c.move_to(n,true)
-	if bi.mode in ["move", "exit"]:
+	if bi.mode=="move":
+		bi.plan_move_at(at)
+		return false
+	if bi.mode=="exit":
 		var n := MovePlanner.node_at(at)
 		if bi.nodes.has(n):
-			if bi.mode=="move":
-				bi.plan_move(n)
-				return false
 			return bi.c.exit_table(n)
 	return false
 

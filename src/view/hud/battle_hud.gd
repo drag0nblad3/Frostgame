@@ -236,8 +236,10 @@ func _ready() -> void:
 		button.toggle_mode = key not in ["reload", "end", "pass_phase", "group", "group_begin", "group_cancel", "items", "items_back","move_confirm","move_reset","move_camera"]
 		button.tooltip_text=action_labels[key]
 		button.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
-		button.custom_minimum_size=Vector2(126,66)
+		button.custom_minimum_size=Vector2(clampf(float(button.text.length())*11.0+(44.0 if button.icon!=null else 24.0),144.0,320.0),66)
 		button.add_theme_font_size_override("font_size",22)
+		if key=="move_camera":
+			button.custom_minimum_size.x=190
 		if key in ["move_confirm","move_reset"]:
 			button.custom_minimum_size.x=0
 			button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
