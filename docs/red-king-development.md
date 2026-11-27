@@ -220,3 +220,6 @@ Wizard-only targeting extension: a blocked figure target can be reached if a gen
 ## Scroll Shield
 
 Roll the carried shield spell in campaign preparation; the roll is retained for that battle, and deployment requires it. The wizard can choose available before/after rituals from the shield without needing to know the spell. In battle, any friendly spellcaster within two inches of an unengaged bearer can consume the writing as a scroll, including failed-cast insurance. The bearer starts at -1 Health. Settlement preserves unused after-game writing only until the next roll. Summoning Circle-specific ritual and layered campaign edge cases remain pending; the ordinary Summon Demon battle spell is still supported.
+
+### Quiver of the Hunter
+Enchant Weapon can create single-use enchanted ammunition; ordinary quivers carry one, Hunter quivers four. The player chooses a separate enchanted shot, replacing missile weapon bonuses with +1 Shoot and a magical attack. Caster quiver replaces the normal quiver slot. Ammunition is battle-local; additional expansion ammunition sources and campaign persistence are not implemented.

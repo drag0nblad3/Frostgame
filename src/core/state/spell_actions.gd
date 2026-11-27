@@ -32,7 +32,7 @@ func _init(controller: GameController) -> void:
 	eye = WizardEye.new(c)
 
 
-func can_cast(id: String, target_id: int) -> bool:
+func can_cast(id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := c.state
 	if not s.board.floor_layout.is_empty() and not LayeredFigureSpells.SUPPORTED.has(id):
 		return false
@@ -82,6 +82,8 @@ func can_cast(id: String, target_id: int) -> bool:
 				return false
 		elif not WizardEye.visible(s.board,f,t.pos,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
 			return false
+	if ammo:
+		return id=="enchant_weapon" and t.side==f.side and MagicAmmo.can_enchant(t)
 	if kind == "shot":
 		return t != f
 	if kind == "area_shot":
@@ -133,10 +135,10 @@ func can_cast(id: String, target_id: int) -> bool:
 	return not t.spell_effects.has(id)
 
 
-func start(id: String, target_id: int) -> bool:
-	if not can_cast(id, target_id) or id in ["leap", "transpose", "suggestion"]:
+func start(id: String, target_id: int,ammo: bool=false) -> bool:
+	if not can_cast(id, target_id,ammo) or id in ["leap", "transpose", "suggestion"]:
 		return false
-	return _roll(id, target_id)
+	return _roll(id,target_id,null,false,-1,{"magic_ammo":true} if ammo else {})
 
 
 func counter_options(id: String) -> Array[Dictionary]:
@@ -416,6 +418,10 @@ func _finish_one(health: int) -> bool:
 		return true
 	if SummonActions.CONTROL.has(id):
 		summons.apply_control(f, t, id, int(result["roll"]))
+		return true
+	if id=="enchant_weapon" and p.get("effect",{}).get("magic_ammo",false):
+		if MagicAmmo.add(t):
+			c.emit("spell_effect",{"id":t.id,"spell":"enchant_weapon"})
 		return true
 	match id:
 		"fast_act":

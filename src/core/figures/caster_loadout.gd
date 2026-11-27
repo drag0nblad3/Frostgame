@@ -53,6 +53,11 @@ static func carried(d: Dictionary, unit: Dictionary, omit: int = -1, extra: Dict
 		else:
 			other += 1
 	var used := weapon_slots(weapons) + other
+	if weapons.has("bow") or weapons.has("crossbow"):
+		for item: Dictionary in items:
+			if item.get("gear","")==MagicAmmo.ITEM:
+				used-=1
+				break
 	for discount in discounted.values():
 		used -= int(discount)
 	return {"weapons": weapons, "slots": used}

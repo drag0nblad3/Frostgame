@@ -11,8 +11,8 @@ func _init(controller: GameController) -> void:
 	c = controller
 
 
-func start(a: Figure, b: Figure, kind: String, declared: int = -1,wraith: bool=false) -> void:
-	c.state.pending_combat = {"a": a.id, "b": b.id, "kind": kind, "declared": declared,"wraith":wraith, "rolls": [c.dice.d20(), c.dice.d20()], "stage": 0}
+func start(a: Figure, b: Figure, kind: String, declared: int = -1,wraith: bool=false,ammo: bool=false) -> void:
+	c.state.pending_combat = {"a": a.id, "b": b.id, "kind": kind, "declared": declared,"wraith":wraith,"ammo":ammo, "rolls": [c.dice.d20(), c.dice.d20()], "stage": 0}
 	advance()
 
 
@@ -22,8 +22,9 @@ func result(p: Dictionary) -> Dictionary:
 	var rolls: Array = p["rolls"]
 	if p["kind"] == "fight":
 		return Melee.resolve_rolls(c.state.figures, a, b, rolls[0], rolls[1], c.state.critical_hits)
-	var res := Shooting.resolve_rolls(c.state.board,a,b,rolls[0],rolls[1],c.state.critical_hits,c.state.storm_penalty,bool(p.get("wraith",false)))
+	var res := Shooting.resolve_rolls(c.state.board,a,b,rolls[0],rolls[1],c.state.critical_hits,c.state.storm_penalty,bool(p.get("wraith",false)),bool(p.get("ammo",false)))
 	res["wraith"]=p.get("wraith",false)
+	res["ammo"]=p.get("ammo",false)
 	return res
 
 

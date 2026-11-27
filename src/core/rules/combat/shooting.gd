@@ -22,7 +22,7 @@ static func distance(a: Figure, b: Figure) -> float:
 
 
 ## Why `shooter` can't shoot `target`, or "" if the shot is allowed.
-static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure, target: Figure,wraith: bool=false) -> String:
+static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure, target: Figure,wraith: bool=false,ammo: bool=false) -> String:
 	if shooter.spell_effects.has("blinding_light"):
 		return "blinded"
 	if shooter.ranged == null:
@@ -31,7 +31,9 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "needs to reload"
 	if not target.in_play() or target == shooter or not IllusionRules.visible_to(figures, shooter, target):
 		return "not a target"
-	if RedKingTethers.pylon(target) and not WeaponActions.magic_attack(shooter,shooter.ranged):
+	if ammo and (wraith or not MagicAmmo.ready(shooter)):
+		return "no enchanted ammunition"
+	if RedKingTethers.pylon(target) and not ammo and not WeaponActions.magic_attack(shooter,shooter.ranged):
 		return "pylon requires magical shooting"
 	if target.side == shooter.side and not Contact.in_combat(figures, target):
 		return "not an enemy"
@@ -71,7 +73,7 @@ static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, c
 	return resolve_rolls(board, shooter, target, dice.d20(), dice.d20(), critical_hits, storm_penalty)
 
 
-static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0,wraith: bool=false) -> Dictionary:
+static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0,wraith: bool=false,ammo: bool=false) -> Dictionary:
 	var los := LineOfSight.check_figures(board, shooter, target)
 	if wraith:
 		var special := wraith_line(board,shooter,target)
@@ -83,22 +85,23 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	if target.def.traits.has("large"):
 		mod -= 2
 	var null_target := ScenarioNull.muted(target)
-	var magic_shoot := 0 if null_target else MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id)
-	var magic_damage := 0 if null_target else MagicEquipment.bonus(shooter, "damage", shooter.ranged.id)
-	var st := sr - (2 if RealityCracks.low_gravity(shooter) else 0) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and shooter.spell_effects.has("enchant_weapon") else 0) + (3 if HolyLantern.glow(target) else 0), 10) + shooter.roll_penalty()
+	var magic_shoot := 0 if null_target else (1 if ammo else MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id))
+	var magic_damage := 0 if null_target or ammo else MagicEquipment.bonus(shooter, "damage", shooter.ranged.id)
+	var magical := not null_target and (ammo or WeaponActions.magic_attack(shooter,shooter.ranged))
+	var st := sr - (2 if RealityCracks.low_gravity(shooter) else 0) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and not ammo and shooter.spell_effects.has("enchant_weapon") else 0) + (3 if HolyLantern.glow(target) else 0), 10) + shooter.roll_penalty()
 	var tt := tr + mini(target.effective_fight() + Melee.secret_hrut_bonus(target,shooter) + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
 		dmg = Damage.amount(st, shooter.ranged.damage_mod + magic_damage, target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits and not target.def.traits.has("immune_critical"))
 		if dmg > 0 and not null_target and shooter.spell_effects.has("elemental_hammer"):
 			dmg += 5
-	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and (null_target or not WeaponActions.magic_attack(shooter, shooter.ranged)):
+	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and not magical:
 		dmg = 0
 	if target.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(shooter,shooter.ranged) and shooter.ranged.id=="genie_bolt":
 		dmg=0
-	if RedKingTethers.pylon(target) and not WeaponActions.magic_attack(shooter,shooter.ranged):
+	if RedKingTethers.pylon(target) and not magical:
 		dmg=0
-	if target.def.traits.has("missile_resistant") and shooter.ranged.id in ["bow","crossbow","javelin"] and not WeaponActions.magic_attack(shooter,shooter.ranged):
+	if target.def.traits.has("missile_resistant") and shooter.ranged.id in ["bow","crossbow","javelin"] and not magical:
 		dmg=mini(dmg,2)
 	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}
 

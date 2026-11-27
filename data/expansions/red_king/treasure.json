@@ -161,7 +161,7 @@
       "buy": 200,
       "sell": 75,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_bronze_star_of_the_apprentice": {

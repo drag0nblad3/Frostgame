@@ -324,22 +324,24 @@ func _auto_tie_withdraw() -> void:
 	stay_in_combat()
 
 
-func can_shoot(target_id: int,wraith: bool=false) -> bool:
+func can_shoot(target_id: int,wraith: bool=false,ammo: bool=false) -> bool:
 	var t := state.figure(target_id)
-	return can_act() and t != null and not RedKingMadMan.is_ryce(t) and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board,state.figures,state.active(),t,wraith)==""
+	return can_act() and t != null and not RedKingMadMan.is_ryce(t) and not BeautyActions.blocked(state, state.active(), t) and Shooting.blocked_reason(state.board,state.figures,state.active(),t,wraith,ammo)==""
 
 
-func shoot(target_id: int,wraith: bool=false) -> bool:
-	if not can_shoot(target_id,wraith):
+func shoot(target_id: int,wraith: bool=false,ammo: bool=false) -> bool:
+	if not can_shoot(target_id,wraith,ammo):
 		return false
 	var f := state.active()
 	var t := state.figure(target_id)
-	_magic.beauty.authorize(f, ShotTarget.participants(state.figures, t), _shoot_authorized.bind(f,t,wraith))
+	_magic.beauty.authorize(f, ShotTarget.participants(state.figures, t), _shoot_authorized.bind(f,t,wraith,ammo))
 	return true
 
 
-func _shoot_authorized(f: Figure,t: Figure,wraith: bool=false) -> void:
+func _shoot_authorized(f: Figure,t: Figure,wraith: bool=false,ammo: bool=false) -> void:
 	if not f.in_play() or not t.in_play() or (wraith and not ActiveGear.spend(f,Shooting.WRAITH)):
+		return
+	if ammo and not MagicAmmo.spend(f):
 		return
 	_magic.illusions.reveal(f)
 	var declared := t.id
@@ -347,7 +349,7 @@ func _shoot_authorized(f: Figure,t: Figure,wraith: bool=false) -> void:
 	_spend(f)
 	if f.ranged.needs_reload:
 		f.loaded = false
-	_fate_combat.start(f,t,"shoot",declared,wraith)
+	_fate_combat.start(f,t,"shoot",declared,wraith,ammo)
 
 
 func finish_fate_shot(f: Figure, t: Figure, res: Dictionary, declared: int) -> void:
@@ -550,12 +552,12 @@ func stay_in_combat() -> bool:
 	return true
 
 
-func can_cast(spell: String, target: int) -> bool:
-	return _magic.can_cast(spell, target)
+func can_cast(spell: String, target: int,ammo: bool=false) -> bool:
+	return _magic.can_cast(spell, target,ammo)
 
 
-func start_cast(spell: String, target: int) -> bool:
-	return _magic.start(spell, target)
+func start_cast(spell: String, target: int,ammo: bool=false) -> bool:
+	return _magic.start(spell, target,ammo)
 
 
 func finish_cast(health: int) -> bool:

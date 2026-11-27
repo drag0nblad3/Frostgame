@@ -17,6 +17,7 @@ var group_selection: Array[int] = []
 var cast_options: Array[String] = []
 var item_options: Array[String] = []
 var selected_spell := ""
+var spell_ammo := false
 var selected_potion := ""
 var selected_drop := -1
 var spell_rotated := false
@@ -169,6 +170,8 @@ func refresh() -> void:
 			available.append("fight")
 		if c.can_shoot(enemy.id) and not available.has("shoot"):
 			available.append("shoot")
+		if c.can_shoot(enemy.id,false,true) and not available.has("ammo_shot"):
+			available.append("ammo_shot")
 		if c.can_shoot(enemy.id,true) and not available.has("wraith_shot"):
 			available.append("wraith_shot")
 	for token in c.state.treasures:
@@ -177,6 +180,11 @@ func refresh() -> void:
 			break
 	cast_options.clear()
 	for id: String in c._magic.available_spells(f):
+		if id=="enchant_weapon":
+			for t in c.state.figures:
+				if c.can_cast(id,t.id,true):
+					cast_options.append("enchant_ammo")
+					break
 		if not c._magic.treasure_options(id).is_empty():
 			cast_options.append(id)
 			continue
@@ -344,10 +352,10 @@ func preview() -> void:
 			hint = "Choose a summoned or controlled creature to release."
 		"spell_target":
 			for t in c.state.figures:
-				if c.can_cast(selected_spell, t.id):
+				if c.can_cast(selected_spell,t.id,spell_ammo):
 					targets.append(t)
 			radius = 0.65
-			hint = "Choose a target for %s." % c.state.spell_catalog[selected_spell]["name"]
+			hint = "Choose a bow or crossbow user to enchant ammunition." if spell_ammo else "Choose a target for %s." % c.state.spell_catalog[selected_spell]["name"]
 		"resist":
 			var p := c.state.pending_resistance
 			var t := c.state.figure(p["id"])
@@ -413,6 +421,12 @@ func preview() -> void:
 			targets.assign(GearActions.gutter_targets(c))
 			radius=0.65
 			hint="Free Gutter Flail attack: select an enemy or skip."
+		"ammo_shot":
+			for t in c.state.figures:
+				if c.can_shoot(t.id,false,true):
+					targets.append(t)
+			radius=0.65
+			hint="Fire enchanted ammunition (%d remaining)." % MagicAmmo.count(f)
 		"wraith_shot":
 			for t in c.state.figures:
 				if c.can_shoot(t.id,true):
@@ -587,7 +601,8 @@ func action(key: String) -> bool:
 	if key == "shatter_single":
 		return c._magic.single_shatter()
 	if key.begins_with("spell_") and key != "spell_cancel":
-		selected_spell = key.trim_prefix("spell_")
+		spell_ammo=key=="spell_enchant_ammo"
+		selected_spell="enchant_weapon" if spell_ammo else key.trim_prefix("spell_")
 		spell_rotated = false
 		spell_extended=false
 		if selected_spell in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"]:
@@ -756,7 +771,7 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight","wraith_shot"]:
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight","wraith_shot","ammo_shot"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
@@ -780,7 +795,7 @@ func tap(screen: Vector2) -> bool:
 					mode = "swap_second" if selected_spell == "transpose" else "leap_destination"
 					preview()
 					return false
-				return _declared(c.start_cast(selected_spell, id))
+				return _declared(c.start_cast(selected_spell,id,spell_ammo))
 			"cancel_control":
 				return c._magic.cancel(id)
 			"group_select":
@@ -797,6 +812,7 @@ func tap(screen: Vector2) -> bool:
 			"fight_hand": return c.fight_hand(id)
 			"gutter_fight": return GearActions.gutter_fight(c,id)
 			"fight": return c.fight(id)
+			"ammo_shot": return c.shoot(id,false,true)
 			"wraith_shot": return c.shoot(id,true)
 			"shoot": return c.shoot(id)
 	var hit: Variant = _surface_at(screen)
@@ -911,7 +927,7 @@ func _resist_buttons() -> void:
 
 func _declared(ok: bool) -> bool:
 	if not ok and not c._magic.shatter.first.is_empty():
-		var key := "spell_" + str(c._magic.shatter.first["id"])
+		var key := "spell_enchant_ammo" if c._magic.shatter.first.get("effect",{}).get("magic_ammo",false) else "spell_" + str(c._magic.shatter.first["id"])
 		available.assign([key])
 		action(key)
 	return ok
