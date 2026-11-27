@@ -32,6 +32,9 @@ func idle() -> bool:
 
 
 func _process(_delta: float) -> void:
+	# Explainers and animations read live state; never do so during a bot turn.
+	if thinking:
+		return
 	while not _busy and not _queue.is_empty():
 		_play(_queue.pop_front())
 
