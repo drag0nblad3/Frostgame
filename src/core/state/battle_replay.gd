@@ -29,6 +29,7 @@ static func verify(checkpoint: Dictionary,db: FigureDb,commands: Array,events: A
 static func apply(c: GameController,key: String,args: Dictionary) -> bool:
 	match key:
 		"activate": return c.activate(args["id"])
+		"bot_resume": return Bot.resume_activation(c)
 		"movement": return c.commit_movement(args["mode"],args["node"])
 		"move_to": return c.move_to(args["node"],args.get("cape",false))
 		"move_on_floor": return c.move_on_floor(args["node"])
