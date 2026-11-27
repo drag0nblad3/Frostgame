@@ -75,6 +75,11 @@ func refresh() -> void:
 		mode = "initiative_choice"
 		preview()
 		return
+	if c.state.scenario_data.has("rk_spell_absorption"):
+		available.assign(["elemental_absorb","elemental_pass"])
+		mode="elemental_spell_reaction"
+		preview()
+		return
 	if not c.state.pending_combat.is_empty():
 		if c.state.pending_combat.has("absorb_target"):
 			available.assign(["elemental_absorb","elemental_pass"])
@@ -404,6 +409,12 @@ func preview() -> void:
 				hint+=" • Golden Fang selected: +1 Fight on success."
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
+		"elemental_spell_reaction":
+			var offer: Dictionary=c.state.scenario_data["rk_spell_absorption"]
+			var target := c.state.figure(int(offer["event"]["target"]))
+			points.append(target.pos)
+			radius=0.65
+			hint="%s: %d elemental damage from %s. Reduce by 1 or risk full absorption (1–16 success; 17–20 destroys amulet and adds 3 damage)." % [target.label(),offer["damage"],str(offer["event"]["spell"]).replace("_"," ").capitalize()]
 		"elemental_reaction":
 			var p := c.state.pending_combat
 			var target := c.state.figure(int(p["absorb_target"]))

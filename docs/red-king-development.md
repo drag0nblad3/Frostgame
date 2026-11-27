@@ -291,3 +291,6 @@ Cloven Hoof now uses a split, scorched hoof silhouette and amber danger ring ins
 
 ### Opposed-combat elemental reaction
 After both Fate Stone opportunities, ordinary fight/shoot resolution now offers the human bearer a choice to attempt full amulet absorption or retain its passive reduction. The UI separates normal and elemental damage and shows overload risk. Declining does not spend the item; the full attempt uses the existing overload/removal logic. Other elemental sources (spell, environmental or creature effects) retain the pre-arm model until their synchronous damage pipelines are converted. Pending opposed rolls remain unsaveable as before.
+
+### Spell absorption reactions
+Elemental Bolt and Elemental Ball now pause on the actual incoming elemental damage for a human amulet bearer, before applying damage. Ball resolves its target list sequentially, preserving unprocessed targets and continuing after each decision; reflected shots still use the original targeting rules. The pending spell offer and ball queue use figure IDs and plain checkpoint data. Shatterstar retains its existing restriction on checkpointing during a chained cast. Other synchronous elemental sources still use pre-arming.

@@ -511,9 +511,11 @@ func _finish_one(health: int) -> bool:
 					for member in ShotTarget.participants(s.figures, other):
 						if not affected.has(member):
 							affected.append(member)
+			var ids: Array[int]=[]
 			for other in affected:
-				var recipient := CreatureEffects.reflection_target(c,f,other,id)
-				_shot(f, recipient, 5, f.pos if recipient==f or other==t else t.pos, true, true, id)
+				ids.append(other.id)
+			s.scenario_data["rk_ball_queue"]={"caster":f.id,"center":t.id,"origin":t.pos,"targets":ids}
+			_continue_ball()
 		"destroy_undead":
 			var raw := c.dice.d20()
 			var total := raw + t.effective_will() + t.roll_penalty() + MagicEquipment.bonus(t,"resistance")
@@ -567,13 +569,57 @@ func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: 
 		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
+	var event := {"id":f.id,"target":t.id,"attack":a,"defence":d,"spell":spell,"origin":from if s.board.floor_layout.is_empty() else null}
+	# Only these spell pipelines can safely suspend without skipping subsequent effects.
+	if elemental and spell in ["elemental_bolt","elemental_ball"] and dmg>0 and t.side==s.reaction_side and ActiveGear.ready(t,RedKingElemental.AMULET):
+		s.scenario_data["rk_spell_absorption"]={"event":event,"damage":dmg}
+		c.emit("elemental_offer",{"id":t.id,"damage":dmg,"spell":spell})
+		return
 	if elemental:
-		dmg = RedKingElemental.reduce(c,t,dmg)
-	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from if s.board.floor_layout.is_empty() else null})
+		dmg=RedKingElemental.reduce(c,t,dmg)
+	_apply_shot(f,t,dmg,event)
+
+
+func _apply_shot(f: Figure,t: Figure,dmg: int,event: Dictionary) -> void:
+	c.emit("spell_shot",event)
 	var old_health := t.health
-	c._hurt(t, dmg, f)
+	c._hurt(t,dmg,f)
 	if t.health<old_health:
 		RedKingHill.balance(c,t)
+
+
+func _continue_ball() -> void:
+	var s := c.state
+	var queue: Dictionary=s.scenario_data.get("rk_ball_queue",{})
+	if queue.is_empty():
+		return
+	var f := s.figure(int(queue["caster"]))
+	while not queue["targets"].is_empty():
+		var other := s.figure(int(queue["targets"].pop_front()))
+		if other==null:
+			continue
+		var recipient := CreatureEffects.reflection_target(c,f,other,"elemental_ball")
+		_shot(f,recipient,5,f.pos if recipient==f or other.id==int(queue["center"]) else queue["origin"],true,true,"elemental_ball")
+		if s.scenario_data.has("rk_spell_absorption"):
+			return
+	s.scenario_data.erase("rk_ball_queue")
+
+
+func answer_absorption(use: bool) -> bool:
+	var s := c.state
+	var offer: Dictionary=s.scenario_data.get("rk_spell_absorption",{})
+	if offer.is_empty():
+		return false
+	var event: Dictionary=offer["event"]
+	var t := s.figure(int(event["target"]))
+	var f := s.figure(int(event["id"]))
+	if t==null or f==null or t.side!=s.reaction_side:
+		return false
+	s.scenario_data.erase("rk_spell_absorption")
+	_apply_shot(f,t,RedKingElemental.reduce(c,t,int(offer["damage"]),int(use)),event)
+	_continue_ball()
+	advance_shatter()
+	return true
 
 
 func _resist_effect(f: Figure, id: String) -> void:
