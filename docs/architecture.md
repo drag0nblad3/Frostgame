@@ -184,3 +184,27 @@ Red King processing order and reaction pause points. Scenario victory
 policies and automatic creature decisions are not yet fully migrated.
 Replay remains a partial command audit rather than a guarantee that
 every autonomous decision can be reconstructed from an initial seed.
+
+
+### Final victory, autonomous replay and historical table boundaries
+
+`RedKingVictory` owns expansion-specific victory and turn-limit policy.
+`scenario_victory` returns null for the default policy, an empty dictionary
+when the scenario is not finished, or a winner dictionary. The turn engine
+alone emits game-over. Additional hooks handle pre-turn termination,
+turn limits, limit settlement and end-turn victory checks. Existing
+settlement ordering and dice consumption are preserved.
+
+Bot activation selection stays explicit; the subsequent autonomous segment
+is recorded as `bot_resume`, including planner RNG and internal state changes.
+Nested successful commands still capture presentation frames; their commands
+are not duplicated in the audit. Verification re-executes the same version
+of the bot from the checkpoint and checks the resulting events and RNG.
+
+The journal offers an optional isolated schematic 3D viewport alongside
+the tactical map. It uses recorded figure and treasure heights, floor
+slopes and structural volumes, with floor filtering and four camera angles.
+Older frames use approximate terrain heights when the new fields are absent.
+It displays recorded action-boundary states, not continuous animations or
+the original miniature artwork. Missing historical frames are not replaced
+with future board positions. The ordinary map remains the default.
