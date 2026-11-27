@@ -228,7 +228,7 @@ func _open_journal() -> void:
 	if controller==null or player==null or _bots.busy() or not player.idle():
 		hud._open_journal()
 		return
-	hud._open_journal(BattleTimeline.build(controller.state,controller.history))
+	hud._open_journal(BattleTimeline.build(controller.state,controller.history),controller.replay_frames.duplicate(true))
 
 
 func _open_guide() -> void:
@@ -303,6 +303,9 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_wait = 0.0
 	_bots.finish()
 	controller = c
+	controller.capture_frames=true
+	if controller.deployment==null or controller.deployment.done:
+		BattleFrame.record(controller)
 	_expedition_checkpoint_stamp=""
 	var state := c.state
 	var began := Time.get_ticks_usec()
@@ -375,6 +378,7 @@ func _deployment_complete() -> void:
 			v.visible=f.in_play()
 			v.position=TableSpace.to_world(f.pos,f.elevation)
 			v.set_active(false)
+	BattleFrame.record(controller)
 	controller.start_game()
 	_dirty=true
 
@@ -478,6 +482,7 @@ func _on_event(event: GameEvent) -> void:
 
 
 func _refresh() -> void:
+	BattleFrame.record(controller)
 	_dirty = false
 	_sites.update_sites(controller.state)
 	_update_status()
