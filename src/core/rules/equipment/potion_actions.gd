@@ -204,7 +204,7 @@ func cocktail_floor_legal(n: Vector3i) -> bool:
 	if not layout.contains(n,0.0):
 		return false
 	var at:=layout.world(n)
-	return Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(at)<=8.001 and c._magic.terrain.can_place_floor(f,"grenade",n)
+	return Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(at)<=8.001 and LineOfSight.floor_point_visible(c.state.board,layout,f,at,8.0) and c._magic.terrain.can_place_floor(f,"grenade",n)
 
 
 func cocktail_floor_points(index: int=-1,first_only: bool=false) -> Array[Vector3i]:

@@ -81,7 +81,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 			if distance>=best or n==reach.start:
 				continue
 			for enemy in c.state.figures:
-				if enemy.in_play() and enemy.side!=f.side and Contact.touches_position(enemy,layout.point(n),layout.height(n),layout.surface_id(n)):
+				if enemy.in_play() and enemy.side!=f.side and not WormRider.ignored(f,enemy) and Contact.touches_position(enemy,layout.point(n),layout.height(n),layout.surface_id(n)):
 					best=distance
 					goal=n
 	if f.treasure_id>=0 and goal!=null and RunForIt.ready(c,true):

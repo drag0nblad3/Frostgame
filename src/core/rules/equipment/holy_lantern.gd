@@ -16,7 +16,7 @@ static func glow(f: Figure) -> bool:
 
 static func can_toggle(c: GameController) -> bool:
 	var f := c.state.active()
-	return f!=null and f.in_play() and not c.awaiting_reaction() and c.state.pending_cast.is_empty() and c.state.push_winner<0 and c.state.pending_gutter<0 and c.state.board.floor_layout.is_empty() and (ActiveGear.ready(f,ITEM) or lit(f))
+	return f!=null and f.in_play() and not c.awaiting_reaction() and c.state.pending_cast.is_empty() and c.state.push_winner<0 and c.state.pending_gutter<0 and (ActiveGear.ready(f,ITEM) or lit(f))
 
 
 static func toggle(c: GameController) -> bool:
@@ -34,23 +34,28 @@ static func toggle(c: GameController) -> bool:
 	return true
 
 
-static func mark(c: GameController,f: Figure,at: Vector2) -> void:
+static func mark(c: GameController,f: Figure,at: Vector2,height: float=NAN) -> void:
 	if not lit(f):
 		return
+	if is_nan(height):
+		height=f.elevation
 	for t in c.state.figures:
-		if t!=f and t.in_play() and t.ring_side==f.ring_side and (t.is_demon() or t.is_undead()) and Vector2(t.pos.distance_to(at),t.elevation-f.elevation).length()<=3.0:
+		if t!=f and t.in_play() and t.ring_side==f.ring_side and (t.is_demon() or t.is_undead()) and Vector2(t.pos.distance_to(at),t.elevation-height).length()<=3.0:
 			t.used_gear[FLEE]={"source":f.id,"at":at}
 
 
 static func observe(c: GameController,type: String,data: Dictionary) -> void:
-	if type not in ["move","push_back","force_combat","forced_relocation"]:
+	if type not in ["move","layered_move","push_back","force_combat","forced_relocation"]:
 		return
 	var f := c.state.figure(int(data.get("id",-1)))
 	if not lit(f):
 		return
 	if data.has("path"):
-		for at: Vector2 in data["path"]:
-			mark(c,f,at)
+		for at in data["path"]:
+			if at is Vector3:
+				mark(c,f,Vector2(at.x,at.z),at.y)
+			else:
+				mark(c,f,at)
 	else:
 		mark(c,f,f.pos)
 
@@ -81,6 +86,10 @@ static func flee(c: GameController,f: Figure) -> void:
 	var direction := (f.pos-bearer.pos).normalized()
 	if direction.is_zero_approx():
 		direction=Vector2.RIGHT
+	if not c.state.board.floor_layout.is_empty():
+		_flee_floor(c,f,direction)
+		c.emit("gear_used",{"id":bearer.id,"gear":ITEM,"target":f.id,"flee":true})
+		return
 	var grid := MoveGrid.new(c.state.board,f,c.state.figures)
 	var origin := f.pos
 	var last := origin
@@ -106,6 +115,43 @@ static func flee(c: GameController,f: Figure) -> void:
 	else:
 		f.actions_left-=1
 	c.emit("gear_used",{"id":bearer.id,"gear":ITEM,"target":f.id,"flee":true})
+
+
+static func _flee_floor(c: GameController,f: Figure,direction: Vector2) -> void:
+	var s:=c.state
+	var layout:=s.board.floor_geometry()
+	var start:=layout.node(f.surface_id,f.pos)
+	if not layout.standable(start) or f.spell_effects.has("bones_of_the_earth"):
+		f.actions_left-=1
+		return
+	var path:=PackedVector3Array([layout.world(start)])
+	var surfaces: Array[String]=[f.surface_id]
+	var last:=start
+	var cost:=0.0
+	var allowance:=MoveRules.allowance(f)
+	for step in range(1,ceili(allowance*4.0)+1):
+		var at:=MoveGrid.to_pos(MovePlanner.node_at(f.pos+direction*float(step)*0.25))
+		if at==layout.point(last):
+			continue
+		var next:=layout.node(layout.surface_id(last),at)
+		if not BattlePlacement.floor_open(s,next,f):
+			break
+		var a:=layout.world(last)
+		var b:=layout.world(next)
+		if BattleBoundary.blocks_segment(s.board.boundaries,layout.point(last),at,"movement",f) or not layout.clearance(a.lerp(b,0.5),Figure.BASE_RADIUS,1.6):
+			break
+		var middle:=a.lerp(b,0.5)
+		var edge:=a.distance_to(b)*maxf(layout.surfaces[next.z].rough,TerrainMagic.floor_multiplier(s.board,Vector2(middle.x,middle.z),middle.y))
+		if cost+edge>allowance+0.001:
+			break
+		cost+=edge
+		last=next
+		path.append(b)
+		surfaces.append(layout.surface_id(next))
+	if path.size()>1:
+		LayeredMovement._apply(c,f,path,surfaces,cost,{},false,false,false)
+	else:
+		f.actions_left-=1
 
 
 static func end_turn(c: GameController) -> void:

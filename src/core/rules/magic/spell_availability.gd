@@ -142,25 +142,42 @@ static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=
 	var s:=sa.c.state
 	var layout:=s.board.floor_geometry()
 	var origin:=Vector3(t.pos.x,t.elevation,t.pos.y)
+	var start:=layout.node(t.surface_id,t.pos)
+	if not layout.standable(start):
+		return out
+	# The common route graph supplies safe inclines, stairs and short climbs.
+	# Allow leaving existing contact as the ordinary Suggestion rule does.
+	var grid:=LayeredGrid.new(layout,t,s.figures)
+	var reach:=LayeredReach.search(grid,start,3.0,true)
+	for n: Vector3i in reach.cost:
+		if index>=0 and n.z!=index:
+			continue
+		if n==start:
+			out.append(n)
+		elif BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) and not ScenarioNull.field_at(s.board,layout.point(n)) and not layout.surface_id(n).begins_with("climb:"):
+			out.append(n)
+		if first_only and not out.is_empty():
+			return out
+	# Safe downward displacements can fall up to three inches without harm.
 	for n in BattlePlacement.nodes(s.board,t.pos,3.0,index):
-		var at:=layout.world(n)
-		if origin.distance_to(at)>3.001 or not BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) or ScenarioNull.field_at(s.board,layout.point(n)):
+		if out.has(n) or not BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) or ScenarioNull.field_at(s.board,layout.point(n)):
 			continue
-		if not is_equal_approx(at.y,origin.y):
+		var dest:=layout.world(n)
+		if dest.y>=origin.y or origin.distance_to(dest)>3.001:
 			continue
-		if BattleBoundary.blocks_segment(s.board.boundaries,t.pos,layout.point(n),"movement",t):
+		if not LayeredFall.clear_descent(layout,dest,origin.y):
 			continue
+		var edge:=Vector3(dest.x,origin.y,dest.z)
 		var clear:=true
-		var steps:=maxi(1,ceili(origin.distance_to(at)*4.0))
-		for i in range(1,steps+1):
-			var sample:=origin.lerp(at,float(i)/steps)
-			if not layout.clearance(sample,Figure.BASE_RADIUS,1.6) or TerrainMagic.ward_blocks(s.board,t,Vector2(sample.x,sample.z),sample.y):
+		for step in range(1,maxi(2,ceili(origin.distance_to(edge)*4.0))+1):
+			var count:=maxi(2,ceili(origin.distance_to(edge)*4.0))
+			if not layout.clearance(origin.lerp(edge,float(step)/count),Figure.BASE_RADIUS,1.6):
 				clear=false
 				break
-		if clear:
+		if clear and not BattleBoundary.blocks_segment(s.board.boundaries,t.pos,layout.point(n),"movement",t):
 			out.append(n)
 			if first_only:
-				break
+				return out
 	return out
 
 

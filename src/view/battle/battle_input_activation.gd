@@ -150,7 +150,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		# Geometry-dependent gear/potions must be migrated before exposure.
 		# Shared melee, shooting, group, reaction and spell menus stay common.
 		for key in bi.available.duplicate():
-			if key.begins_with("gear_") and key not in [GearActions.CAPE,"gear_rk_bottle_imp","gear_death_mask_toggle","gear_gloves_casting","gear_wand_light","gear_ring_transference","gear_ring_teleportation",""gear_horn_destruction","gear_tiger_eye_move","gear_teetotum_arm","gear_absorb_arm"]:
+			if key.begins_with("gear_") and key not in [GearActions.CAPE,"gear_rk_bottle_imp","gear_death_mask_toggle","gear_gloves_casting","gear_wand_light","gear_ring_transference","gear_ring_teleportation","gear_horn_destruction","gear_tiger_eye_move","gear_teetotum_arm","gear_absorb_arm","gear_lantern_toggle","gear_worm_summon"]:
 				bi.available.erase(key)
 		if not LayeredBridge.owned(bi.c.state,f.id).is_empty() and not bi.available.has("cancel_bridge"):
 			bi.available.append("cancel_bridge")

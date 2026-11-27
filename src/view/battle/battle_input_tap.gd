@@ -6,6 +6,21 @@ extends RefCounted
 static func tap(bi: BattleInput, screen: Vector2) -> bool:
 	if bi.is_layered() and (bi.mode in BattleMovePlan.MODES or bi.mode in BattleFloorInput.POINT_MODES or bi.mode=="floor_leap_target"):
 		return BattleFloorInput.tap(bi,screen)
+	if bi.is_layered() and bi.mode in ["gear_worm_point","worm_relocation"]:
+		var best: Variant=null
+		var distance:=28.0
+		var points:=WormRider.relocation_points(bi.c) if bi.mode=="worm_relocation" else WormRider.points(bi.c)
+		for at in points:
+			var point:=WormRider.world_point(bi.c,at)
+			if bi.camera.is_position_behind(point):
+				continue
+			var d:=bi.camera.unproject_position(point).distance_to(screen)
+			if d<distance:
+				best=at
+				distance=d
+		if best==null:
+			return false
+		return WormRider.answer_relocation(bi.c,best) if bi.mode=="worm_relocation" else WormRider.summon(bi.c,best)
 	if bi.is_layered() and bi.mode=="gear_tiger_point":
 		var best: Variant=null
 		var distance:=28.0

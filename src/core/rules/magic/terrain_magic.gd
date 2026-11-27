@@ -110,7 +110,7 @@ func can_place_floor(f: Figure,id: String,n: Vector3i,rotated: bool=false) -> bo
 		return false
 	var point:=layout.world(n)
 	if id in ["grenade","planar_tear"]:
-		return LineOfSight.floor_point_visible(b,layout,f,point,14.0 if id=="grenade" else 24.0)
+		return WizardEye.floor_origin(b,f,point,14.0 if id=="grenade" else 24.0,0.02)!=null
 	if not is_equal_approx(surface.level,surface.end_level) or not surface.contains(rect.position) or not surface.contains(rect.end):
 		return false
 	# Check that the entire effect is supported and not inside solid masonry.
@@ -135,7 +135,7 @@ func can_place_floor(f: Figure,id: String,n: Vector3i,rotated: bool=false) -> bo
 				count+=1
 		return count<3 and LineOfSight.floor_point_visible(b,layout,f,point,4.0)
 	if id=="mud":
-		return LineOfSight.floor_point_visible(b,layout,f,point)
+		return WizardEye.floor_origin(b,f,point,24.0,0.02)!=null
 	if id=="wall" and not FloorWall.legal(s,layout,f,n,rect):
 		return false
 	var seen:=false

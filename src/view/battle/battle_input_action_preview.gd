@@ -41,7 +41,11 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 					s.points.append(option["at"])
 			s.hint="Move the Wizard Eye along its supporting surface (up to 4″)."
 		"gear_worm_point":
-			s.points.assign(WormRider.points(bi.c))
+			if bi.is_layered():
+				for at in WormRider.points(bi.c):
+					s.world_points.append(WormRider.world_point(bi.c,at))
+			else:
+				s.points.assign(WormRider.points(bi.c))
 			s.hint="Choose a worm summoning token location. On a 1 the rival relocates it."
 		"gear_bottle_imp":
 			s.points.assign(GearActions.bottle_points(bi.c))

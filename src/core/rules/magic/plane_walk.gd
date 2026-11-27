@@ -74,7 +74,7 @@ static func floor_reach(s: GameState,f: Figure) -> LayeredReach:
 		var at:=layout.point(n)
 		var dest:=layout.world(n)
 		var cost:=origin.distance_to(dest)
-		if cost>allowance+0.001 or not is_equal_approx(dest.y,origin.y) or s.board.over_void(at,Figure.BASE_RADIUS) or BattleBoundary.blocks_end(s.board.boundaries,at) or BattleBoundary.blocks_segment(s.board.boundaries,f.pos,at,"movement",f):
+		if cost>allowance+0.001 or (not is_equal_approx(dest.y,origin.y) and n.z!=result.start.z) or s.board.over_void(at,Figure.BASE_RADIUS) or BattleBoundary.blocks_end(s.board.boundaries,at) or BattleBoundary.blocks_segment(s.board.boundaries,f.pos,at,"movement",f):
 			continue
 		var legal:=true
 		for other in s.figures:
@@ -89,7 +89,7 @@ static func floor_reach(s: GameState,f: Figure) -> LayeredReach:
 		for i in range(1,steps+1):
 			var point:=origin.lerp(dest,float(i)/steps)
 			var sample:=Vector2(point.x,point.z)
-			if s.board.over_void(sample,Figure.BASE_RADIUS) or ScenarioNull.field_at(s.board,sample) or (not phased and TerrainMagic.ward_blocks(s.board,f,sample,point.y)):
+			if (not phased and s.board.over_void(sample,Figure.BASE_RADIUS)) or ScenarioNull.field_at(s.board,sample) or (not phased and TerrainMagic.ward_blocks(s.board,f,sample,point.y)):
 				legal=false
 				break
 		if legal:
