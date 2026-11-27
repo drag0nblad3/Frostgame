@@ -1,0 +1,53 @@
+class_name BattleCommandScreen
+extends ExpeditionScreen
+## Large grouped command choices; modal so battle actions cannot leak behind.
+signal chosen(id: int)
+
+var _grid: GridContainer
+var _buttons := {}
+const GROUPS := [
+	["EXPEDITION",[[0,"Campaign headquarters"],[1,"Warband workshop"],[2,"New skirmish"],[14,"Return to home"]]],
+	["BATTLE & SAVES",[[3,"Save battle"],[4,"Resume saved battle"],[5,"Scenario briefing"],[6,"Combat log"]]],
+	["GUIDANCE",[[7,"Field guide"],[8,"Extra rules tips"],[9,"Training yard"]]],
+	["VIEW & PERFORMANCE",[[11,"Frame battlefield"],[12,"Overhead view"],[13,"Focus active figure"],[10,"Toggle snowfall"],[15,"Graphics quality"]]]
+]
+
+
+func _ready() -> void:
+	build("BATTLE COMMANDS","Return to battle",navigate_back)
+	var col := WorkshopUI.scroll(body)
+	_grid=GridContainer.new()
+	_grid.columns=2
+	_grid.add_theme_constant_override("h_separation",12)
+	_grid.add_theme_constant_override("v_separation",12)
+	col.add_child(_grid)
+	for group: Array in GROUPS:
+		var card := PanelContainer.new()
+		card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		card.add_theme_stylebox_override("panel",BattleTheme.panel(Color("203441"),Color("60717b")))
+		_grid.add_child(card)
+		var section := WorkshopUI.column(card)
+		WorkshopUI.label(section,str(group[0]),22,WorkshopUI.GOLD)
+		for command: Array in group[1]:
+			var id := int(command[0])
+			var b := WorkshopUI.button(section,str(command[1]),_select.bind(id))
+			b.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+			b.custom_minimum_size.y=60
+			_buttons[id]=b
+
+
+func open(status: String,objective: String,log_on: bool,tips_on: bool) -> void:
+	subtitle.text=status+"\n"+objective
+	_buttons[6].text="Hide combat log" if log_on else "Show combat log"
+	_buttons[8].text="Disable extra rules tips" if tips_on else "Enable extra rules tips"
+	show_screen()
+
+
+func _reflow() -> void:
+	if _grid!=null:
+		_grid.columns=1 if size.x<size.y else (4 if size.x>=1450 else 2)
+
+
+func _select(id: int) -> void:
+	hide()
+	chosen.emit(id)

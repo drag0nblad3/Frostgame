@@ -41,7 +41,8 @@ var _action_row: HFlowContainer
 var _action_scroll: ScrollContainer
 var _safe: PhoneSafeArea
 var _log_panel: PanelContainer
-var _menu: MenuButton
+var _menu: Button
+var _command_screen: BattleCommandScreen
 var _scenarios: OptionButton
 var _objective: Label
 var _toast: Label
@@ -86,13 +87,8 @@ func _ready() -> void:
 	_auto = _button("Auto", func() -> void: auto_toggled.emit(_auto.button_pressed))
 	_auto.toggle_mode = true
 	top.add_child(_auto)
-	_menu = MenuButton.new()
-	_menu.text = "Menu"
-	_menu.custom_minimum_size = Vector2(90, 48)
-	var popup := _menu.get_popup()
-	for label_text: String in ["Campaign", "Warband", "New skirmish", "Save battle", "Resume battle", "Scenario briefing", "Combat log", "How to play", "Toggle extra tips", "Training battle", "Toggle snowfall", "Frame battlefield", "Overhead view", "Focus active figure", "Return to title", "Graphics quality"]:
-		popup.add_item(label_text)
-	popup.id_pressed.connect(_menu_action)
+	_menu=_button("Menu",_open_commands)
+	_menu.custom_minimum_size=Vector2(100,48)
 	top.add_child(_menu)
 	var home := _button("Home",func() -> void: title_requested.emit())
 	top.add_child(home)
@@ -297,6 +293,16 @@ func _button(text: String, on_press: Callable) -> Button:
 	b.pressed.connect(on_press)
 	return b
 
+
+
+func _open_commands() -> void:
+	if ModalInput.blocked():
+		return
+	if _command_screen==null:
+		_command_screen=BattleCommandScreen.new()
+		add_child(_command_screen)
+		_command_screen.chosen.connect(_menu_action)
+	_command_screen.open(_status.text,_objective.text,_log_panel.visible,_tips_enabled)
 
 
 func _menu_action(id: int) -> void:
