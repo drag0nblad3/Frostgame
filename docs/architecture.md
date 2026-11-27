@@ -110,3 +110,16 @@ of their figures for that phase, then the next player.
   and detects missing history, unsupported commands, RNG and event divergence.
   It is an audit/testing facility, not a complete player-facing replay viewer.
   Expansion-specific decisions and other unrecorded transitions still need migration.
+
+
+### Spell command boundary
+
+`BattleSpellAction` accepts plain payloads for placement, displacement,
+treasure spells, bridge endpoints, counter choices and cast/resist reactions.
+The same command selects the existing geometry-specific validator from the
+board, and rejects incorrectly typed or out-of-range floor indices before
+spending resources. Input and the bot use this boundary; targeted spells
+retain the existing `BattleAction` path. Accepted decisions can be replayed
+from a safe checkpoint. Intermediate Shatterstar declarations and some
+special expansion choices still need explicit recording; this is not yet a
+complete replay of arbitrary battles.
