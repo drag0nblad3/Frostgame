@@ -159,6 +159,8 @@ static func _floor_declaration_valid(sa: SpellActions,f: Figure,t: Figure,entry:
 		if effect.has("token"):
 			var token:=s.treasure(int(effect["token"]))
 			return token!=null and sa.treasure_magic.can_place_floor(f,id,token,n)
+	if effect.get("kind","")=="eye_face" and not effect.get("eye_solid",[]).is_empty():
+		return s.board.floor_layout.get("solids",[]).has(effect["eye_solid"])
 	if effect.has("piece"):
 		return s.board.pieces.has(effect["piece"])
 	if effect.get("kind","")=="floor_bridge":

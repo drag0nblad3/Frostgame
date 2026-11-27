@@ -71,7 +71,11 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 			var option := bi.counter_choices[bi.counter_index]
 			s.hint = "%s %d/%d: %s" % ["Choose eye face" if bi.selected_spell == "wizard_eye" else "Destroy terrain" if bi.selected_spell == "crumble" else "Destroy weapon" if bi.selected_spell == "decay" else ("Choose spell" if bi.selected_spell in ["power_word", "draining_word"] else "Cancel effect"), bi.counter_index + 1, bi.counter_choices.size(), option["label"]]
 			if option["kind"] == "eye_face":
-				s.points.append(option["at"])
+				if bi.is_layered():
+					var at: Vector2=option["at"]
+					bi.floor_points[Vector3i.ZERO]=Vector3(at.x,float(option["height"]),at.y)
+				else:
+					s.points.append(option["at"])
 			elif option["kind"] == "terrain":
 				var p: TerrainPiece=option["piece"]
 				if bi.is_layered() and not p.surface_id.is_empty():

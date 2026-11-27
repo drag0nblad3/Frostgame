@@ -6,6 +6,7 @@ var kind: TerrainKind
 var rect := Rect2()
 var circular := false
 var eye_host: TerrainPiece
+var eye_solid: Array=[]
 var eye_direction := Vector2.ZERO
 var ramp := false
 var ramp_rotated := false

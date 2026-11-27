@@ -107,7 +107,9 @@ func show_floor(layout: FloorLayout,id: String) -> void:
 	var index:=layout.index_of(id)
 	_floor_art.cut_at(INF if index<0 else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level))
 	for p: TerrainPiece in _pieces:
-		if not p.surface_id.is_empty():
+		if p.kind.id=="spell_wizard_eye" and not p.surface_id.is_empty():
+			_pieces[p]["node"].visible=index<0 or p.base_height<=maxf(layout.surfaces[index].level,layout.surfaces[index].end_level)+1.5
+		elif not p.surface_id.is_empty():
 			_pieces[p]["node"].visible=id.is_empty() or p.surface_id==id or (not p.dynamic_surface.is_empty() and FloorSupportRemoval.removed(id,p.dynamic_surface))
 
 

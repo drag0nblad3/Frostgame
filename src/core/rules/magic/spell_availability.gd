@@ -48,7 +48,9 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 	var limit := 1.0 if kind == "touch" else float(spell.get("range", 24.0))
 	if t != f:
 		if not s.board.floor_layout.is_empty():
-			if not LineOfSight.within_centres(s.board,f,t,limit):
+			var direct:=LineOfSight.within_centres(s.board,f,t,limit)
+			var remote:=kind not in ["touch","area_shot"] and LineOfSight.spell_visible(s.board,f,t,limit)
+			if not direct and not remote and (kind=="touch" or TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),limit)==null):
 				return false
 		elif kind == "area_shot":
 			if Shooting.distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
@@ -114,8 +116,6 @@ static func counter_options(sa: SpellActions, id: String) -> Array[Dictionary]:
 	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"] or not sa.c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
 	if not sa.available_spell(f, id):
-		return empty
-	if not sa.c.state.board.floor_layout.is_empty() and id=="wizard_eye":
 		return empty
 	if id == "wizard_eye":
 		return sa.eye.options(f)

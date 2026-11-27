@@ -119,10 +119,17 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 	# projected x/z point reinterpreted as the uppermost floor.
 	var from: Vector2=WizardEye.origin(s.board,f,t.pos) if origin==null else (Vector2(origin.x,origin.z) if origin is Vector3 else origin)
 	var los:=LineOfSight.check(s.board,from,t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if not s.board.floor_layout.is_empty() and origin==null and not spell.is_empty() and spell!="elemental_ball":
+		var remote: Variant=WizardEye.floor_origin(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),float(s.spell_catalog.get(spell,{}).get("range",24.0)))
+		if remote!=null:
+			origin=remote
 	if origin is Vector3 and not s.board.floor_layout.is_empty():
 		los=LineOfSight.Result.new()
 		los.clear=LineOfSight.floor_ray(s.board,s.board.floor_geometry(),origin,Vector3(t.pos.x,t.elevation+1.0,t.pos.y),f,false)
 	if s.board.floor_layout.is_empty() and not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and from==f.pos and TigerEye.witness(s.board,f,t.pos,float(s.spell_catalog[spell].get("range",24.0)))!=null:
+		los.clear=true
+		los.intervening+=1
+	if not s.board.floor_layout.is_empty() and not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and not origin is Vector3 and TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),float(s.spell_catalog[spell].get("range",24.0)))!=null:
 		los.clear=true
 		los.intervening+=1
 	if not los.clear and (not s.board.floor_layout.is_empty() or RedKingHill.cracked(s)):

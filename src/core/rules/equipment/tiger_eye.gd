@@ -22,6 +22,22 @@ static func witness(b: Board,f: Figure,at: Vector2,limit: float=24.0) -> Variant
 	return null
 
 
+static func floor_witness(b: Board,f: Figure,at: Vector3,limit: float=24.0) -> Variant:
+	if not active(f) or Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(at)>limit or BattleBoundary.blocks_segment(b.boundaries,f.pos,Vector2(at.x,at.z),"sight",f):
+		return null
+	var layout:=b.floor_geometry()
+	var start:=Vector3(f.pos.x,f.elevation+1.5,f.pos.y)
+	for n in BattlePlacement.nodes(b,Vector2(at.x,at.z),2.0):
+		if not layout.standable(n):
+			continue
+		var point:=layout.world(n)
+		if point.distance_to(at)>2.001 or BattleBoundary.blocks_segment(b.boundaries,Vector2(point.x,point.z),Vector2(at.x,at.z),"sight",f):
+			continue
+		if LineOfSight.floor_ray(b,layout,start,point+Vector3.UP,f):
+			return point+Vector3.UP
+	return null
+
+
 static func test_use(c: GameController,f: Figure) -> void:
 	var roll := c.dice.d20()
 	var ok := StatRoll.succeeds(roll,f.effective_will()+f.roll_penalty(),20)

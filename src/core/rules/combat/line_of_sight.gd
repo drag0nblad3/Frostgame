@@ -87,7 +87,7 @@ static func spell_visible(board: Board,from: Figure,to: Figure,limit: float=24.0
 		return false
 	if board.floor_layout.is_empty():
 		return WizardEye.visible(board,from,to.pos,limit)
-	return within_centres(board,from,to,limit)
+	return WizardEye.floor_origin(board,from,Vector3(to.pos.x,to.elevation,to.pos.y),limit)!=null
 
 
 static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null) -> Result:
