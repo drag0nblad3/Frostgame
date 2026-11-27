@@ -11,6 +11,8 @@ var errors: Array[String] = []
 
 static func from_dict(d: Dictionary) -> FloorLayout:
 	var layout := FloorLayout.new()
+	for error in d.get("assembly_errors",[]):
+		layout.errors.append(str(error))
 	for entry: Dictionary in d.get("surfaces",[]):
 		var s := FloorSurface.from_dict(entry)
 		if s.id.is_empty() or layout.index_of(s.id)>=0 or s.rect.size.x<=0.0 or s.rect.size.y<=0.0:
