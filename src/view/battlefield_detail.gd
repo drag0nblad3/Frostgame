@@ -187,8 +187,13 @@ static func rubble(root: Node3D,p: TerrainPiece,scenario: String) -> void:
 static func facade(root: Node3D,p: TerrainPiece,scenario: String) -> void:
 	if p.kind.id!="ruin" or p.ramp or p.circular or p.level!=null:
 		return
-	var r:=p.rect
-	var h:=p.kind.height
+	wall_relief(root,p.rect,p.kind.height,scenario)
+
+
+## Shared architectural relief for exposed terrain and stacked solid volumes.
+static func wall_relief(root: Node3D,r: Rect2,h: float,scenario: String) -> void:
+	if h<1.7:
+		return
 	var seed:=absi(hash(str(r.position)+scenario))
 	var style:=seed%4
 	if scenario in ["mausoleum","complex_temple","living_museum","red_king_back_into_fire"]:

@@ -4,7 +4,7 @@ extends Node3D
 var upper_nodes: Array[Node3D] = []
 
 
-func build(layout: FloorLayout,include_ground: bool=true) -> void:
+func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") -> void:
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
@@ -34,6 +34,14 @@ func build(layout: FloorLayout,include_ground: bool=true) -> void:
 		slab.material_override=stone
 		if solid.size.y<=0.5:
 			_deck_edge(solid)
+		elif solid.size.y>=1.7:
+			var relief:=Node3D.new()
+			add_child(relief)
+			relief.position.y=solid.position.y
+			relief.set_meta("cut_height",solid.get_center().y)
+			BattlefieldDetail.wall_relief(relief,Rect2(solid.position.x,solid.position.z,solid.size.x,solid.size.z),solid.size.y,scenario)
+			if roof:
+				upper_nodes.append(relief)
 	# Wall volumes get narrow masonry courses (visual only).
 	for solid in layout.solids:
 		if solid.position.y>0.1:
@@ -106,8 +114,8 @@ func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> MeshInstance3D:
 
 func cut_at(height: float) -> void:
 	for child in get_children():
-		if child is MeshInstance3D:
-			child.visible=child.position.y<=height+0.1
+		if child is Node3D:
+			child.visible=float(child.get_meta("cut_height",child.position.y))<=height+0.1
 
 
 func show_upper(on: bool) -> void:
