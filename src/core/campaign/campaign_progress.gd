@@ -19,7 +19,9 @@ func start(roster: Dictionary,profile: ContentProfile=null) -> void:
 func deployment() -> Dictionary:
 	var units: Array = []
 	var ragged := RaggedWarbands.active(data)
-	var ragged_ids := RaggedWarbands.deployed_ids(data) if ragged else []
+	var ragged_ids: Array[int]=[]
+	if ragged:
+		ragged_ids=RaggedWarbands.deployed_ids(data)
 	var locked := RedKingCampaign.economy_locked(data)
 	var reserve := -1 if locked else BaseResources.reserve_id(data, FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data)))
 	for unit: Dictionary in data["units"]:

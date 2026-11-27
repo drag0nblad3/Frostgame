@@ -23,7 +23,7 @@ static func offer(d: Dictionary,entry: Dictionary) -> String:
 	if d.get("red_king_exchange_used",false) or entry.has("rk_roll"):
 		return ""
 	if entry.get("rk_artefact",false):
-		return "artefact"
+		return "artefact" if remaining_artefacts(d)>0 else ""
 	if entry.get("rk_exchange",false) and not d.get("red_king_exchange_used",false):
 		return "treasure"
 	return ""
@@ -34,6 +34,14 @@ static func result(first: int,second: int) -> String:
 		return "artefact"
 	var table: Array=tables()["first" if first<=10 else "second"]
 	return str(table[clampi(second,1,19)-1])
+
+
+static func remaining_artefacts(d: Dictionary) -> int:
+	var count := 0
+	for id: String in tables()["artefacts"]:
+		if not d.get("red_king_found_artefacts",[]).has(id):
+			count+=1
+	return count
 
 
 static func artefact(d: Dictionary,dice: Dice) -> String:
@@ -88,17 +96,32 @@ static func exchange(d: Dictionary,dice: Dice) -> bool:
 	if entry["central"]:
 		# Show both results before asking whether to apply +2.
 		return true
+	var id := result(entry["rk_roll"][0],entry["rk_roll"][1])
+	if id=="artefact" and remaining_artefacts(d)==0:
+		entry.erase("rk_roll")
+		d["last_report"].append("All artefacts discovered; keep the ordinary treasure instead.")
+		return true
+	if not award(d,id,dice):
+		return false
 	queue.pop_front()
-	return award(d,result(entry["rk_roll"][0],entry["rk_roll"][1]),dice)
+	return true
 
 
 static func resolve_bonus(d: Dictionary,bonus: bool,dice: Dice) -> bool:
 	var queue: Array=d.get("pending_treasure",[])
 	if queue.is_empty() or not queue[0].has("rk_roll"):
 		return false
-	var entry: Dictionary=queue.pop_front()
+	var entry: Dictionary=queue[0]
 	var rolls: Array=entry["rk_roll"]
-	return award(d,result(rolls[0],rolls[1]+(2 if bonus else 0)),dice)
+	var id := result(rolls[0],rolls[1]+(2 if bonus else 0))
+	if id=="artefact" and remaining_artefacts(d)==0:
+		entry.erase("rk_roll")
+		d["last_report"].append("All artefacts discovered; keep the ordinary treasure instead.")
+		return true
+	if not award(d,id,dice):
+		return false
+	queue.pop_front()
+	return true
 
 
 static func label(first: int,second: int) -> String:

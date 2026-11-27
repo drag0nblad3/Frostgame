@@ -431,3 +431,12 @@ func test_campaign_ringworld_full_roster_positions() -> void:
 		for other in s.figures:
 			if other!=f and other.ring_side==f.ring_side:
 				check(f.pos.distance_to(other.pos)>=Contact.OVERLAP)
+
+
+func test_exhausted_artefacts_keep_treasure_choice() -> void:
+	var seen: Array=RedKingRewards.tables()["artefacts"].duplicate()
+	var d := {"red_king_found_artefacts":seen,"last_report":[],"loot":[],"pending_treasure":[{"token":0,"central":true,"first":10,"rk_roll":[1,19]}]}
+	check_eq(RedKingRewards.remaining_artefacts(d),0)
+	check(RedKingRewards.resolve_bonus(d,true,Dice.new(1)))
+	check_eq(d["pending_treasure"].size(),1)
+	check(not d["pending_treasure"][0].has("rk_roll"))

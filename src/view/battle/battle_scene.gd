@@ -493,7 +493,7 @@ func _begin_campaign_battle() -> void:
 			unit["dead"] = true
 			CampaignInventory.lose_owned(_campaign.data, int(unit["id"]))
 			_campaign.data["last_report"].append("%s retires after losing both eyes." % str(unit["type"]).capitalize())
-	if RaggedWarbands.stage(_scenario_id) and not RaggedWarbands.active(_campaign.data):
+	if RedKingCampaign.active(_campaign.data) and RaggedWarbands.stage(_scenario_id) and not RaggedWarbands.active(_campaign.data):
 		RaggedWarbands.enter(_campaign.data)
 		_campaign.save()
 		_campaign_dialog.refresh(false)

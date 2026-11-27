@@ -16,7 +16,7 @@ static func campaign_index(d: Dictionary,phase: String) -> int:
 			return i
 		if phase=="before" and int(item.get("shield_game",-1))==int(d["games"]) and not item.get("shield_used",false) and int(u.get("miss",0))==0:
 			return i
-		if phase=="after" and int(item.get("shield_game",-1))==int(d["games"])-1 and item.get("shield_after",false) and not item.get("shield_used",false):
+		if phase=="after" and not d.get("preparation_started",false) and int(item.get("shield_game",-1))==int(d["games"])-1 and item.get("shield_after",false) and not item.get("shield_used",false):
 			return i
 	return -1
 
@@ -48,7 +48,7 @@ static func prepare(c: GameController) -> void:
 		for item in f.items:
 			if item.get("gear","")!=ITEM:
 				continue
-			if not item.has("shield_spell"):
+			if str(item.get("shield_spell","")).is_empty():
 				item["shield_spell"]=CampaignProgress.random_spell(c.dice)
 			f.health=maxi(1,f.health-1)
 

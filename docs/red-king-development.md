@@ -236,3 +236,6 @@ Random recruitment is a visible preparation step after permanent summoning ritua
 
 ### Shared equipment controls on layered maps
 Layered spell selection exposes enchanted ammunition; firing uses the same shot validation as flat maps. Bottle Imp can spawn on an explicit legal floor node and creates the new figure with its correct surface and elevation before the spawn event. The layered cast and resistance panel now exposes Vampire Staff selection and empowerment, scroll insurance, amulet and Fate Stone reactions. Creature and warband bots can use enchanted shots. Other advanced floor-specific hazards and targeting still require separate migration.
+
+### Integration regressions
+Corrected typed empty reserve lists on ordinary campaigns, prevented a free-form expansion scenario from permanently activating story-only Ragged restrictions, retained at most one eligible book-supported Foulhorn during reconciliation, and kept ordinary treasure choices available if the unique artefact pool is exhausted. The latter fallback is a digital policy because the book does not specify what happens after every artefact has been discovered.

@@ -88,6 +88,8 @@ static func choices(d: Dictionary,caster: int,id: String,shield: bool=false) -> 
 
 
 static func attempt(d: Dictionary, caster: int, id: String, option: String, dice: Dice, enchant: bool=false,shears_target: int=-1,bottle: bool=false,shield: bool=false) -> bool:
+	if shield and (enchant or shears_target>=0 or bottle):
+		return false
 	if not choices(d,caster,id,shield).has(option):
 		return false
 	if bottle and (id!="brew_potion" or enchant or RedKingCampaignGear.empty_bottle(d,caster,option)<0):

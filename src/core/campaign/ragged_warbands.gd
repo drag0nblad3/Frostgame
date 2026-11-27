@@ -141,7 +141,18 @@ static func restore(d: Dictionary,db: FigureDb) -> void:
 		# Core permits permanent constructs and the normal soldier roster.
 		# Other recruited bestiary creatures need a supported permission rule.
 		var definition := db.get_def(u["type"])
-		if definition.role=="creature" and not Rituals.CONSTRUCTS.has(u["type"]):
+		var retain_foulhorn := false
+		if u["type"]=="foulhorn":
+			for book: Dictionary in d.get("loot",[]):
+				if book.get("gear","")=="gear_rk_book_of_the_foulhorn" and int(book.get("owner",-1))<0:
+					retain_foulhorn=true
+					break
+			if retain_foulhorn:
+				for previous: Dictionary in d["units"]:
+					if int(previous["id"])<int(u["id"]) and previous["type"]=="foulhorn" and BaseResources.alive(previous):
+						retain_foulhorn=false
+						break
+		if definition.role=="creature" and not Rituals.CONSTRUCTS.has(u["type"]) and not retain_foulhorn:
 			u["dismissed"]=true
 			d["last_report"].append(definition.name+" leaves after the campaign.")
 			for item: Dictionary in d["loot"]:
