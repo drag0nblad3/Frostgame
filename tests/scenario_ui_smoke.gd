@@ -97,7 +97,7 @@ func _run() -> void:
 		_fail("Back did not dismiss guide safely")
 		return
 	scene.hud._open_commands()
-	if not ModalInput.blocked() or not scene.hud._command_screen.visible or scene.hud._command_screen._buttons.size()!=17:
+	if not ModalInput.blocked() or not scene.hud._command_screen.visible or scene.hud._command_screen._buttons.size()!=19:
 		_fail("Battle command screen unavailable")
 		return
 	ModalInput.close_top(root)
@@ -115,6 +115,16 @@ func _run() -> void:
 	if ModalInput.blocked() or scene.controller!=before_guide:
 		_fail("Closing journal changed battle")
 		return
+	scene.hud._menu_action(17)
+	if not is_equal_approx(scene.player.speed,1.6):
+		_fail("Playback speed did not reach the director")
+		return
+	scene.hud._menu_action(18)
+	if not scene.player.camera_director.enabled:
+		_fail("Action camera toggle unavailable")
+		return
+	scene.hud._menu_action(18)
+	scene.player.speed=30.0
 	scene._camera_preset(1)
 	if scene._rig.pitch < deg_to_rad(80.0):
 		_fail("Overhead preset did not change camera")
