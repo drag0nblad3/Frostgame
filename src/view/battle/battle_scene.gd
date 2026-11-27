@@ -39,6 +39,7 @@ var _board_view: BoardView
 var _atmosphere: BattleAtmosphere
 var _rig: CameraRig
 var _wait := 0.0
+var _bots := BotRunner.new()
 var _launch_intent := ""
 var _title_prompt: AcceptDialog
 var _picker: SkirmishPicker
@@ -258,6 +259,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	auto_play = false
 	hud.set_auto(false)
 	_wait = 0.0
+	_bots.finish()
 	controller = c
 	var state := c.state
 	_board_view.scenario_id = _active_scenario_id
@@ -286,8 +288,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player.line_logged.connect(hud.add_line)
 	player.notice.connect(hud.notify)
 	player.roll_resolved.connect(hud.show_roll)
-	controller.event_emitted.connect(player.push)
-	controller.event_emitted.connect(_on_event)
+	controller.event_emitted.connect(_relay)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
 	if start:
 		controller.start_game()
@@ -306,14 +307,35 @@ func step() -> void:
 		return
 	if controller.state.over or not player.idle() or controller.awaiting_reaction():
 		return
-	if controller.state.active() != null:
-		Bot.resume_activation(controller)
+	_bots.start(controller)
+	if _bots.busy():
+		player.thinking = true
+		player_input.lock("Rival warband is thinking…")
 	else:
-		Bot.play_activation(controller)
+		_update_status()
+
+
+## Bot events arrive on a worker thread; hold them until it finishes.
+func _relay(event: GameEvent) -> void:
+	if _bots.capture(event):
+		return
+	player.push(event)
+	_on_event(event)
+
+
+func _collect_bot_turn() -> void:
+	player.thinking = false
+	for event in _bots.take_events():
+		player.push(event)
+		_on_event(event)
 	_update_status()
 
 
 func _process(delta: float) -> void:
+	if _bots.busy():
+		if not _bots.done():
+			return
+		_collect_bot_turn()
 	if ModalInput.blocked():
 		_rig.cancel_gesture()
 	if _info_open() or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():

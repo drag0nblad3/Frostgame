@@ -222,6 +222,17 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	return mi
 
 
+static var _shared_mats := {}
+
+
+## A cached material for nodes that never change it. Use _mat() to get one to edit.
+static func shared_mat(c: Color, rough: float) -> StandardMaterial3D:
+	var key := Vector4(c.r, c.g, c.b, c.a * 10.0 + rough)
+	if not _shared_mats.has(key):
+		_shared_mats[key] = _mat(c, rough)
+	return _shared_mats[key]
+
+
 static func _mat(c: Color, rough: float) -> StandardMaterial3D:
 	var m := StandardMaterial3D.new()
 	m.albedo_color = c

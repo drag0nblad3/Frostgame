@@ -15,6 +15,8 @@ var views := {}
 var treasure_views := {}
 var _queue: Array[GameEvent] = []
 var _busy := false
+## A bot is thinking on another thread; callers must wait as if animating.
+var thinking := false
 
 
 func push(e: GameEvent) -> void:
@@ -22,7 +24,7 @@ func push(e: GameEvent) -> void:
 
 
 func idle() -> bool:
-	return not _busy and _queue.is_empty()
+	return not _busy and not thinking and _queue.is_empty()
 
 
 func _process(_delta: float) -> void:
