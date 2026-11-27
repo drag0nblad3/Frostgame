@@ -37,3 +37,17 @@ func test_guardian_column_removes_physical_blocker() -> void:
 	check(not token.frozen)
 	check(b.floor_geometry().standable(b.floor_geometry().node("street",Vector2(8,8))))
 	check_eq(f.treasure_id,token.id)
+
+
+func test_guardian_contact_does_not_trap_figure_on_floor() -> void:
+	var b:=BoardLoader.from_dict({"id":"complex_temple","size":[16,16],"floor_layout":{"surfaces":[{"id":"street","rect":[0,0,16,16],"level":0}]},"pieces":[{"kind":"temple_column","rect":[7.5,7.5,1,1]}]},terrain())
+	var f:=fig("wizard",0,Vector2(7,8))
+	f.surface_id="street"
+	var c:=make_game(b,[f],LoadedDice.new([20,1]))
+	c.state.scenario_special="complex_temple"
+	c.state.active_id=f.id
+	f.actions_left=2
+	var reach:=c.layered_reach()
+	var layout:=b.floor_geometry()
+	check(reach.can_reach(layout.node("street",Vector2(6,8))),"a guardian contact must allow withdrawal")
+	check(reach.can_reach(layout.node("street",Vector2(7,7.5))),"another guardian contact can be attempted")

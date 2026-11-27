@@ -78,7 +78,12 @@ static func _move(c: GameController,f: Figure) -> bool:
 		if quarry==null:
 			return _wander(c,f,layout,reach)
 	var grid := LayeredGrid.new(layout,f,c.state.figures)
-	var long_route := LayeredReach.search(grid,reach.start,100.0)
+	var column:=ScenarioColumns.contact(c.state.board,f.pos,f.elevation)
+	if column!=null and f.side>=0 and f.treasure_id<0:
+		for n: Vector3i in reach.cost:
+			if n!=reach.start and ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))==column:
+				return c.move_on_floor(n)
+	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null)
 	var goal: Variant = null
 	var best := INF
 	for n: Vector3i in long_route.cost:
@@ -91,9 +96,16 @@ static func _move(c: GameController,f: Figure) -> bool:
 				best=distance
 		elif f.side>=0 and not f.def.traits.has("animal"):
 			for token in c.state.treasures:
-				if token.on_ground() and token.ring_side==f.ring_side and token.surface_id==layout.surface_id(n) and token.pos.distance_to(layout.point(n))<=(1.5 if token.frozen and c.state.scenario_special=="complex_temple" else 0.8):
-					goal=n
-					best=distance
+				if not token.on_ground() or token.ring_side!=f.ring_side or token.surface_id!=layout.surface_id(n):
+					continue
+				if token.frozen and c.state.scenario_special=="complex_temple":
+					var guardian:=ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))
+					if guardian==null or guardian.rect.get_center().distance_to(token.pos)>0.01:
+						continue
+				elif token.pos.distance_to(layout.point(n))>0.8:
+					continue
+				goal=n
+				best=distance
 	# When not extracting or pursuing a reachable objective, seek a legal
 	# firing position rather than forcing every shooter into melee.
 	if f.treasure_id<0 and (goal==null or goal==reach.start) and f.ranged!=null and f.actions_left>=2 and c.can_act() and (not f.ranged.needs_reload or f.loaded):

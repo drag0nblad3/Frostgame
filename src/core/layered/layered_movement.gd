@@ -32,7 +32,8 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 		return LayeredReach.new() if run or cape else FuryRules.restrict_floor(s,f,PlaneWalk.floor_reach(s,f))
 	var grid := LayeredGrid.new(layout,f,s.figures)
 	grid.running=run
-	return FuryRules.restrict_floor(s,f,LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape))
+	var leave_site:=ScenarioColumns.contact(s.board,f.pos,f.elevation)!=null
+	return FuryRules.restrict_floor(s,f,LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape or leave_site))
 
 
 static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=false,boost: bool=false,exiting: bool=false) -> bool:
