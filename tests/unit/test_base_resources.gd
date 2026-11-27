@@ -82,3 +82,20 @@ func test_sarcophagus_and_ritual_bonuses() -> void:
 	check(p.treat(0))
 	check_eq(p.data["gold"], gold)
 	check_eq(unit["miss"], 0)
+
+
+func test_mantle_companion_compatibility() -> void:
+	var p := _campaign()
+	var d := p.data
+	d["expansions"]=["red_king"]
+	var companion := {"type":"bear","companion_of":0,"permanent_summon":true}
+	check(not BaseResources.specialist(companion,db(),d),"core classification unchanged")
+	d[CompanionMantle.OPTION]=true
+	check(BaseResources.specialist(companion,db(),d))
+	d["loot"].append({"kind":"gear","gear":CompanionMantle.ITEM,"owner":0})
+	check(CompanionMantle.bind(d,d["loot"].size()-1,"bear"))
+	check(not CompanionMantle.bind(d,d["loot"].size()-1,"snow_leopard"))
+	check(not BaseResources.specialist(companion,db(),d))
+	check(BaseResources.specialist({"type":"snow_leopard","companion_of":0},db(),d))
+	d["loot"].back()["owner"]=-1
+	check(BaseResources.specialist(companion,db(),d))

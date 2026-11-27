@@ -110,3 +110,26 @@ func test_wraith_bow_shoots_through_one_ruin_and_curse() -> void:
 	var blocked := _shot(make_board([["ruin",13,8,2,4],["ruin",17,8,2,4]]),"archer",Vector2(20,10),[])
 	blocked.state.active().items.append({"gear":Shooting.WRAITH,"gear_info":RedKingRewards.catalog()[Shooting.WRAITH]})
 	check(not blocked.can_shoot(2,true))
+
+
+func test_enchanted_ammunition_capacity_and_consumption() -> void:
+	var c := _shot(make_board(),"archer",Vector2(20,10),[14,5])
+	var f := c.state.active()
+	check(MagicAmmo.add(f))
+	check(not MagicAmmo.add(f))
+	f.items.append({"gear":MagicAmmo.ITEM,"gear_info":RedKingRewards.catalog()[MagicAmmo.ITEM]})
+	for i in 3:
+		check(MagicAmmo.add(f))
+	check_eq(MagicAmmo.count(f),4)
+	check(not MagicAmmo.add(f))
+	f.spell_effects["enchant_weapon"]=true
+	check(c.can_shoot(2,false,true))
+	check(c.shoot(2,false,true))
+	check_eq(MagicAmmo.count(f),3)
+	check_eq(c.state.figure(2).health,3,"+1 ammunition bonus does not stack with Enchant Weapon")
+
+
+func test_hunter_quiver_replaces_caster_quiver_slot() -> void:
+	var unit := {"id":0,"type":"wizard","weapons":["staff","bow","dagger"]}
+	var d := {"loot":[{"kind":"gear","gear":MagicAmmo.ITEM,"owner":0}]}
+	check_eq(CasterLoadout.carried(d,unit)["slots"],3)

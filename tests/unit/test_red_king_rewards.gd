@@ -404,3 +404,10 @@ func test_lantern_glow_flee_and_end_turn() -> void:
 	check_eq(t.actions_left,1)
 	HolyLantern.end_turn(c)
 	check(not HolyLantern.lit(f))
+
+
+func test_all_red_king_equipment_has_implementation() -> void:
+	var catalog := RedKingRewards.catalog()
+	check_eq(catalog.size(),62)
+	for id: String in catalog:
+		check(bool(catalog[id].get("live",false)),id)
