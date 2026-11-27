@@ -219,6 +219,8 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 			RealityHazardView.worm(root,piece,board)
 		"library_shelf":
 			SiteArt.shelf(root,piece)
+		"library_gate","temple_gate","tent_canvas","alien_obelisk","alien_terrace","alien_rib":
+			ScenarioArchitecture.build(root,piece)
 		"arcane_disc","dreams_well":
 			root.add_child(_piece(piece))
 			TabletopDetails.decorate(root,piece)

@@ -196,5 +196,53 @@
     "cover": 0,
     "height": 3,
     "walkable_top": false
+  },
+  "library_gate": {
+    "name": "Library doorway pier",
+    "blocks_move": true,
+    "blocks_los": true,
+    "cover": 0,
+    "height": 3.2,
+    "walkable_top": false
+  },
+  "temple_gate": {
+    "name": "Broken temple gateway",
+    "blocks_move": true,
+    "blocks_los": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": false
+  },
+  "tent_canvas": {
+    "name": "Barbarian tent hide",
+    "blocks_move": true,
+    "blocks_los": true,
+    "cover": 0,
+    "height": 2.5,
+    "walkable_top": false
+  },
+  "alien_obelisk": {
+    "name": "Hrut monolith",
+    "blocks_move": true,
+    "blocks_los": true,
+    "cover": 0,
+    "height": 4,
+    "walkable_top": false
+  },
+  "alien_terrace": {
+    "name": "Carved alien terrace",
+    "blocks_move": true,
+    "blocks_los": true,
+    "cover": 0,
+    "height": 2,
+    "walkable_top": true
+  },
+  "alien_rib": {
+    "name": "Alien stone rib",
+    "blocks_move": true,
+    "blocks_los": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": false
   }
 }

@@ -79,25 +79,34 @@
       ]
     },
     {
-      "kind": "hut_wall",
+      "kind": "tent_canvas",
       "rect": [
         15,
-        16,
+        16.5,
         0.5,
-        4
+        3
       ]
     },
     {
-      "kind": "hut_wall",
+      "kind": "tent_canvas",
       "rect": [
-        20.5,
-        16,
+        15.5,
+        15.5,
         0.5,
-        4
+        1
       ]
     },
     {
-      "kind": "hut_wall",
+      "kind": "tent_canvas",
+      "rect": [
+        15.5,
+        19.5,
+        0.5,
+        1
+      ]
+    },
+    {
+      "kind": "tent_canvas",
       "rect": [
         16,
         15,
@@ -106,7 +115,43 @@
       ]
     },
     {
-      "kind": "hut_wall",
+      "kind": "tent_canvas",
+      "rect": [
+        16,
+        20.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "tent_canvas",
+      "rect": [
+        20.5,
+        15.5,
+        0.5,
+        1
+      ]
+    },
+    {
+      "kind": "tent_canvas",
+      "rect": [
+        20.5,
+        19.5,
+        0.5,
+        1
+      ]
+    },
+    {
+      "kind": "tent_canvas",
+      "rect": [
+        20.5,
+        16.5,
+        0.5,
+        3
+      ]
+    },
+    {
+      "kind": "tent_canvas",
       "rect": [
         19,
         15,
@@ -115,19 +160,46 @@
       ]
     },
     {
-      "kind": "hut_wall",
+      "kind": "tent_canvas",
       "rect": [
-        16,
+        19,
         20.5,
         1,
         0.5
       ]
     },
     {
-      "kind": "hut_wall",
+      "kind": "tent_canvas",
       "rect": [
-        19,
-        20.5,
+        16,
+        15.5,
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "kind": "tent_canvas",
+      "rect": [
+        16,
+        20,
+        0.5,
+        0.5
+      ]
+    },
+    {
+      "kind": "tent_canvas",
+      "rect": [
+        19.5,
+        15.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "tent_canvas",
+      "rect": [
+        19.5,
+        20,
         1,
         0.5
       ]

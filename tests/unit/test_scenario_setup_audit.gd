@@ -32,7 +32,7 @@ func test_special_objective_positions() -> void:
 	check_eq(temple.treasures.size(),6)
 	for i in range(6):
 		check(temple.treasures[i].frozen)
-		check_eq(temple.treasures[i].pos,Vector2(15.0+3.0*(i%3),16.5+3.0*floori(i/3.0)))
+		check_eq(temple.treasures[i].pos,Vector2(14.0+4.0*(i%3),16.0+4.0*floori(i/3.0)))
 
 
 func test_deployment_all_core_scenarios() -> void:

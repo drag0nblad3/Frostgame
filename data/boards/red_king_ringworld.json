@@ -7,7 +7,7 @@
   ],
   "pieces": [
     {
-      "kind": "ruin",
+      "kind": "alien_obelisk",
       "rect": [
         9,
         2,
@@ -16,7 +16,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_rib",
       "rect": [
         19,
         2,
@@ -25,7 +25,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_terrace",
       "rect": [
         1,
         10,
@@ -34,7 +34,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_obelisk",
       "rect": [
         25,
         10,
@@ -43,7 +43,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_rib",
       "rect": [
         13,
         10,
@@ -52,7 +52,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_rib",
       "rect": [
         13,
         23,
@@ -61,7 +61,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_obelisk",
       "rect": [
         1,
         24,
@@ -70,7 +70,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_terrace",
       "rect": [
         25,
         24,
@@ -79,7 +79,7 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_rib",
       "rect": [
         9,
         31,
@@ -88,12 +88,84 @@
       ]
     },
     {
-      "kind": "ruin",
+      "kind": "alien_obelisk",
       "rect": [
         19,
         31,
         3,
         3
+      ]
+    },
+    {
+      "kind": "alien_rib",
+      "rect": [
+        7,
+        10,
+        1,
+        4
+      ]
+    },
+    {
+      "kind": "alien_rib",
+      "rect": [
+        22,
+        22,
+        1,
+        4
+      ]
+    },
+    {
+      "kind": "alien_terrace",
+      "rect": [
+        5.5,
+        24,
+        2.5,
+        2
+      ]
+    },
+    {
+      "kind": "alien_terrace",
+      "rect": [
+        22,
+        10,
+        2.5,
+        2
+      ]
+    },
+    {
+      "kind": "alien_obelisk",
+      "rect": [
+        10,
+        27,
+        1.5,
+        1.5
+      ]
+    },
+    {
+      "kind": "alien_obelisk",
+      "rect": [
+        18.5,
+        8,
+        1.5,
+        1.5
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        9,
+        18,
+        2,
+        1.5
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        19,
+        16.5,
+        2,
+        1.5
       ]
     }
   ]
