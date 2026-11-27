@@ -60,6 +60,8 @@ func _play(e: GameEvent) -> void:
 			add_child(v)
 			v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 			views[f.id] = v
+			CombatVfx.magic(self,v.position,"portal",Color("b3a0ee"),1.1,speed)
+			_hold(0.85)
 		"ring_switch":
 			var v := _view(d["id"])
 			v.refresh(state.figure(d["id"]))
@@ -79,7 +81,36 @@ func _play(e: GameEvent) -> void:
 			_animate_move(_view(d["id"]), d["path"])
 		"terrain_fall":
 			var f := state.figure(d["id"])
-			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
+			var falling := _view(f.id)
+			var landing:=TableSpace.to_world(f.pos,f.elevation)
+			var fall:=create_tween()
+			fall.tween_property(falling,"position",landing,0.35).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+			fall.tween_callback(CombatVfx.sparks.bind(self,landing,Color("b7c8d3"),0.6,speed,0.15))
+			fall.tween_interval(0.35)
+			_wait_for(fall)
+		"terrain_changed","magic_burst","rune_exploded":
+			if d.get("at") is Vector2:
+				var id:=str(d.get("spell","explosive_rune"))
+				var point: Vector2=d["at"]
+				var at:=TableSpace.to_world(point,float(d.get("height",state.board.height_at(point)))+0.07)
+				var color:=SpellVisuals.color_for(id,state)
+				var radius:=float(d.get("radius",2.0))
+				CombatVfx.magic(self,at,_motif(id),color,radius,speed,not d.get("created",true))
+				if e.type!="terrain_changed":
+					CombatVfx.flash(self,at+Vector3.UP*0.5,color,radius,speed)
+					CombatVfx.sparks(self,at,color,radius,speed)
+				_hold(1.1)
+		"magic_impact":
+			if views.has(d["id"]):
+				var target:=_view(d["id"])
+				var id:=str(d["spell"])
+				CombatVfx.shot_impact(self,target.position+Vector3.UP*target.body_height(),SpellVisuals.color_for(id,state),bool(d["hit"]),true,id,speed)
+				_hold(0.85)
+		"resistance_result":
+			if views.has(d["id"]):
+				var target:=_view(d["id"])
+				CombatVfx.magic(self,target.position,"ward" if d["success"] else "runes",Color("a3e7f0") if d["success"] else Color("b69add"),0.95,speed,not d["success"])
+				_float_text(target,"RESISTED" if d["success"] else "RESISTANCE FAILED",Color("e5d1a0"))
 		"allegiance", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison", "null_field", "shield_absorb":
 			var affected := _view(d["id"])
 			affected.refresh(state.figure(d["id"]))
@@ -87,18 +118,35 @@ func _play(e: GameEvent) -> void:
 				var effect := str(d.get("spell",e.type)).replace("_"," ").capitalize()
 				if e.type=="spell_expired":
 					effect+=" ends"
-				_float_text(affected,effect,Color("8ed8ef"))
+				var id:=str(d.get("spell",e.type))
+				var color:=SpellVisuals.color_for(id,state)
+				var kind:=_motif(id)
+				if e.type=="shield_absorb":
+					kind="ward"
+					color=Color("83d5f7")
+					effect="Absorbed %d"%int(d.get("amount",0))
+				elif e.type=="poison":
+					kind="swarm"
+					color=Color("92ce54")
+				elif e.type=="null_field":
+					kind="runes"
+					color=Color("9baebd")
+				CombatVfx.magic(self,affected.position,kind,color,1.0,speed,e.type in ["spell_expired","null_field"])
+				_float_text(affected,effect,color.lightened(0.3))
 		"cast_result":
 			if views.has(d["id"]):
 				var caster := _view(d["id"])
 				var color := SpellVisuals.color_for(str(d["spell"]),state)
+				var id:=str(d["spell"])
+				SpellVisuals.sigil(self,caster.position+Vector3.UP*0.08,color,1.25)
+				CombatVfx.magic(self,caster.position,_motif(id),color,1.15,speed,not d["success"])
 				if d["success"]:
-					SpellVisuals.sigil(self,caster.position+Vector3.UP*0.16,color,1.25)
+					CombatVfx.flash(self,caster.position+Vector3.UP*caster.body_height(),color,0.45,speed)
 				else:
-					BattleEffects.pulse(self,caster.position+Vector3.UP*0.15,Color(0.90,0.38,0.36),1.1)
+					CombatVfx.sparks(self,caster.position+Vector3.UP*caster.body_height(),Color("c8a0ac"),0.55,speed)
 				var pose_tween := create_tween()
-				pose_tween.tween_method(caster.cast_pose,0.0,1.0,0.13)
-				pose_tween.tween_method(caster.cast_pose,1.0,0.0,0.22)
+				pose_tween.tween_method(caster.cast_pose,0.0,1.0,0.40)
+				pose_tween.tween_method(caster.cast_pose,1.0,0.0,0.35)
 				pose_tween.tween_interval(0.6)
 				_wait_for(pose_tween)
 		"disc_transport":
@@ -109,20 +157,23 @@ func _play(e: GameEvent) -> void:
 			BattleEffects.restore(self, healed.position + Vector3.UP * 0.15)
 			_float_text(healed, "+%d" % d["amount"], Color(0.45, 1.0, 0.63))
 		"shoot", "spell_shot":
-			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot",str(d.get("spell","")),d.get("origin",null),int(d.get("dmg",int(d.get("attack",1))>int(d.get("defence",0))))>0)
+			_animate_shot(_view(d["id"]),_view(d["target"]),e.type=="spell_shot" or d.get("wraith",false) or d.get("ammo",false),str(d.get("spell","")),d.get("origin",null),int(d.get("dmg",0))>0,str(d.get("weapon","bow")))
 		"fight":
 			var a := _view(d["id"])
 			var b := _view(d["target"])
 			if int(d["winner"]) == int(d["target"]):
-				_animate_lunge(b, a)
+				_animate_lunge(b,a,false,str(d.get("b_weapon","hand_weapon")),state.critical_hits and int(d.get("b_roll",0))==20)
 			else:
-				_animate_lunge(a, b,int(d["winner"])<0)
+				_animate_lunge(a,b,int(d["winner"])<0,str(d.get("a_weapon","hand_weapon")),state.critical_hits and int(d.get("a_roll",0))==20)
 		"damage":
 			var v := _view(d["id"])
 			v.refresh(state.figure(d["id"]))
+			CombatVfx.flash(self,v.position+Vector3.UP*v.body_height(),Color("f39882"),0.46,speed)
+			CombatVfx.sparks(self,v.position+Vector3.UP*v.body_height(),Color("e2ac86"),0.45,speed)
 			_float_text(v, "-%d" % d["amount"])
 		"out_of_action":
 			var fallen := _view(d["id"])
+			CombatVfx.sparks(self,fallen.position+Vector3.UP*0.15,Color("b8c7d0"),0.8,speed,0.25)
 			var defeat := fallen.take_out()
 			defeat.tween_interval(0.7)
 			_wait_for(defeat)
@@ -180,6 +231,11 @@ func _play(e: GameEvent) -> void:
 		_hold(NOTICE_HOLD if e.type in NOTICES or e.type.begins_with("reality_") else RESULT_HOLD)
 
 
+
+func _motif(id: String) -> String:
+	return CombatVfx.motif(id,str(state.spell_catalog.get(id,{}).get("school","")))
+
+
 func _view(id: int) -> FigureView:
 	return views[id]
 
@@ -231,10 +287,10 @@ func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 	_wait_for(t)
 
 
-func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell: String = "", origin: Variant = null, damaging: bool = true) -> void:
+func _animate_shot(from: FigureView,to: FigureView,magic: bool=false,spell: String="",origin: Variant=null,damaging: bool=true,weapon: String="bow") -> void:
 	from.face_toward(to.position)
 	var color := SpellVisuals.color_for(spell,state) if magic else Color(0.92,0.78,0.50)
-	var bolt := SpellVisuals.projectile(spell,magic,color)
+	var bolt := SpellVisuals.projectile(spell,magic,color,weapon)
 	add_child(bolt)
 	var start := from.position + Vector3.UP*from.body_height()
 	if origin is Vector2:
@@ -247,17 +303,27 @@ func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell:
 	var t := create_tween()
 	t.tween_method(from.cast_pose if magic else from.shot_pose, 0.0, 0.88, 0.20).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	t.tween_callback(bolt.show)
-	t.tween_property(bolt, "position", destination, maxf(0.10,start.distance_to(destination)*0.035))
+	t.tween_callback(CombatVfx.flash.bind(self,start,color,0.34 if magic else 0.14,speed))
+	var travel:=clampf(start.distance_to(destination)*0.055,0.20,1.25)
+	t.tween_property(bolt,"position",destination,travel)
+	if magic:
+		t.parallel().tween_property(bolt,"rotation:z",bolt.rotation.z+TAU,travel)
 	t.parallel().tween_method(from.cast_pose if magic else from.shot_pose, 0.88, 0.0, 0.23).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	t.tween_callback(bolt.queue_free)
-	t.tween_callback(BattleEffects.impact.bind(self,destination,color,damaging,magic))
+	t.tween_callback(CombatVfx.shot_impact.bind(self,destination,color,damaging,magic,spell,speed))
+	if damaging:
+		t.tween_method(to.recoil_pose,0.0,0.65,0.15)
+		t.tween_method(to.recoil_pose,0.65,0.0,0.20)
+	else:
+		t.tween_method(to.guard_pose,0.0,0.75,0.14)
+		t.tween_method(to.guard_pose,0.75,0.0,0.17)
 	if spell == "elemental_ball" and damaging:
 		t.tween_callback(BattleEffects.pulse.bind(self,to.position+Vector3.UP*0.15,color,1.7))
 	t.tween_interval(0.5)
 	_wait_for(t)
 
 
-func _animate_lunge(a: FigureView, b: FigureView,tied: bool=false) -> void:
+func _animate_lunge(a: FigureView,b: FigureView,tied: bool=false,weapon: String="hand_weapon",critical: bool=false) -> void:
 	a.face_toward(b.position)
 	b.face_toward(a.position)
 	var home := a.position
@@ -267,7 +333,12 @@ func _animate_lunge(a: FigureView, b: FigureView,tied: bool=false) -> void:
 	t.parallel().tween_method(b.guard_pose,0.0,1.0,0.17)
 	t.tween_property(a, "position", toward, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	t.parallel().tween_method(a.attack_pose, -0.45, 1.0, 0.16)
-	t.tween_callback(BattleEffects.clash.bind(self,toward.lerp(b.position,0.5)+Vector3.UP*0.85,b.position-home,tied))
+	var impact:=toward.lerp(b.position,0.5)+Vector3.UP*0.85
+	t.tween_callback(CombatVfx.strike.bind(self,toward+Vector3.UP*0.85,b.position-home,weapon,critical,speed))
+	t.tween_callback(BattleEffects.clash.bind(self,impact,b.position-home,tied))
+	t.tween_callback(CombatVfx.sparks.bind(self,impact,Color("ffe1a2") if critical else Color("cfdbe5"),1.1 if critical else 0.65,speed,0.45))
+	if critical:
+		t.tween_callback(CombatVfx.flash.bind(self,impact,Color("ffd58d"),0.8,speed))
 	t.tween_method(b.guard_pose,1.0,0.0,0.06)
 	t.tween_method(b.recoil_pose, 0.0, 0.35 if tied else 1.0, 0.12)
 	t.parallel().tween_property(a, "position", home, 0.20)

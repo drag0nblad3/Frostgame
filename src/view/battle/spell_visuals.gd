@@ -20,7 +20,7 @@ static func color_for(spell: String, state: GameState) -> Color:
 	return SchoolArt.glow(str(info.get("school","")))
 
 
-static func projectile(spell: String, magic: bool, color: Color) -> Node3D:
+static func projectile(spell: String, magic: bool, color: Color,weapon: String="") -> Node3D:
 	var root := Node3D.new()
 	var orb := spell in ["elemental_bolt","elemental_ball","fire_breath"] or (magic and spell.is_empty())
 	if orb:
@@ -42,6 +42,21 @@ static func projectile(spell: String, magic: bool, color: Color) -> Node3D:
 			var a := TAU*i/3.0
 			var fin := MiniatureFactory.box(root,Vector3(cos(a)*0.034,sin(a)*0.034,0.30),Vector3(0.04,0.095,0.13),color)
 			fin.rotation.z = a
+	var trail:=CombatVfx.material(Color(color.r,color.g,color.b,0.58))
+	if magic:
+		var count:=3 if GraphicsQuality.mode()==0 else 6
+		for i in count:
+			var a:=TAU*i/count
+			var w:=0.17 if orb else 0.08
+			var mote:=CombatVfx.part(root,"sphere",Vector3(cos(a)*w,sin(a)*w,0.45+0.13*i),Vector3(0.075,0.075,0.24),trail)
+			mote.rotation.z=a
+		if spell=="elemental_ball":
+			var ring:=CombatVfx.part(root,"ring",Vector3.ZERO,Vector3.ONE*0.29,trail)
+			ring.rotation.x=PI*0.5
+	else:
+		# Readable at tabletop zoom, without turning arrows into magic bolts.
+		var length:=0.9 if weapon=="javelin" else (0.48 if weapon=="crossbow" else 0.7)
+		CombatVfx.part(root,"box",Vector3(0,0,length*0.55),Vector3(0.025,0.025,length),trail)
 	return root
 
 

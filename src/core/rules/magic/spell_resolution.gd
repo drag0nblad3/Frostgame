@@ -176,6 +176,7 @@ static func _direct_attack(sa: SpellActions, f: Figure,t: Figure,power: int,spel
 		return
 	var a := sa.c.dice.d20() + power
 	var d := sa.c.dice.d20() + t.effective_fight() + t.roll_penalty()
+	sa.c.emit("magic_impact",{"id":t.id,"spell":spell,"hit":a>d})
 	if a > d:
 		sa.c._hurt(t, maxi(0, a - t.effective_armour()), f, false)
 

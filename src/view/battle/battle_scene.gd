@@ -319,11 +319,11 @@ func _process(delta: float) -> void:
 		_collect_bot_turn()
 	if ModalInput.blocked():
 		_rig.cancel_gesture()
+	if not _launch_intent.is_empty() and controller!=null and not ModalInput.blocked():
+		_open_launch_intent()
+		return
 	if _info_open() or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
-		return
-	if not _launch_intent.is_empty():
-		_open_launch_intent()
 		return
 	if _training >= 0:
 		_training_complete = TrainingLesson.completed(_training, controller)

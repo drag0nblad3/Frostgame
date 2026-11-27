@@ -17,6 +17,8 @@ static func fight(c: GameController, target_id: int) -> bool:
 static func finish_fate_fight(c: GameController, f: Figure, t: Figure, res: Dictionary) -> void:
 	res["id"] = f.id
 	res["target"] = t.id
+	res["a_weapon"]=f.melee.id if f.melee!=null else "unarmed"
+	res["b_weapon"]=t.melee.id if t.melee!=null else "unarmed"
 	c.emit("fight", res)
 	c._magic.illusions.reveal(f)
 	c._magic.illusions.reveal(t)
@@ -103,6 +105,7 @@ static func finish_fate_shot(c: GameController, f: Figure, t: Figure, res: Dicti
 	res["declared"] = declared
 	res["id"] = f.id
 	res["target"] = t.id
+	res["weapon"]=f.ranged.id if f.ranged!=null else "bow"
 	c.emit("shoot", res)
 	c._weapon_damage(t,RedKingElemental.weapon_damage(c,f,t,int(res["dmg"]),int(res["s_roll"]),true,int(res.get("elemental_choices",{}).get(t.id,-1))),f,f.ranged)
 	if f.spell_effects.get("potion_fairy_dust", "") == f.ranged.id:
