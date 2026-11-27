@@ -65,7 +65,7 @@ static func preview(bi: BattleInput) -> void:
 	var action_info:=CombatHudInfo.action(bi,f)
 	if not action_info.is_empty():
 		s.hint=action_info+"\n"+s.hint
-	if bi.mode in ["spell_target","spell_point","counter_select","treasure_spell","treasure_destination","leap_destination","swap_second","floor_teleport","floor_leap_target","floor_leap","floor_bridge","floor_bridge_end"] and bi.c.state.spell_catalog.has(bi.selected_spell):
+	if bi.mode in ["spell_target","spell_point","counter_select","treasure_spell","treasure_destination","leap_destination","swap_second","floor_teleport","floor_leap_target","floor_leap","floor_bridge","floor_bridge_end","floor_spell_point","floor_treasure_destination"] and bi.c.state.spell_catalog.has(bi.selected_spell):
 		var info: Dictionary=bi.c.state.spell_catalog[bi.selected_spell]
 		var tn:=int(bi.c.state.spellbooks.get(f.side,{}).get(bi.selected_spell,info["number"])) if f!=null else int(info["number"])
 		s.hint="%s · TN %d — %s"%[info["name"],tn,s.hint]

@@ -65,6 +65,15 @@ func start_treasure(id: String, token_id: int, at: Vector2) -> bool:
 	return _roll(id, c.state.active_id, at, false, -1, {"token": token_id})
 
 
+func start_floor_treasure(id: String,token_id: int,n: Vector3i) -> bool:
+	var token:=c.state.treasure(token_id)
+	var f:=c.state.active()
+	if c.state.board.floor_layout.is_empty() or token==null or not treasure_options(id).has(token) or not treasure_magic.can_place_floor(f,id,token,n):
+		return false
+	var layout:=c.state.board.floor_geometry()
+	return _roll(id,f.id,layout.point(n),false,-1,{"token":token_id,"surface_id":layout.surface_id(n)})
+
+
 func start_move(id: String, target_id: int, at: Vector2) -> bool:
 	if not can_cast(id, target_id):
 		return false

@@ -114,7 +114,7 @@ func drop_on_death(f: Figure) -> void:
 		_drop(f, f.pos, id)
 
 
-func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
+func _drop(f: Figure, at: Vector2, id: int = -1,surface: String="") -> void:
 	if id < 0:
 		id = f.treasure_id
 	var token := _c.state.treasure(id)
@@ -123,15 +123,29 @@ func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
 	_c._magic.illusions.reveal(f)
 	_clear_carrier(token)
 	token.pos = at
-	token.surface_id = f.surface_id
+	token.surface_id = f.surface_id if surface.is_empty() else surface
 	token.ring_side=f.ring_side
 	var height := _c.state.board.height_at(at)
-	if not f.surface_id.is_empty():
-		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)
-		var index := layout.index_of(f.surface_id)
+	if not token.surface_id.is_empty():
+		var layout:=_c.state.board.floor_geometry()
+		var index:=layout.index_of(token.surface_id)
 		if index>=0:
 			height=layout.surfaces[index].height_at(at)
 	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at,"height":height})
+
+
+func relocate_ground(token: TreasureToken,at: Vector2,surface: String="") -> void:
+	if token==null or not token.on_ground():
+		return
+	token.pos=at
+	token.surface_id=surface
+	var height:=_c.state.board.height_at(at)
+	if not surface.is_empty():
+		var layout:=_c.state.board.floor_geometry()
+		var index:=layout.index_of(surface)
+		if index>=0:
+			height=layout.surfaces[index].height_at(at)
+	_c.emit("treasure_moved",{"treasure":token.id,"at":at,"height":height})
 
 
 func cancel_shrinking(f: Figure) -> void:

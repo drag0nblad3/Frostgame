@@ -2,7 +2,7 @@ class_name BattleFloorInput
 extends RefCounted
 ## Geometry adapter only. All menus, reactions, attack confirmation and
 ## movement planning belong to BattleInput and BattleHud, on every board.
-const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle","floor_spell_point","floor_ring_teleport","floor_potion_teleport"]
+const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle","floor_spell_point","floor_ring_teleport","floor_potion_teleport","floor_treasure_destination"]
 
 
 static func append_spells(bi: BattleInput,f: Figure) -> void:
@@ -89,6 +89,11 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 		for n in nodes:
 			candidates[n]=true
 		s.hint="Choose a legal placement on this floor."
+	elif bi.mode=="floor_treasure_destination":
+		var token:=bi.c.state.treasure(bi.spell_first)
+		for n in bi.c._magic.treasure_magic.floor_points(f,bi.selected_spell,token,false,index):
+			candidates[n]=true
+		s.hint="Choose the treasure's destination on this floor."
 	elif bi.mode in ["floor_bridge","floor_bridge_end"]:
 		candidates=LayeredBridgePicker.points(bi.c,layout,index,bi.bridge_start if bi.mode=="floor_bridge_end" else null)
 		s.hint="Select first bridge endpoint." if bi.mode=="floor_bridge" else "Select a different floor and the second endpoint."
@@ -132,10 +137,9 @@ static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> voi
 			else:
 				world.append(at)
 		for token in bi.tokens:
-			if visible(bi,token.surface_id):
-				var index:=bi.floor_layout.index_of(token.surface_id)
-				if index>=0:
-					world.append(TableSpace.to_world(token.pos,bi.floor_layout.surfaces[index].height_at(token.pos)))
+			var surface:=bi.c._magic.treasure_magic.origin_surface(token)
+			if visible(bi,surface):
+				world.append(bi.c._magic.treasure_magic.origin_world(token))
 		if bi.tokens.is_empty() and f!=null and visible(bi,f.surface_id):
 			var index:=bi.floor_layout.index_of(f.surface_id)
 			if index>=0:
@@ -208,6 +212,7 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		"floor_teleport","floor_spell_point": return bi._declared(bi.c._magic.start_floor_at(bi.selected_spell,node))
 		"floor_ring_teleport": return GearActions.teleport_on_floor(bi.c,node)
 		"floor_potion_teleport": return bi.c._potions.teleport_on_floor(node)
+		"floor_treasure_destination": return bi._declared(bi.c._magic.start_floor_treasure(bi.selected_spell,bi.spell_first,node))
 		"floor_leap": return bi.c.leap_on_floor(bi.spell_first,node)
 		"floor_bottle": return GearActions.bottle_on_floor(bi.c,node)
 		"floor_bridge":

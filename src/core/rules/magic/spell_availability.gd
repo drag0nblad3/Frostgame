@@ -128,13 +128,11 @@ static func counter_options(sa: SpellActions, id: String) -> Array[Dictionary]:
 
 static func treasure_options(sa: SpellActions, id: String) -> Array[TreasureToken]:
 	var out: Array[TreasureToken] = []
-	if not sa.c.state.board.floor_layout.is_empty():
-		return out
 	var f := sa.c.state.active()
 	if id not in ["telekinesis", "fools_gold"] or f == null or not sa.c.can_act() or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light") or not sa.available_spell(f, id):
 		return out
 	for token in sa.c.state.treasures:
-		if sa.treasure_magic.can_target(f, id, token) and not sa.treasure_magic.points(f, id, token, true).is_empty():
+		if sa.treasure_magic.can_target(f,id,token) and (not sa.treasure_magic.points(f,id,token,true).is_empty() if sa.c.state.board.floor_layout.is_empty() else not sa.treasure_magic.floor_points(f,id,token,true).is_empty()):
 			out.append(token)
 	return out
 

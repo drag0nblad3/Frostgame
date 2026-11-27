@@ -48,7 +48,11 @@ static func _finish_one(sa: SpellActions, health: int) -> bool:
 		sa.weapons.destroy(t, p["effect"]["weapon"])
 		return true
 	if id in ["telekinesis", "fools_gold"]:
-		sa.treasure_magic.apply(f, id, s.treasure(p["effect"]["token"]), p["at"], int(result["roll"]))
+		var token:=s.treasure(p["effect"]["token"])
+		if p["effect"].has("surface_id"):
+			sa.treasure_magic.apply_floor(f,id,token,p["at"],p["effect"]["surface_id"],int(result["roll"]))
+		else:
+			sa.treasure_magic.apply(f,id,token,p["at"],int(result["roll"]))
 		return true
 	if id=="bridge" and p.get("effect",{}).has("layered_bridge"):
 		var bridge: Dictionary=p["effect"]["layered_bridge"]
