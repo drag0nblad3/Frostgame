@@ -39,6 +39,10 @@ func test_layered_frames_preserve_elevation_and_surface_identity() -> void:
 	check_eq(frame["figures"][1]["surface"],"upper")
 	check_eq(frame["figures"][1]["height"],3.0)
 	check_eq(frame["floors"].size(),4)
+	check(not frame["solids"].is_empty())
+	for surface in frame["floors"]:
+		check(surface.has("end_height"))
+		check(surface.has("axis_y"))
 
 
 func test_frame_storage_bound_and_opt_in() -> void:
