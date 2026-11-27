@@ -76,7 +76,10 @@ static func _begin_campaign_battle(bs: BattleScene) -> void:
 		return
 	var source: Dictionary=JsonFile.read(ScenarioLoader.DIR+bs._scenario_id+".json")
 	source["warbands"][0]=bs._campaign.deployment()
+	source["reality_cracks"]=bs._campaign.data.get("reality_cracks",false)
+	var began := Time.get_ticks_usec()
 	var candidate := ScenarioLoader.from_dict(source,bs._figures,bs._terrain)
+	print("Map load: campaign deployment %.1f ms"%[float(Time.get_ticks_usec()-began)/1000.0])
 	if candidate.scenario_data.has("deployment_error"):
 		bs.hud.notify(str(candidate.scenario_data["deployment_error"]))
 		bs._campaign_dialog.refresh(false)
@@ -84,7 +87,7 @@ static func _begin_campaign_battle(bs: BattleScene) -> void:
 	bs._campaign_battle = true
 	bs.watch_mode = false
 	bs._campaign_dialog.hide()
-	bs.new_game(0)
+	bs.new_game(0,candidate)
 
 
 static func _save_battle(bs: BattleScene) -> bool:

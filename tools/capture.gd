@@ -66,7 +66,7 @@ func _process(_delta: float) -> bool:
 		_scene.step()
 		_left -= 1
 		return false
-	if _frames < 40:
+	if _frames < 40 or not _scene._board_view.scenery_ready():
 		return false
 	if _effects and _effect_frame<0:
 		_effect_frame=_frames

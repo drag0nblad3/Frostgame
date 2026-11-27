@@ -23,11 +23,25 @@ var _boundary_key := ""
 var _ground_key := ""
 var _decoration_key := ""
 var _camera_at := Vector3(INF,INF,INF)
+var _city_key := ""
+var _city_next := 4
+var _city_board: Board
+var _city_scenario := ""
+var _city_started := 0
 
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_scenery):
 		return
+	if _city_next<4:
+		var district_started := Time.get_ticks_usec()
+		_scenery.add_child(CityScenery.build_district(_city_board,_city_scenario,false,_city_next))
+		_city_next+=1
+		_camera_at=Vector3(INF,INF,INF)
+		print("Map load: district %d %.1f ms"%[_city_next,float(Time.get_ticks_usec()-district_started)/1000.0])
+		if _city_next==4:
+			_city_board=null
+			print("Map load: outskirts ready after %.1f ms"%[float(Time.get_ticks_usec()-_city_started)/1000.0])
 	var camera := get_viewport().get_camera_3d()
 	if camera!=null and camera.global_position!=_camera_at:
 		_camera_at=camera.global_position
@@ -35,8 +49,13 @@ func _process(_delta: float) -> void:
 
 
 func build(board: Board) -> void:
-	# New encounter only. In-battle terrain changes use sync_terrain().
+	# New encounter only. Reuse static surroundings for identical scenarios.
+	var scenario := board.id if scenario_id.is_empty() else scenario_id
+	var city_key := str([board.size,scenario,cinematic,GraphicsQuality.mode()])
+	var keep_city := is_instance_valid(_scenery) and city_key==_city_key
 	for c in get_children():
+		if keep_city and c==_scenery:
+			continue
 		remove_child(c)
 		c.queue_free()
 	_pieces.clear()
@@ -49,12 +68,29 @@ func build(board: Board) -> void:
 	_ground_key=""
 	_decoration_key=""
 	_camera_at=Vector3(INF,INF,INF)
-	var scenario := board.id if scenario_id.is_empty() else scenario_id
-	_scenery=CityScenery.build(board,scenario,cinematic)
-	add_child(_scenery)
 	_board_size=board.size
+	if not keep_city:
+		_city_key=city_key
+		_city_next=4
+		_city_board=null
+		if cinematic or not is_inside_tree() or RealmScenery.special(scenario) or scenario in ["underground_library","training_yard"]:
+			_scenery=CityScenery.build(board,scenario,cinematic)
+		else:
+			_scenery=Node3D.new()
+			_scenery.name="CityScenery"
+			# Snapshot only the size: the bot may be mutating the actual board.
+			_city_board=Board.new()
+			_city_board.size=board.size
+			_city_scenario=scenario
+			_city_next=0
+			_city_started=Time.get_ticks_usec()
+		add_child(_scenery)
 	set_process(not cinematic)
 	sync_terrain(board)
+
+
+func scenery_ready() -> bool:
+	return _city_next>=4
 
 
 func sync_terrain(board: Board) -> void:
