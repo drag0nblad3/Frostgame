@@ -2,7 +2,7 @@ class_name BattleFloorInput
 extends RefCounted
 ## Geometry adapter only. All menus, reactions, attack confirmation and
 ## movement planning belong to BattleInput and BattleHud, on every board.
-const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle","floor_spell_point","floor_ring_teleport","floor_potion_teleport","floor_treasure_destination"]
+const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle","floor_spell_point","floor_ring_teleport","floor_potion_teleport","floor_treasure_destination","floor_suggestion"]
 
 
 static func append_spells(bi: BattleInput,f: Figure) -> void:
@@ -73,7 +73,7 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 	if f==null:
 		return true
 	var layout:=bi.floor_layout
-	var t:=bi.c.state.figure(bi.spell_first) if bi.mode=="floor_leap" else f
+	var t:=bi.c.state.figure(bi.spell_first) if bi.mode in ["floor_leap","floor_suggestion"] else f
 	if t==null:
 		return true
 	var index:=_index(bi,t)
@@ -92,6 +92,10 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 		for n in nodes:
 			candidates[n]=true
 		s.hint="Choose a legal placement on this floor."
+	elif bi.mode=="floor_suggestion":
+		for n in SpellAvailability.floor_suggestion_points(bi.c._magic,t,false,index):
+			candidates[n]=true
+		s.hint="Choose a safe destination within 3 inches, or leave the figure where it is."
 	elif bi.mode=="floor_treasure_destination":
 		var token:=bi.c.state.treasure(bi.spell_first)
 		for n in bi.c._magic.treasure_magic.floor_points(f,bi.selected_spell,token,false,index):
@@ -125,7 +129,7 @@ static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> voi
 	var selected:=PackedVector3Array()
 	var f:=bi.c.state.active()
 	if not bi.floor_points.is_empty():
-		var actor:=bi.c.state.figure(bi.spell_first) if bi.mode=="floor_leap" else f
+		var actor:=bi.c.state.figure(bi.spell_first) if bi.mode in ["floor_leap","floor_suggestion"] else f
 		var index:=_index(bi,actor) if actor!=null else -1
 		for n: Vector3i in bi.floor_points:
 			if n.z==index:
@@ -158,7 +162,7 @@ static func pick(bi: BattleInput,screen: Vector2) -> Variant:
 	if f==null:
 		return null
 	var index:=_index(bi,f)
-	if bi.mode=="floor_leap" and bi.floor_id.is_empty():
+	if bi.mode in ["floor_leap","floor_suggestion"] and bi.floor_id.is_empty():
 		var t:=bi.c.state.figure(bi.spell_first)
 		if t!=null:
 			index=_index(bi,t)
@@ -215,6 +219,7 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		"floor_teleport","floor_spell_point": return bi._declared(bi.c._magic.start_floor_at(bi.selected_spell,node,bi.spell_rotated))
 		"floor_ring_teleport": return GearActions.teleport_on_floor(bi.c,node)
 		"floor_potion_teleport": return bi.c._potions.teleport_on_floor(node)
+		"floor_suggestion": return bi._declared(bi.c._magic.start_floor_suggestion(bi.spell_first,node))
 		"floor_treasure_destination": return bi._declared(bi.c._magic.start_floor_treasure(bi.selected_spell,bi.spell_first,node))
 		"floor_leap": return bi.c.leap_on_floor(bi.spell_first,node)
 		"floor_bottle": return GearActions.bottle_on_floor(bi.c,node)

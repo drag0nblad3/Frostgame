@@ -74,8 +74,28 @@ func start_floor_treasure(id: String,token_id: int,n: Vector3i) -> bool:
 	return _roll(id,f.id,layout.point(n),false,-1,{"token":token_id,"surface_id":layout.surface_id(n)})
 
 
+func start_floor_suggestion(target_id: int,n: Vector3i) -> bool:
+	if c.state.board.floor_layout.is_empty() or not can_cast("suggestion",target_id):
+		return false
+	var t:=c.state.figure(target_id)
+	if not SpellAvailability.floor_suggestion_points(self,t).has(n):
+		return false
+	var layout:=c.state.board.floor_geometry()
+	return _roll("suggestion",target_id,layout.point(n),false,-1,{"surface_id":layout.surface_id(n)})
+
+
+func _floor_suggestion_result(success: bool,t: Figure,at: Vector2,surface: String) -> void:
+	if success or not t.in_play():
+		return
+	c._loot.drop_on_death(t)
+	var layout:=c.state.board.floor_geometry()
+	var n:=layout.node(surface,at)
+	if SpellAvailability.floor_suggestion_points(self,t).has(n) and (at!=t.pos or surface!=t.surface_id):
+		movement.move_floor(t,n)
+
+
 func start_move(id: String, target_id: int, at: Vector2) -> bool:
-	if not can_cast(id, target_id):
+	if not c.state.board.floor_layout.is_empty() or not can_cast(id,target_id):
 		return false
 	var f := c.state.active()
 	var t := c.state.figure(target_id)

@@ -10,11 +10,8 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 		return false
 	if (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or FuryRules.target(s,f)!=null:
 		return false
-	if f.spell_effects.has("plane_walk") or f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
+	if cape and PlaneWalk.uses_direct(f):
 		return false
-	for piece in s.board.pieces:
-		if piece.cast_turn>=0:
-			return false
 	return true
 
 
@@ -29,6 +26,8 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 	var start := layout.node(f.surface_id,f.pos)
 	if not layout.standable(start) or not layout.point(start).is_equal_approx(f.pos) or not is_equal_approx(layout.height(start),f.elevation):
 		return LayeredReach.new()
+	if PlaneWalk.uses_direct(f):
+		return LayeredReach.new() if run or cape else PlaneWalk.floor_reach(s,f)
 	var grid := LayeredGrid.new(layout,f,s.figures)
 	grid.running=run
 	return LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape)
@@ -46,6 +45,14 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 		path.append(layout.world(step))
 		surfaces.append(layout.surface_id(step))
 	var cost:=float(reachable.cost[node])
+	if f.spell_effects.has("plane_walk"):
+		c.spend_move(f)
+		f.pos=layout.point(node)
+		f.elevation=layout.height(node)
+		f.surface_id=layout.surface_id(node)
+		c.emit("layered_move",{"id":f.id,"path":path,"surfaces":surfaces,"cost":cost})
+		ScenarioSites.end_move(c,f)
+		return true
 	var targets:=MovementContact.enemies_at(c.state.figures,f,layout.point(node),layout.height(node),layout.surface_id(node))
 	var ignored: Array[int]=[]
 	if cape:

@@ -51,7 +51,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			"spell_target":
 				if bi.selected_spell in ["leap", "transpose", "suggestion"]:
 					bi.spell_first = id
-					bi.mode = "swap_second" if bi.selected_spell == "transpose" else "leap_destination"
+					bi.mode = "swap_second" if bi.selected_spell=="transpose" else ("floor_suggestion" if bi.is_layered() and bi.selected_spell=="suggestion" else "leap_destination")
 					bi.preview()
 					return false
 				return bi._declared(bi.c.start_cast(bi.selected_spell,id,bi.spell_ammo))

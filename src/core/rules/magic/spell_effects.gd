@@ -32,7 +32,8 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 			else:
 				sa.movement.move(t,p["at"],true,false,true,id)
 		"suggestion":
-			sa.resistance.attempt(t, int(result["roll"]), sa._suggestion_result.bind(t, p["at"]),(5 if t.def.traits.has("blood_marked") else 0)+RedKingGear.puppet_penalty(f,t))
+			var callback:=sa._floor_suggestion_result.bind(t,p["at"],p["effect"]["surface_id"]) if p.get("effect",{}).has("surface_id") else sa._suggestion_result.bind(t,p["at"])
+			sa.resistance.attempt(t,int(result["roll"]),callback,(5 if t.def.traits.has("blood_marked") else 0)+RedKingGear.puppet_penalty(f,t))
 			return true
 		"push":
 			sa.movement.push(f, t)

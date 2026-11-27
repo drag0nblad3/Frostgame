@@ -5,7 +5,7 @@ extends RefCounted
 
 static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := sa.c.state
-	if not s.board.floor_layout.is_empty() and id in ["suggestion","leap","plane_walk"]:
+	if not s.board.floor_layout.is_empty() and id=="leap":
 		# These effects still require an explicit floor placement/origin.
 		# All other figure-targeted effects use the standard rules below.
 		return false
@@ -77,7 +77,7 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 	if id=="control_demon" and t.def.traits.has("immune_control_demon"):
 		return false
 	if id == "suggestion":
-		return t != f and not t.mind_locked()
+		return t != f and not t.mind_locked() and (s.board.floor_layout.is_empty() or not floor_suggestion_points(sa,t,true).is_empty())
 	if id == "bones_of_the_earth":
 		return not t.def.traits.has("large") and t.elevation < 0.01 and not t.spell_effects.has(id)
 	if id == "leap":
@@ -134,6 +134,33 @@ static func treasure_options(sa: SpellActions, id: String) -> Array[TreasureToke
 	for token in sa.c.state.treasures:
 		if sa.treasure_magic.can_target(f,id,token) and (not sa.treasure_magic.points(f,id,token,true).is_empty() if sa.c.state.board.floor_layout.is_empty() else not sa.treasure_magic.floor_points(f,id,token,true).is_empty()):
 			out.append(token)
+	return out
+
+
+static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=false,index: int=-1) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	var s:=sa.c.state
+	var layout:=s.board.floor_geometry()
+	var origin:=Vector3(t.pos.x,t.elevation,t.pos.y)
+	for n in BattlePlacement.nodes(s.board,t.pos,3.0,index):
+		var at:=layout.world(n)
+		if origin.distance_to(at)>3.001 or not BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) or ScenarioNull.field_at(s.board,layout.point(n)):
+			continue
+		if not is_equal_approx(at.y,origin.y):
+			continue
+		if BattleBoundary.blocks_segment(s.board.boundaries,t.pos,layout.point(n),"movement",t):
+			continue
+		var clear:=true
+		var steps:=maxi(1,ceili(origin.distance_to(at)*4.0))
+		for i in range(1,steps+1):
+			var sample:=origin.lerp(at,float(i)/steps)
+			if not layout.clearance(sample,Figure.BASE_RADIUS,1.6) or TerrainMagic.ward_blocks(s.board,t,Vector2(sample.x,sample.z),sample.y):
+				clear=false
+				break
+		if clear:
+			out.append(n)
+			if first_only:
+				break
 	return out
 
 

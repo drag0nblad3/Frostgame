@@ -27,7 +27,7 @@ static func query(c: GameController,mode: String,existing: MoveReach=null) -> Ba
 			if (mode=="exit" and c.can_exit_table(n,o.flat)) or (mode!="exit" and float(o.flat.cost[n])>0.001):
 				o.cost[n]=o.flat.cost[n]
 	else:
-		o.layout=FloorLayout.from_dict(o.board.floor_layout)
+		o.layout=o.board.floor_geometry()
 		match mode:
 			"jump":
 				o.jumps=LayeredJump.plans(c)
