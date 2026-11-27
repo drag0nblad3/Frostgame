@@ -140,6 +140,11 @@ func test_story_campaign_lifecycle_with_real_scenarios() -> void:
 		check(p.can_deploy(),id+": "+"; ".join(p.deployment_blockers()))
 		var source: Dictionary = JsonFile.read(ScenarioLoader.DIR+id+".json")
 		source["warbands"][0]=p.deployment()
+		for entry: Dictionary in source.get("creatures",[]):
+			if not defs.available(entry["type"]):
+				check(false,id+": unavailable creature "+str(entry["type"]))
+				DirAccess.remove_absolute(path)
+				return
 		var s := ScenarioLoader.from_dict(source,defs,terrain())
 		check(not s.scenario_data.has("deployment_error"),id)
 		var c := GameController.new(s,Dice.new(47))

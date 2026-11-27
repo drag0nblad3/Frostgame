@@ -22,7 +22,7 @@ static func load_files(fig_path: String = FIGURES, weapon_path: String = WEAPONS
 	if fig_path==FIGURES:
 		for pack_id: String in db.content_profile.enabled:
 			var pack: Dictionary=db.content_profile.packs.get(pack_id,{})
-			if pack.get("status","ready")!="ready":
+			if not db.content_profile.packs.has(pack_id) or not ContentProfile.playable(pack):
 				continue
 			var path := str(pack.get("catalogs",{}).get("figures",""))
 			if not path.is_empty():

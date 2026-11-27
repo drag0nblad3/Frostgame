@@ -52,6 +52,11 @@ func test_installed_red_king_playtest_is_opt_in() -> void:
 	var expansion := ContentProfile.new(["red_king"])
 	check(expansion.errors().is_empty())
 	check(expansion.allows("campaigns","red_king"))
+	var enabled_db := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,expansion)
+	var core_db := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,core)
+	for id: String in expansion.packs["red_king"]["content"]["figures"]:
+		check(enabled_db.available(id),id+" is available in installed expansion")
+		check(not core_db.available(id),id+" is unavailable without the expansion")
 	check(not core.allows("campaigns","red_king"))
 	check(expansion.rule("red_king_reality_cracks"))
 	check(not core.rule("red_king_reality_cracks"))

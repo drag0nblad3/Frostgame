@@ -13,6 +13,17 @@ func _init() -> void:
 	if id.begins_with("red_king_"):
 		profile=ContentProfile.new(["red_king"])
 	var db := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	if not profile.errors().is_empty():
+		printerr("FAIL ", "; ".join(profile.errors()))
+		quit(1)
+		return
+	if id.begins_with("red_king_"):
+		var source: Dictionary = JsonFile.read(ScenarioLoader.DIR+id+".json")
+		for entry: Dictionary in source.get("creatures",[]):
+			if not db.available(entry["type"]):
+				printerr("FAIL unavailable creature ",entry["type"])
+				quit(1)
+				return
 	var terrain := TerrainDb.load_file()
 	var layered := id in ["stacked_gatehouse","layered_silent_tower"]
 	var c: GameController
