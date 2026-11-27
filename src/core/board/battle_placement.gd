@@ -79,3 +79,18 @@ static func support(s: GameState,at: Vector2,id: String="",radius: float=Figure.
 			best=n
 			lowest=h
 	return best
+
+
+## Scenario spawns near a known support never select a deck above or below it.
+static func nearby_floor(s: GameState,center: Vector2,height: float,radius: float,surface: String="",mover: Figure=null) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	var layout:=s.board.floor_geometry()
+	var index:=layout.index_of(surface) if not surface.is_empty() else -1
+	if not surface.is_empty() and index<0:
+		return out
+	for n in nodes(s.board,center,radius,index):
+		if layout.point(n).distance_to(center)>radius+0.001 or absf(layout.height(n)-height)>=0.5:
+			continue
+		if floor_open(s,n,mover):
+			out.append(n)
+	return out

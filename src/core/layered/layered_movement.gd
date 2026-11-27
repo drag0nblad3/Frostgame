@@ -8,7 +8,9 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 	var f := s.active()
 	if s.board.floor_layout.is_empty() or not (GearActions.cape_ready(c) if cape else c.can_move()) or f.surface_id.is_empty():
 		return false
-	if not s.scenario_special.is_empty() and s.scenario_special!="silent_tower":
+	# Only scenarios whose spatial objectives have been audited can opt
+	# into authored stacked floors. Ordinary maps continue to use the same rules.
+	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle"]:
 		return false
 	if cape and PlaneWalk.uses_direct(f):
 		return false

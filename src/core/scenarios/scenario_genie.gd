@@ -13,6 +13,27 @@ static func first_pickup(c: GameController, finder: Figure, token: TreasureToken
 			collected += 1
 	if collected < s.treasures.size() and c.dice.d20() < 15:
 		return
+	if not s.board.floor_layout.is_empty():
+		var layout:=s.board.floor_geometry()
+		var nodes:=BattlePlacement.nearby_floor(s,finder.pos,finder.elevation,4.0,finder.surface_id)
+		var best: Variant=null
+		var score:=INF
+		for n in nodes:
+			var at:=layout.point(n)
+			var distance:=at.distance_to(finder.pos)
+			var closer:=true
+			for other in s.figures:
+				if other!=finder and other.in_play() and absf(other.elevation-finder.elevation)<0.5 and other.pos.distance_to(at)<=distance:
+					closer=false
+					break
+			var value:=absf(distance-1.75)+(0.0 if closer else 10.0)
+			if value<score:
+				score=value
+				best=n
+		if best!=null:
+			var creature:=c._encounters._spawn_on_floor("genie",best)
+			_released(c,finder,token,creature)
+		return
 	var grid := MoveGrid.new(s.board, null, s.figures)
 	var candidates: Array[Vector2] = []
 	var center := MovePlanner.node_at(finder.pos)
@@ -43,10 +64,14 @@ static func first_pickup(c: GameController, finder: Figure, token: TreasureToken
 		return
 	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool:
 		return absf(a.distance_to(finder.pos) - 1.75) < absf(b.distance_to(finder.pos) - 1.75))
-	var genie := c._encounters._spawn_at("genie", candidates[0])
-	s.lamp_token = token.id
-	s.genie_id = genie.id
-	c.emit("genie_released", {"id": genie.id, "side": finder.side, "treasure": token.id, "xp": 30})
+	var creature := c._encounters._spawn_at("genie", candidates[0])
+	_released(c,finder,token,creature)
+
+
+static func _released(c: GameController,finder: Figure,token: TreasureToken,creature: Figure) -> void:
+	c.state.lamp_token=token.id
+	c.state.genie_id=creature.id
+	c.emit("genie_released",{"id":creature.id,"side":finder.side,"treasure":token.id,"xp":30})
 
 
 static func record_kill(c: GameController, victim: Figure, by: Figure) -> void:
@@ -64,6 +89,24 @@ static func flee(c: GameController, f: Figure) -> bool:
 		return false
 	if Contact.in_combat(s.figures, f):
 		return false
+	if not s.board.floor_layout.is_empty():
+		if f.moves_taken==0 and c.can_move():
+			LayeredLoot.advance_to_exit(c,f)
+		if c.awaiting_reaction() or not f.in_play():
+			return true
+		if Contact.in_combat(s.figures,f):
+			return false
+		var layout:=s.board.floor_geometry()
+		if LayeredLoot.is_exit(s,layout,layout.node(f.surface_id,f.pos),f.side):
+			f.exited=true
+			f.actions_left=0
+			c.emit("exit",{"id":f.id})
+			c.emit("genie_escaped",{"id":f.id})
+			return true
+		var enemy:=CreatureBot.closest(c,f,true)
+		if enemy!=null:
+			c.shoot(enemy.id)
+		return true
 	if f.moves_taken == 0 and c.can_move():
 		var r := c.reach()
 		var best := Vector2i(-1, -1)

@@ -11,6 +11,8 @@ static func play(c: GameController) -> bool:
 
 
 static func perform(c: GameController,f: Figure) -> void:
+	if f.side<0 and ScenarioGenie.flee(c,f):
+		return
 	if not c.awaiting_reaction() and _cape(c,f):
 		if c.state.active()!=f or c.awaiting_reaction():
 			return
@@ -31,6 +33,10 @@ static func _act(c: GameController,f: Figure) -> bool:
 		if f.side<0:
 			PackRules.remember(c.state,f,enemy)
 		return c.fight(enemy.id)
+	if f.side>=0 and c.can_drink_well():
+		return c.drink_well()
+	if f.side>=0 and c.break_ice():
+		return true
 	if f.side>=0 and not f.def.traits.has("animal"):
 		for token in c.state.treasures:
 			if c.can_pick_up(token.id):
@@ -39,7 +45,7 @@ static func _act(c: GameController,f: Figure) -> bool:
 		var shot := CreatureBot._blast_target(c,f)
 		if shot!=null:
 			c._spend(f)
-			c._magic._shot(f,shot,3,Vector3(f.pos.x,f.elevation,f.pos.y),true,true,"elemental_blast")
+			c._magic._shot(f,shot,3,Vector3(f.pos.x,f.elevation+1.5,f.pos.y),true,true,"elemental_blast")
 			return true
 	if MagicBot.play(c,f):
 		return true
@@ -80,7 +86,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 		if distance>=best:
 			continue
 		if f.treasure_id>=0:
-			if LayeredLoot.is_exit(c.state,layout,n):
+			if LayeredLoot.is_exit(c.state,layout,n,f.side):
 				goal=n
 				best=distance
 		elif f.side>=0 and not f.def.traits.has("animal"):

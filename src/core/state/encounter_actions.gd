@@ -118,6 +118,16 @@ func museum_pickup(f: Figure) -> bool:
 		return true
 	var statue := statues[c.dice.pick(statues.size())]
 	var at := statue.rect.get_center()
+	if not c.state.board.floor_layout.is_empty():
+		var height:=statue.base_height
+		var surface:=statue.surface_id
+		c._magic.terrain.remove(statue)
+		var layout:=c.state.board.floor_geometry()
+		var options:=BattlePlacement.nearby_floor(c.state,at,height,2.0,surface)
+		options.sort_custom(func(a: Vector3i,b: Vector3i) -> bool: return layout.point(a).distance_to(at)<layout.point(b).distance_to(at))
+		if not options.is_empty():
+			_spawn_on_floor("medium_construct",options[0])
+		return true
 	c.state.board.pieces.erase(statue)
 	c.state.board.invalidate_terrain()
 	c.emit("terrain_changed", {"spell": "museum_statue", "created": false})

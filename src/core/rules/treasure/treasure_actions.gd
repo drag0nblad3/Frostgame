@@ -43,17 +43,16 @@ func claim_free(f: Figure, token: TreasureToken) -> bool:
 		return false
 	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
 		return false
-	for enemy in _c.state.figures:
-		if enemy.ring_side!=f.ring_side or enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
-			continue
-		if Shooting.distance(enemy, f) <= 1.0 or Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, _c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
-			return false
+	if TreasureRules.enemy_interferes(_c.state,f,token):
+		return false
 	return _claim(f, token)
 
 
 func _claim(f: Figure, token: TreasureToken) -> bool:
 	var id := token.id
-	ScenarioSites.discover(_c, token.pos, f.side)
+	# Only a figure on the site's actual ground level can discover a hut.
+	if token.surface_id.is_empty() or absf(TreasureRules.token_height(_c.state,token))<0.5:
+		ScenarioSites.discover(_c, token.pos, f.side)
 	_c._magic.illusions.reveal(f)
 	if f.treasure_id >= 0:
 		f.second_treasure_id = f.treasure_id
@@ -172,7 +171,7 @@ func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if r.cost[node] + Figure.BASE_RADIUS > MoveRules.allowance(f) + 0.001:
 		return false
 	for enemy in _c.state.figures:
-		if enemy.in_play() and enemy.side != f.side and Contact.touching(enemy.pos, at):
+		if enemy.in_play() and enemy.ring_side==f.ring_side and enemy.side!=f.side and Contact.touches_position(enemy,at,_c.state.board.height_at(at)):
 			return false
 	return true
 
