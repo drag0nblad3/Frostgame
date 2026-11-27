@@ -11,6 +11,7 @@ const NOTICES := ["hut_discovered", "disc_transport", "disc_stay", "well_drink",
 
 ## Animation speed multiplier (higher is faster).
 var speed := 0.8
+var camera_director := BattleCameraDirector.new()
 const RESULT_HOLD := 0.8
 const NOTICE_HOLD := 1.3
 const DAMAGE_HOLD := 1.7
@@ -37,9 +38,12 @@ func _process(_delta: float) -> void:
 		return
 	while not _busy and not _queue.is_empty():
 		_play(_queue.pop_front())
+	if idle():
+		camera_director.finish()
 
 
 func _play(e: GameEvent) -> void:
+	camera_director.before(e,views)
 	var line := Explainer.text(state, e)
 	if line != "":
 		if e.type in NOTICES:
