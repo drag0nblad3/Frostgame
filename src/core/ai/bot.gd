@@ -14,6 +14,10 @@ static func play_activation(c: GameController) -> bool:
 
 
 static func resume_activation(c: GameController) -> bool:
+	return BattleRecord.run(c,"bot_resume",{},func() -> bool: return _resume(c))
+
+
+static func _resume(c: GameController) -> bool:
 	var f := c.state.active()
 	if f == null or c.awaiting_reaction():
 		return false
