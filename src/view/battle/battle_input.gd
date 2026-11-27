@@ -56,6 +56,11 @@ func refresh() -> void:
 		mode=end_choice["kind"]
 		preview()
 		return
+	if end_choice.get("kind","")=="sinkhole_pull":
+		available.assign(["sinkhole_accept","sinkhole_fight","sinkhole_will","sinkhole_all"])
+		mode="sinkhole_pull"
+		preview()
+		return
 	if end_choice.get("kind","")=="memory":
 		available.assign(["mind_skip"])
 		mode="mind_token"
@@ -478,6 +483,11 @@ func preview() -> void:
 			points.assign(RedKingHunt.points(c))
 			var choice: Dictionary=c.state.scenario_data["rk_end_choice"]
 			hint="Deploy %s within 6″ of the chosen corner. %d remaining."%["Hrut Stinger" if choice["remaining"]==choice["total"] else "Hrut Warrior",choice["remaining"]]
+		"sinkhole_pull":
+			var unit := c.state.figure(int(c.state.scenario_data["rk_end_choice"]["id"]))
+			points.append(unit.pos)
+			radius=0.65
+			hint="%s: accept 1″ pull toward the orb, or resist (TN20, Fight %+d / Will %+d). Failure costs 2 Health and still moves the figure."%[unit.label(),unit.effective_fight()+MagicEquipment.bonus(unit,"fight_test")+unit.roll_penalty(),unit.effective_will()+unit.roll_penalty()]
 		"mind_token":
 			for token in c.state.treasures:
 				if token.on_ground():
@@ -610,6 +620,8 @@ func action(key: String) -> bool:
 		available.clear()
 		preview()
 		return false
+	if key in ["sinkhole_accept","sinkhole_fight","sinkhole_will","sinkhole_all"]:
+		return RedKingSinkhole.answer_pull(c,key.trim_prefix("sinkhole_"))
 	if key=="veil_keep":
 		return RedKingVeil.answer_target(c,int(c.state.scenario_data["rk_end_choice"]["target"]))
 	if key=="mind_skip":

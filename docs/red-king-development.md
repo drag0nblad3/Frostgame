@@ -300,3 +300,6 @@ Blink and Kalamon Ryce's wandering now support a post-roll heading decision, wit
 
 ### Environmental lightning reaction
 Reality Crack 10 now resolves the affected figures sequentially, pausing for a human amulet bearer after damage is known. Priority remains suspended until the queue has finished, and the queue and offer are checkpoint-safe. Other elemental environmental and creature-effect sources retain the pre-arm approximation.
+
+### Planar Sinkhole resistance choices
+The gravitational pull now resolves nearest-first through a checkpoint-safe queue. Human figures may accept displacement or attempt a Fight/Will TN20 test (failure adds two damage); a single accept-all option avoids excessive prompts when no figure needs resistance. Rivals consider resistance only near dangerous contact and with a reasonable stat. Loose treasure movement, Nullman returns and turn advancement occur after all choices resolve.

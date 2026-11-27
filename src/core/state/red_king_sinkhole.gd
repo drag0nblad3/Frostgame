@@ -68,7 +68,7 @@ static func record_xp(c: GameController,f: Figure) -> void:
 			_award(c,f,"nullman_combat")
 
 
-## Explicit optional resistance; the end-turn default is to accept the pull.
+## Optional resistance. A failed test costs two Health in addition to movement.
 static func pull(c: GameController,f: Figure,resist: String="") -> void:
 	var s := c.state
 	if not active(s) or not f.in_play() or f.def.id=="nullman":
@@ -123,8 +123,55 @@ static func end_turn(c: GameController) -> void:
 			units.append(f)
 	units.sort_custom(func(a: Figure,b: Figure) -> bool:
 		return a.pos.distance_squared_to(center(s))<b.pos.distance_squared_to(center(s)))
+	var ids: Array[int]=[]
 	for f in units:
-		pull(c,f)
+		if f.def.id!="nullman":
+			ids.append(f.id)
+	s.scenario_data["rk_sinkhole_queue"]=ids
+	_advance_pull(c)
+
+
+static func _advance_pull(c: GameController,accept_rest: bool=false) -> void:
+	var s := c.state
+	var queue: Array=s.scenario_data.get("rk_sinkhole_queue",[])
+	while not queue.is_empty():
+		var f := s.figure(int(queue.pop_front()))
+		if f==null or not f.in_play():
+			continue
+		if f.side>=0 and f.side==s.reaction_side and not accept_rest:
+			s.scenario_data["rk_end_choice"]={"kind":"sinkhole_pull","id":f.id}
+			c.emit("sinkhole_choice",{"id":f.id})
+			return
+		# Rivals risk resistance only where contact would cause more damage.
+		var resist := ""
+		if f.side>=0 and f.side!=s.reaction_side and distance(s,f.pos)<=1.0 and not touches(s,f.pos) and f.health>2:
+			var fight := f.effective_fight()+MagicEquipment.bonus(f,"fight_test")
+			var will := f.effective_will()
+			if maxi(fight,will)>=4:
+				resist="fight" if fight>=will else "will"
+		pull(c,f,resist)
+	s.scenario_data.erase("rk_sinkhole_queue")
+	_finish_pull(c)
+
+
+static func answer_pull(c: GameController,choice: String) -> bool:
+	var s := c.state
+	var pending: Dictionary=s.scenario_data.get("rk_end_choice",{})
+	if pending.get("kind","")!="sinkhole_pull" or choice not in ["accept","fight","will","all"]:
+		return false
+	var f := s.figure(int(pending["id"]))
+	if f==null or f.side!=s.reaction_side:
+		return false
+	s.scenario_data.erase("rk_end_choice")
+	pull(c,f,choice)
+	_advance_pull(c,choice=="all")
+	if not s.scenario_data.has("rk_end_choice"):
+		c._flow.resume_end_turn()
+	return true
+
+
+static func _finish_pull(c: GameController) -> void:
+	var s := c.state
 	for token in s.treasures:
 		if not token.on_ground():
 			continue

@@ -52,3 +52,25 @@ func test_gravity_nullman_immunity_and_checkpoint() -> void:
 	if restored!=null:
 		check_eq(restored.state.scenario_data,s.scenario_data)
 		check(restored.state.treasures[0].lost)
+
+
+func test_human_pull_queue_checkpoint() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	s.order.assign([0,1])
+	var f := s.figures[0]
+	f.pos=Vector2(18,12)
+	var before := f.pos
+	RedKingSinkhole.end_turn(c)
+	check_eq(s.scenario_data.get("rk_end_choice",{}).get("kind",""),"sinkhole_pull")
+	check(c.awaiting_reaction())
+	var saved := BattleSnapshot.capture(c)
+	var restored := BattleSnapshot.rebuild(saved,s.creature_db)
+	check(restored!=null)
+	if restored==null:
+		return
+	check(RedKingSinkhole.answer_pull(restored,"all"))
+	check(not restored.state.scenario_data.has("rk_sinkhole_queue"))
+	check(not restored.state.scenario_data.has("rk_end_choice"))
+	check(restored.state.figure(f.id).pos!=before)
