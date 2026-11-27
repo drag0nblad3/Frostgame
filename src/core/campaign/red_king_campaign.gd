@@ -37,7 +37,7 @@ static func next_id(d: Dictionary) -> String:
 
 
 static func permits(d: Dictionary,id: String) -> bool:
-	return not active(d) or next_id(d)==id
+	return next_id(d)==id if active(d) else freeform_permits(id)
 
 
 ## Mindscape is a rescue-linked bonus encounter, not a free-form campaign mission.

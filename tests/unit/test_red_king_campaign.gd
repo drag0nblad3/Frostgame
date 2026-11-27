@@ -116,3 +116,71 @@ func test_optional_mindscape_skip_and_saved_story_cursor() -> void:
 	check(RaggedWarbands.active(restored.data))
 	check(not RedKingCampaign.skip_mind(restored.data))
 	DirAccess.remove_absolute(path)
+
+
+## Exercise the installed pack, actual scenario loading, settlement and JSON
+## round-trips through every chapter. Battle outcomes are scripted here;
+## the scenario simulation workflow separately exercises tactical play.
+func test_story_campaign_lifecycle_with_real_scenarios() -> void:
+	var profile := ContentProfile.new(["red_king"])
+	var defs := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	var draft := WarbandDraft.new(defs)
+	draft.choose_defaults()
+	var roster := draft.as_warband()
+	roster["figures"]=[{"type":"wizard"},{"type":"apprentice"}]
+	for i in 8:
+		roster["figures"].append({"type":"thug"})
+	var p := CampaignProgress.new()
+	p.start(roster,profile)
+	check(RedKingCampaign.start(p.data,profile,true))
+	var path := "user://red_king_lifecycle_test.json"
+	for stage: Dictionary in RedKingCampaign.stages():
+		var id := str(stage["id"])
+		check_eq(RedKingCampaign.next_id(p.data),id)
+		check(p.can_deploy(),id+": "+"; ".join(p.deployment_blockers()))
+		var source := JsonFile.read(ScenarioLoader.DIR+id+".json")
+		source["warbands"][0]=p.deployment()
+		var s := ScenarioLoader.from_dict(source,defs,terrain())
+		check(not s.scenario_data.has("deployment_error"),id)
+		var c := GameController.new(s,Dice.new(47))
+		s.over=true
+		if id=="red_king_squatter" or id=="red_king_back_into_fire":
+			for token in s.treasures:
+				if token.central:
+					token.secured_by=0
+					break
+		if id=="red_king_demons_and_mad_man":
+			check(s.scenario_data.get("reduced_hunters_0",false))
+			var rescue := s.treasure(int(s.scenario_data["ryce_token"]))
+			rescue.lost=false
+			rescue.secured_by=0
+		if id=="red_king_mind":
+			check_eq(s.side_figures(0).size(),1)
+			s.scenario_data["mind_rewards"]=["8","7"]
+		if id=="red_king_herded":
+			check(RaggedWarbands.active(p.data))
+			check(s.scenario_data.get("secret_hrut_0",false))
+		if id=="red_king_ringworld":
+			s.scenario_data["ring_success"]=true
+		check(p.settle(c,LoadedDice.new([1])),id+" settlement")
+		if id=="red_king_squatter" or id=="red_king_back_into_fire":
+			check(not p.can_deploy())
+			check(p.resolve_treasure(false,Dice.new(1)))
+		if id=="red_king_mind":
+			check(p.data.get("red_king_secret_hrut",false))
+			p.data["red_king_use_secret_hrut"]=true
+		if id=="red_king_herded":
+			check(not p.data.has("red_king_secret_hrut"))
+		check(p.save(path),id+" save")
+		var restored := CampaignProgress.new()
+		check(restored.load_save(path),id+" reload")
+		p=restored
+	check_eq(p.data["red_king_history"].size(),12)
+	check_eq(p.data["games"],11)
+	check(p.data.get("red_king_completed",false))
+	check(RedKingCampaign.reconcile(p.data,defs))
+	check(not RaggedWarbands.active(p.data))
+	check(RedKingCampaign.return_to_skirmishes(p.data,defs))
+	check(p.can_deploy())
+	check(ContentProfile.from_campaign(p.data).enabled.has("red_king"))
+	DirAccess.remove_absolute(path)
