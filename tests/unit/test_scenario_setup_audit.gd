@@ -82,3 +82,13 @@ func test_red_king_deployment_matrix() -> void:
 					break
 			check(DeploymentRules.zone(s,int(d.zones[f.side]),f.pos,wizard,f.def.role=="wizard"),id+" zone "+str(f.id))
 			check(DeploymentRules.legal(s,f,DeploymentRules.support(s,f.pos),[]),id+" stand "+str(f.id))
+
+
+func test_standard_scenarios_have_distinct_playable_maps() -> void:
+	var ids: Array[String]=[]
+	for id in ["treasure_skirmish","worm_hunts","genie_in_the_bottle"]:
+		var s:=ScenarioLoader.load_id(id,db(),terrain())
+		check(not ids.has(s.board.id),id)
+		ids.append(s.board.id)
+		for t in s.treasures:
+			check(s.board.can_stand(t.pos,TreasureRules.TOKEN_RADIUS),id+" token "+str(t.id))

@@ -1,7 +1,7 @@
 {
   "id": "worm_hunts",
   "name": "The Worm Hunts",
-  "board": "frozen_ruins",
+  "board": "worm_hunts",
   "warbands": [
     {
       "name": "Elementalist",

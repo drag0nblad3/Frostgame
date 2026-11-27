@@ -21,6 +21,11 @@ static func best(s: GameState,f: Figure,points: Array[Dictionary],zone: int,plac
 		if distance<best_goal:
 			best_goal=distance
 			target=t.pos
+	var central: TreasureToken=null
+	for t in s.treasures:
+		if t.central and t.on_ground():
+			central=t
+			break
 	var caster: Figure=null
 	for other in s.figures:
 		if other.side==f.side and placed.has(other.id) and other.def.role=="wizard":
@@ -50,6 +55,8 @@ static func best(s: GameState,f: Figure,points: Array[Dictionary],zone: int,plac
 					break
 			if exposed:
 				value+=12.0
+			if central!=null and s.board.floor_layout.is_empty() and LineOfSight.check(s.board,at,central.pos,f).clear:
+				value+=8.0
 		for other in s.figures:
 			if not placed.has(other.id) or other.side!=f.side or other==f:
 				continue

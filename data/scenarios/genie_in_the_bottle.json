@@ -1,7 +1,7 @@
 {
   "id": "genie_in_the_bottle",
   "name": "The Genie in the Bottle",
-  "board": "frozen_ruins",
+  "board": "genie_in_the_bottle",
   "warbands": [
     {
       "name": "Elementalist",
