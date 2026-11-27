@@ -13,8 +13,16 @@ func _run() -> void:
 	while not scene.player.idle():
 		await process_frame
 	scene._open_map_picker()
-	if scene._picker==null or scene._picker._list.get_child_count()!=12:
+	if scene._picker==null or scene._picker._list.item_count!=12:
 		_fail("Battle map catalog missing")
+		return
+	var index: int=scene._picker._ids.find("complex_temple")
+	if index<0:
+		_fail("Temple missing from catalogue")
+		return
+	scene._picker._inspect(index)
+	if scene.controller!=original or scene._picker._chosen!="complex_temple" or not scene._picker.visible:
+		_fail("Inspecting map changed current battle")
 		return
 	scene._picker.hide()
 	scene.hud.scenario_selected.emit("complex_temple")
@@ -28,7 +36,9 @@ func _run() -> void:
 		_fail("New scenario confirmation not tied to next battle")
 		return
 	scene._briefing.hide()
-	scene._briefing.start_requested.emit()
+	scene._open_map_picker()
+	scene._picker._inspect(scene._picker._ids.find("complex_temple"))
+	scene._picker._start()
 	if scene.controller == original or scene.controller.state.scenario_special != "complex_temple":
 		_fail("Confirmed scenario did not start")
 		return
