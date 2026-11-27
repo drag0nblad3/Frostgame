@@ -13,7 +13,7 @@ static func plan(c: GameController, f: Figure) -> Dictionary:
 			if not t.in_play():
 				continue
 			var score := MagicTactics.value(c, f, t, id)
-			if score > best_value and c.can_cast(id, t.id):
+			if score > best_value and BattleAction.legal(c,"cast",t.id,id):
 				best_value = score
 				best = {"spell": id, "target": t.id, "score": score}
 	for id: String in ["raise_zombie", "summon_demon", "animate_skull"]:
@@ -43,9 +43,9 @@ static func play(c: GameController, f: Figure) -> bool:
 		return false
 	var id: String = chosen["spell"]
 	if c.state.spellbooks.get(f.side, {}).has(id) and int(c.state.spellbooks[f.side][id]) >= 10 and f.next_cast_gear == "":
-		if not GearActions.arm(c, "gear_gloves_casting"):
-			GearActions.arm(c, "gear_wand_light")
-	var declared := c._magic.start_floor_at(id,chosen["node"]) if chosen.has("node") else (c._magic.start_at(id,chosen["at"]) if chosen.has("at") else c.start_cast(id,chosen["target"]))
+		if not BattleEquipmentAction.execute(c,"arm",{"id":"gear_gloves_casting"}):
+			BattleEquipmentAction.execute(c,"arm",{"id":"gear_wand_light"})
+	var declared := BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["node"]}) if chosen.has("node") else (BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["at"]}) if chosen.has("at") else BattleAction.execute(c,"cast",chosen["target"],id))
 	if not declared:
 		return false
 	if not c.awaiting_reaction():
@@ -62,10 +62,10 @@ static func resolve(c: GameController) -> bool:
 	var id := str(p["id"])
 	var budget := PowerPool.available(f,id)+(0 if PowerPool.words_only(f,id) else mini(2,maxi(0,f.health-2)))
 	if not p.get("scroll", false) and needed > budget and int(p["raw"]) <= 8:
-		if c._magic.reroll_fate():
+		if BattleSpellAction.execute(c,"cast_fate"):
 			needed = maxi(0, int(p["tn"]) - int(p["total"]))
 	if c._magic.can_insure() and (needed > mini(budget, c.cast_max_empowerment()) or (p["id"] == "summon_demon" and p["raw"] == 1)):
-		return c._magic.insure()
+		return BattleSpellAction.execute(c,"insure")
 	if id=="animate_skull" and not p.get("golden_fang",false) and RedKingMaterials.fang_count(f)>0:
-		c._magic.toggle_golden_fang()
+		BattleSpellAction.execute(c,"golden_fang")
 	return c.finish_cast(needed if needed <= mini(budget, c.cast_max_empowerment()) else 0)

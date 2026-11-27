@@ -20,7 +20,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				distance=d
 		if best==null:
 			return false
-		return WormRider.answer_relocation(bi.c,best) if bi.mode=="worm_relocation" else WormRider.summon(bi.c,best)
+		return BattleEquipmentAction.execute(bi.c,"worm_relocation" if bi.mode=="worm_relocation" else "worm_summon",{"at":best})
 	if bi.is_layered() and bi.mode=="gear_tiger_point":
 		var best: Variant=null
 		var distance:=28.0
@@ -32,7 +32,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if d<distance:
 				best=option["at"]
 				distance=d
-		return best!=null and TigerEye.move_eye(bi.c,best)
+		return best!=null and BattleEquipmentAction.execute(bi.c,"tiger_eye_move",{"at":best})
 	if bi.is_layered() and bi.mode=="treasure_spell":
 		var best: TreasureToken
 		var distance:=28.0
@@ -53,10 +53,10 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 		return false
 	if bi.mode=="veil_target":
 		var choice := bi._figure_at(screen)
-		return choice>=0 and RedKingVeil.answer_target(bi.c,choice)
+		return choice>=0 and BattleScenarioAction.execute(bi.c,"veil",{"target":choice})
 	if bi.mode=="secret_exchange":
 		var choice := bi._figure_at(screen)
-		return choice>=0 and RealityCracks.answer_exchange(bi.c,choice)
+		return choice>=0 and BattleScenarioAction.execute(bi.c,"exchange",{"target":choice})
 	if bi.mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight","wraith_shot","ammo_shot"]:
 		var id := bi._figure_at(screen)
 		if id < 0:
@@ -70,20 +70,20 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				bi.preview()
 				return false
 			"breathe_fire":
-				return bi.c._potions.breathe(bi.c.state.figure(id))
+				return BattleEquipmentAction.execute(bi.c,"breathe",{"target":id})
 			"potion_target":
-				return bi.c._potions.drink(bi.selected_potion, bi.c.state.figure(id))
+				return BattleEquipmentAction.execute(bi.c,"drink",{"id":bi.selected_potion,"target":id})
 			"swap_second":
-				return bi._declared(bi.c._magic.start_swap(bi.spell_first, id))
+				return bi._declared(BattleSpellAction.execute(bi.c,"swap",{"target":bi.spell_first,"second":id}))
 			"spell_target":
 				if bi.selected_spell in ["leap", "transpose", "suggestion"]:
 					bi.spell_first = id
 					bi.mode = "swap_second" if bi.selected_spell=="transpose" else ("floor_suggestion" if bi.is_layered() and bi.selected_spell=="suggestion" else "leap_destination")
 					bi.preview()
 					return false
-				return bi._declared(bi.c.start_cast(bi.selected_spell,id,bi.spell_ammo))
+				return bi._declared(BattleAction.execute(bi.c,"cast",id,bi.selected_spell,bi.spell_ammo))
 			"cancel_control":
-				return bi.c._magic.cancel(id)
+				return BattleSpellAction.execute(bi.c,"cancel_control",{"target":id})
 			"group_select":
 				if id == int(bi.c.state.early.leaders[bi.c.state.current_side()]):
 					return false
@@ -95,8 +95,8 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				bi.preview()
 				return false
 			"select": return bi.c.activate(id)
-			"fight_hand": return bi.c.fight_hand(id)
-			"gutter_fight": return GearActions.gutter_fight(bi.c,id)
+			"fight_hand": return BattleAction.execute(bi.c,"fight_hand",id)
+			"gutter_fight": return BattleEquipmentAction.execute(bi.c,"gutter_fight",{"target":id})
 			"fight","shoot","ammo_shot","wraith_shot":
 				bi.plan_attack(id)
 				return false
@@ -111,7 +111,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RealityConvergence.answer(bi.c,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"convergence",{"at":best})
 	if bi.mode in ["hunt_corner","hunt_place"]:
 		var best := Vector2(INF,INF)
 		var distance := 1.5 if bi.mode=="hunt_corner" else 0.55
@@ -119,10 +119,10 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RedKingHunt.answer(bi.c,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"hunt",{"at":best})
 	if bi.mode=="worm_relocation":
 		var at_grid := at.round()
-		return WormRider.answer_relocation(bi.c,at_grid)
+		return BattleEquipmentAction.execute(bi.c,"worm_relocation",{"at":at_grid})
 	if bi.mode=="hill_seam":
 		var unit := bi.c.state.figure(int(bi.c.state.scenario_data["rk_priority_choice"]["id"]))
 		var best := Vector2(INF,INF)
@@ -131,7 +131,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RedKingHill.answer_seam(bi.c,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"hill_seam",{"at":best})
 	if bi.mode=="ruins_piece":
 		for index: int in bi.c.state.scenario_data["rk_priority_choice"]["options"]:
 			if bi.c.state.board.pieces[index].rect.has_point(at):
@@ -147,7 +147,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			if candidate.distance_to(at)<distance:
 				best=candidate
 				distance=candidate.distance_to(at)
-		return is_finite(best.x) and RealityCrackTerrain.answer_shift(bi.c,bi.spell_first,best)
+		return is_finite(best.x) and BattleScenarioAction.execute(bi.c,"shift_ruin",{"piece":bi.spell_first,"at":best})
 	if bi.mode=="mind_token":
 		for token in bi.tokens:
 			if at.distance_to(token.pos)<=0.9:
@@ -157,7 +157,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				bi.preview()
 				return false
 	if bi.mode=="mind_destination":
-		return RedKingMind.answer_memory(bi.c,bi.spell_first,MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return BattleScenarioAction.execute(bi.c,"memory",{"target":bi.spell_first,"at":MoveGrid.to_pos(MovePlanner.node_at(at))})
 	if bi.mode == "treasure_spell":
 		for token in bi.tokens:
 			if at.distance_to(bi.c._magic.treasure_magic.origin(token)) <= 0.9 and (not bi.is_layered() or BattleFloorInput.visible(bi,bi.c._magic.treasure_magic.origin_surface(token))):
@@ -166,32 +166,32 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				bi.preview()
 				return false
 	if bi.mode == "treasure_destination":
-		return bi._declared(bi.c._magic.start_treasure(bi.selected_spell, bi.spell_first, MoveGrid.to_pos(MovePlanner.node_at(at))))
+		return bi._declared(BattleSpellAction.execute(bi.c,"treasure",{"spell":bi.selected_spell,"target":bi.spell_first,"at":MoveGrid.to_pos(MovePlanner.node_at(at))}))
 	if bi.mode == "leap_destination":
 		var t := bi.c.state.figure(bi.spell_first)
 		var destination := t.pos if bi.selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return bi._declared(bi.c._magic.start_move(bi.selected_spell, bi.spell_first, destination))
+		return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":bi.selected_spell,"target":bi.spell_first,"at":destination}))
 	if bi.mode=="gear_tiger_point":
-		return TigerEye.move_eye(bi.c,at)
+		return BattleEquipmentAction.execute(bi.c,"tiger_eye_move",{"at":at})
 	if bi.mode=="gear_worm_point":
-		return WormRider.summon(bi.c,MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return BattleEquipmentAction.execute(bi.c,"worm_summon",{"at":MoveGrid.to_pos(MovePlanner.node_at(at))})
 	if bi.mode=="gear_bottle_imp":
-		return GearActions.bottle_imp(bi.c,MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return BattleEquipmentAction.execute(bi.c,"bottle_imp",{"at":MoveGrid.to_pos(MovePlanner.node_at(at))})
 	if bi.mode == "gear_teleport":
-		return GearActions.teleport(bi.c, MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return BattleEquipmentAction.execute(bi.c,"ring_teleport",{"at":MoveGrid.to_pos(MovePlanner.node_at(at))})
 	if bi.mode == "potion_point":
-		return bi.c._potions.use_at(bi.selected_potion, at.round() if bi.selected_potion == "explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at)))
+		return BattleEquipmentAction.execute(bi.c,"potion_"+bi.selected_potion,{"at":at.round() if bi.selected_potion=="explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at))})
 	if bi.mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(bi.selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return bi._declared(bi.c._magic.start_at(bi.selected_spell,destination,bi.spell_rotated,bi.spell_extended))
+		return bi._declared(BattleSpellAction.execute(bi.c,"place",{"spell":bi.selected_spell,"at":destination,"rotated":bi.spell_rotated,"extended":bi.spell_extended}))
 	if bi.mode == "collect":
 		for token in bi.tokens:
 			if at.distance_to(token.pos) <= 0.9 and (not bi.is_layered() or BattleFloorInput.visible(bi,token.surface_id)):
-				return bi.c.pick_up(token.id)
+				return BattleAction.execute(bi.c,"collect",token.id)
 	if bi.mode in ["drop", "drop_shrunk"]:
 		for p in bi.drops:
 			if at.distance_to(p) <= 0.3:
-				return bi.c._loot.drop(p, bi.c.state.active().shrunk_treasure_id if bi.mode == "drop_shrunk" else -1)
+				return bi.c.drop_treasure(p, bi.c.state.active().shrunk_treasure_id if bi.mode == "drop_shrunk" else -1)
 	if bi.mode in BattleMovePlan.MODES:
 		bi.move_plan.choose(bi,at)
 		return false

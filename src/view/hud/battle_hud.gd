@@ -10,13 +10,16 @@ signal roster_pressed
 signal campaign_pressed
 signal save_battle_pressed
 signal resume_battle_pressed
+signal resume_expedition_pressed
 signal scenario_selected(id: String)
+signal journal_requested
 signal briefing_pressed
 signal inspect_pressed
 signal guide_pressed
 signal atmosphere_toggled
 signal graphics_requested
 signal camera_requested(mode: int)
+signal presentation_changed(speed: float,cinematic: bool)
 signal title_requested
 signal training_requested
 signal training_next
@@ -33,6 +36,8 @@ var _status: Label
 var _hint: Label
 var _log: Label
 var _lines: Array[String] = []
+var _history: Array[String] = []
+var _journal: BattleJournal
 var _auto: Button
 var _step: Button
 var _watch: Button
@@ -55,6 +60,10 @@ var _toast: Label
 var _toast_timer: Timer
 var _context_tip: Label
 var _tips_enabled := true
+var _pace := 0
+var _cinematic := false
+const PACE_NAMES := ["Normal","Fast","Cinematic"]
+const PACE_SPEEDS := [0.8,1.6,0.55]
 var _training_panel: VBoxContainer
 var _training_text: Label
 var _training_next_button: Button
@@ -229,6 +238,7 @@ func _ready() -> void:
 		button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		button.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 		button.tooltip_text=action_labels[key]
+		button.add_theme_constant_override("h_separation",8)
 		button.toggle_mode = key in ["move","fight","shoot","collect","drop","exit","run_for_it","run_talisman","fight_hand","ammo_shot","wraith_shot"]
 		if key in ["move_confirm","attack_confirm"]:
 			button.add_theme_stylebox_override("normal",BattleTheme.panel(Color("305664"),Color("e5c58a")))
@@ -241,6 +251,7 @@ func _ready() -> void:
 func show_roll(text: String) -> void:
 	if text.is_empty():
 		return
+	BattleJournal.record(_history,text)
 	_roll_label.text = text
 	_roll_panel.show()
 	_roll_timer.start(6.0)
@@ -257,6 +268,7 @@ func set_training(index: int, complete: bool, failed: bool = false) -> void:
 
 func set_objective(text: String) -> void:
 	_objective.text = text
+	_objective.visible=not text.is_empty()
 
 
 func notify(text: String) -> void:
@@ -272,6 +284,7 @@ func show_outcome(text: String) -> void:
 
 func set_status(text: String) -> void:
 	_status.text = text
+	_status.visible=not text.is_empty()
 
 
 func set_watch(on: bool, can_change: bool, idle: bool) -> void:
@@ -299,6 +312,7 @@ func open_spellbook(caster: String,entries: Array[Dictionary]) -> void:
 
 func set_hint(hint: String) -> void:
 	_hint.text=hint
+	_hint.visible=not hint.is_empty()
 
 
 func set_floors(layout: FloorLayout,selected: String="") -> void:
@@ -337,7 +351,7 @@ static func active_summary(f: Figure) -> String:
 
 
 func set_actions(available: Array[String], mode: String, hint: String) -> void:
-	_hint.text = hint
+	set_hint(hint)
 	var changed := _mode!=mode or _last_actions!=available
 	_mode=mode
 	_last_actions.assign(available)
@@ -352,6 +366,7 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 			b.tooltip_text=SpellReference.text(key.trim_prefix("spell_"))
 		if key=="move_confirm":
 			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else ("Confirm jump" if mode=="jump" else "Confirm move"))
+			b.tooltip_text=b.text
 	if changed:
 		for i in available.size():
 			if _buttons.has(available[i]):
@@ -368,6 +383,9 @@ func blocks_tap(at: Vector2) -> bool:
 
 
 func add_line(text: String) -> void:
+	if text.is_empty():
+		return
+	BattleJournal.record(_history,text)
 	_lines.append(text)
 	while _lines.size() > LOG_LINES:
 		_lines.pop_front()
@@ -376,7 +394,10 @@ func add_line(text: String) -> void:
 
 func clear_log() -> void:
 	_lines.clear()
+	_history.clear()
 	_log.text = ""
+	_toast.hide()
+	_toast_timer.stop()
 	_roll_panel.hide()
 	_roll_timer.stop()
 
@@ -391,11 +412,8 @@ func _label(size: int) -> Label:
 
 
 func _button(text: String, on_press: Callable) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.custom_minimum_size = Vector2(108, 62)
-	b.add_theme_font_size_override("font_size", 22)
-	b.pressed.connect(on_press)
+	var b := WorkshopUI.command_button(text,on_press,false,22,62.0)
+	b.custom_minimum_size.x=108
 	return b
 
 
@@ -407,7 +425,7 @@ func _open_commands() -> void:
 		_command_screen=BattleCommandScreen.new()
 		add_child(_command_screen)
 		_command_screen.chosen.connect(_menu_action)
-	_command_screen.open(_status.text,_objective.text,_log_panel.visible,_tips_enabled)
+	_command_screen.open(_status.text,_objective.text,_log_panel.visible,_tips_enabled,PACE_NAMES[_pace],_cinematic)
 
 
 func _menu_action(id: int) -> void:
@@ -431,6 +449,23 @@ func _menu_action(id: int) -> void:
 		13: camera_requested.emit(2)
 		14: title_requested.emit()
 		15: graphics_requested.emit()
+		16: journal_requested.emit()
+		19: resume_expedition_pressed.emit()
+		17:
+			_pace=(_pace+1)%PACE_NAMES.size()
+			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)
+		18:
+			_cinematic=not _cinematic
+			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)
+
+
+func _open_journal(timeline: Array[Dictionary]=[],frames: Array[Dictionary]=[]) -> void:
+	if ModalInput.blocked():
+		return
+	if _journal==null:
+		_journal=BattleJournal.new()
+		add_child(_journal)
+	_journal.open(_history,timeline,frames)
 
 
 func select_scenario(id: String) -> void:
@@ -450,7 +485,22 @@ func _fit_actions() -> void:
 	_dock.size_flags_vertical=Control.SIZE_EXPAND_FILL if wide else Control.SIZE_FILL
 	_dock.size_flags_horizontal=Control.SIZE_FILL
 	_action_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL if wide else Control.SIZE_FILL
-	var long_list := _mode in ["spell_menu","items_menu"] or _last_actions.size()>8 or _last_actions.has("move_confirm") or _last_actions.has("attack_confirm")
-	_action_row.columns=1 if wide and long_list else (2 if wide else maxi(2,mini(4,floori(bounds.size.x/190.0))))
+	# Measure actual labels instead of forcing two columns into a narrow dock.
+	var dock_width := _dock.custom_minimum_size.x if wide else bounds.size.x
+	var usable := maxf(1.0,dock_width-60.0) # Panel padding and scroll track.
+	var minimum := 160.0
+	for key: String in _last_actions:
+		if not _buttons.has(key):
+			continue
+		var button: Button = _buttons[key]
+		var font := button.get_theme_font("font")
+		var font_size := button.get_theme_font_size("font_size")
+		var label_width := font.get_string_size(button.text,HORIZONTAL_ALIGNMENT_LEFT,-1,font_size).x
+		minimum=maxf(minimum,label_width+24.0+(40.0 if button.icon!=null else 0.0))
+	_action_row.columns=BattleHud.action_columns(usable,minimum,wide)
 	var rows := maxi(1,ceili(float(_last_actions.size())/float(_action_row.columns)))
-	_action_scroll.custom_minimum_size.y=0.0 if wide else minf(float(rows)*82.0,bounds.size.y*0.30)
+	_action_scroll.custom_minimum_size.y=0.0 if wide else minf(float(rows)*82.0-10.0,bounds.size.y*0.34)
+
+
+static func action_columns(usable: float,minimum: float,wide: bool) -> int:
+	return clampi(floori((usable+10.0)/(maxf(1.0,minimum)+10.0)),1,2 if wide else 4)

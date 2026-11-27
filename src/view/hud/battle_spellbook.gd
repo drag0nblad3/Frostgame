@@ -24,6 +24,7 @@ func _ready() -> void:
 	_list.custom_minimum_size.y=140
 	_list.add_theme_font_size_override("font_size",25)
 	_list.add_theme_constant_override("v_separation",17)
+	_list.fixed_icon_size=Vector2i(32,32)
 	_split.add_child(_list)
 	_list.item_selected.connect(_inspect)
 	_detail=WorkshopUI.scroll(_split)
@@ -43,6 +44,7 @@ func open(caster: String,entries: Array[Dictionary]) -> void:
 			label_text+=" · Unavailable"
 		_list.add_item(label_text,ActionArt.school(str(e["school"])))
 		var i := _list.item_count-1
+		_list.set_item_tooltip(i,label_text)
 		if not e["legal"]:
 			_list.set_item_custom_fg_color(i,WorkshopUI.MUTED)
 		elif _selected<0:
@@ -50,6 +52,7 @@ func open(caster: String,entries: Array[Dictionary]) -> void:
 	if not entries.is_empty():
 		_selected=maxi(0,_selected)
 		_list.select(_selected)
+		_list.ensure_current_is_visible()
 		_inspect(_selected)
 	show_screen()
 
@@ -91,3 +94,5 @@ func navigate_back() -> void:
 func _reflow() -> void:
 	if _split!=null:
 		_split.vertical=size.x<size.y
+		# Give descriptions more space, but keep the spell selector readable.
+		_list.size_flags_stretch_ratio=1.0 if _split.vertical else 1.25

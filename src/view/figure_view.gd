@@ -101,7 +101,8 @@ static func _ward_material() -> StandardMaterial3D:
 	return _ward
 
 
-func refresh(f: Figure) -> void:
+func refresh(f: Figure,health_override: Variant=null) -> void:
+	var health := f.health if health_override==null else int(health_override)
 	var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	var base_color := color.darkened(0.12)
 	if f.ring_side==1:
@@ -138,7 +139,7 @@ func refresh(f: Figure) -> void:
 	if RedKingTethers.pylon(f):
 		_height=2.8
 	_plate.position.y = _height + 0.42
-	var ratio := clampf(float(f.health) / maxf(1.0, float(f.def.health)), 0.0, 1.0)
+	var ratio := clampf(float(health) / maxf(1.0, float(f.def.health)), 0.0, 1.0)
 	_health_fill.scale.x = maxf(0.01, ratio)
 	_health_fill.position.x = -0.41 * (1.0 - ratio)
 	var health_color := Color(0.31,0.75,0.47) if ratio>0.5 else Color(0.95,0.49,0.23)
@@ -155,8 +156,8 @@ func refresh(f: Figure) -> void:
 		status += " · Null"
 	if f.def.traits.has("immune_normal"):
 		status += " · Magic only"
-	_plate.text = "%s%s%s\n%d/%d" % [f.label(), suffix, status, f.health, f.def.health]
-	_plate.modulate = Color(1, 1, 1) if f.health * 2 > f.def.health else Color(1, 0.6, 0.4)
+	_plate.text = "%s%s%s\n%d/%d" % [f.label(), suffix, status, health, f.def.health]
+	_plate.modulate = Color(1, 1, 1) if health * 2 > f.def.health else Color(1, 0.6, 0.4)
 
 
 func face_toward(at: Vector3) -> void:

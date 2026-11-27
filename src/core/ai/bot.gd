@@ -14,6 +14,10 @@ static func play_activation(c: GameController) -> bool:
 
 
 static func resume_activation(c: GameController) -> bool:
+	return BattleRecord.run(c,"bot_resume",{},func() -> bool: return _resume(c))
+
+
+static func _resume(c: GameController) -> bool:
 	var f := c.state.active()
 	if f == null or c.awaiting_reaction():
 		return false
@@ -97,7 +101,7 @@ static func _fight_if_engaged(c: GameController, f: Figure) -> bool:
 	if t == null:
 		return false
 	if c.can_act() and c.state.push_winner<0:
-		c.fight(t.id)
+		BattleAction.execute(c,"fight",t.id)
 	return true
 
 
@@ -123,13 +127,13 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 	if _fight_if_engaged(c, f):
 		return
 	if f.ranged.needs_reload and not f.loaded:
-		if not c.reload() or not c.can_act():
+		if not BattleAction.execute(c,"reload") or not c.can_act():
 			return
 	var t := BotTargets.best_legal_shot(c,f)
 	if RedKingBot.special_shot(c,f,t):
 		return
 	if t != null:
-		c.shoot(t.id,false,c.can_shoot(t.id,false,true))
+		BattleAction.execute(c,"ammo_shot" if c.can_shoot(t.id,false,true) else "shoot",t.id)
 		return
 	if not c.can_move():
 		return
@@ -138,7 +142,7 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 	if not spot.is_empty():
 		c.move_to(spot["node"])
 		if c.can_shoot(spot["target"].id):
-			c.shoot(spot["target"].id,false,c.can_shoot(spot["target"].id,false,true))
+			BattleAction.execute(c,"ammo_shot" if c.can_shoot(spot["target"].id,false,true) else "shoot",spot["target"].id)
 		return
 	_advance(c, f, r)
 
@@ -165,4 +169,4 @@ static func _use_healing(c: GameController, f: Figure) -> void:
 			target = t
 			value = score
 	if target != null:
-		c._potions.drink("healing", target)
+		BattleEquipmentAction.execute(c,"drink",{"id":"healing","target":target.id})

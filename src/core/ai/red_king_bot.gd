@@ -8,7 +8,7 @@ static func prepare(c: GameController,f: Figure) -> bool:
 	if HolyLantern.can_toggle(c) and not HolyLantern.lit(f):
 		for t in c.state.figures:
 			if t.in_play() and t.side!=f.side and t.ring_side==f.ring_side and (t.is_demon() or t.is_undead()) and Shooting.distance(f,t)<=5.0:
-				HolyLantern.toggle(c)
+				BattleEquipmentAction.execute(c,"lantern_toggle")
 				break
 	# Escape routes use their geometry provider; the lantern policy above is shared.
 	if not c.state.board.floor_layout.is_empty():
@@ -45,7 +45,7 @@ static func prepare(c: GameController,f: Figure) -> bool:
 			if value<best_value:
 				best_value=value
 				best=n
-		if best!=null and RunForIt.apply(c,best,true):
+		if best!=null and c.commit_movement("run_talisman",best):
 			return true
 	return false
 

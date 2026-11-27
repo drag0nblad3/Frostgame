@@ -11,6 +11,7 @@ const NOTICES := ["hut_discovered", "disc_transport", "disc_stay", "well_drink",
 
 ## Animation speed multiplier (higher is faster).
 var speed := 0.8
+var camera_director := BattleCameraDirector.new()
 const RESULT_HOLD := 0.8
 const NOTICE_HOLD := 1.3
 const DAMAGE_HOLD := 1.7
@@ -19,6 +20,10 @@ var views := {}
 var treasure_views := {}
 var _queue: Array[GameEvent] = []
 var _busy := false
+var _pending_tweens := 0
+var _batch_outcomes: Array[String]=[]
+var _batching := false
+var _event_waits := 0
 ## A bot is thinking on another thread; callers must wait as if animating.
 var thinking := false
 
@@ -32,11 +37,25 @@ func idle() -> bool:
 
 
 func _process(_delta: float) -> void:
+	# Explainers and animations read live state; never do so during a bot turn.
+	if thinking:
+		return
 	while not _busy and not _queue.is_empty():
-		_play(_queue.pop_front())
+		var count := BattlePresentation.batch_size(_queue)
+		_batching=count>1
+		_batch_outcomes.clear()
+		for i in count:
+			_event_waits=0
+			_play(_queue.pop_front())
+		if not _batch_outcomes.is_empty():
+			outcome.emit("\n".join(_batch_outcomes))
+		_batching=false
+	if idle():
+		camera_director.finish()
 
 
 func _play(e: GameEvent) -> void:
+	camera_director.before(e,views)
 	var line := Explainer.text(state, e)
 	if line != "":
 		if e.type in NOTICES:
@@ -44,7 +63,10 @@ func _play(e: GameEvent) -> void:
 		else:
 			line_logged.emit(line)
 	if not line.is_empty() and e.type in ["damage","heal","out_of_action","spell_effect","spell_expired","poison","shield_absorb","weapon_destroyed","treasure_pickup","treasure_secured","treasure_lost","terrain_fall","ring_switch","creature_transformed"]:
-		outcome.emit(line)
+		if _batching:
+			_batch_outcomes.append(line)
+		else:
+			outcome.emit(line)
 	var result := RollSummary.describe(state, e)
 	if not result.is_empty():
 		roll_resolved.emit(result)
@@ -166,7 +188,7 @@ func _play(e: GameEvent) -> void:
 			BattleEffects.pulse(self, _view(d["id"]).position + Vector3.UP * 0.15, Color(1.0,0.78,0.32), 1.6)
 		"heal":
 			var healed := _view(d["id"])
-			healed.refresh(state.figure(d["id"]))
+			healed.refresh(state.figure(d["id"]),int(d.get("health",state.figure(d["id"]).health)))
 			BattleEffects.restore(self, healed.position + Vector3.UP * 0.15)
 			_float_text(healed, "+%d" % d["amount"], Color(0.45, 1.0, 0.63))
 		"shoot", "spell_shot":
@@ -180,7 +202,7 @@ func _play(e: GameEvent) -> void:
 				_animate_lunge(a,b,int(d["winner"])<0,str(d.get("a_weapon","hand_weapon")),state.critical_hits and int(d.get("a_roll",0))==20)
 		"damage":
 			var v := _view(d["id"])
-			v.refresh(state.figure(d["id"]))
+			v.refresh(state.figure(d["id"]),int(d["health"]))
 			CombatVfx.flash(self,v.position+Vector3.UP*v.body_height(),Color("f39882"),0.46,speed)
 			CombatVfx.sparks(self,v.position+Vector3.UP*v.body_height(),Color("e2ac86"),0.45,speed)
 			_float_text(v, "-%d" % d["amount"])
@@ -240,8 +262,9 @@ func _play(e: GameEvent) -> void:
 		"exit":
 			_view(d["id"]).visible = false
 	# Don’t let non-animated results flash by in a single process tick.
-	if not _busy and not line.is_empty() and e.type not in ["activate","end_activation","move","layered_move","push_back","force_combat"]:
-		_hold(NOTICE_HOLD if e.type in NOTICES or e.type.begins_with("reality_") else RESULT_HOLD)
+	if _event_waits==0 and not line.is_empty() and e.type not in ["activate","end_activation","move","layered_move","push_back","force_combat"]:
+		var next: GameEvent = _queue[0] if not _queue.is_empty() else null
+		_hold(BattlePresentation.hold(e,next,e.type in NOTICES or e.type.begins_with("reality_")))
 
 
 
@@ -260,9 +283,13 @@ func _hold(seconds: float) -> void:
 
 
 func _wait_for(t: Tween) -> void:
-	_busy = true
+	_pending_tweens+=1
+	_event_waits+=1
+	_busy=true
 	t.set_speed_scale(speed)
-	t.finished.connect(func() -> void: _busy = false)
+	t.finished.connect(func() -> void:
+		_pending_tweens=maxi(0,_pending_tweens-1)
+		_busy=_pending_tweens>0)
 
 
 func _animate_portal(v: FigureView,destination: Vector3,id: String) -> void:

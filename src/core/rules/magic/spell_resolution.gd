@@ -106,7 +106,7 @@ static func _heal(sa: SpellActions, t: Figure, amount: int) -> void:
 	t.health = mini(t.def.health, t.health + amount)
 	if t.health > old:
 		t.poisoned = false
-	sa.c.emit("heal", {"id": t.id, "amount": t.health - old})
+	sa.c.emit("heal", {"id": t.id, "amount": t.health - old, "health":t.health})
 
 
 static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:

@@ -63,4 +63,4 @@ static func try_cast(c: GameController,f: Figure,layout: FloorLayout,long_route:
 				best=candidate
 		if budget>=8 and not best.is_empty():
 			break
-	return not best.is_empty() and c.bridge_on_floors(best["a"],best["b"]) and LayeredTactics.resolve(c)
+	return not best.is_empty() and BattleSpellAction.execute(c,"bridge",{"at":best["a"],"end":best["b"]}) and LayeredTactics.resolve(c)

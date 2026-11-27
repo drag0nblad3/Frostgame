@@ -12,17 +12,17 @@ static func action(bi: BattleInput, key: String) -> bool:
 		bi.preview()
 		return false
 	if key=="exchange_join":
-		return RealityCracks.answer_exchange(bi.c,int(bi.c.state.scenario_data["rk_end_choice"]["options"][0]))
+		return BattleScenarioAction.execute(bi.c,"exchange",{"target":int(bi.c.state.scenario_data["rk_end_choice"]["options"][0])})
 	if key=="exchange_decline":
-		return RealityCracks.answer_exchange(bi.c,-1)
+		return BattleScenarioAction.execute(bi.c,"exchange",{"target":-1})
 	if key=="worm_keep":
-		return WormRider.answer_relocation(bi.c,bi.c.state.scenario_data["rk_worm_relocation"]["at"])
+		return BattleEquipmentAction.execute(bi.c,"worm_relocation",{"at":bi.c.state.scenario_data["rk_worm_relocation"]["at"]})
 	if key in ["sinkhole_accept","sinkhole_fight","sinkhole_will","sinkhole_all"]:
-		return RedKingSinkhole.answer_pull(bi.c,key.trim_prefix("sinkhole_"))
+		return BattleScenarioAction.execute(bi.c,"sinkhole",{"choice":key.trim_prefix("sinkhole_")})
 	if key=="veil_keep":
-		return RedKingVeil.answer_target(bi.c,int(bi.c.state.scenario_data["rk_end_choice"]["target"]))
+		return BattleScenarioAction.execute(bi.c,"veil",{"target":int(bi.c.state.scenario_data["rk_end_choice"]["target"])})
 	if key=="mind_skip":
-		return RedKingMind.answer_memory(bi.c,-1)
+		return BattleScenarioAction.execute(bi.c,"memory",{"target":-1})
 	if key=="mind_back":
 		bi.mode="mind_token"
 		bi.available.assign(["mind_skip"])
@@ -39,19 +39,19 @@ static func action(bi: BattleInput, key: String) -> bool:
 		bi.refresh()
 		return false
 	if key=="reality_exit":
-		return RealityCracks.exit_center(bi.c)
+		return BattleScenarioAction.execute(bi.c,"reality_exit")
 	if key=="ring_switch":
-		return RedKingRingworld.switch(bi.c,bi.c.state.active())
+		return BattleScenarioAction.execute(bi.c,"ring_switch")
 	if key=="ring_escape":
-		return RedKingRingworld.escape(bi.c,bi.c.state.active())
+		return BattleScenarioAction.execute(bi.c,"ring_escape")
 	if key == "drink_well":
-		return bi.c.drink_well()
+		return BattleAction.execute(bi.c,"drink_well")
 	if key == "break_ice":
-		return bi.c.break_ice()
+		return BattleAction.execute(bi.c,"break_ice")
 	if key.begins_with("weapon_"):
 		return bi.c.select_melee(key.trim_prefix("weapon_"))
 	if key in ["direction_keep","direction_teetotum","direction_gem"]:
-		return RedKingDirection.answer(bi.c,key.trim_prefix("direction_"))
+		return BattleEquipmentAction.execute(bi.c,"direction_answer",{"method":key.trim_prefix("direction_")})
 	if key in ["elemental_absorb","elemental_pass"]:
 		return bi.c.answer_elemental_combat(key=="elemental_absorb")
 	if key in ["fate_combat_yes", "fate_combat_no"]:
@@ -63,9 +63,9 @@ static func action(bi: BattleInput, key: String) -> bool:
 		bi.refresh()
 		return false
 	if key in ["coat_melee", "coat_ranged"]:
-		return bi.c._potions.coat(bi.selected_potion, key == "coat_ranged")
+		return BattleEquipmentAction.execute(bi.c,"coat",{"id":bi.selected_potion,"ranged":key=="coat_ranged"})
 	if key in ["gear_gloves_casting", "gear_wand_light"]:
-		GearActions.arm(bi.c, key)
+		BattleEquipmentAction.execute(bi.c,"arm",{"id":key})
 		bi.preview()
 		return false
 	if key == "gear_ring_transference":
@@ -79,20 +79,20 @@ static func action(bi: BattleInput, key: String) -> bool:
 		bi.preview()
 		return false
 	if key=="gear_lantern_toggle":
-		return HolyLantern.toggle(bi.c)
+		return BattleEquipmentAction.execute(bi.c,"lantern_toggle")
 	if key=="gear_worm_summon":
 		bi.mode="gear_worm_point"
 		bi.available.assign(["potion_cancel"])
 		bi.preview()
 		return false
 	if key=="gear_death_mask_toggle":
-		return DeathMask.toggle(bi.c)
+		return BattleEquipmentAction.execute(bi.c,"death_mask_toggle")
 	if key=="gear_teetotum_arm":
-		RedKingDirection.arm(bi.c)
+		BattleEquipmentAction.execute(bi.c,"direction_arm")
 		bi.refresh()
 		return false
 	if key=="gear_absorb_arm":
-		RedKingElemental.arm(bi.c)
+		BattleEquipmentAction.execute(bi.c,"absorb_arm")
 		bi.refresh()
 		return false
 	if key==GearActions.CAPE:
@@ -145,7 +145,7 @@ static func action(bi: BattleInput, key: String) -> bool:
 			bi.available.assign(["potion_cancel"])
 			bi.preview()
 			return false
-		return bi.c._potions.drink(bi.selected_potion)
+		return BattleEquipmentAction.execute(bi.c,"drink",{"id":bi.selected_potion})
 	if key == "shatter_single":
-		return bi.c._magic.single_shatter()
+		return BattleSpellAction.execute(bi.c,"single_shatter")
 	return BattleInputSpellActions.action_rest(bi, key)

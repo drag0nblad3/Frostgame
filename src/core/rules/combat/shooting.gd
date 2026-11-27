@@ -11,10 +11,7 @@ const INTERVENING := 1
 
 ## Range is measured base edge to base edge.
 static func distance(a: Figure, b: Figure) -> float:
-	var special: Variant = RuleHooks.first("range", [a, b])
-	if special != null:
-		return float(special)
-	return maxf(Vector3(a.pos.x, a.elevation, a.pos.y).distance_to(Vector3(b.pos.x, b.elevation, b.pos.y)) - 2.0 * Figure.BASE_RADIUS, 0.0)
+	return BattleSpace.edge_distance(a,b)
 
 
 ## Why `shooter` can't shoot `target`, or "" if the shot is allowed.
@@ -72,23 +69,26 @@ static func target_mod(los: LineOfSight.Result) -> int:
 	return m
 
 
-## Rolls the shot. Returns {s_roll, t_roll, s_total, t_total, mod, dmg}.
-static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
-	return resolve_rolls(board, shooter, target, dice.d20(), dice.d20(), critical_hits, storm_penalty)
-
-
-static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0,wraith: bool=false,ammo: bool=false) -> Dictionary:
-	var los := LineOfSight.check_figures(board, shooter, target)
+## The same situational defence modifier drives previews and resolution.
+static func defence_modifier(board: Board,shooter: Figure,target: Figure,wraith: bool=false) -> int:
+	var los := BattleSpace.sight(board,shooter,target)
 	if wraith:
 		var special := wraith_line(board,shooter,target)
 		if special!=null:
 			los=special
 		else:
 			los.intervening+=1
-	FigureCover.apply(board,shooter,target,Vector3(shooter.pos.x,shooter.elevation+1.5,shooter.pos.y),los)
-	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
-	if target.def.traits.has("large"):
-		mod -= 2
+	FigureCover.apply(board,shooter,target,BattleSpace.center(shooter)+Vector3.UP*1.5,los)
+	return target_mod(los)+(1 if shooter.moves_taken>0 else 0)-(2 if target.def.traits.has("large") else 0)
+
+
+## Rolls the shot. Returns {s_roll, t_roll, s_total, t_total, mod, dmg}.
+static func resolve(dice: Dice, board: Board, shooter: Figure, target: Figure, critical_hits: bool = false, storm_penalty: int = 0) -> Dictionary:
+	return resolve_rolls(board, shooter, target, dice.d20(), dice.d20(), critical_hits, storm_penalty)
+
+
+static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int, tr: int, critical_hits: bool = false, storm_penalty: int = 0,wraith: bool=false,ammo: bool=false) -> Dictionary:
+	var mod := defence_modifier(board,shooter,target,wraith)
 	var null_target := ScenarioNull.muted(target)
 	var magic_shoot := 0 if null_target else (1 if ammo else MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id))
 	var magic_damage := 0 if null_target or ammo else MagicEquipment.bonus(shooter, "damage", shooter.ranged.id)

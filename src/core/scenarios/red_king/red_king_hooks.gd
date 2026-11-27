@@ -7,6 +7,21 @@ extends RefCounted
 static func install() -> void:
 	# Figures that are objectives rather than combatants (tether pylons).
 	RuleHooks.add("objective_figure", RedKingTethers.pylon)
+	RuleHooks.add("equipment_command",_equipment_command)
+	RuleHooks.add("scenario_command",RedKingCommands.execute)
+	RuleHooks.add("battle_prepare",RedKingTurnHooks.prepare)
+	RuleHooks.add("turn_priority",RedKingTurnHooks.priority)
+	RuleHooks.add("turn_end",RedKingTurnHooks.end_turn)
+	RuleHooks.add("turn_end_resume",RedKingTurnHooks.after_end_turn)
+	RuleHooks.add("before_phase",RedKingVeil.before_phase)
+	RuleHooks.add("victory_before_turn",RedKingVictory.before_turn)
+	RuleHooks.add("turn_limit",RedKingVictory.turn_limit)
+	RuleHooks.add("victory_at_limit",RedKingVictory.at_limit)
+	RuleHooks.add("victory_after_turn",RedKingVictory.check_after_turn)
+	RuleHooks.add("scenario_victory",RedKingVictory.check)
+	RuleHooks.add("sticky_treasure",RedKingGear.sticky)
+	RuleHooks.add("potion_source_allowed",RedKingPotionHooks.source_allowed)
+	RuleHooks.add("potion_consume",RedKingPotionHooks.consume)
 	# Figures that never lend support in a fight (Mad Man hunters).
 	RuleHooks.add("no_support", RedKingMadMan.hunter)
 	RuleHooks.add("fight_bonus", _secret_hrut_bonus)
@@ -24,6 +39,21 @@ static func install() -> void:
 	RuleHooks.add("forced_move_blocked", RedKingVeil.touch)
 	RuleHooks.add("forced_contact", _forced_contact)
 	RuleHooks.add("forced_path_void", func(c: GameController, p: Vector2) -> bool: return RedKingBridge.active(c.state) and c.state.board.over_void(p, Figure.BASE_RADIUS))
+
+
+static func _equipment_command(c: GameController,key: String,args: Dictionary) -> Variant:
+	match key:
+		"lantern_toggle": return HolyLantern.toggle(c)
+		"death_mask_toggle": return DeathMask.toggle(c)
+		"direction_arm": return RedKingDirection.arm(c)
+		"direction_answer": return RedKingDirection.answer(c,str(args.get("method","")))
+		"absorb_arm": return RedKingElemental.arm(c)
+		"gutter_fight": return GearActions.gutter_fight(c,int(args.get("target",-1)))
+		"gutter_skip": return GearActions.gutter_skip(c)
+		"tiger_eye_move": return TigerEye.move_eye(c,args["at"]) if args.get("at") is Vector2 else false
+		"worm_summon": return WormRider.summon(c,args["at"]) if args.has("at") else false
+		"worm_relocation": return WormRider.answer_relocation(c,args["at"]) if args.has("at") else false
+	return null
 
 
 ## The mindscape reward affects Fight against Hrut for one selected battle.

@@ -23,6 +23,8 @@ var distance := 34.0
 var min_distance := 8.0
 var max_distance := 80.0
 var camera: Camera3D
+var manual_revision := 0
+var _presentation_tween: Tween
 var _touches := {}
 var _pinch_start := 0.0
 var _pinch_distance := 0.0
@@ -42,6 +44,7 @@ func look_at_table(center: Vector3) -> void:
 
 ## Fit the whole board, with enough margin for the command strips.
 func frame_board(size: Vector2, overhead: bool = false) -> void:
+	manual_camera()
 	yaw = PI
 	pitch = deg_to_rad(87.0 if overhead else 55.0)
 	var viewport := get_viewport().get_visible_rect().size
@@ -58,6 +61,7 @@ func frame_board(size: Vector2, overhead: bool = false) -> void:
 
 
 func focus_figure(at: Vector3) -> void:
+	manual_camera()
 	distance = 13.0
 	pitch = deg_to_rad(44.0)
 	look_at_table(at)
@@ -74,6 +78,7 @@ func _apply() -> void:
 
 
 func _pan(delta: Vector2) -> void:
+	manual_camera()
 	var right := Vector3(cos(yaw), 0, -sin(yaw))
 	var fwd := Vector3(sin(yaw), 0, cos(yaw))
 	position -= (right * delta.x + fwd * delta.y) * distance * 0.002
@@ -88,6 +93,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventMouse and event.device == -1:
 		return
 	if event is InputEventMouseButton:
+		if event.pressed:
+			manual_camera()
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			if event.pressed:
 				_mouse_down = true
@@ -120,6 +127,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			_pan(event.relative)
 	elif event is InputEventScreenTouch:
 		if event.pressed:
+			manual_camera()
 			if _touches.is_empty():
 				_touch_start = event.position
 				_touch_dragged = false
@@ -172,3 +180,26 @@ func cancel_gesture() -> void:
 	_pinch_start=0.0
 	_mouse_plan=false
 	_touch_plan=false
+
+
+func presentation_pose() -> Dictionary:
+	return {"position":position,"distance":distance,"pitch":pitch}
+
+
+func manual_camera() -> void:
+	manual_revision+=1
+	if _presentation_tween!=null and _presentation_tween.is_valid():
+		_presentation_tween.kill()
+	_presentation_tween=null
+
+
+func present_pose(pose: Dictionary) -> void:
+	if _presentation_tween!=null and _presentation_tween.is_valid():
+		_presentation_tween.kill()
+	var from := presentation_pose()
+	_presentation_tween=create_tween()
+	_presentation_tween.tween_method(func(weight: float) -> void:
+		position=(from["position"] as Vector3).lerp(pose["position"],weight)
+		distance=lerpf(from["distance"],pose["distance"],weight)
+		pitch=lerpf(from["pitch"],pose["pitch"],weight)
+		_apply(),0.0,1.0,0.28).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)

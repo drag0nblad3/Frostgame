@@ -105,13 +105,13 @@ static func _save_battle(bs: BattleScene) -> bool:
 	return false
 
 
-static func _resume_battle(bs: BattleScene) -> void:
+static func _resume_battle(bs: BattleScene,automatic: bool=false) -> void:
 	if bs.controller != null and not bs.player.idle():
 		bs.hud.notify("Finish the current animation before resuming.")
 		return
-	var data := BattleSnapshot.read()
+	var data := CampaignBattleCheckpoint.read() if automatic else BattleSnapshot.read()
 	if data.is_empty():
-		bs.hud.notify("No compatible saved battle.")
+		bs.hud.notify("No compatible expedition checkpoint." if automatic else "No compatible saved battle.")
 		return
 	var meta: Dictionary = data.get("meta", {})
 	if not bs._figures.content_profile.same(meta.get("expansions",[])):
@@ -185,6 +185,7 @@ static func _finish_campaign_battle(bs: BattleScene, plant_target: int,survival_
 		bs.hud.notify("Could not save campaign settlement. Battle retained.")
 		return
 	bs._campaign_battle=false
+	CampaignBattleCheckpoint.clear()
 	var checkpoint := BattleSnapshot.read()
 	if checkpoint.get("meta",{}).get("campaign",false):
 		DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))

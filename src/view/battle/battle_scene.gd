@@ -31,6 +31,7 @@ var _roster: Dictionary = {}
 var _setup: WarbandSetup
 var _campaign := CampaignProgress.new()
 var _campaign_battle := false
+var _expedition_checkpoint_stamp := ""
 var _campaign_dialog: CampaignPanel
 var _plant_dialog: ConfirmationDialog
 var _survival_dialog: ConfirmationDialog
@@ -81,11 +82,13 @@ func _ready() -> void:
 	add_child(_inspector)
 	hud.inspect_pressed.connect(_open_inspector)
 	hud.guide_pressed.connect(_open_guide)
+	hud.journal_requested.connect(_open_journal)
 	hud.graphics_requested.connect(_open_graphics)
 	hud.atmosphere_toggled.connect(func() -> void:
 		_atmosphere.set_effects(not _atmosphere.enabled)
 		hud.notify("Snow effects %s." % ("on" if _atmosphere.enabled else "off")))
 	hud.camera_requested.connect(_camera_preset)
+	hud.presentation_changed.connect(_presentation_changed)
 	hud.title_requested.connect(_confirm_title)
 	hud.training_requested.connect(_confirm_training)
 	hud.training_next.connect(_next_training)
@@ -97,6 +100,7 @@ func _ready() -> void:
 	hud.campaign_pressed.connect(_open_campaign)
 	hud.save_battle_pressed.connect(_save_battle)
 	hud.resume_battle_pressed.connect(_resume_battle)
+	hud.resume_expedition_pressed.connect(func() -> void: BattleCampaignFlow._resume_battle(self,true))
 	hud.scenario_selected.connect(func(id: String) -> void:
 		if not _figures.content_profile.allows("scenarios",id):
 			return
@@ -194,6 +198,14 @@ func _leave_training() -> void:
 	BattleTraining._leave_training(self)
 
 
+func _presentation_changed(speed: float,cinematic: bool) -> void:
+	if player!=null:
+		player.speed=speed
+		player.camera_director.enabled=cinematic
+		if not cinematic:
+			player.camera_director.finish()
+
+
 func _camera_preset(mode: int) -> void:
 	if controller == null:
 		return
@@ -210,6 +222,13 @@ func _open_inspector() -> void:
 	if controller == null or not player.idle():
 		return
 	_inspector.open(controller.state, controller.state.active_id)
+
+
+func _open_journal() -> void:
+	if controller==null or player==null or _bots.busy() or not player.idle():
+		hud._open_journal()
+		return
+	hud._open_journal(BattleTimeline.build(controller.state,controller.history),controller.replay_frames.duplicate(true))
 
 
 func _open_guide() -> void:
@@ -275,6 +294,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	if _move_preview_tween!=null and _move_preview_tween.is_valid():
 		_move_preview_tween.kill()
 	if player != null:
+		_rig.manual_camera()
 		remove_child(player)
 		player.queue_free()
 	_markers.clear()
@@ -283,6 +303,10 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_wait = 0.0
 	_bots.finish()
 	controller = c
+	controller.capture_frames=true
+	if controller.deployment==null or controller.deployment.done:
+		BattleFrame.record(controller)
+	_expedition_checkpoint_stamp=""
 	var state := c.state
 	var began := Time.get_ticks_usec()
 	_board_view.scenario_id = _active_scenario_id
@@ -295,6 +319,9 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
 	player = EventPlayer.new()
 	player.state = state
+	player.camera_director.rig=_rig
+	player.speed=BattleHud.PACE_SPEEDS[hud._pace]
+	player.camera_director.enabled=hud._cinematic
 	add_child(player)
 	var figures_started:=Time.get_ticks_usec()
 	for f in state.figures:
@@ -326,10 +353,12 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	if start:
 		controller.start_game()
 	else:
-		for event in controller.history.slice(-8):
-			var line := Explainer.text(state, event)
-			if line != "":
+		for event in controller.history.slice(-BattleJournal.LIMIT):
+			var line := Explainer.text(state,event)
+			if not line.is_empty():
 				hud.add_line(line)
+			var roll := RollSummary.describe(state,event)
+			BattleJournal.record(hud._history,roll)
 	_update_status()
 	_dirty = true
 	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,float(Time.get_ticks_usec()-began)/1000.0])
@@ -349,6 +378,7 @@ func _deployment_complete() -> void:
 			v.visible=f.in_play()
 			v.position=TableSpace.to_world(f.pos,f.elevation)
 			v.set_active(false)
+	BattleFrame.record(controller)
 	controller.start_game()
 	_dirty=true
 
@@ -452,6 +482,7 @@ func _on_event(event: GameEvent) -> void:
 
 
 func _refresh() -> void:
+	BattleFrame.record(controller)
 	_dirty = false
 	_sites.update_sites(controller.state)
 	_update_status()
@@ -461,6 +492,18 @@ func _refresh() -> void:
 	else:
 		player_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
 	_update_floor_view()
+	_checkpoint_expedition()
+
+
+func _checkpoint_expedition() -> void:
+	if not _campaign_battle or not player.idle() or not BattleSnapshot.can_save(controller):
+		return
+	var s := controller.state
+	var stamp := "%s:%s"%[s.turn,s.phase]
+	if stamp==_expedition_checkpoint_stamp:
+		return
+	if CampaignBattleCheckpoint.save(controller,_active_scenario_id,_campaign_fingerprint(),watch_mode):
+		_expedition_checkpoint_stamp=stamp
 
 
 func _lock_after_action() -> void:

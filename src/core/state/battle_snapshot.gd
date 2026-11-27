@@ -63,9 +63,10 @@ static func capture(c: GameController, meta: Dictionary = {}) -> Dictionary:
 		out["figures"].append(BattleSnapshotParts.figure_data(figure))
 	for token in s.treasures:
 		out["treasures"].append(pack(token, TOKEN))
-	for event in c.history:
-		if plain(event.data):
-			out["history"].append({"type": event.type, "data": event.data.duplicate(true)})
+	out["history"]=BattleRecord.pack(c.history)
+	out["commands"]=c.command_history.duplicate(true)
+	out["replay_frames"]=c.replay_frames.duplicate(true)
+	out["history_count"]=c.history.size()
 	return out if plain(out) else {}
 
 
@@ -97,8 +98,10 @@ static func rebuild(d: Dictionary, db: FigureDb) -> GameController:
 	var dice := Dice.new(1)
 	dice._rng.state = int(d["rng"])
 	var c := GameController.new(s, dice)
-	for entry: Dictionary in d["history"]:
-		c.history.append(GameEvent.new(entry["type"], entry["data"]))
+	c.history.assign(BattleRecord.unpack(d["history"]))
+	c.command_history.assign(d.get("commands",[]))
+	if int(d.get("history_count",c.history.size()))==c.history.size():
+		c.replay_frames.assign(d.get("replay_frames",[]).slice(-BattleFrame.LIMIT))
 	return c
 
 

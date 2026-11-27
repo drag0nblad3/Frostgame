@@ -44,43 +44,43 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			bi.preview()
 			return false
 		"transfer_confirm":
-			return GearActions.transfer(bi.c, bi.c.state.figure(bi.transfer_target), bi.transfer_amount)
+			return BattleEquipmentAction.execute(bi.c,"transfer",{"target":bi.transfer_target,"amount":bi.transfer_amount})
 		"cancel_bridge":
-			return bi.c._magic.terrain.cancel_bridge(bi.c.state.active())
+			return BattleSpellAction.execute(bi.c,"cancel_bridge")
 		"use_stored_action":
-			return bi.c.use_stored_action()
+			return BattleAction.execute(bi.c,"use_stored_action")
 		"resist_plus", "resist_minus":
 			bi.empower = clampi(bi.empower + (1 if key == "resist_plus" else -1), 0, int(bi.c.state.pending_resistance["max"]))
 			bi._resist_buttons()
 			bi.preview()
 			return false
 		"resist_fate":
-			bi.c._magic.resistance.reroll_fate()
+			BattleSpellAction.execute(bi.c,"resist_fate")
 			bi.empower = 0
 			bi._resist_buttons()
 			bi.preview()
 			return false
 		"cast_fate":
-			bi.c._magic.reroll_fate()
+			BattleSpellAction.execute(bi.c,"cast_fate")
 			bi.empower = 0
 			bi._empower_buttons()
 			bi.preview()
 			return false
 		"resist_amulet":
-			bi.c._magic.resistance.use_amulet()
+			BattleSpellAction.execute(bi.c,"resist_amulet")
 			bi._resist_buttons()
 			bi.preview()
 			return false
 		"resist_confirm":
-			return bi.c._magic.resistance.answer(bi.empower)
+			return BattleSpellAction.execute(bi.c,"resist",{"health":bi.empower})
 		"counter_previous", "counter_next":
 			bi.counter_index = posmod(bi.counter_index + (1 if key == "counter_next" else -1), bi.counter_choices.size())
 			bi.preview()
 			return false
 		"counter_confirm":
 			if bi.selected_spell == "horn":
-				return GearActions.horn(bi.c, bi.counter_choices[bi.counter_index]["piece"])
-			return bi._declared(bi.c._magic.start_counter(bi.selected_spell, bi.counter_index))
+				return BattleEquipmentAction.execute(bi.c,"horn",{"piece":bi.c.state.board.pieces.find(bi.counter_choices[bi.counter_index]["piece"])})
+			return bi._declared(BattleSpellAction.execute(bi.c,"counter",{"spell":bi.selected_spell,"index":bi.counter_index}))
 		"extend_bridge":
 			bi.spell_extended=not bi.spell_extended
 			bi.preview()
@@ -102,17 +102,16 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 				bi.hud.open_spellbook(f.label(),SpellReference.battle_entries(bi.c.state,f,bi.cast_options))
 			return false
 		"spell_cancel":
-			bi.c._magic.shatter.first.clear()
+			BattleSpellAction.execute(bi.c,"cancel_declaration")
 			bi.mode = ""
 			bi.refresh()
 			return false
 		"vampire_donor","vampire_plus","vampire_minus":
 			var cast := bi.mode=="empower"
-			var p := bi.c.state.pending_cast if cast else bi.c.state.pending_resistance
 			if key=="vampire_donor":
-				VampireStaff.cycle(bi.c,p,cast)
+				BattleSpellAction.execute(bi.c,"vampire_donor",{"cast":cast})
 			else:
-				VampireStaff.adjust(bi.c,p,cast,1 if key=="vampire_plus" else -1)
+				BattleSpellAction.execute(bi.c,"vampire_adjust",{"cast":cast,"delta":1 if key=="vampire_plus" else -1})
 			if cast:
 				bi.empower=mini(bi.empower,bi.c.cast_max_empowerment())
 				bi._empower_buttons()
@@ -126,21 +125,21 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			bi.preview()
 			return false
 		"cast_scroll":
-			return bi.c._magic.insure()
+			return BattleSpellAction.execute(bi.c,"insure")
 		"gem_extend","gem_reroll":
-			bi.c._magic.toggle_gem(key)
+			BattleSpellAction.execute(bi.c,"gem",{"option":key})
 			bi._empower_buttons()
 			bi.preview()
 			return false
 		"cast_fang":
-			bi.c._magic.toggle_golden_fang()
+			BattleSpellAction.execute(bi.c,"golden_fang")
 			bi._empower_buttons()
 			bi.preview()
 			return false
 		"cast_confirm":
 			return bi.c.finish_cast(bi.empower)
 		"gutter_skip":
-			return GearActions.gutter_skip(bi.c)
+			return BattleEquipmentAction.execute(bi.c,"gutter_skip")
 		"stay":
 			return bi.c.stay_in_combat()
 		"push_self":
@@ -166,13 +165,14 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			bi.mode = ""
 			return true
 		"pass_phase":
-			return bi.c.finish_early_phase()
+			return BattleAction.execute(bi.c,"pass_phase")
 		"reload":
-			return bi.c.reload()
+			return BattleAction.execute(bi.c,"reload")
 		"end":
-			bi.c.end_activation()
-			bi.mode = ""
-			return true
+			var ended := BattleAction.execute(bi.c,"end")
+			if ended:
+				bi.mode = ""
+			return ended
 	bi.mode = key
 	bi.preview()
 	return false

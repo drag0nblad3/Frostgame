@@ -16,23 +16,19 @@ func start_turn() -> void:
 	var s := _c.state
 	if s.over:
 		return
-	if RedKingMind.active(s) and s.turn>=8:
-		RedKingMind.finish(_c)
-		_finish(0)
+	var before: Variant=RuleHooks.first("victory_before_turn",[_c])
+	if before!=null and before.has("winner"):
+		_finish(int(before["winner"]))
 		return
 	s.turn += 1
-	var limit:=int(s.scenario_data.get("turn_limit",18 if RedKingHerded.active(s) else GameState.MAX_TURNS))
+	var override: Variant=RuleHooks.first("turn_limit",[s])
+	var limit:=int(s.scenario_data.get("turn_limit",GameState.MAX_TURNS if override==null else int(override)))
 	if limit>0 and s.turn>limit:
-		if RedKingVeil.active(s):
-			RedKingVeil.finish(_c)
-			_finish(0 if RedKingVeil.xp(_c,0)>0 else 1)
-			return
-		if s.treasures.is_empty():
-			_finish(-1)
+		var decision: Variant=RuleHooks.first("victory_at_limit",[_c])
+		if decision!=null and decision.has("winner"):
+			_finish(int(decision["winner"]))
 		else:
-			if RedKingInvestigations.active(s):
-				RedKingInvestigations.finish_unsearched(_c)
-			_finish(TreasureRules.winner(s))
+			_finish(-1 if s.treasures.is_empty() else TreasureRules.winner(s))
 		return
 	for f in s.figures:
 		f.activated = false
@@ -87,9 +83,7 @@ func _roll_initiative(use: bool) -> void:
 	s.phase = Phase.WIZARD
 	s.early.capture(s)
 	_c.emit("turn_start", {"turn": s.turn, "order": s.order, "rolls": ini["rolls"]})
-	RedKingHill.priority(_c,ini["rolls"])
-	if not s.scenario_data.has("rk_priority_choice"):
-		RealityCracks.on_priority(_c,ini["rolls"])
+	RuleHooks.run("turn_priority",[_c,ini["rolls"]])
 	resume_priority()
 
 
@@ -113,18 +107,7 @@ func _settle() -> void:
 		if s.phase == Phase.CREATURE:
 			_c._magic.on_end_turn()
 			CreatureEffects.end_turn(_c)
-			RedKingSquatter.end_turn(_c)
-			RedKingInvestigations.end_turn(_c)
-			RedKingVeil.end_turn(_c)
-			RedKingFire.end_turn(_c)
-			RedKingMadMan.end_turn(_c)
-			RedKingMind.end_turn(_c)
-			RedKingHerded.end_turn(_c)
-			RedKingSinkhole.end_turn(_c)
-			RedKingTethers.end_turn(_c)
-			RedKingBridge.end_turn(_c)
-			RedKingRingworld.end_turn(_c)
-			RealityCracks.on_end_turn(_c)
+			RuleHooks.run("turn_end",[_c])
 			if s.scenario_data.has("rk_end_choice") or s.scenario_data.has("rk_direction_choice"):
 				return
 			resume_end_turn()
@@ -138,7 +121,7 @@ func _settle() -> void:
 			start_turn()
 			return
 		s.phase = Phase.ORDER[i]
-		RedKingVeil.before_phase(_c)
+		RuleHooks.run("before_phase",[_c])
 		s.fast_acts.clear()
 		s.early.capture(s)
 		if s.phase == Phase.CREATURE:
@@ -152,10 +135,9 @@ func resume_end_turn() -> void:
 	var s := _c.state
 	if s.over or s.scenario_data.has("rk_end_choice") or s.scenario_data.has("rk_direction_choice"):
 		return
-	if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
+	if RuleHooks.any("victory_after_turn",[s]) and _check_victory():
 		return
-	HolyLantern.end_turn(_c)
-	WormRider.end_turn(_c)
+	RuleHooks.run("turn_end_resume",[_c])
 	_c._encounters.on_end_turn()
 	start_turn()
 
@@ -166,69 +148,11 @@ func _check_victory() -> bool:
 		if not _c.state.side_figures(side).is_empty():
 			standing.append(side)
 	var s := _c.state
-	if RedKingRingworld.active(s):
-		if not RedKingRingworld.check_end(_c):
+	var decision: Variant=RuleHooks.first("scenario_victory",[_c,standing])
+	if decision!=null:
+		if not decision.has("winner"):
 			return false
-		_finish(TreasureRules.winner(s) if s.scenario_data.get("ring_success",false) else -1)
-		return true
-	if RedKingBridge.active(s):
-		if not standing.is_empty():
-			return false
-		for token in s.treasures:
-			if token.unresolved():
-				_c._loot.lose(token)
-		_finish(TreasureRules.winner(s))
-		return true
-	if RedKingTethers.active(s) and RedKingTethers.remaining(s)>0:
-		if not standing.is_empty():
-			return false
-		_finish(-1)
-		return true
-	if RedKingHerded.active(s):
-		if not standing.is_empty() and float(s.scenario_data.get("herd_veil",0.0))<s.board.size.y:
-			return false
-		for token in s.treasures:
-			if token.unresolved():
-				_c._loot.lose(token)
-		_finish(TreasureRules.winner(s))
-		return true
-	if RedKingMind.active(s):
-		var wizard := RedKingMind.wizard(s)
-		if wizard!=null and wizard.in_play():
-			return false
-		RedKingMind.finish(_c)
-		_finish(0)
-		return true
-	if RedKingMadMan.active(s):
-		var living_warband := false
-		for f in s.figures:
-			if f.side>=0 and f.in_play() and not RedKingMadMan.hunter(f):
-				living_warband=true
-				break
-		if not living_warband:
-			for token in s.treasures:
-				if token.unresolved():
-					_c._loot.lose(token)
-			_finish(TreasureRules.winner(s))
-			return true
-		if RedKingMadMan.unresolved(s):
-			return false
-		for token in s.treasures:
-			if token.unresolved():
-				return false
-		_finish(TreasureRules.winner(s))
-		return true
-	if RedKingVeil.active(s):
-		if not s.side_figures(0).is_empty():
-			return false
-		RedKingVeil.finish(_c)
-		_finish(0 if RedKingVeil.xp(_c,0)>0 else 1)
-		return true
-	if RedKingInvestigations.active(s):
-		if not standing.is_empty():
-			return false
-		RedKingInvestigations.finish_unsearched(_c)
-		_finish(TreasureRules.winner(s))
+		_finish(int(decision["winner"]))
 		return true
 	if not s.treasures.is_empty():
 		if standing.size() <= 1:
@@ -236,17 +160,17 @@ func _check_victory() -> bool:
 			for token in s.treasures:
 				if not token.unresolved():
 					continue
-				var eligible := not token.frozen and not RedKingHill.guarded(s,token)
+				var eligible := not token.frozen and not RuleHooks.any("treasure_guarded",[s,token])
 				var secured := false
 				if survivor >= 0:
-					secured = eligible and (token.carrier_id >= 0 or _c.dice.d20()+int(RedKingGear.sticky(s,survivor)) >= 15)
+					secured = eligible and (token.carrier_id >= 0 or _c.dice.d20()+int(RuleHooks.any("sticky_treasure",[s,survivor])) >= 15)
 				if secured:
 					_c._loot.secure(token, survivor)
 					continue
 				var claimed := false
 				if eligible and token.on_ground():
 					for side in s.side_count():
-						if side!=survivor and RedKingGear.sticky(s,side) and _c.dice.d20()==20:
+						if side!=survivor and RuleHooks.any("sticky_treasure",[s,side]) and _c.dice.d20()==20:
 							_c._loot.secure(token,side)
 							claimed=true
 							break

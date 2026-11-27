@@ -38,7 +38,7 @@ static func shortcut(c: GameController,f: Figure,layout: FloorLayout,reach: Laye
 		if score<walk_cost-1.0 and score<best_score:
 			best_score=score
 			best_jump=n
-	if best_jump!=null and c.jump_on_floor(best_jump):
+	if best_jump!=null and c.commit_movement("jump",best_jump):
 		return true
 	if not CasterLoadout.is_caster(f.def.role) or not c.can_act() or ScenarioNull.muted(f) or f.health<=3:
 		return false
@@ -53,7 +53,7 @@ static func shortcut(c: GameController,f: Figure,layout: FloorLayout,reach: Laye
 			continue
 		best=n
 		gain=saved
-	if best!=null and c.teleport_on_floor(best):
+	if best!=null and BattleSpellAction.execute(c,"place",{"spell":"teleport","at":best}):
 		return resolve(c)
 	# Leap a friendly soldier to a token if its ordinary move cannot get
 	# there. A landed target cannot pick up until the next turn.
@@ -66,7 +66,7 @@ static func shortcut(c: GameController,f: Figure,layout: FloorLayout,reach: Laye
 		for n in loot_nodes(c.state,layout,target_grid):
 			if normal.can_reach(n) or layout.world(start).distance_to(layout.world(n))<MoveRules.allowance(t)+1.0:
 				continue
-			if c.leap_on_floor(t.id,n):
+			if BattleSpellAction.execute(c,"move",{"spell":"leap","target":t.id,"at":n}):
 				return resolve(c)
 	return false
 
