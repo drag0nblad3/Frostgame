@@ -44,7 +44,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			bi.preview()
 			return false
 		"transfer_confirm":
-			return GearActions.transfer(bi.c, bi.c.state.figure(bi.transfer_target), bi.transfer_amount)
+			return BattleEquipmentAction.execute(bi.c,"transfer",{"target":bi.transfer_target,"amount":bi.transfer_amount})
 		"cancel_bridge":
 			return bi.c._magic.terrain.cancel_bridge(bi.c.state.active())
 		"use_stored_action":
@@ -79,7 +79,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			return false
 		"counter_confirm":
 			if bi.selected_spell == "horn":
-				return GearActions.horn(bi.c, bi.counter_choices[bi.counter_index]["piece"])
+				return BattleEquipmentAction.execute(bi.c,"horn",{"piece":bi.c.state.board.pieces.find(bi.counter_choices[bi.counter_index]["piece"])})
 			return bi._declared(bi.c._magic.start_counter(bi.selected_spell, bi.counter_index))
 		"extend_bridge":
 			bi.spell_extended=not bi.spell_extended
@@ -140,7 +140,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 		"cast_confirm":
 			return bi.c.finish_cast(bi.empower)
 		"gutter_skip":
-			return GearActions.gutter_skip(bi.c)
+			return BattleEquipmentAction.execute(bi.c,"gutter_skip")
 		"stay":
 			return bi.c.stay_in_combat()
 		"push_self":
