@@ -75,6 +75,11 @@ func refresh() -> void:
 		mode = "initiative_choice"
 		preview()
 		return
+	if c.state.scenario_data.has("rk_lightning_absorb"):
+		available.assign(["elemental_absorb","elemental_pass"])
+		mode="elemental_lightning_reaction"
+		preview()
+		return
 	if c.state.scenario_data.has("rk_direction_choice"):
 		var choice: Dictionary=c.state.scenario_data["rk_direction_choice"]
 		available.assign(["direction_keep"])
@@ -429,6 +434,12 @@ func preview() -> void:
 				if c.state.board.contains(point):
 					points.append(point)
 			hint="%s: marked random heading. Keep it or use an available item to reroll. The new heading is binding."%target.label()
+		"elemental_lightning_reaction":
+			var offer: Dictionary=c.state.scenario_data["rk_lightning_absorb"]
+			var target := c.state.figure(int(offer["target"]))
+			points.append(target.pos)
+			radius=0.65
+			hint="%s: %d elemental damage from Lightning Front. Reduce by 1 or risk full absorption (1–16 success; 17–20 destroys amulet and adds 3 damage)."%[target.label(),offer["damage"]]
 		"elemental_spell_reaction":
 			var offer: Dictionary=c.state.scenario_data["rk_spell_absorption"]
 			var target := c.state.figure(int(offer["event"]["target"]))

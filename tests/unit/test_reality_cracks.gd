@@ -151,3 +151,25 @@ func test_convergence_placement_and_checkpoint() -> void:
 	check(RealityConvergence.answer(restored,points[0]))
 	check_eq(restored.state.figure(f.id).pos,points[0])
 	check(not restored.state.scenario_data.has("rk_priority_choice"))
+
+
+func test_lightning_front_waits_for_absorption() -> void:
+	var c := _fixture()
+	var s := c.state
+	var f := s.figures[0]
+	s.reaction_side=f.side
+	s.order.assign([0,1])
+	for other in s.figures:
+		other.pos=Vector2(2,2)
+	f.pos=s.board.size*0.5
+	f.items.append({"gear":RedKingElemental.AMULET})
+	var hp := f.health
+	# Directly exercise the same priority queue with deterministic damage.
+	s.scenario_data["rk_lightning_queue"]=[]
+	s.scenario_data["rk_lightning_absorb"]={"target":f.id,"damage":5}
+	check(c.awaiting_reaction())
+	check_eq(f.health,hp)
+	check(c.answer_elemental_combat(false))
+	check_eq(f.health,hp-4)
+	check(ActiveGear.ready(f,RedKingElemental.AMULET))
+	check(not s.scenario_data.has("rk_lightning_queue"))

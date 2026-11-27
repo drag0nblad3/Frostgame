@@ -133,6 +133,9 @@ static func _repeat(c: GameController,effect: int) -> void:
 	var s := c.state
 	var center := s.board.size*0.5
 	var axis := c.dice.pick(2) if effect in [8,10] else -1
+	if effect==10:
+		RealityLightning.begin(c,axis)
+		return
 	if effect==5:
 		s.scenario_data["reality_null_turn"]=s.turn
 		for f in s.figures.duplicate():
@@ -154,10 +157,6 @@ static func _repeat(c: GameController,effect: int) -> void:
 		var delta: Vector2=center-f.pos
 		if effect in [8,10]:
 			delta=Vector2(delta.x,0) if axis==0 else Vector2(0,delta.y)
-		if effect==10:
-			if delta.length()<=4.0+Figure.BASE_RADIUS:
-				environmental_attack(c,f,3,true)
-			continue
 		var origin: Vector2=f.pos
 		for token in f.carried_treasures():
 			if not StatRoll.succeeds(c.dice.d20(),f.effective_move()+MagicEquipment.bonus(f,"move_test")+f.roll_penalty(),18):

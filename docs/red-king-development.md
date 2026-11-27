@@ -297,3 +297,6 @@ Elemental Bolt and Elemental Ball now pause on the actual incoming elemental dam
 
 ### Random heading reactions
 Blink and Kalamon Ryce's wandering now support a post-roll heading decision, with a marked direction and a binding reroll. A living human-controlled Teetotum bearer may spend the item; a human Blink caster with a Pulsing Gem may instead reroll through the gem (including its cumulative shooting defence penalty). Declining costs nothing. The remaining Ryce turn, including hunter deployment and crack checks, continues after the choice. Other random movement sources retain the older pre-arm fallback. The displayed heading is not a guarantee that terrain or figures permit the full movement.
+
+### Environmental lightning reaction
+Reality Crack 10 now resolves the affected figures sequentially, pausing for a human amulet bearer after damage is known. Priority remains suspended until the queue has finished, and the queue and offer are checkpoint-safe. Other elemental environmental and creature-effect sources retain the pre-arm approximation.

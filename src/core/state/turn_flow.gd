@@ -93,7 +93,7 @@ func _roll_initiative(use: bool) -> void:
 
 func resume_priority() -> void:
 	var s := _c.state
-	if s.scenario_data.has("rk_priority_choice") or s.over:
+	if s.scenario_data.has("rk_priority_choice") or s.scenario_data.has("rk_lightning_absorb") or s.over:
 		return
 	_c.emit("phase", {"phase": s.phase})
 	_settle()

@@ -577,13 +577,15 @@ func answer_fate_combat(use: bool) -> bool:
 
 
 func answer_elemental_combat(use: bool) -> bool:
+	if state.scenario_data.has("rk_lightning_absorb"):
+		return RealityLightning.answer(self,use)
 	if state.scenario_data.has("rk_spell_absorption"):
 		return _magic.answer_absorption(use)
 	return _fate_combat.answer_absorption(use)
 
 
 func awaiting_reaction() -> bool:
-	if state.scenario_data.has("rk_end_choice") or state.scenario_data.has("rk_priority_choice") or state.scenario_data.has("rk_spell_absorption") or state.scenario_data.has("rk_direction_choice"):
+	if state.scenario_data.has("rk_end_choice") or state.scenario_data.has("rk_priority_choice") or state.scenario_data.has("rk_spell_absorption") or state.scenario_data.has("rk_direction_choice") or state.scenario_data.has("rk_lightning_absorb"):
 		return true
 	if not state.pending_combat.is_empty() or state.pending_initiative or not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
 		return true
