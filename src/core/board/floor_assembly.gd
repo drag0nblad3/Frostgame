@@ -23,11 +23,15 @@ static func expand(source: Dictionary) -> Dictionary:
 		var ids: Dictionary={}
 		for entry: Dictionary in kit.get("surfaces",[]):
 			var id := str(entry.get("id",""))
+			if id.is_empty() or ids.has(id):
+				errors.append("Missing or duplicate local floor ID in "+key)
 			ids[id]=prefix+id
-		for entry: Dictionary in kit.get("walls",[]):
-			var id := str(entry.get("id",""))
-			ids[id]=prefix+id
+		# Explicit static solids are rendered by the floor artwork. Dynamic walls
+		# require a corresponding TerrainPiece and remain in BoardLoader.
 		for entry: Dictionary in kit.get("surfaces",[]):
+			if not entry.has("id") or entry.get("rect",[]).size()!=4:
+				errors.append("Malformed floor surface in "+key)
+				continue
 			var surface := entry.duplicate(true)
 			surface["id"]=ids[str(entry["id"])]
 			var ramp := {"axis":surface.get("axis","x"),"start":surface.get("level",0.0),"end":surface.get("end_level",surface.get("level",0.0))}
@@ -41,27 +45,30 @@ static func expand(source: Dictionary) -> Dictionary:
 				surface["axis"]=ramp["axis"]
 			append(result,"surfaces",surface)
 		for solid: Array in kit.get("solids",[]):
+			if solid.size()!=6:
+				errors.append("Malformed solid in "+key)
+				continue
 			var rect_piece := {"rect":[solid[0],solid[2],solid[3],solid[5]]}
 			TerrainAssembly.rotate_piece(rect_piece,turns)
 			var rect := translate_rect(rect_piece["rect"],offset)
 			append(result,"solids",[rect[0],float(solid[1])+lift,rect[1],rect[2],solid[4],rect[3]])
 		for field in ["links","climbs"]:
 			for entry: Dictionary in kit.get(field,[]):
+				if entry.get("from",[]).size()!=3 or entry.get("to",[]).size()!=3:
+					errors.append("Malformed floor connection in "+key)
+					continue
 				var link := entry.duplicate(true)
 				link["from"]=endpoint(entry["from"],ids,offset,turns)
 				link["to"]=endpoint(entry["to"],ids,offset,turns)
 				if link.has("id"):
 					link["id"]=prefix+str(link["id"])
 				append(result,field,link)
-		for entry: Dictionary in kit.get("walls",[]):
-			var wall := entry.duplicate(true)
-			wall["id"]=ids[str(wall["id"])]
-			wall["support"]=ids.get(str(wall["support"]),wall["support"])
-			wall["height"]=float(wall["height"])+lift
-			TerrainAssembly.rotate_piece(wall,turns)
-			wall["rect"]=translate_rect(wall["rect"],offset)
-			append(result,"walls",wall)
+		if kit.has("walls"):
+			errors.append("Use static solids rather than dynamic walls in floor kit: "+key)
 		for rect: Array in kit.get("null_regions",[]):
+			if rect.size()!=4:
+				errors.append("Malformed null region in "+key)
+				continue
 			var piece := {"rect":rect.duplicate()}
 			TerrainAssembly.rotate_piece(piece,turns)
 			append(result,"null_regions",translate_rect(piece["rect"],offset))
