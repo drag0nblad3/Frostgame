@@ -54,13 +54,7 @@ func begin_deployment(human_side: int=-1) -> BattleDeployment:
 func start_game() -> void:
 	if deployment!=null and not deployment.done:
 		return
-	DeathMask.prepare(self)
-	CircletDefence.prepare(self)
-	ScrollShield.prepare(self)
-	RedKingGear.foulhorn_brawl(self)
-	RedKingInvestigations.prepare(self)
-	RedKingVeil.prepare(self)
-	RedKingMind.prepare(self)
+	RuleHooks.run("battle_prepare",[self])
 	_flow.start_turn()
 	BattleFrame.record(self)
 
