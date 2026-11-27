@@ -6,7 +6,7 @@ var catalog: Dictionary
 const POINTS := ["explosive_cocktail", "teleportation"]
 const COATINGS := ["poison", "fairy_dust"]
 ## Only effects that still need floor-aware placement/route contracts.
-const FLOOR_PENDING := ["explosive_cocktail","teleportation","burrowing","fury","null","shatterstar","ethereal_vacuum"]
+const FLOOR_PENDING := ["explosive_cocktail","burrowing","fury","null","shatterstar","ethereal_vacuum"]
 
 
 func _init(controller: GameController) -> void:
@@ -156,7 +156,7 @@ func _report(f: Figure, target: Figure, id: String) -> void:
 
 
 func can_place(id: String, at: Vector2) -> bool:
-	if not can_drink(id):
+	if not c.state.board.floor_layout.is_empty() or not can_drink(id):
 		return false
 	var f := c.state.active()
 	if id == "teleportation":
@@ -195,6 +195,24 @@ func use_at(id: String, at: Vector2) -> bool:
 	if not success:
 		return true
 	_report(f, f, id)
+	return true
+
+
+func teleport_floor_points(index: int=-1,first_only: bool=false) -> Array[Vector3i]:
+	if c.state.board.floor_layout.is_empty() or not can_drink("teleportation"):
+		return []
+	return BattlePlacement.teleports(c.state,c.state.active(),24.0,index,first_only)
+
+
+func teleport_on_floor(n: Vector3i) -> bool:
+	var f:=c.state.active()
+	if c.state.board.floor_layout.is_empty() or not can_drink("teleportation") or not BattlePlacement.teleport_legal(c.state,f,n):
+		return false
+	var success:=_consume(f,"teleportation")
+	_spend_drink(f)
+	if success:
+		c._magic.movement.move_floor(f,n,true,false,"teleport")
+		_report(f,f,"teleportation")
 	return true
 
 

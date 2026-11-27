@@ -20,7 +20,7 @@ static func arm(c: GameController, id: String) -> bool:
 
 
 static func teleport_legal(c: GameController, at: Vector2) -> bool:
-	if not can_use(c, "gear_ring_teleportation"):
+	if not c.state.board.floor_layout.is_empty() or not can_use(c,"gear_ring_teleportation"):
 		return false
 	var f := c.state.active()
 	return Vector2(f.pos.distance_to(at), f.elevation - c.state.board.height_at(at)).length() <= 8.0 and c._magic.movement.can_land(f, f, "teleport", at)
@@ -47,6 +47,23 @@ static func teleport(c: GameController, at: Vector2) -> bool:
 	c._spend(f)
 	c._magic.movement.move(f, at)
 	c.emit("gear_used", {"id": f.id, "gear": "gear_ring_teleportation"})
+	return true
+
+
+static func teleport_floor_points(c: GameController,index: int=-1,first_only: bool=false) -> Array[Vector3i]:
+	if c.state.board.floor_layout.is_empty() or not can_use(c,"gear_ring_teleportation"):
+		return []
+	return BattlePlacement.teleports(c.state,c.state.active(),8.0,index,first_only)
+
+
+static func teleport_on_floor(c: GameController,n: Vector3i) -> bool:
+	if c.state.board.floor_layout.is_empty() or not can_use(c,"gear_ring_teleportation") or not BattlePlacement.teleport_legal(c.state,c.state.active(),n,8.0):
+		return false
+	var f:=c.state.active()
+	ActiveGear.spend(f,"gear_ring_teleportation")
+	c._spend(f)
+	c._magic.movement.move_floor(f,n,false,false,"teleport")
+	c.emit("gear_used",{"id":f.id,"gear":"gear_ring_teleportation"})
 	return true
 
 

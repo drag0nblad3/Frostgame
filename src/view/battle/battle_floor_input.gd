@@ -2,15 +2,13 @@ class_name BattleFloorInput
 extends RefCounted
 ## Geometry adapter only. All menus, reactions, attack confirmation and
 ## movement planning belong to BattleInput and BattleHud, on every board.
-const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle"]
+const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle","floor_spell_point","floor_ring_teleport","floor_potion_teleport"]
 
 
 static func append_spells(bi: BattleInput,f: Figure) -> void:
 	var c:=bi.c
 	if not c.can_act() or not CasterLoadout.is_caster(f.def.role) or ScenarioNull.muted(f) or Contact.in_combat(c.state.figures,f) or f.spell_effects.has("blinding_light"):
 		return
-	if c._magic.available_spell(f,"teleport") and not c.state.group.in_progress() and not f.surface_id.begins_with("climb:"):
-		bi.cast_options.append("teleport")
 	for target in c.state.figures:
 		if LayeredLeap.eligible(c,target):
 			bi.cast_options.append("leap")
@@ -20,7 +18,7 @@ static func append_spells(bi: BattleInput,f: Figure) -> void:
 
 
 static func handles_action(bi: BattleInput,key: String) -> bool:
-	return bi.available.has(key) and key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp"]
+	return bi.available.has(key) and (key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation"] or (key.begins_with("spell_") and SummonActions.PLACEMENT.has(key.trim_prefix("spell_"))))
 
 
 static func action(bi: BattleInput,key: String) -> bool:
@@ -39,7 +37,16 @@ static func action(bi: BattleInput,key: String) -> bool:
 		"gear_rk_bottle_imp":
 			bi.mode="floor_bottle"
 			bi.selected_spell=""
-	bi.available.assign(["potion_cancel"] if key=="gear_rk_bottle_imp" else ["spell_cancel"])
+		"gear_ring_teleportation":
+			bi.mode="floor_ring_teleport"
+			bi.selected_spell=""
+		"potion_teleportation":
+			bi.mode="floor_potion_teleport"
+			bi.selected_spell=""
+		_:
+			bi.mode="floor_spell_point"
+			bi.selected_spell=key.trim_prefix("spell_")
+	bi.available.assign(["potion_cancel"] if key.begins_with("gear_") or key.begins_with("potion_") else ["spell_cancel"])
 	bi.preview()
 	return false
 
@@ -73,6 +80,15 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 	if bi.mode=="floor_bottle":
 		candidates=GearActions.bottle_floor_points(bi.c)
 		s.hint="Place the imp within one inch."
+	elif bi.mode in ["floor_spell_point","floor_teleport","floor_ring_teleport","floor_potion_teleport"]:
+		var nodes: Array[Vector3i]=[]
+		match bi.mode:
+			"floor_ring_teleport": nodes=GearActions.teleport_floor_points(bi.c,index)
+			"floor_potion_teleport": nodes=bi.c._potions.teleport_floor_points(index)
+			_: nodes=SpellAvailability.floor_placement_points(bi.c._magic,bi.selected_spell,false,index)
+		for n in nodes:
+			candidates[n]=true
+		s.hint="Choose a legal placement on this floor."
 	elif bi.mode in ["floor_bridge","floor_bridge_end"]:
 		candidates=LayeredBridgePicker.points(bi.c,layout,index,bi.bridge_start if bi.mode=="floor_bridge_end" else null)
 		s.hint="Select first bridge endpoint." if bi.mode=="floor_bridge" else "Select a different floor and the second endpoint."
@@ -189,7 +205,9 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		bi.move_plan.choose_node(bi,node)
 		return false
 	match bi.mode:
-		"floor_teleport": return bi.c.teleport_on_floor(node)
+		"floor_teleport","floor_spell_point": return bi._declared(bi.c._magic.start_floor_at(bi.selected_spell,node))
+		"floor_ring_teleport": return GearActions.teleport_on_floor(bi.c,node)
+		"floor_potion_teleport": return bi.c._potions.teleport_on_floor(node)
 		"floor_leap": return bi.c.leap_on_floor(bi.spell_first,node)
 		"floor_bottle": return GearActions.bottle_on_floor(bi.c,node)
 		"floor_bridge":

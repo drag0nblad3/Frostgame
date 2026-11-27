@@ -61,7 +61,16 @@ static func _finish_one(sa: SpellActions, health: int) -> bool:
 			sa.terrain.apply(f,id,p["at"],p["rotated"],int(result["roll"]),extended)
 		return true
 	if SummonActions.PLACEMENT.has(id):
-		sa.summons.spawn(f,id,p["at"],int(result["roll"]),int(p["tn"]),bool(p.get("golden_fang",false)))
+		var effect: Dictionary=p.get("effect",{})
+		var surface:=str(effect.get("surface_id",""))
+		var height:=0.0
+		if not surface.is_empty():
+			var layout:=s.board.floor_geometry()
+			var node:=layout.node(surface,p["at"])
+			if not sa.summons.can_place_floor(f,id,node):
+				return true
+			height=layout.height(node)
+		sa.summons.spawn(f,id,p["at"],int(result["roll"]),int(p["tn"]),bool(p.get("golden_fang",false)),surface,height)
 		sa.illusions.sweep()
 		return true
 	if not t.in_play():

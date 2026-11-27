@@ -91,6 +91,31 @@ func move(t: Figure,at: Vector2,exhaust: bool=false,falling: bool=false,sites: b
 		ScenarioSites.end_move(c, t)
 
 
+## Explicit floor arrival. Same exhaustion, status removal, illusion and
+## scenario consequences as exposed-surface magic movement.
+func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,visual_spell: String="",path: PackedVector3Array=PackedVector3Array(),sites: bool=true) -> void:
+	var layout:=c.state.board.floor_geometry()
+	if not layout.standable(n):
+		return
+	var start:=Vector3(t.pos.x,t.elevation,t.pos.y)
+	var old:=t.surface_id
+	t.spell_effects.erase("bones_of_the_earth")
+	t.pos=layout.point(n)
+	t.elevation=layout.height(n)
+	t.surface_id=layout.surface_id(n)
+	if exhaust:
+		t.magic_exhausted=true
+		t.actions_left=0
+	if path.is_empty():
+		path=PackedVector3Array([start,layout.world(n)])
+	c.emit("layered_move",{"id":t.id,"path":path,"surfaces":[old,t.surface_id],"cost":0.0,"teleport":visual_spell=="teleport" or visual_spell=="transpose","leap":visual_spell=="leap"})
+	c._magic.illusions.after_move(t)
+	if falling:
+		LayeredFall.apply(c,t,start.y-t.elevation,t)
+	if sites:
+		ScenarioSites.end_move(c,t)
+
+
 func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=null) -> void:
 	if direction.is_zero_approx():
 		return
