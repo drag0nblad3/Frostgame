@@ -64,6 +64,7 @@ static func capture(c: GameController, meta: Dictionary = {}) -> Dictionary:
 	for token in s.treasures:
 		out["treasures"].append(pack(token, TOKEN))
 	out["history"]=BattleRecord.pack(c.history)
+	out["commands"]=c.command_history.duplicate(true)
 	return out if plain(out) else {}
 
 
@@ -96,6 +97,7 @@ static func rebuild(d: Dictionary, db: FigureDb) -> GameController:
 	dice._rng.state = int(d["rng"])
 	var c := GameController.new(s, dice)
 	c.history.assign(BattleRecord.unpack(d["history"]))
+	c.command_history.assign(d.get("commands",[]))
 	return c
 
 
