@@ -43,6 +43,7 @@ content set registers callables in one installer (`RedKingHooks.install()`, list
 | `treasure_light_slowdown` | figure | `any` | Carrying treasure costs 1" instead of half Move |
 | `treasure_guarded` | state, token | `any` | Token can't be picked up yet |
 | `cannot_carry_treasure` | state, figure | `any` | Figure may never pick up treasure |
+| `equipment_command` | controller, key, args | `first` | Execute expansion-owned equipment choice; null means unhandled |
 | `group_blocked` | state, figure | `any` | Figure can't join a group activation |
 | `forced_move_void` | controller, figure, from, to | `any` | A push was resolved by a void (figure fell or stopped) |
 | `forced_move_blocked` | controller, figure, to | `any` | A forced move was resolved by a hazard at the destination |
@@ -68,6 +69,11 @@ of their figures for that phase, then the next player.
   use the same situational defence query as shooting resolution. Migrate additional
   movement, spell, equipment and expansion decisions incrementally, leaving legality
   in the controller. Previewing must never consume actions or dice.
+- `BattleEquipmentAction` exposes stable equipment commands and shared point
+  queries for both geometry providers. Point payloads must be Vector2 on ordinary
+  boards or Vector3i (including support index) on layered boards; invalid geometry
+  is rejected before consumption. Equipment commands are recorded for replay.
+  Expansion-owned actions are dispatched by the `equipment_command` hook.
 - `BattlePresentation` classifies action/consequence/movement/context beats;
   `BattleCameraDirector` optionally frames visible participants and yields to manual
   camera input. The command screen exposes Normal, Fast and Cinematic playback.
