@@ -23,7 +23,7 @@ func _ready() -> void:
 	environment.environment=Environment.new()
 	environment.environment.background_mode=Environment.BG_COLOR
 	environment.environment.background_color=Color("16232e")
-	add_child_to_viewport(environment)
+	_viewport.add_child(environment)
 	_root=Node3D.new()
 	_viewport.add_child(_root)
 	_camera=Camera3D.new()
@@ -31,10 +31,6 @@ func _ready() -> void:
 	_viewport.add_child(_camera)
 	_camera.current=true
 	resized.connect(_render)
-
-
-func add_child_to_viewport(node: Node) -> void:
-	_viewport.add_child(node)
 
 
 func show_frame(frame: Dictionary,surface: String="") -> void:
@@ -84,6 +80,9 @@ func _rebuild() -> void:
 			_cylinder(at,r.size.x*0.5,h,color)
 		else:
 			_box(at,Vector3(r.size.x,h,r.size.y),color)
+	if _surface.is_empty():
+		for solid: AABB in _frame.get("solids",[]):
+			_box(solid.get_center(),solid.size,Color("536673"))
 	for floor: Dictionary in _frame["floors"]:
 		if floor["id"]=="street" or (not _surface.is_empty() and floor["id"]!=_surface):
 			continue
