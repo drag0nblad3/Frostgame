@@ -82,6 +82,7 @@ func _ready() -> void:
 	add_child(_inspector)
 	hud.inspect_pressed.connect(_open_inspector)
 	hud.guide_pressed.connect(_open_guide)
+	hud.journal_requested.connect(_open_journal)
 	hud.graphics_requested.connect(_open_graphics)
 	hud.atmosphere_toggled.connect(func() -> void:
 		_atmosphere.set_effects(not _atmosphere.enabled)
@@ -221,6 +222,13 @@ func _open_inspector() -> void:
 	if controller == null or not player.idle():
 		return
 	_inspector.open(controller.state, controller.state.active_id)
+
+
+func _open_journal() -> void:
+	if controller==null or player==null or _bots.busy() or not player.idle():
+		hud._open_journal()
+		return
+	hud._open_journal(BattleTimeline.build(controller.state,controller.history))
 
 
 func _open_guide() -> void:
