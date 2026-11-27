@@ -9,6 +9,11 @@ static func install() -> void:
 	RuleHooks.add("objective_figure", RedKingTethers.pylon)
 	RuleHooks.add("equipment_command",_equipment_command)
 	RuleHooks.add("scenario_command",RedKingCommands.execute)
+	RuleHooks.add("battle_prepare",RedKingTurnHooks.prepare)
+	RuleHooks.add("turn_priority",RedKingTurnHooks.priority)
+	RuleHooks.add("turn_end",RedKingTurnHooks.end_turn)
+	RuleHooks.add("turn_end_resume",RedKingTurnHooks.after_end_turn)
+	RuleHooks.add("before_phase",RedKingVeil.before_phase)
 	RuleHooks.add("potion_source_allowed",RedKingPotionHooks.source_allowed)
 	RuleHooks.add("potion_consume",RedKingPotionHooks.consume)
 	# Figures that never lend support in a fight (Mad Man hunters).
