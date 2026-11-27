@@ -30,9 +30,12 @@ static func run(c: GameController,key: String,args: Dictionary,apply: Callable) 
 	c.recording_command=true
 	var rng_before := c.dice._rng.state
 	var first := c.history.size()
+	var staged_before := c._magic.shatter.first.duplicate(true)
 	var accepted := bool(apply.call())
 	c.recording_command=false
-	if accepted:
-		c.command_history.append({"key":key,"args":args.duplicate(true),"rng_before":rng_before,"rng_after":c.dice._rng.state,"event_start":first,"event_end":c.history.size()})
+	# First Shatterstar declarations deliberately return false while staging a
+	# second target. They are real decisions, unlike an invalid command.
+	if accepted or staged_before!=c._magic.shatter.first:
+		c.command_history.append({"key":key,"args":args.duplicate(true),"rng_before":rng_before,"rng_after":c.dice._rng.state,"event_start":first,"event_end":c.history.size(),"accepted":accepted})
 		BattleFrame.record(c)
 	return accepted
