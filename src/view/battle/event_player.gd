@@ -76,9 +76,22 @@ func _play(e: GameEvent) -> void:
 			v.position=TableSpace.to_world(d["at"],d["height"])
 			BattleEffects.pulse(self,v.position+Vector3.UP*0.15,Color(0.73,0.42,0.95))
 		"layered_move":
-			_animate_layered_move(_view(d["id"]),d["path"])
+			var path: PackedVector3Array=d["path"]
+			if d.get("teleport",false) and path.size()>1:
+				_animate_portal(_view(d["id"]),path[-1],"teleport")
+			else:
+				if d.get("leap",false) or d.get("jump",false):
+					CombatVfx.sparks(self,path[0],Color("d5e1e7"),0.55,speed,0.1)
+				_animate_layered_move(_view(d["id"]),path)
 		"move", "push_back", "force_combat":
-			_animate_move(_view(d["id"]), d["path"])
+			var id:=str(d.get("visual_spell",""))
+			var path: PackedVector2Array=d["path"]
+			if id in ["teleport","transpose"] and path.size()>1:
+				_animate_portal(_view(d["id"]),TableSpace.to_world(path[-1],float(d.get("end_height",state.board.height_at(path[-1])))),id)
+			elif id=="leap" and path.size()>1:
+				_animate_leap(_view(d["id"]),TableSpace.to_world(path[-1],float(d.get("end_height",state.board.height_at(path[-1])))))
+			else:
+				_animate_move(_view(d["id"]),path)
 		"terrain_fall":
 			var f := state.figure(d["id"])
 			var falling := _view(f.id)
@@ -250,6 +263,38 @@ func _wait_for(t: Tween) -> void:
 	_busy = true
 	t.set_speed_scale(speed)
 	t.finished.connect(func() -> void: _busy = false)
+
+
+func _animate_portal(v: FigureView,destination: Vector3,id: String) -> void:
+	var color:=SpellVisuals.color_for(id,state)
+	var origin:=v.position
+	CombatVfx.magic(self,origin,"portal",color,1.1,speed)
+	var t:=create_tween()
+	t.tween_interval(0.25)
+	t.tween_callback(v.hide)
+	t.tween_callback(CombatVfx.flash.bind(self,origin+Vector3.UP*0.8,color,0.55,speed))
+	t.tween_property(v,"position",destination,0.0)
+	t.tween_callback(CombatVfx.magic.bind(self,destination,"portal",color,1.1,speed))
+	t.tween_interval(0.25)
+	t.tween_callback(v.show)
+	t.tween_callback(CombatVfx.sparks.bind(self,destination,color,0.65,speed))
+	t.tween_interval(0.60)
+	_wait_for(t)
+
+
+func _animate_leap(v: FigureView,destination: Vector3) -> void:
+	var start:=v.position
+	var color:=SpellVisuals.color_for("leap",state)
+	v.face_toward(destination)
+	CombatVfx.magic(self,start,"portal",color,0.85,speed)
+	var t:=create_tween()
+	var arc:=func(f: float) -> void:
+		v.position=start.lerp(destination,f)+Vector3.UP*4.0*f*(1.0-f)*2.0
+	t.tween_method(arc,0.0,1.0,0.7)
+	t.tween_callback(CombatVfx.magic.bind(self,destination,"portal",color,0.85,speed,true))
+	t.tween_callback(CombatVfx.sparks.bind(self,destination,Color("c9d9e3"),0.55,speed,0.2))
+	t.tween_interval(0.55)
+	_wait_for(t)
 
 
 func _animate_layered_move(v: FigureView,path: PackedVector3Array) -> void:
