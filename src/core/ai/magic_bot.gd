@@ -13,7 +13,7 @@ static func plan(c: GameController, f: Figure) -> Dictionary:
 			if not t.in_play():
 				continue
 			var score := MagicTactics.value(c, f, t, id)
-			if score > best_value and c.can_cast(id, t.id):
+			if score > best_value and BattleAction.legal(c,"cast",t.id,id):
 				best_value = score
 				best = {"spell": id, "target": t.id, "score": score}
 	for id: String in ["raise_zombie", "summon_demon", "animate_skull"]:
@@ -45,7 +45,7 @@ static func play(c: GameController, f: Figure) -> bool:
 	if c.state.spellbooks.get(f.side, {}).has(id) and int(c.state.spellbooks[f.side][id]) >= 10 and f.next_cast_gear == "":
 		if not GearActions.arm(c, "gear_gloves_casting"):
 			GearActions.arm(c, "gear_wand_light")
-	var declared := c._magic.start_floor_at(id,chosen["node"]) if chosen.has("node") else (c._magic.start_at(id,chosen["at"]) if chosen.has("at") else c.start_cast(id,chosen["target"]))
+	var declared := c._magic.start_floor_at(id,chosen["node"]) if chosen.has("node") else (c._magic.start_at(id,chosen["at"]) if chosen.has("at") else BattleAction.execute(c,"cast",chosen["target"],id))
 	if not declared:
 		return false
 	if not c.awaiting_reaction():
