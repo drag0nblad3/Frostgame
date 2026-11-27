@@ -106,10 +106,9 @@ func source(f: Figure,id: String,target: Figure=null) -> int:
 		var item: Dictionary=f.items[i]
 		if item.get("potion","")!=id:
 			continue
-		var gear := str(item.get("gear",""))
-		if gear in [RedKingCampaignGear.POTION_STAFF,RedKingCampaignGear.GOLDEN_BOTTLE]:
-			if MagicEquipment.suppressed(f) or (target!=null and target!=f) or (gear==RedKingCampaignGear.POTION_STAFF and f.destroyed_weapons.has("staff")) or (gear==RedKingCampaignGear.GOLDEN_BOTTLE and int(item.get("bottle_doses",0))<=0):
-				continue
+		var allowed: Variant=RuleHooks.first("potion_source_allowed",[f,item,target])
+		if allowed!=null and not bool(allowed):
+			continue
 		if item.get("enchanted",false):
 			return i
 		if ordinary<0:
@@ -121,25 +120,12 @@ func _consume(f: Figure,id: String,target: Figure=null) -> bool:
 	var index := source(f,id,target)
 	if index<0:
 		return false
-	var item: Dictionary=f.items[index]
-	var gear := str(item.get("gear",""))
-	if gear==RedKingCampaignGear.POTION_STAFF:
-		item.erase("potion")
-		return true
-	if gear==RedKingCampaignGear.GOLDEN_BOTTLE:
-		item["bottle_doses"]=int(item["bottle_doses"])-1
-		if int(item["bottle_doses"])==0:
-			item.erase("potion")
-		var roll := c.dice.d20()
-		var success := StatRoll.succeeds(roll,f.effective_will()+f.roll_penalty(),4)
-		c.emit("creature_test",{"id":f.id,"trait":"golden_bottle","roll":roll,"success":success})
-		if not success:
-			c.poison(f)
-		return success
-	var roll := RedKingMaterials.use_potion(f.items,index,c.dice)
-	if roll>0:
-		c.emit("enchanted_vial",{"id":f.id,"roll":roll,"retained":roll>=19})
+	var special: Variant=RuleHooks.first("potion_consume",[c,f,index])
+	if special!=null:
+		return bool(special)
+	f.items.remove_at(index)
 	return true
+
 
 func _spend_drink(f: Figure) -> void:
 	if f.moves_taken == 0 and not c.state.group.in_progress():
