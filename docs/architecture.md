@@ -77,8 +77,8 @@ of their figures for that phase, then the next player.
 - `BattlePresentation` classifies action/consequence/movement/context beats;
   `BattleCameraDirector` optionally frames visible participants and yields to manual
   camera input. The command screen exposes Normal, Fast and Cinematic playback.
-  Animation remains separate from rule state; true overlapping sequences and instant
-  skip require further work.
+  Animation remains separate from rule state; independent consequences can overlap.
+  Instant skip is not implemented.
 - `BattleSpace` is the shared geometry facade. Existing route providers remain
   underneath it; migrate spatial call sites without changing scenario overrides.
 - `TerrainAssembly` expands reusable local rectangular kits in order, with optional
@@ -109,7 +109,7 @@ of their figures for that phase, then the next player.
   `BattleReplay.verify` re-executes supported commands from a compatible checkpoint
   and detects missing history, unsupported commands, RNG and event divergence.
   It is an audit/testing facility, not a complete player-facing replay viewer.
-  Expansion-specific decisions and other unrecorded transitions still need migration.
+  Explicit expansion decisions and autonomous bot segments are now recorded.
 
 
 ### Spell command boundary
@@ -120,9 +120,9 @@ The same command selects the existing geometry-specific validator from the
 board, and rejects incorrectly typed or out-of-range floor indices before
 spending resources. Input and the bot use this boundary; targeted spells
 retain the existing `BattleAction` path. Accepted decisions can be replayed
-from a safe checkpoint. Intermediate Shatterstar declarations and some
-special expansion choices still need explicit recording; this is not yet a
-complete replay of arbitrary battles.
+from a safe checkpoint. Intermediate Shatterstar declarations, cancellation and Vampire Staff choices
+are recorded, including the staged declaration's false return value. This is
+not yet a guarantee of replaying arbitrary older battles.
 
 
 ### Event presentation and turn review
@@ -138,8 +138,8 @@ corresponding health bar update.
 The Battle Journal includes a read-only timeline with event stepping,
 turn jumps, scrubbing and timed playback. The scene builds its text from
 recorded events only when no bot or animation is active; otherwise the
-recent journal remains accessible. It does not replay 3D positions, reroll
-dice, or change game state. Historical labels may reflect a figure's
+recent journal remains accessible. It does not reroll dice or change game state. Recorded positions can be
+reviewed in the separate schematic battlefield views. Historical labels may reflect a figure's
 current name or allegiance; older healing events lack event-time Health.
 
 
@@ -180,8 +180,8 @@ enchanted vials; ordinary potions require no expansion-specific code.
 
 The ordered lifecycle hooks `battle_prepare`, `turn_priority`,
 `before_phase`, `turn_end` and `turn_end_resume` preserve existing
-Red King processing order and reaction pause points. Scenario victory
-policies and automatic creature decisions are not yet fully migrated.
+Red King processing order and reaction pause points. Scenario victory policies are separated below; some creature-specific rule
+implementations still call expansion classes directly.
 Replay remains a partial command audit rather than a guarantee that
 every autonomous decision can be reconstructed from an initial seed.
 
@@ -208,3 +208,8 @@ Older frames use approximate terrain heights when the new fields are absent.
 It displays recorded action-boundary states, not continuous animations or
 the original miniature artwork. Missing historical frames are not replaced
 with future board positions. The ordinary map remains the default.
+
+Staged Shatterstar declarations preserve their original false UI return while
+recording the changed first target. The replay verifier requires the expected
+return value and a new recorded transaction, so unsupported false-returning
+commands cannot silently pass. Existing records default to accepted=true.
