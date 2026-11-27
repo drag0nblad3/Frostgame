@@ -20,7 +20,7 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 	for region: Array in d.get("void_regions",[]):
 		if region.size()==4:
 			b.void_regions.append(Rect2(region[0],region[1],region[2],region[3]))
-	for p: Dictionary in d.get("pieces", []):
+	for p: Dictionary in TerrainAssembly.pieces(d):
 		var r: Array = p["rect"]
 		var piece := TerrainPiece.new(terrain.get_kind(p["kind"]), Rect2(r[0], r[1], r[2], r[3]))
 		piece.circular = piece.kind.id in ["arcane_disc","red_king_portal","red_king_sinkhole_orb"]
