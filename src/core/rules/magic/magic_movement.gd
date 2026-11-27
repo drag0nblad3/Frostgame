@@ -64,7 +64,7 @@ func points(f: Figure, t: Figure, id: String, first_only: bool = false) -> Array
 	return result
 
 
-func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, sites: bool = true) -> void:
+func move(t: Figure,at: Vector2,exhaust: bool=false,falling: bool=false,sites: bool=true,visual_spell: String="") -> void:
 	if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
 		return
 	# A teleport has no intervening path; test its landing.
@@ -80,7 +80,7 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, 
 	if exhaust:
 		t.magic_exhausted = true
 		t.actions_left = 0
-	c.emit("move", {"id": t.id, "path": PackedVector2Array([old, at]), "cost": 0.0})
+	c.emit("move", {"id":t.id,"path":PackedVector2Array([old,at]),"cost":0.0,"visual_spell":visual_spell,"start_height":height,"end_height":t.elevation})
 	c._magic.terrain.trigger_landing(t)
 	c._magic.illusions.after_move(t)
 	if falling:
@@ -133,8 +133,8 @@ func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=n
 func swap(a: Figure, b: Figure) -> void:
 	var pos := a.pos
 	var other := b.pos
-	move(a, other, false, false, false)
-	move(b, pos, false, false, false)
+	move(a,other,false,false,false,"transpose")
+	move(b,pos,false,false,false,"transpose")
 	ScenarioSites.end_move(c, a)
 	ScenarioSites.end_move(c, b)
 

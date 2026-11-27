@@ -72,9 +72,17 @@ func _process(_delta: float) -> bool:
 		_effect_frame=_frames
 		var state: GameState=_scene.controller.state
 		var center := state.board.size*0.5
-		SpellVisuals.sigil(_scene.player,TableSpace.to_world(center+Vector2(-3,0),0.14),Color("6ddaff"),1.7)
-		BattleEffects.impact(_scene.player,TableSpace.to_world(center+Vector2(0,0),1.0),Color("ffb36a"),true,true)
-		BattleEffects.restore(_scene.player,TableSpace.to_world(center+Vector2(3,0),0.14))
+		_scene._rig.focus_figure(TableSpace.to_world(center,0.4))
+		_scene._rig.distance=19.0
+		_scene._rig._apply()
+		for sample in [["clock",Vector2(-4,-2),Color("e6bc72")],["portal",Vector2(0,-2),Color("b8a1ed")],["ward",Vector2(4,-2),Color("7cc8ee")],["crystal",Vector2(-4,2),Color("94dbd9")],["swarm",Vector2(4,2),Color("9fc95e")]]:
+			var point: Vector2=center+sample[1]
+			CombatVfx.magic(_scene.player,TableSpace.to_world(point,state.board.height_at(point)+0.12),sample[0],sample[2],1.3,0.6)
+		var impact:=TableSpace.to_world(center,state.board.height_at(center)+1.0)
+		CombatVfx.shot_impact(_scene.player,impact,Color("ffb36a"),true,true,"elemental_ball",0.6)
+		var strike:=TableSpace.to_world(center+Vector2(0,2),1.0)
+		CombatVfx.strike(_scene.player,strike,Vector3.RIGHT,"two_handed",true,0.6)
+		CombatVfx.sparks(_scene.player,strike,Color("ffe0a1"),0.9,0.6)
 	if _effects and _frames<_effect_frame+6:
 		return false
 	var img := root.get_viewport().get_texture().get_image()

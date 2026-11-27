@@ -40,7 +40,22 @@ func _run() -> void:
 		quit(1)
 		return
 	var node: Vector3i = scene.targets.keys()[0]
+	var start:=f.pos
+	var surface:=f.surface_id
+	var rng:=c.dice._rng.state
+	var history:=c.history.size()
 	scene.controls.choose_destination(node)
+	if f.pos!=start or f.surface_id!=surface or f.moves_taken!=0 or c.dice._rng.state!=rng or c.history.size()!=history:
+		printerr("Floor preview mutated state")
+		quit(1)
+		return
+	scene.controls.command("plan_undo")
+	if scene.controls.planned!=null or v.position!=TableSpace.to_world(start,f.elevation):
+		printerr("Floor undo failed")
+		quit(1)
+		return
+	scene.controls.choose_destination(node)
+	scene.controls.command("plan_confirm")
 	if f.moves_taken!=1 or f.actions_left!=1:
 		printerr("Movement command failed")
 		quit(1)

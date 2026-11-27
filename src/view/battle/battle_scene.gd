@@ -13,7 +13,7 @@ var _training_complete := false
 var _training_failed := false
 var _training_prompt: AcceptDialog
 ## Pause between bot activations in Auto mode (seconds).
-const AUTO_DELAY := 0.35
+const AUTO_DELAY := 0.8
 
 var controller: GameController
 var player: EventPlayer
@@ -44,6 +44,7 @@ var _bots := BotRunner.new()
 var _launch_intent := ""
 var _title_prompt: AcceptDialog
 var _picker: SkirmishPicker
+var _move_preview_tween: Tween
 
 
 func _ready() -> void:
@@ -108,6 +109,8 @@ func _ready() -> void:
 			_scenario_id=SCENARIO
 		hud.select_scenario(_scenario_id)
 	_rig.tapped.connect(_on_tap)
+	_rig.plan_drag.connect(_on_plan_drag)
+	_rig.can_plan_drag=_can_plan_drag
 	_markers = BattleMarkers.new()
 	add_child(_markers)
 	_sites = ScenarioMarkers.new()
@@ -226,6 +229,8 @@ func new_game(seed_value: int) -> void:
 
 
 func _attach_battle(c: GameController, start: bool) -> void:
+	if _move_preview_tween!=null and _move_preview_tween.is_valid():
+		_move_preview_tween.kill()
 	if player != null:
 		remove_child(player)
 		player.queue_free()
@@ -261,9 +266,11 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
 	player.notice.connect(hud.notify)
+	player.outcome.connect(hud.show_outcome)
 	player.roll_resolved.connect(hud.show_roll)
 	controller.event_emitted.connect(_relay)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
+	player_input.move_preview_changed.connect(_move_preview)
 	if start:
 		controller.start_game()
 	else:
@@ -312,11 +319,11 @@ func _process(delta: float) -> void:
 		_collect_bot_turn()
 	if ModalInput.blocked():
 		_rig.cancel_gesture()
+	if not _launch_intent.is_empty() and controller!=null and not ModalInput.blocked():
+		_open_launch_intent()
+		return
 	if _info_open() or (_campaign_dialog != null and _campaign_dialog.visible) or (_setup != null and _setup.visible) or controller == null or not player.idle():
 		_wait = 0.0
-		return
-	if not _launch_intent.is_empty():
-		_open_launch_intent()
 		return
 	if _training >= 0:
 		_training_complete = TrainingLesson.completed(_training, controller)
@@ -396,6 +403,35 @@ func _on_tap(at: Vector2) -> void:
 	if _human_turn() and player.idle() and not _dirty and not hud.blocks_tap(at):
 		if player_input.tap(at):
 			_lock_after_action()
+
+
+func _can_plan_drag(at: Vector2) -> bool:
+	return controller!=null and player_input!=null and player.idle() and not _dirty and _human_turn() and not hud.blocks_tap(at) and player_input.move_plan.can_begin_drag(player_input,at)
+
+
+func _on_plan_drag(at: Vector2) -> void:
+	if controller!=null and player_input!=null and player.idle() and not _dirty and _human_turn() and not hud.blocks_tap(at):
+		player_input.plan_drag(at)
+
+
+func _move_preview(id: int,at: Vector2,active: bool) -> void:
+	if not player.views.has(id):
+		return
+	var f := controller.state.figure(id)
+	if f==null:
+		return
+	var view: FigureView=player.views[id]
+	# Only presentation moves. Interpolate nearby drag updates; snap on a
+	# distant tap rather than animating through walls. Undo always restores
+	# the exact authoritative position before event animations begin.
+	if _move_preview_tween!=null and _move_preview_tween.is_valid():
+		_move_preview_tween.kill()
+	var point := TableSpace.to_world(at,controller.state.board.height_at(at)) if active else TableSpace.to_world(f.pos,f.elevation)
+	if active and view.position.distance_to(point)<=1.25:
+		_move_preview_tween=create_tween()
+		_move_preview_tween.tween_property(view,"position",point,0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	else:
+		view.position=point
 
 
 func _update_status() -> void:

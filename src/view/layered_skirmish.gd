@@ -12,6 +12,8 @@ var marks: MultiMeshInstance3D
 var targets := {}
 var _was_idle := false
 var _layout_revision := 0
+var _body: BoxContainer
+var _plan_art: Node3D
 
 
 func _ready() -> void:
@@ -37,6 +39,8 @@ func _ready() -> void:
 	add_child(rig)
 	rig.frame_board(s.board.size)
 	rig.tapped.connect(_tap)
+	rig.plan_drag.connect(_drag_plan)
+	rig.can_plan_drag=_can_drag_plan
 	player=EventPlayer.new()
 	player.state=s
 	add_child(player)
@@ -57,12 +61,10 @@ func _ready() -> void:
 func _ui() -> void:
 	var layer := CanvasLayer.new()
 	add_child(layer)
-	var root := MarginContainer.new()
+	var root := PhoneSafeArea.new()
 	root.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	root.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	root.theme=BattleTheme.create()
-	for edge: String in ["left","right","top","bottom"]:
-		root.add_theme_constant_override("margin_"+edge,10)
 	layer.add_child(root)
 	var col := VBoxContainer.new()
 	col.mouse_filter=Control.MOUSE_FILTER_IGNORE
@@ -73,6 +75,8 @@ func _ui() -> void:
 	status=Label.new()
 	row.add_child(status)
 	floor_choice=OptionButton.new()
+	floor_choice.custom_minimum_size.y=62
+	floor_choice.add_theme_font_size_override("font_size",22)
 	for surface in layout.surfaces:
 		floor_choice.add_item(surface.id.capitalize())
 	floor_choice.add_item("All floors")
@@ -82,19 +86,28 @@ func _ui() -> void:
 	for entry: Array in [["Home","res://scenes/title.tscn"],["Floor lab","res://scenes/layered_demo.tscn"]]:
 		var button := Button.new()
 		button.text=entry[0]
+		button.custom_minimum_size.y=62
 		button.pressed.connect(_leave.bind(str(entry[1])))
 		row.add_child(button)
 	var tower_button := Button.new()
 	tower_button.text="Gatehouse" if controller.state.board.id=="layered_silent_tower" else "Silent Tower"
 	tower_button.pressed.connect(_switch_board)
 	row.add_child(tower_button)
+	_body=BoxContainer.new()
+	_body.vertical=true
+	_body.mouse_filter=Control.MOUSE_FILTER_IGNORE
+	_body.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	col.add_child(_body)
 	var space := Control.new()
 	space.mouse_filter=Control.MOUSE_FILTER_IGNORE
 	space.size_flags_vertical=Control.SIZE_EXPAND_FILL
-	col.add_child(space)
+	space.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	_body.add_child(space)
 	controls=LayeredSkirmishControls.new()
-	col.add_child(controls)
+	_body.add_child(controls)
 	controls.setup(self)
+	get_viewport().size_changed.connect(_fit_controls)
+	_fit_controls()
 	var save := Button.new()
 	save.text="Save 3D battle"
 	save.pressed.connect(_save)
@@ -104,6 +117,13 @@ func _ui() -> void:
 		resume.text="Load 3D save"
 		resume.pressed.connect(_resume)
 		row.add_child(resume)
+
+
+func _fit_controls() -> void:
+	var bounds:=PhoneSafeArea.safe_rect(get_viewport(),10)
+	var wide:=bounds.size.x>=bounds.size.y*1.25
+	_body.vertical=not wide
+	controls.fit_dock(wide,bounds.size)
 
 
 func _save() -> void:
@@ -185,12 +205,15 @@ func refresh() -> void:
 	var s := controller.state
 	for f in s.figures:
 		var view: FigureView = player.views[f.id]
-		view.visible=f.in_play() and (all or f.surface_id==chosen)
+		if player.idle():
+			var surface:=layout.surface_id(controls.planned) if controls.planned_actor==f.id and controls.planned!=null else f.surface_id
+			view.visible=f.in_play() and (all or surface==chosen)
 	for t in s.treasures:
 		var model: MeshInstance3D = player.treasure_views[t.id]
 		var carrier := s.figure(t.carrier_id)
 		var surface := carrier.surface_id if carrier!=null else t.surface_id
-		model.visible=t.unresolved() and (all or surface==chosen)
+		if player.idle():
+			model.visible=t.unresolved() and (all or surface==chosen)
 	status.text="%s  •  Turn %d  |  %s  |  Loot %d:%d" % ["SILENT TOWER" if s.board.id=="layered_silent_tower" else "GATEHOUSE",s.turn,Phase.name_of(s.phase),s.secured_count(0),s.secured_count(1)]
 	controls.refresh()
 	targets.clear()
@@ -230,13 +253,21 @@ func _draw() -> void:
 
 
 func _tap(at: Vector2) -> void:
-	if not player.idle():
+	if not player.idle() or ModalInput.blocked() or controls.get_global_rect().has_point(at):
 		return
 	if controls.tap_figure(at):
 		refresh()
 		return
+	var best: Variant = _destination_at(at)
+	if best!=null:
+		controls.choose_destination(best)
+		if controls.planned==null:
+			refresh()
+
+
+func _destination_at(at: Vector2) -> Variant:
 	var best: Variant = null
-	var distance := 24.0
+	var distance := 30.0
 	for n: Vector3i in targets:
 		var p := layout.world(n)+Vector3.UP*0.07
 		if rig.camera.is_position_behind(p):
@@ -245,6 +276,57 @@ func _tap(at: Vector2) -> void:
 		if d<distance:
 			best=n
 			distance=d
-	if best!=null:
-		controls.choose_destination(best)
-		refresh()
+	return best
+
+
+func _can_drag_plan(at: Vector2) -> bool:
+	if not player.idle() or ModalInput.blocked() or controls.get_global_rect().has_point(at) or controls.mode not in LayeredSkirmishControls.PLAN_MODES:
+		return false
+	var f:=controller.state.active()
+	if f==null:
+		return false
+	var v: FigureView=player.views[f.id]
+	return _destination_at(at)!=null or rig.camera.unproject_position(v.position+Vector3.UP*0.65).distance_to(at)<36.0
+
+
+func _drag_plan(at: Vector2) -> void:
+	if not player.idle() or ModalInput.blocked() or controls.get_global_rect().has_point(at):
+		return
+	var n: Variant=_destination_at(at)
+	if n!=null:
+		controls.plan_destination(n)
+
+
+func clear_plan_art() -> void:
+	if is_instance_valid(_plan_art):
+		remove_child(_plan_art)
+		_plan_art.queue_free()
+	_plan_art=null
+
+
+func show_plan_art(points: PackedVector3Array,at: Vector3) -> void:
+	clear_plan_art()
+	_plan_art=Node3D.new()
+	add_child(_plan_art)
+	var mat:=StandardMaterial3D.new()
+	mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color=Color("f6d487")
+	var ring:=TorusMesh.new()
+	ring.inner_radius=0.52
+	ring.outer_radius=0.66
+	var marker:=MeshInstance3D.new()
+	marker.mesh=ring
+	marker.material_override=mat
+	marker.position=at+Vector3.UP*0.1
+	marker.scale.y=0.25
+	_plan_art.add_child(marker)
+	if points.size()>1:
+		var mesh:=ImmediateMesh.new()
+		mesh.surface_begin(Mesh.PRIMITIVE_LINES,mat)
+		for i in range(1,points.size()):
+			mesh.surface_add_vertex(points[i-1]+Vector3.UP*0.12)
+			mesh.surface_add_vertex(points[i]+Vector3.UP*0.12)
+		mesh.surface_end()
+		var line:=MeshInstance3D.new()
+		line.mesh=mesh
+		_plan_art.add_child(line)

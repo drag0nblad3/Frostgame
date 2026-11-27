@@ -25,14 +25,14 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 				if float(bi.reach.cost[n])>0.001:
 					bi.nodes.append(n)
 					s.points.append(MoveGrid.to_pos(n))
-			s.hint="Run %d″ ignoring movement penalties; ends activation."%(6 if bi.mode=="run_talisman" else 3)
+			s.hint="Plan a run up to %d″ ignoring movement penalties. Confirm to end activation."%(6 if bi.mode=="run_talisman" else 3)
 		"gear_cape_move":
 			bi.reach=GearActions.cape_reach(bi.c)
 			for n: Vector2i in bi.reach.nodes():
 				if float(bi.reach.cost[n])>0.001:
 					bi.nodes.append(n)
 					s.points.append(MoveGrid.to_pos(n))
-			s.hint="Choose a legal escape move. The cape is spent only when the move is authorized."
+			s.hint="Plan a legal escape move. Confirm to authorize the move and spend the cape."
 		"gear_tiger_point":
 			for option in TigerEye.eye_options(bi.c):
 				s.points.append(option["at"])

@@ -247,7 +247,7 @@ func set_active(on: bool) -> void:
 		_model.rotation.z=0.0
 
 
-func take_out() -> void:
+func take_out() -> Tween:
 	set_process(false)
 	_active=false
 	_moving=false
@@ -260,6 +260,7 @@ func take_out() -> void:
 	t.tween_property(self, "rotation:z", PI * 0.5, 0.4)
 	t.tween_property(self, "scale", Vector3(0.6, 0.6, 0.6), 0.3)
 	t.tween_callback(func() -> void: visible = false)
+	return t
 
 
 func body_height() -> float:

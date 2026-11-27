@@ -95,6 +95,7 @@ func points(f: Figure, id: String, rotated: bool, first_only: bool,extended: boo
 
 func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,extended: bool=false) -> void:
 	if id == "grenade":
+		c.emit("magic_burst",{"spell":id,"at":at,"height":c.state.board.height_at(at),"radius":1.5})
 		var affected: Array[Figure] = []
 		var s := c.state
 		for t in s.figures:
@@ -107,6 +108,7 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,ext
 			c._magic._shot(f, t, 3, at)
 		return
 	if id == "planar_tear":
+		c.emit("magic_burst",{"spell":id,"at":at,"height":c.state.board.height_at(at),"radius":2.0})
 		for t in c.state.figures:
 			if not t.in_play() or Vector2(t.pos.distance_to(at), t.elevation - c.state.board.height_at(at)).length() > 2.0 + Figure.BASE_RADIUS:
 				continue
@@ -137,7 +139,7 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,ext
 	p.caster_id = f.id
 	c.state.board.pieces.append(p)
 	c.state.board.invalidate_terrain()
-	c.emit("terrain_changed", {"spell": id, "created": true})
+	c.emit("terrain_changed", {"spell": id, "created": true,"at":at,"height":c.state.board.height_at(at),"radius":minf(3.0,p.rect.size.length()*0.5)})
 
 
 func expire() -> void:
@@ -168,7 +170,7 @@ func remove(p: TerrainPiece) -> void:
 	WizardEye.remove_attached(s.board, p)
 	s.board.pieces.erase(p)
 	s.board.invalidate_terrain()
-	c.emit("terrain_changed", {"spell": p.kind.id.trim_prefix("spell_"), "created": false})
+	c.emit("terrain_changed", {"spell": p.kind.id.trim_prefix("spell_"), "created": false,"at":p.rect.get_center(),"height":s.board.height_at(p.rect.get_center()),"radius":minf(3.0,p.rect.size.length()*0.5)})
 	for t in s.figures:
 		if not t.in_play():
 			continue
