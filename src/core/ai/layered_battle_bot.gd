@@ -97,7 +97,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 	# When not extracting or pursuing a reachable objective, seek a legal
 	# firing position rather than forcing every shooter into melee.
 	if f.treasure_id<0 and (goal==null or goal==reach.start) and f.ranged!=null and f.actions_left>=2 and c.can_act() and (not f.ranged.needs_reload or f.loaded):
-		var spot:=_shooting_spot(c,f,layout,reach)
+		var spot: Variant=_shooting_spot(c,f,layout,reach)
 		if spot!=null:
 			return c.move_on_floor(spot)
 	if goal==null or goal==reach.start:
