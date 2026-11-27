@@ -34,6 +34,13 @@ static func battle_entries(s: GameState,f: Figure,legal: Array[String]) -> Array
 	var ids: Array[String]=[]
 	for id: String in s.spellbooks.get(f.side,{}):
 		ids.append(id)
+	for item in f.items:
+		var scroll_id := str(item.get("scroll",""))
+		if not scroll_id.is_empty() and not ids.has(scroll_id):
+			ids.append(scroll_id)
+	for scroll_id in ScrollShield.spells(f):
+		if not ids.has(scroll_id):
+			ids.append(scroll_id)
 	for key in legal:
 		if not ids.has(key):
 			ids.append(key)

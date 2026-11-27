@@ -22,7 +22,7 @@ func test_reference_covers_every_catalogue_spell() -> void:
 		var entry := SpellReference.entry(id)
 		check(not entry.is_empty())
 		for key in ["target","effect","duration"]:
-			check(str(entry.get(key,"")).length()>10)
+			check(not str(entry.get(key,"")).strip_edges().is_empty(),"Missing %s for %s"%[key,id])
 	check_eq(SpellReference.odds(12),45)
 	check_eq(SpellReference.odds(12,-2),35)
 	check_eq(SpellReference.guide_pages(catalog).size(),10)

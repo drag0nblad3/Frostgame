@@ -36,7 +36,7 @@
   },
   "time_walk": {
     "target": "Self; wizard phase, wizard only",
-    "effect": "Allows the wizard to act again in apprentice and soldier phases.",
+    "effect": "Allows the wizard one additional action in each of the apprentice and soldier phases this turn.",
     "duration": "This turn only. Consecutive-turn use deals 8 damage to the wizard."
   },
   "call_storm": {
@@ -61,7 +61,7 @@
   },
   "elemental_hammer": {
     "target": "Visible figure or self within 24″",
-    "effect": "Enhances the figure's active weapon with elemental damage and magical attacks.",
+    "effect": "When the enchanted weapon inflicts positive damage, adds 5 damage. Attacks count as magical.",
     "duration": "Ongoing until removed. Applies to the ranged weapon if carried, otherwise the melee weapon."
   },
   "elemental_shield": {
@@ -87,11 +87,11 @@
   "control_construct": {
     "target": "Visible construct within 24″",
     "effect": "Target tests Will against casting result. Failure transfers control to the caster's side.",
-    "duration": "Ongoing control; may be released or dispelled."
+    "duration": "One controlled target of this spell type per caster; ongoing until released or dispelled."
   },
   "embed_enchantment": {
     "target": "Campaign aftermath; select an eligible enchanted reward",
-    "effect": "Makes the selected eligible enchantment permanent through the campaign reward system.",
+    "effect": "Convert an eligible surviving figure's Enchant Weapon or Enchant Armour effect from the previous battle into a permanent gear item in the vault.",
     "duration": "One eligible ritual attempt per caster per preparation/aftermath cycle; not a battle action."
   },
   "enchant_armour": {
@@ -101,8 +101,8 @@
   },
   "enchant_weapon": {
     "target": "Visible figure or self within 24″",
-    "effect": "Enchants its ranged weapon if present, otherwise melee weapon; the attack counts as magical and gains combat benefits.",
-    "duration": "Ongoing. A separate Enchant Ammunition choice applies to eligible friendly bow/crossbow users."
+    "effect": "Gives +1 to the figure's ranged attack roll if a ranged weapon is carried, otherwise +1 to its melee Fight roll. That weapon counts as magical.",
+    "duration": "Ongoing until removed. The separate Enchant Ammunition option grants one expendable magical shot to a friendly bow/crossbow user (up to one stored, or four with Hunter's Quiver)."
   },
   "grenade": {
     "target": "Visible placement within 14″",
@@ -136,7 +136,7 @@
   },
   "glow": {
     "target": "Visible figure or self within 24″",
-    "effect": "Makes the target easier to hit with shooting attacks.",
+    "effect": "Attackers gain +3 to shooting and applicable opposed spell-shot attack rolls against this figure.",
     "duration": "Ongoing until removed; does not directly inflict damage."
   },
   "illusionary_soldier": {
@@ -177,7 +177,7 @@
   "control_undead": {
     "target": "Visible undead within 24″",
     "effect": "Target tests Will against casting result. Failure transfers control to caster's side.",
-    "duration": "Ongoing; may be released or dispelled."
+    "duration": "One controlled target of this spell type per caster; ongoing until released or dispelled."
   },
   "raise_zombie": {
     "target": "Legal visible point within 1.25″ on caster's level; also campaign preparation",
@@ -200,7 +200,7 @@
     "duration": "Immediate. High casting number; resistance may be empowered where allowed."
   },
   "absorb_knowledge": {
-    "target": "Campaign aftermath",
+    "target": "Campaign aftermath; wizard only, not knocked out in the preceding battle",
     "effect": "Gain 40 campaign XP on success.",
     "duration": "Immediate campaign reward; cannot be cast in battle."
   },
@@ -217,7 +217,7 @@
   "explosive_rune": {
     "target": "Legal visible point within 4″",
     "effect": "Places a trap. A figure whose base enters its 1″ trigger radius causes separate +5 magical direct attacks against figures overlapping the 2″ blast radius.",
-    "duration": "Remains until triggered, removed, or expires after caster is out of play (11+ at turn end). One per caster."
+    "duration": "Remains until triggered, removed, or expires after caster is out of play (11+ at turn end). Up to three active runes per caster."
   },
   "furious_quill": {
     "target": "Visible figure or self within 24″",
@@ -235,14 +235,14 @@
     "duration": "Immediate; ordinary Push inflicts no direct damage. Stops at obstructions; special gear can alter it."
   },
   "write_scroll": {
-    "target": "Campaign aftermath; select eligible known spell",
+    "target": "Campaign aftermath; select a known spell or one in an owned grimoire",
     "effect": "Creates an unassigned scroll for that spell on success.",
     "duration": "Consumable campaign reward; no Health empowerment of the ritual."
   },
   "awareness": {
     "target": "Campaign preparation",
-    "effect": "Prepares the caster's Awareness benefit for the coming battle.",
-    "duration": "Preparation flag; cannot cast in battle."
+    "effect": "Adds +2 to the warband's initiative rolls while the prepared caster is in play; combined Awareness bonus capped at +4.",
+    "duration": "For the next battle only; prepare again between battles."
   },
   "combat_awareness": {
     "target": "Self or figure within 1″",
@@ -252,7 +252,7 @@
   "mind_control": {
     "target": "Visible noncaster, nonmindless figure within 24″",
     "effect": "Failed Will resistance transfers control to caster's side.",
-    "duration": "Target retests Will after each activation to break control. Mind Lock prevents or removes it."
+    "duration": "One target per caster. Target retests Will after each activation to break control. Mind Lock prevents or removes it."
   },
   "mind_lock": {
     "target": "Visible figure or self within 24″",
@@ -261,8 +261,8 @@
   },
   "reveal_secret": {
     "target": "Campaign preparation",
-    "effect": "Adds one revealed-secret preparation reward for the upcoming battle.",
-    "duration": "Before battle only; affects scenario treasure preparation."
+    "effect": "For one recovered noncentral treasure, roll two reward results and choose which to accept. Each success adds one such choice.",
+    "duration": "Used during the next battle's treasure settlement. No extra treasure token is placed."
   },
   "suggestion": {
     "target": "Visible other figure within 24″ not protected by Mind Lock",
@@ -317,7 +317,7 @@
   "summon_demon": {
     "target": "Legal visible point within 2″ on caster's level; also campaign preparation",
     "effect": "Creates a controlled imp; margin ≥6 above TN creates minor demon, ≥13 major demon. Natural 1 releases an uncontrolled demon.",
-    "duration": "One controlled demon per caster. Exceptional empowerment ceiling; a prepared demon occupies the control slot."
+    "duration": "One controlled demon per caster. Natural 1 always fails and releases a hostile demon. Preparation requires Summoning Circle, wizard knowing Control Demon, and successful separate summoning and control rolls."
   },
   "banish": {
     "target": "Self; visible demons within 24″",
@@ -332,7 +332,7 @@
   "circle_of_protection": {
     "target": "Legal ground placement within 2″ on caster's level",
     "effect": "Creates a 3″-diameter ward that blocks undead and demons from entering.",
-    "duration": "Ends on a turn-end roll of 1–3 or when removed. Cannot place over an existing eligible enemy."
+    "duration": "One active circle per caster. Ends on a turn-end roll of 1–3 or when removed. Cannot place over an existing eligible creature."
   },
   "destroy_undead": {
     "target": "Visible undead within 24″",
@@ -350,7 +350,7 @@
     "duration": "Immediate. Cannot heal undead or constructs with this spell."
   },
   "miraculous_cure": {
-    "target": "Campaign aftermath; choose eligible injured or dead member",
+    "target": "Campaign aftermath; wizard only, choose eligible injured, recovering or dead member",
     "effect": "Revives the member and clears permanent injury records on success.",
     "duration": "−4 casting modifier if target is dead; no battle casting."
   },
@@ -372,7 +372,7 @@
   "control_animal": {
     "target": "Visible eligible animal within 24″",
     "effect": "Failed Will resistance transfers control to caster's side.",
-    "duration": "Ongoing; may be released or dispelled."
+    "duration": "One controlled target of this spell type per caster; ongoing until released or dispelled."
   },
   "curse": {
     "target": "Visible figure or self within 24″",
@@ -381,8 +381,8 @@
   },
   "familiar": {
     "target": "Campaign preparation",
-    "effect": "Prepares the caster's familiar for subsequent deployment.",
-    "duration": "Campaign preparation; not a battle action."
+    "effect": "The caster starts the next battle with +2 maximum Health.",
+    "duration": "Lost if Health drops to 1 or less; maximum Health then falls by 2. Preparation resets between battles."
   },
   "fog": {
     "target": "Visible legal placement within 24″",
@@ -390,7 +390,7 @@
     "duration": "Disappears on 1–4 at turn end or when dispelled."
   },
   "mud": {
-    "target": "Legal visible ground placement",
+    "target": "Legal visible ground placement within 24″",
     "effect": "Creates a circular 6″-diameter area of rough ground: movement through it costs double.",
     "duration": "Ongoing until removed; not a direct damage spell."
   },
