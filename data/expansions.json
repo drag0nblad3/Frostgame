@@ -3,8 +3,8 @@
   "packs": {
     "red_king": {
       "name": "The Red King",
-      "description": "A three-act invasion campaign featuring unstable dimensions, demonic opponents, unusual treasure and isolated warbands.",
-      "status": "development",
+      "description": "A three-act invasion campaign featuring unstable dimensions, demonic opponents, unusual treasure and isolated warbands. Playtest edition: some advanced interactions and player choices use digital approximations.",
+      "status": "playtest",
       "requires": [],
       "content": {
         "campaigns": [

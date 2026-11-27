@@ -39,3 +39,6 @@ Disabling a pack scans the saved draft and campaign for references to its conten
 Tests: add pack fixtures for each new catalog and rule gate; check enabled/disabled saves, deterministic core outcomes, saved battle resume, and dependencies.
 
 A pack may declare `status: development` while being built. The dialog displays it disabled, profile validation refuses it, and its owned content is excluded even if a manually edited save requests it. Change to `ready` only after all exposed content is verified.
+
+
+A pack may also declare `status: playtest` to expose a playable but not fully validated implementation. It is selectable per save, defaults off, and has the same dependency and save safety checks as a ready pack. The dialog marks it Playtest. The Red King uses this status while its remaining digital approximations and advanced edge cases are reviewed. The rescue-linked Mindscape is available in the ordered story or as a standalone skirmish, not an ordinary campaign mission.

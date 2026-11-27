@@ -51,9 +51,11 @@ func open(slot: int) -> void:
 		var check := CheckBox.new()
 		check.text=str(pack.get("name",id))
 		check.button_pressed=profile.enabled.has(id)
-		check.disabled=pack.get("status","ready")!="ready"
+		check.disabled=not ContentProfile.playable(pack)
 		if check.disabled:
 			check.text+=" · In development"
+		elif pack.get("status","ready")=="playtest":
+			check.text+=" · Playtest"
 		check.custom_minimum_size.y=52
 		_rows.add_child(check)
 		_checks[id]=check
@@ -66,6 +68,7 @@ func open(slot: int) -> void:
 		empty.text="No expansion books are registered yet. New books will appear here when their digital content is installed."
 		empty.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 		_rows.add_child(empty)
+	_status.modulate=Color.WHITE
 	_status.text="Changes do not delete your roster or campaign. A saved battle requires its original selection to resume."
 	var bounds := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
 	_scroll.custom_minimum_size=Vector2(minf(660,bounds.x*0.8),minf(280,bounds.y*0.40))

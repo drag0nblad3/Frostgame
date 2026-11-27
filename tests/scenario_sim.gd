@@ -11,9 +11,7 @@ func _init() -> void:
 	var seed_value := int(args[1]) if args.size() > 1 else 17
 	var profile := ContentProfile.new()
 	if id.begins_with("red_king_"):
-		var packs := ContentProfile.registered().duplicate(true)
-		packs["red_king"]["status"]="ready"
-		profile=ContentProfile.new(["red_king"],packs)
+		profile=ContentProfile.new(["red_king"])
 	var db := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
 	var terrain := TerrainDb.load_file()
 	var layered := id in ["stacked_gatehouse","layered_silent_tower"]

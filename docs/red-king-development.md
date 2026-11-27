@@ -239,3 +239,8 @@ Layered spell selection exposes enchanted ammunition; firing uses the same shot 
 
 ### Integration regressions
 Corrected typed empty reserve lists on ordinary campaigns, prevented a free-form expansion scenario from permanently activating story-only Ragged restrictions, retained at most one eligible book-supported Foulhorn during reconciliation, and kept ordinary treasure choices available if the unique artefact pool is exhausted. The latter fallback is a digital policy because the book does not specify what happens after every artefact has been discovered.
+
+
+## Opt-in integrated playtest
+
+All four workflows passed on the preceding branch revision. The registry now exposes the expansion as an opt-in playtest, not a claim of full printed-rule fidelity. The real pack configuration is used by scenario simulation rather than overriding its status. The rescue-only Mindscape is excluded from free-form campaign selection; an explicit skip forfeits the bonus encounter and continues into Act III, including when the wizard cannot attend. The skip is recorded separately from completed stages and survives save/load. Known approximations and unresolved interactions above remain documented; historical prototype/locked notes describe earlier development passes. Full human campaign playthrough, touch controls and exact rule fidelity remain unverified.

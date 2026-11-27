@@ -37,13 +37,17 @@ static func from_campaign(data: Dictionary) -> ContentProfile:
 	return ContentProfile.new(data.get("expansions",[]))
 
 
+static func playable(pack: Dictionary) -> bool:
+	return str(pack.get("status","ready")) in ["ready","playtest"]
+
+
 func errors() -> Array[String]:
 	var result: Array[String]=[]
 	for id in enabled:
 		if not packs.has(id):
 			result.append("Missing content pack: "+id)
 			continue
-		if packs[id].get("status","ready")!="ready":
+		if not playable(packs[id]):
 			result.append("%s is not playable yet."%packs[id].get("name",id))
 		for required: String in packs[id].get("requires",[]):
 			if not enabled.has(required):
@@ -54,7 +58,7 @@ func errors() -> Array[String]:
 func allows(category: String,id: String) -> bool:
 	var owners: Array=_owners.get(category+":"+id,[])
 	for owner: String in owners:
-		if not enabled.has(owner) or packs[owner].get("status","ready")!="ready":
+		if not enabled.has(owner) or not playable(packs[owner]):
 			return false
 	return true
 

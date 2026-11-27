@@ -45,3 +45,20 @@ func test_save_slot_paths_and_legacy_core_only() -> void:
 	check(WarbandSlots.content_profile(slot).enabled.is_empty())
 	check(not WarbandSlots.change_content(["unknown_book"],slot).is_empty())
 	DirAccess.remove_absolute(path)
+
+
+func test_installed_red_king_playtest_is_opt_in() -> void:
+	var core := ContentProfile.new()
+	var expansion := ContentProfile.new(["red_king"])
+	check(expansion.errors().is_empty())
+	check(expansion.allows("campaigns","red_king"))
+	check(not core.allows("campaigns","red_king"))
+	check(expansion.rule("red_king_reality_cracks"))
+	check(not core.rule("red_king_reality_cracks"))
+	for stage: Dictionary in RedKingCampaign.stages():
+		check(expansion.allows("scenarios",stage["id"]))
+		check(not core.allows("scenarios",stage["id"]))
+		check(ScenarioBriefing.available_entries(expansion).has(stage["id"]))
+	check(not RedKingCampaign.freeform_permits("red_king_mind"))
+	check(RedKingCampaign.freeform_permits("red_king_squatter"))
+	check(not ContentProfile.playable({"status":"development"}))

@@ -88,3 +88,31 @@ func test_ragged_recovered_members_and_replacement_wizard() -> void:
 	check(d["ragged_no_apprentice"])
 	check_eq(RaggedWarbands.fill(d,db(),Dice.new(24)),9)
 	check_eq(RaggedWarbands.deployed_ids(d).size(),10)
+
+
+func test_optional_mindscape_skip_and_saved_story_cursor() -> void:
+	var d := _story(false)
+	check(not RedKingCampaign.skip_mind(d))
+	while RedKingCampaign.next_id(d)!="red_king_demons_and_mad_man":
+		check(RedKingCampaign.advance(d,RedKingCampaign.next_id(d)))
+	d["red_king_secured_kalamon"]=true
+	check(RedKingCampaign.advance(d,"red_king_demons_and_mad_man"))
+	d["pending_treasure"]=[{"token":0}]
+	check(not RedKingCampaign.skip_mind(d))
+	d["pending_treasure"]=[]
+	check(RedKingCampaign.skip_mind(d))
+	check(not d["red_king_history"].has("red_king_mind"))
+	check(d["red_king_mind_skipped"])
+	check(not d["red_king_secured_kalamon"])
+	check_eq(RedKingCampaign.next_id(d),"red_king_herded")
+	check(RaggedWarbands.active(d))
+	var progress := CampaignProgress.new()
+	progress.data=d
+	var path := "user://red_king_story_cursor_test.json"
+	check(progress.save(path))
+	var restored := CampaignProgress.new()
+	check(restored.load_save(path))
+	check_eq(RedKingCampaign.next_id(restored.data),"red_king_herded")
+	check(RaggedWarbands.active(restored.data))
+	check(not RedKingCampaign.skip_mind(restored.data))
+	DirAccess.remove_absolute(path)

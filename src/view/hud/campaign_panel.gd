@@ -23,6 +23,7 @@ var reality_option: CheckBox
 var wounded_option: CheckBox
 var mantle_option: CheckBox
 var secret_hrut: CheckBox
+var skip_mind_button: Button
 var reconcile_button: Button
 var continue_skirmishes: Button
 var begin: Button
@@ -205,6 +206,9 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		campaign.data["red_king_use_secret_hrut"]=on
 		campaign.save())
 	col.add_child(secret_hrut)
+	skip_mind_button=_command(col,"Skip optional Mindscape (forfeit its rewards)",func() -> void:
+		if RedKingCampaign.skip_mind(campaign.data):
+			changed())
 	reconcile_button=_command(col,"Reconcile warband after The Red King",func() -> void:
 		if RedKingCampaign.reconcile(campaign.data,db):
 			changed())
@@ -215,6 +219,8 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	_scenario.fit_to_longest_item=false
 	_scenario.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	for id: String in ScenarioBriefing.available_entries(db.content_profile):
+		if not RedKingCampaign.freeform_permits(id):
+			continue
 		_scenario.add_item(ScenarioBriefing.title(id))
 		_scenario.set_item_metadata(_scenario.item_count-1,id)
 		if id=="treasure_skirmish":
@@ -248,6 +254,8 @@ func refresh(in_battle: bool) -> void:
 	roll_recruits.text="Roll %d random recruits (finish summoning rituals first)"%maxi(0,10-RaggedWarbands.ready_count(d))
 	secret_hrut.visible=bool(d.get("red_king_secret_hrut",false)) and not in_battle and not stage.is_empty() and stage.get("id","")!="red_king_mind"
 	secret_hrut.set_pressed_no_signal(bool(d.get("red_king_use_secret_hrut",false)))
+	skip_mind_button.visible=RedKingCampaign.next_id(d)=="red_king_mind" and not in_battle
+	skip_mind_button.disabled=not d.get("pending_treasure",[]).is_empty()
 	reconcile_button.visible=RedKingCampaign.active(d) and stage.is_empty() and RaggedWarbands.active(d) and not in_battle
 	reconcile_button.disabled=not d.get("pending_treasure",[]).is_empty()
 	continue_skirmishes.visible=bool(d.get("red_king_reconcile_pending",false)) and not in_battle

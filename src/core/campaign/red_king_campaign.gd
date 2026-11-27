@@ -40,6 +40,20 @@ static func permits(d: Dictionary,id: String) -> bool:
 	return not active(d) or next_id(d)==id
 
 
+## Mindscape is a rescue-linked bonus encounter, not a free-form campaign mission.
+static func freeform_permits(id: String) -> bool:
+	return id!="red_king_mind"
+
+
+static func skip_mind(d: Dictionary) -> bool:
+	if next_id(d)!="red_king_mind" or not d.get("pending_treasure",[]).is_empty():
+		return false
+	d["red_king_secured_kalamon"]=false
+	d["red_king_mind_skipped"]=true
+	d["last_report"].append("Skipped the optional Mindscape encounter.")
+	return advance(d,"red_king_mind",false)
+
+
 static func economy_locked(d: Dictionary) -> bool:
 	return RaggedWarbands.active(d) or (active(d) and next_id(d)=="red_king_veil")
 
@@ -48,12 +62,13 @@ static func suppress_base_after(d: Dictionary,id: String) -> bool:
 	return economy_locked(d) or (active(d) and id=="red_king_investigations" and d.get("red_king_include_veil",false))
 
 
-static func advance(d: Dictionary,id: String) -> bool:
+static func advance(d: Dictionary,id: String,completed: bool=true) -> bool:
 	if not active(d) or not permits(d,id):
 		return false
 	var i := int(d["red_king_stage"])+1
 	var all := stages()
-	d["red_king_history"].append(id)
+	if completed:
+		d["red_king_history"].append(id)
 	while i<all.size():
 		var stage: Dictionary=all[i]
 		if stage.get("optional",false) and not d.get("red_king_include_veil",false):

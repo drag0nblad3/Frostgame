@@ -488,6 +488,9 @@ func _begin_campaign_battle() -> void:
 		if _scenario_id.is_empty() or not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
 			return
 		hud.select_scenario(_scenario_id)
+	elif not RedKingCampaign.freeform_permits(_scenario_id):
+		_scenario_id=SCENARIO
+		hud.select_scenario(_scenario_id)
 	for unit: Dictionary in _campaign.data["units"]:
 		if InjuryRules.blind(unit) and not unit["dead"]:
 			unit["dead"] = true
