@@ -50,6 +50,8 @@ static func build(board: Board,scenario: String) -> Node3D:
 			for j in 3:
 				var at := Vector2(center.x+(j-1)*0.65,center.y+0.85)
 				EnvironmentProps.paving(root,Vector3(at.x,0.065,at.y),0.27,j,Color("63584d"))
+	if snow and GraphicsQuality.mode()>0:
+		SnowBanks.decorate(root,board,scenario)
 	MiniatureBatch.bake(root)
 	return root
 

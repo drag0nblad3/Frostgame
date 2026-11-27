@@ -146,6 +146,7 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 			TabletopDetails.decorate(root,piece)
 			if piece.kind.id in ["ruin","tower","wall","platform","hut_wall","null_annex","null_walk","null_lower","null_middle","null_upper"]:
 				RuinSilhouette.decorate(root,piece)
+				RuinedFacade.decorate(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 			if board.id=="mausoleum" and piece.kind.id=="ruin" and piece.rect.has_point(board.size*0.5):
 				SiteArt.crypt(root,piece)
 	# Rubble is otherwise dozens of individual shadow-casting meshes.
@@ -217,6 +218,7 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 		var stone := StoneFinish.material(col,false,piece.kind.id in ["ruin","tower","hut_wall","null_lower","null_middle","null_upper"],piece.rect.position)
 		stone.set_shader_parameter("footprint_size",piece.rect.size)
 		stone.set_shader_parameter("walkable_roof",piece.kind.walkable_top)
+		stone.set_shader_parameter("facade_style",RuinedFacade.style(piece,scenario_id))
 		stone.set_shader_parameter("building_height",h)
 		stone.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
 		stone.set_shader_parameter("snow_amount",float(VisualPalette.for_scenario(scenario_id).get("snow",0.86)))

@@ -134,6 +134,12 @@ jobs:
             ! grep -E "SCRIPT ERROR|Parse Error|Shader compilation failed|SHADER ERROR|Shader error" "art-$scenario.log"
             test -s "previews/art-$scenario.png"
           done
+      - name: Capture terrain finishes and effect showcase
+        run: |
+          set -euo pipefail
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/capture.gd -- previews/spell-effects.png 0 treasure_skirmish effects 2>&1 | tee spell-effects.log
+          if grep -E "SCRIPT ERROR|Parse Error|Shader compilation failed|SHADER ERROR|Shader error" spell-effects.log; then exit 1; fi
+          test -s previews/spell-effects.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:
