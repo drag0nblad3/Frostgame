@@ -66,6 +66,7 @@ static func capture(c: GameController, meta: Dictionary = {}) -> Dictionary:
 	out["history"]=BattleRecord.pack(c.history)
 	out["commands"]=c.command_history.duplicate(true)
 	out["replay_frames"]=c.replay_frames.duplicate(true)
+	out["history_count"]=c.history.size()
 	return out if plain(out) else {}
 
 
@@ -99,7 +100,8 @@ static func rebuild(d: Dictionary, db: FigureDb) -> GameController:
 	var c := GameController.new(s, dice)
 	c.history.assign(BattleRecord.unpack(d["history"]))
 	c.command_history.assign(d.get("commands",[]))
-	c.replay_frames.assign(d.get("replay_frames",[]).slice(-BattleFrame.LIMIT))
+	if int(d.get("history_count",c.history.size()))==c.history.size():
+		c.replay_frames.assign(d.get("replay_frames",[]).slice(-BattleFrame.LIMIT))
 	return c
 
 
