@@ -184,3 +184,45 @@ func test_story_campaign_lifecycle_with_real_scenarios() -> void:
 	check(p.can_deploy())
 	check(ContentProfile.from_campaign(p.data).enabled.has("red_king"))
 	DirAccess.remove_absolute(path)
+
+
+func test_pursuit_intermission_releases_base_and_preserves_legal_roster() -> void:
+	var profile := ContentProfile.new(["red_king"])
+	var defs := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	var p := CampaignProgress.new()
+	var roster := {"name":"Pursuit","figures":[{"type":"wizard"},{"type":"apprentice"}]}
+	for i in 9:
+		roster["figures"].append({"type":"thug"})
+	roster["figures"].append({"type":"war_hound"})
+	p.start(roster,profile)
+	check(RedKingCampaign.start(p.data,profile,true,true))
+	p.data["base"]="inn"
+	p.data["resources"]=["kennel","carrier_pigeons"]
+	p.data["gold"]=1000
+	check(RedKingCampaign.advance(p.data,"red_king_squatter"))
+	check(RedKingCampaign.suppress_base_after(p.data,"red_king_investigations"))
+	check(RedKingCampaign.advance(p.data,"red_king_investigations"))
+	check(RedKingCampaign.temporary_lock(p.data))
+	check(not BaseResources.owns(p.data,"kennel"))
+	check(not p.can_hire("thug",defs))
+	check(not p.dismiss(2))
+	check(p.can_deploy())
+	check_eq(p.deployment()["figures"].size(),11)
+	check(not RedKingCampaign.suppress_base_after(p.data,"red_king_veil"))
+	check(RedKingCampaign.advance(p.data,"red_king_veil"))
+	check(not RedKingCampaign.economy_locked(p.data))
+	check(BaseResources.owns(p.data,"kennel"))
+	check(RedKingCampaign.suppress_base_after(p.data,"red_king_back_into_fire"))
+	check(RedKingCampaign.advance(p.data,"red_king_back_into_fire"))
+	check(RedKingCampaign.temporary_lock(p.data))
+	check(p.can_deploy())
+	check(not RedKingCampaign.suppress_base_after(p.data,"red_king_demons_and_mad_man"))
+	check(RedKingCampaign.advance(p.data,"red_king_demons_and_mad_man"))
+	check(RaggedWarbands.active(p.data))
+	check(RedKingCampaign.suppress_base_after(p.data,"red_king_herded"))
+	var normal := _story(false)
+	check(RedKingCampaign.advance(normal,"red_king_squatter"))
+	check(RedKingCampaign.advance(normal,"red_king_investigations"))
+	check(not RedKingCampaign.suppress_base_after(normal,"red_king_back_into_fire"))
+	check(RedKingCampaign.advance(normal,"red_king_back_into_fire"))
+	check(not RedKingCampaign.economy_locked(normal))

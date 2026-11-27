@@ -2,7 +2,7 @@ class_name CampaignPanel
 extends AcceptDialog
 ## Between-battle campaign overview. Starting a campaign is an explicit action.
 signal start_requested
-signal story_requested(include_veil: bool)
+signal story_requested(include_veil: bool, strict_pursuit: bool)
 signal begin_requested
 signal restart_requested
 signal scenario_selected(id: String)
@@ -17,6 +17,7 @@ var improve: Button
 var start: Button
 var story_start: Button
 var story_veil: CheckBox
+var story_strict_pursuit: CheckBox
 var recruit_status: CheckBox
 var roll_recruits: Button
 var reality_option: CheckBox
@@ -171,7 +172,11 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	story_veil.text="Include optional Veil of Unreality"
 	story_veil.button_pressed=true
 	col.add_child(story_veil)
-	story_start=_command(col,"Start The Red King storyline",func() -> void: story_requested.emit(story_veil.button_pressed))
+	story_strict_pursuit=CheckBox.new()
+	story_strict_pursuit.text="Act II: no resupply during the pursuit"
+	story_strict_pursuit.tooltip_text="Optional harder intermission between Back Into the Fire and The Demons and the Mad Man."
+	col.add_child(story_strict_pursuit)
+	story_start=_command(col,"Start The Red King storyline",func() -> void: story_requested.emit(story_veil.button_pressed,story_strict_pursuit.button_pressed))
 	reality_option=CheckBox.new()
 	reality_option.text="Optional Reality Cracks (compatible maps)"
 	reality_option.toggled.connect(func(on: bool) -> void:
@@ -239,6 +244,7 @@ func refresh(in_battle: bool) -> void:
 	start.visible = d.is_empty()
 	story_start.visible=d.is_empty() and db.content_profile.enabled.has("red_king") and db.content_profile.allows("campaigns","red_king")
 	story_veil.visible=story_start.visible
+	story_strict_pursuit.visible=story_start.visible
 	begin.visible = not d.is_empty()
 	_scenario.visible=not d.is_empty() and not in_battle and not RedKingCampaign.active(d)
 	var stage := RedKingCampaign.next_stage(d)
@@ -308,9 +314,11 @@ func refresh(in_battle: bool) -> void:
 	base_upgrades.refresh()
 	var lines: Array[String] = ["%s · Level %d · %d XP · %d gc · %d battles" % [d["name"], d["level"], d["xp"], d["gold"], d["games"]]]
 	if RedKingCampaign.active(d):
-		lines.append("THE RED KING · "+("Story concluded" if stage.is_empty() else "Act %d · %s"%[stage["act"],stage["title"]]))
+		lines.append("THE RED KING · "+("Story concluded" if stage.is_empty() else "Act %d · Chapter %d/%d · %s"%[stage["act"],stage["number"],RedKingCampaign.stages().size(),stage["title"]]))
+		if stage.is_empty():
+			lines.append("Finale: "+("Red King defeated." if d.get("red_king_completed",false) else "The invasion was not stopped."))
 		if RedKingCampaign.economy_locked(d) and not RaggedWarbands.active(d):
-			lines.append("Pursued by the Red King: no purchases, hiring or base benefits before the Veil.")
+			lines.append("Pursued by the Red King: no purchases, hiring or base benefits until after this encounter.")
 	if RaggedWarbands.active(d):
 		lines.append("RAGGED WARBANDS · %d/10 ready. No hiring, purchases or base benefits. Finish summoning rituals, roll replacements, then assign equipment."%mini(10,RaggedWarbands.ready_count(d)))
 		if RaggedWarbands.ready_count(d)>10:
@@ -329,7 +337,7 @@ func refresh(in_battle: bool) -> void:
 			niggle.add_item("%s #%d · %d gc" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, price])
 			niggle.set_item_metadata(niggle.item_count - 1, int(unit["id"]))
 	niggle_button.disabled = niggle.item_count == 0
-	var reserve := BaseResources.reserve_id(d, db)
+	var reserve := BaseResources.reserve_id(RedKingCampaign.capacity_context(d), db)
 	if reserve >= 0:
 		lines.append("Inn reserve: %s #%d" % [db.get_def(d["units"][reserve]["type"]).name, reserve + 1])
 	var blockers := campaign.deployment_blockers()

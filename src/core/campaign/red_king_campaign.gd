@@ -12,12 +12,13 @@ static func stages() -> Array:
 	return JsonFile.read(PATH).get("stages",[])
 
 
-static func start(d: Dictionary,profile: ContentProfile,include_veil: bool) -> bool:
+static func start(d: Dictionary,profile: ContentProfile,include_veil: bool,strict_pursuit: bool=false) -> bool:
 	if d.is_empty() or active(d) or int(d.get("games",0))!=0 or not profile.allows("campaigns","red_king") or not profile.enabled.has("red_king"):
 		return false
 	d["campaign_story"]="red_king"
 	d["red_king_stage"]=0
 	d["red_king_include_veil"]=include_veil
+	d["red_king_strict_pursuit"]=strict_pursuit
 	d["red_king_history"]=[]
 	return true
 
@@ -54,12 +55,32 @@ static func skip_mind(d: Dictionary) -> bool:
 	return advance(d,"red_king_mind",false)
 
 
+## The two short pursuit intermissions block commerce and base effects,
+## but do not invalidate a roster that was legal before the pursuit.
+static func temporary_lock(d: Dictionary) -> bool:
+	if not active(d):
+		return false
+	return next_id(d)=="red_king_veil" or (next_id(d)=="red_king_demons_and_mad_man" and bool(d.get("red_king_strict_pursuit",false)))
+
+
 static func economy_locked(d: Dictionary) -> bool:
-	return RaggedWarbands.active(d) or (active(d) and next_id(d)=="red_king_veil")
+	return RaggedWarbands.active(d) or temporary_lock(d)
 
 
 static func suppress_base_after(d: Dictionary,id: String) -> bool:
-	return economy_locked(d) or (active(d) and id=="red_king_investigations" and d.get("red_king_include_veil",false))
+	if RaggedWarbands.active(d):
+		return true
+	if not active(d):
+		return false
+	return (id=="red_king_investigations" and bool(d.get("red_king_include_veil",false))) or (id=="red_king_back_into_fire" and bool(d.get("red_king_strict_pursuit",false)))
+
+
+static func capacity_context(d: Dictionary) -> Dictionary:
+	if not temporary_lock(d):
+		return d
+	var prior := d.duplicate(true)
+	prior.erase("campaign_story")
+	return prior
 
 
 static func advance(d: Dictionary,id: String,completed: bool=true) -> bool:

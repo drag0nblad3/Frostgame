@@ -23,7 +23,7 @@ func deployment() -> Dictionary:
 	if ragged:
 		ragged_ids=RaggedWarbands.deployed_ids(data)
 	var locked := RedKingCampaign.economy_locked(data)
-	var reserve := -1 if locked else BaseResources.reserve_id(data, FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data)))
+	var reserve := -1 if ragged else BaseResources.reserve_id(RedKingCampaign.capacity_context(data), FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data)))
 	for unit: Dictionary in data["units"]:
 		if unit["dead"] or unit.get("dismissed", false) or (ragged and not ragged_ids.has(int(unit["id"]))) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
 			continue
@@ -93,7 +93,7 @@ func deployment_blockers() -> Array[String]:
 		reasons.append("The story is concluded. Reconcile the warband before continuing.")
 	if not data.get("pending_treasure",[]).is_empty():
 		reasons.append("Resolve the pending treasure choices.")
-	if not RaggedWarbands.active(data) and not BaseResources.fits(data,FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
+	if not RaggedWarbands.active(data) and not BaseResources.fits(RedKingCampaign.capacity_context(data),FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
 		reasons.append("Roster exceeds its current limits. Adjust members or equipment.")
 	if RaggedWarbands.active(data):
 		if RaggedWarbands.has_unassigned(data):
@@ -300,7 +300,7 @@ func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -
 			elif caster and roll <= 4:
 				outcome = "permanent injury: " + InjuryRules.roll(unit, dice)
 			elif roll <= (6 if caster else 8):
-				if f.def.role == "wizard" and BaseResources.owns(data, "sarcophagus_of_healing"):
+				if f.def.role == "wizard" and not RedKingCampaign.suppress_base_after(data,c.state.scenario_special) and data.get("resources",[]).has("sarcophagus_of_healing"):
 					outcome = "recovered using the sarcophagus"
 				else:
 					unit["miss"] = 1

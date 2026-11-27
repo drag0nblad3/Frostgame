@@ -464,11 +464,11 @@ func _create_campaign() -> void:
 	_campaign_dialog.refresh(false)
 
 
-func _create_story_campaign(include_veil: bool) -> void:
+func _create_story_campaign(include_veil: bool,strict_pursuit: bool) -> void:
 	if not _campaign.data.is_empty():
 		return
 	_create_campaign()
-	if RedKingCampaign.start(_campaign.data,_figures.content_profile,include_veil):
+	if RedKingCampaign.start(_campaign.data,_figures.content_profile,include_veil,strict_pursuit):
 		_campaign.save()
 	_campaign_dialog.refresh(false)
 

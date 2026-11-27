@@ -67,7 +67,7 @@ static func replace_ragged(d: Dictionary,draft: Dictionary) -> bool:
 	roster["figures"]=[wizard]
 	roster["gold"]=0
 	replacement.start(roster,ContentProfile.from_campaign(d))
-	for key: String in ["campaign_story","red_king_stage","red_king_history","red_king_include_veil","red_king_ragged","red_king_recruit_status","red_king_found_artefacts","red_king_artefact_recovered","red_king_secured_kalamon","red_king_mind_completed","wounded_rules","reality_cracks",CompanionMantle.OPTION,"games"]:
+	for key: String in ["campaign_story","red_king_stage","red_king_history","red_king_include_veil","red_king_strict_pursuit","red_king_ragged","red_king_recruit_status","red_king_found_artefacts","red_king_artefact_recovered","red_king_secured_kalamon","red_king_mind_completed","wounded_rules","reality_cracks",CompanionMantle.OPTION,"games"]:
 		if d.has(key):
 			replacement.data[key]=d[key]
 	replacement.data["ragged_no_apprentice"]=true
