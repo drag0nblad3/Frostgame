@@ -138,7 +138,7 @@ func test_story_campaign_lifecycle_with_real_scenarios() -> void:
 		var id := str(stage["id"])
 		check_eq(RedKingCampaign.next_id(p.data),id)
 		check(p.can_deploy(),id+": "+"; ".join(p.deployment_blockers()))
-		var source := JsonFile.read(ScenarioLoader.DIR+id+".json")
+		var source: Dictionary = JsonFile.read(ScenarioLoader.DIR+id+".json")
 		source["warbands"][0]=p.deployment()
 		var s := ScenarioLoader.from_dict(source,defs,terrain())
 		check(not s.scenario_data.has("deployment_error"),id)
