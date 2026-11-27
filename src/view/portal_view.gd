@@ -23,6 +23,21 @@ static func build(root: Node3D,p: TerrainPiece) -> void:
 	disc.radial_segments=24
 	var veil := _mesh(root,disc,TableSpace.to_world(at,1.3),Color(0.63,0.18,0.62,0.72),true)
 	veil.rotation.x=PI*0.5
+	# Ground rim communicates the full gameplay footprint from overhead.
+	var footprint := TorusMesh.new()
+	footprint.inner_radius=p.rect.size.x*0.5-0.10
+	footprint.outer_radius=p.rect.size.x*0.5
+	footprint.rings=24
+	footprint.ring_segments=5
+	_mesh(root,footprint,TableSpace.to_world(at,0.035),Color("f48b55"),true)
+	for i in 2:
+		var arc := TorusMesh.new()
+		arc.inner_radius=0.64-0.16*i
+		arc.outer_radius=0.69-0.16*i
+		arc.rings=20
+		arc.ring_segments=5
+		var swirl := _mesh(root,arc,TableSpace.to_world(at,1.3),Color("eab5f2"),true)
+		swirl.rotation=Vector3(PI*0.5,0.3+0.5*i,0.4*i)
 
 
 static func _mesh(root: Node3D,shape: Mesh,at: Vector3,tint: Color,glow: bool) -> MeshInstance3D:

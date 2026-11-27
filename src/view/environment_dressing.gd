@@ -10,9 +10,11 @@ const DIRT := Color("746d62")
 static func build(board: Board,scenario: String) -> Node3D:
 	var root := Node3D.new()
 	root.name="EnvironmentDressing"
+	if scenario=="red_king_mind":
+		return root
 	var seed := absi(hash(board.id))
 	var indoor := scenario=="underground_library"
-	var snow := not indoor and scenario!="worm_hunts"
+	var snow := not indoor and scenario not in ["worm_hunts","red_king_bridge","red_king_ringworld"]
 	# Low, irregular patches near existing architecture, never across ramps.
 	for i in 64:
 		var x := 0.75+float(posmod(seed+i*73,997))/997.0*(board.size.x-1.5)

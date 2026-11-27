@@ -22,7 +22,7 @@ static func probability(c: GameController, f: Figure, id: String) -> float:
 	if not c.state.spellbooks.get(f.side, {}).has(id):
 		return 1.0 if ScrollActions.has_scroll(f, id) else 0.0
 	var tn := int(c.state.spellbooks[f.side][id])
-	var mod := f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) + ActiveGear.casting_bonus(f, id) + RealityCracks.casting_modifier(c.state,id)
+	var mod := f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) + ActiveGear.casting_bonus(f, id) + RealityCracks.casting_modifier(c.state,id) + RedKingSinkhole.casting_modifier(c.state,f)
 	if f.def.role == "apprentice":
 		mod -= 2
 	return clampf((21.0 - tn + mod + mini(2, maxi(0, f.health - 2))) / 20.0, 0.05, 1.0)

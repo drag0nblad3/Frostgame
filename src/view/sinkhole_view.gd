@@ -12,6 +12,16 @@ static func build(root: Node3D,p: TerrainPiece) -> void:
 	black.albedo_color=Color(0.009,0.006,0.025)
 	black.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 	_add(root,orb,center,black)
+	# Ground contact boundary and alternating radial fragments indicate the pull zone.
+	var ground := TorusMesh.new()
+	ground.inner_radius=p.rect.size.x*0.5-0.10
+	ground.outer_radius=p.rect.size.x*0.5
+	ground.rings=28
+	ground.ring_segments=5
+	var glow := StandardMaterial3D.new()
+	glow.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow.albedo_color=Color("b98aff")
+	_add(root,ground,TableSpace.to_world(p.rect.get_center(),0.05),glow)
 	for i in 3:
 		var ring := TorusMesh.new()
 		ring.inner_radius=1.51+0.12*i
