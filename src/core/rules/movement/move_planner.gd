@@ -3,11 +3,14 @@ extends RefCounted
 ## Dijkstra over the MoveGrid: everywhere a figure can get to with `allowance`
 ## inches of movement, and distance fields for the bot.
 
+const NO_LINKS: Array[Vector2i] = []
+
 
 static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 	var r := MoveReach.new()
 	r.start = from
 	var heap := MinHeap.new()
+	var linked := BoardTopology.linked(grid.board)
 	var base := Vector2i(floori(from.x / MoveGrid.STEP), floori(from.y / MoveGrid.STEP))
 	for dx in range(-1, 3):
 		for dy in range(-1, 3):
@@ -35,7 +38,7 @@ static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 				r.cost[m] = nc
 				r.prev[m] = n
 				heap.push(nc, m)
-		for m: Vector2i in BoardTopology.destinations(grid.board,n):
+		for m: Vector2i in (BoardTopology.destinations(grid.board,n) if linked else NO_LINKS):
 			var nc := c+Figure.BASE_RADIUS
 			if grid.open(m) and nc<=allowance+0.001 and nc<r.cost.get(m,INF):
 				r.cost[m]=nc
@@ -60,6 +63,7 @@ static func distance_field(board: Board, target: Vector2) -> Dictionary:
 	var field := {}
 	board.field_cache[base] = field
 	var heap := MinHeap.new()
+	var linked := BoardTopology.linked(board)
 	# A free target seeds its own tile. Only inaccessible objectives
 	# (guardian columns, for example) need nearby edge seeds.
 	if grid.open(base):
@@ -87,7 +91,7 @@ static func distance_field(board: Board, target: Vector2) -> Dictionary:
 			if nc < field.get(m, INF):
 				field[m] = nc
 				heap.push(nc, m)
-		for m: Vector2i in BoardTopology.sources(board,n):
+		for m: Vector2i in (BoardTopology.sources(board,n) if linked else NO_LINKS):
 			var nc := c+Figure.BASE_RADIUS
 			if grid.open(m) and nc<field.get(m,INF):
 				field[m]=nc

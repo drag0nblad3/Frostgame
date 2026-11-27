@@ -19,6 +19,11 @@ static func mobius(size: Vector2,priority: int) -> Array[Dictionary]:
 	return links
 
 
+## True when the board has wrapped edges or edge links (most boards don't).
+static func linked(board: Board) -> bool:
+	return board.wrap_short_edges or board.wrap_long_edges or not board.edge_links.is_empty()
+
+
 static func destinations(board: Board,node: Vector2i) -> Array[Vector2i]:
 	var out: Array[Vector2i]=[]
 	var at := MoveGrid.to_pos(node)

@@ -93,10 +93,18 @@ func current_side() -> int:
 
 
 func figure(id: int) -> Figure:
-	for f in figures:
-		if f.id == id:
-			return f
+	# Remembered slots are checked against the live array, so adds and removals stay safe.
+	var slot: int = _figure_slots.get(id, -1)
+	if slot >= 0 and slot < figures.size() and figures[slot].id == id:
+		return figures[slot]
+	for i in figures.size():
+		if figures[i].id == id:
+			_figure_slots[id] = i
+			return figures[i]
 	return null
+
+
+var _figure_slots := {}
 
 
 func active() -> Figure:

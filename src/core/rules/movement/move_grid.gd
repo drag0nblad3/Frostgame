@@ -15,7 +15,15 @@ var mover: Figure
 var others: Array[Figure] = []
 var cols := 0
 var rows := 0
-var running := false
+var running := false:
+	set(value):
+		if value != running:
+			_open_memo.clear()
+		running = value
+## Open answers for this search. Figures and terrain don't change mid-search.
+var _open_memo := {}
+## Uncached open() evaluations since start-up; tests use it as a work budget.
+static var evaluations := 0
 
 
 func _init(b: Board, f: Figure = null, figures: Array[Figure] = []) -> void:
@@ -38,6 +46,16 @@ func in_bounds(n: Vector2i) -> bool:
 
 ## A figure could stand here: on the table, off blocking terrain, not on another base.
 func open(n: Vector2i) -> bool:
+	var known: Variant = _open_memo.get(n)
+	if known != null:
+		return known
+	var ok := _open(n)
+	evaluations += 1
+	_open_memo[n] = ok
+	return ok
+
+
+func _open(n: Vector2i) -> bool:
 	if not in_bounds(n):
 		return false
 	var p := to_pos(n)
@@ -71,13 +89,24 @@ func stops(n: Vector2i) -> bool:
 ## Cost in inches of stepping a→b: rough terrain counts double.
 func step_cost(a: Vector2i, b: Vector2i) -> float:
 	if mover==null and others.is_empty():
-		var key := Vector4i(a.x,a.y,b.x,b.y)
-		if board.static_step_cache.has(key):
-			return board.static_step_cache[key]
-		var cost := segment_cost(to_pos(a),to_pos(b))
-		board.static_step_cache[key]=cost
-		return cost
+		var i := _step_index(a, b)
+		if i >= 0:
+			var cache := board.static_step_cache
+			if i < cache.size() and cache[i] >= 0.0:
+				return cache[i]
+			var cost := segment_cost(to_pos(a),to_pos(b))
+			if i < cache.size():
+				board.static_step_cache[i] = cost
+			return cost
 	return segment_cost(to_pos(a),to_pos(b))
+
+
+## Flat cache slot for a step from `a` to a neighbour `b`, or -1.
+func _step_index(a: Vector2i, b: Vector2i) -> int:
+	if not in_bounds(a):
+		return -1
+	var d := NEIGHBORS.find(b - a)
+	return -1 if d < 0 else (a.x * rows + a.y) * 8 + d
 
 
 func segment_cost(pa: Vector2, pb: Vector2) -> float:
@@ -99,9 +128,6 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 		return pa.distance_to(pb)
 	if board.has_ground_profiles or board.has_ramps:
 		return TerrainTravel.cost(board,pa,pb,mover)
-	for p in board.pieces_at(mid):
-		if p.ramp and p.contains(pa) and p.contains(pb):
-			var delta := board.height_at(pa) - board.height_at(pb)
-			return Vector2(pa.distance_to(pb), delta).length()
+	# Ramps are handled by TerrainTravel above (has_ramps), so none can be here.
 	var multiplier := 1.0 if mover != null and mover.levitates() else board.move_mult_at(mid)
 	return pa.distance_to(pb) * multiplier + board.climb_cost(pa, pb, mover)

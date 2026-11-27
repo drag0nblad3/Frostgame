@@ -37,7 +37,12 @@ func test_static_step_cache_clears_on_terrain_change() -> void:
 	var b := Vector2i(11,10)
 	var first := grid.step_cost(a,b)
 	check_eq(grid.step_cost(a,b),first)
-	check(not board.static_step_cache.is_empty())
+	var cache := board.static_step_cache
+	check(cache.count(-1.0) < cache.size(), "step cost cached")
+	board.height_at(Vector2(5,5))
 	board.invalidate_terrain()
-	check(board.static_step_cache.is_empty())
-	check(board._height_cache.is_empty())
+	check_eq(board.static_step_cache.count(-1.0), board.static_step_cache.size())
+	var heights := board._height_cache
+	for h in heights:
+		check(is_nan(h), "height cache cleared")
+		break

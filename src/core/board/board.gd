@@ -45,45 +45,73 @@ func pieces_at(p: Vector2) -> Array[TerrainPiece]:
 
 ## Movement cost multiplier at a point (the worst piece there).
 func move_mult_at(p: Vector2) -> float:
-	var key: Variant = _key(p)
-	if key != null and _mult_cache.has(key):
-		return _mult_cache[key]
+	var i := _lattice(p)
+	if i >= 0 and _mult_cache[i] >= 0.0:
+		return _mult_cache[i]
 	var m := 1.0
-	for piece in pieces_at(p):
-		m = maxf(m, piece.kind.move_mult)
-	if key != null:
-		_mult_cache[key] = m
+	for piece in pieces:
+		if piece.contains(p):
+			m = maxf(m, piece.kind.move_mult)
+	if i >= 0:
+		_mult_cache[i] = m
 	return m
 
 
 ## True if a figure with this base radius can stand at `p`.
 func can_stand(p: Vector2, radius: float) -> bool:
-	var key: Variant = _key(p) if is_equal_approx(radius, Figure.BASE_RADIUS) else null
-	if key != null and _stand_cache.has(key):
-		return _stand_cache[key]
+	var i := _lattice(p) if is_equal_approx(radius, Figure.BASE_RADIUS) else -1
+	if i >= 0 and _stand_cache[i] != 0:
+		return _stand_cache[i] == 2
 	var ok := _can_stand(p, radius)
-	if key != null:
-		_stand_cache[key] = ok
+	if i >= 0:
+		_stand_cache[i] = 2 if ok else 1
 	return ok
 
 
-## Terrain never moves, so answers on the quarter-inch lattice (where move
-## searches look) are cached. Off-lattice points are computed each time.
-var _stand_cache := {}
-var _mult_cache := {}
-var _height_cache := {}
-var static_step_cache := {}
+## Answers on the quarter-inch lattice (where move searches look) are kept in
+## flat arrays until invalidate_terrain(). Off-lattice points are computed each time.
+## Stand: 0 unknown, 1 blocked, 2 open. Mult and height: negative/NaN = unknown.
+var _stand_cache := PackedByteArray()
+var _mult_cache := PackedFloat64Array()
+var _height_cache := PackedFloat64Array()
+var _lattice_cols := 0
+var _lattice_size := Vector2.ZERO
+## Distance-field step costs (no mover) by node index * 8 + direction.
+var static_step_cache := PackedFloat64Array()
 ## Bot distance fields by target node (see MovePlanner.distance_field).
 var field_cache := {}
 var has_ground_profiles := false
 var has_ramps := false
 
 
-func _key(p: Vector2) -> Variant:
+## Index of `p` in the quarter-inch lattice arrays, or -1 off the lattice or table.
+func _lattice(p: Vector2) -> int:
+	if _lattice_size != size:
+		_reset_caches()
 	var q := p * 4.0
-	if is_equal_approx(q.x, roundf(q.x)) and is_equal_approx(q.y, roundf(q.y)):
-		return Vector2i(roundi(q.x), roundi(q.y))
-	return null
+	var x := roundi(q.x)
+	var y := roundi(q.y)
+	if x < 0 or y < 0 or x >= _lattice_cols or absf(q.x - x) > 0.0001 or absf(q.y - y) > 0.0001:
+		return -1
+	var i := x * (int(size.y * 4.0) + 1) + y
+	return i if i < _stand_cache.size() else -1
+
+
+func _reset_caches() -> void:
+	_lattice_size = size
+	_lattice_cols = int(size.x * 4.0) + 1
+	var n := _lattice_cols * (int(size.y * 4.0) + 1)
+	_stand_cache = PackedByteArray()
+	_stand_cache.resize(n)
+	_mult_cache = PackedFloat64Array()
+	_mult_cache.resize(n)
+	_mult_cache.fill(-1.0)
+	_height_cache = PackedFloat64Array()
+	_height_cache.resize(n)
+	_height_cache.fill(NAN)
+	static_step_cache = PackedFloat64Array()
+	static_step_cache.resize((int(size.x / 0.5) + 1) * (int(size.y / 0.5) + 1) * 8)
+	static_step_cache.fill(-1.0)
 
 
 func _can_stand(p: Vector2, radius: float) -> bool:
@@ -141,13 +169,13 @@ func surface_at(p: Vector2) -> TerrainPiece:
 
 
 func height_at(p: Vector2) -> float:
-	var key: Variant=_key(p)
-	if key!=null and _height_cache.has(key):
-		return _height_cache[key]
+	var i := _lattice(p)
+	if i >= 0 and not is_nan(_height_cache[i]):
+		return _height_cache[i]
 	var piece := surface_at(p)
 	var height := piece.surface_height(p) if piece!=null else 0.0
-	if key!=null:
-		_height_cache[key]=height
+	if i >= 0:
+		_height_cache[i]=height
 	return height
 
 
@@ -170,10 +198,7 @@ func invalidate_terrain() -> void:
 	for piece in pieces:
 		has_ground_profiles = has_ground_profiles or piece.kind.ground_surface
 		has_ramps = has_ramps or piece.ramp
-	_stand_cache.clear()
-	_mult_cache.clear()
-	_height_cache.clear()
-	static_step_cache.clear()
+	_reset_caches()
 	field_cache.clear()
 
 
