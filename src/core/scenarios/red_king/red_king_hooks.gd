@@ -9,6 +9,8 @@ static func install() -> void:
 	RuleHooks.add("objective_figure", RedKingTethers.pylon)
 	RuleHooks.add("equipment_command",_equipment_command)
 	RuleHooks.add("scenario_command",RedKingCommands.execute)
+	RuleHooks.add("potion_source_allowed",RedKingPotionHooks.source_allowed)
+	RuleHooks.add("potion_consume",RedKingPotionHooks.consume)
 	# Figures that never lend support in a fight (Mad Man hunters).
 	RuleHooks.add("no_support", RedKingMadMan.hunter)
 	RuleHooks.add("fight_bonus", _secret_hrut_bonus)
