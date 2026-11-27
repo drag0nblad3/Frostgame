@@ -113,6 +113,186 @@
         3,
         2
       ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        9.5,
+        17.5,
+        3,
+        1
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        23.5,
+        17.5,
+        3,
+        1
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        16,
+        10.5,
+        4,
+        1
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        16,
+        24,
+        4,
+        1
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        0,
+        0,
+        15,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        21,
+        0,
+        15,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        0,
+        35.5,
+        15,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        21,
+        35.5,
+        15,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        0,
+        0.5,
+        0.5,
+        14.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        0,
+        21,
+        0.5,
+        14.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        35.5,
+        0.5,
+        0.5,
+        14.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        35.5,
+        21,
+        0.5,
+        14.5
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        14.2,
+        0,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        21,
+        0,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        14.2,
+        35.2,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        21,
+        35.2,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        0,
+        14.2,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        0,
+        21,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        35.2,
+        14.2,
+        0.8,
+        0.8
+      ]
+    },
+    {
+      "kind": "library_gate",
+      "rect": [
+        35.2,
+        21,
+        0.8,
+        0.8
+      ]
     }
   ]
 }

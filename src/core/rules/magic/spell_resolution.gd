@@ -136,6 +136,10 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 		los.intervening+=1
 	if not los.clear and (not s.board.floor_layout.is_empty() or RedKingHill.cracked(s)):
 		return
+	var ray_origin: Vector3=origin if origin is Vector3 else Vector3(from.x,s.board.height_at(from)+1.5,from.y)
+	if from==f.pos and not origin is Vector3:
+		ray_origin.y=f.elevation+1.5
+	FigureCover.apply(s.board,f,t,ray_origin,los)
 	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
 		mod -= 2

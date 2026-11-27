@@ -322,3 +322,8 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ## Unified battle geometry update
 
 The earlier elevation milestones above are historical. The current unified-battle branch uses the ordinary battle UI and action controller for authored overlapping floors, including campaign deployment in Silent Tower, shared combat/spell/gear actions, actual-support treasure and encounter placement, and core scenario sites. Flat, sloped and stacked movement/contact parity is covered by regression tests. Red King special scenario conversions are explicitly deferred until their spatial hazards, topology and objectives are audited; those maps still use their existing geometry. See `docs/unified-battle.md` for the detailed integration history and remaining limitations.
+
+
+## November 27 rulebook review
+
+See [rulebook-audit-2026-11-27.md](rulebook-audit-2026-11-27.md) for the latest category-level review, corrected rules, and remaining verification requirements. The old stepped-only Silent Tower and fixed starting positions are superseded by physical overlapping floors and a controller-owned deployment stage in the live UI. Earlier turn-cap and missing-figure-cover descriptions are also superseded for newly deployed games.

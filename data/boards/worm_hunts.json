@@ -1,0 +1,293 @@
+{
+  "id": "worm_hunts",
+  "name": "Worm Hunts — fractured burial district",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        4,
+        10,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        27,
+        18,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        15,
+        15,
+        6,
+        6
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        9,
+        26,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        25,
+        7,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        11,
+        9,
+        6,
+        0.8
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        19,
+        26.2,
+        6,
+        0.8
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        2,
+        21,
+        0.8,
+        5
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        33.2,
+        10,
+        0.8,
+        5
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        11,
+        18,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        22,
+        15,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        28,
+        28,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        4,
+        5,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "platform",
+      "rect": [
+        7,
+        19,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "tower",
+      "rect": [
+        27,
+        10,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "raised_ground",
+      "rect": [
+        13,
+        10.5,
+        5,
+        2.5
+      ],
+      "level": 1
+    },
+    {
+      "kind": "stone_stairs",
+      "rect": [
+        10.5,
+        10.5,
+        2.5,
+        2.5
+      ],
+      "ramp": {
+        "start": 0,
+        "end": 1,
+        "axis": "x"
+      }
+    },
+    {
+      "kind": "stone_ramp",
+      "rect": [
+        18,
+        10.5,
+        2.5,
+        2.5
+      ],
+      "ramp": {
+        "start": 1,
+        "end": 0,
+        "axis": "x"
+      }
+    },
+    {
+      "kind": "sunken_ground",
+      "rect": [
+        18,
+        23,
+        5,
+        2.5
+      ],
+      "level": -1
+    },
+    {
+      "kind": "stone_ramp",
+      "rect": [
+        15.5,
+        23,
+        2.5,
+        2.5
+      ],
+      "ramp": {
+        "start": 0,
+        "end": -1,
+        "axis": "x"
+      }
+    },
+    {
+      "kind": "stone_stairs",
+      "rect": [
+        23,
+        23,
+        2.5,
+        2.5
+      ],
+      "ramp": {
+        "start": -1,
+        "end": 0,
+        "axis": "x"
+      }
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        26.5,
+        25.5,
+        2.5,
+        2
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        10,
+        29.5,
+        4,
+        0.8
+      ]
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        22,
+        5.7,
+        4,
+        0.8
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        4,
+        24,
+        2.5,
+        2
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        29.5,
+        15,
+        2.5,
+        2
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        13,
+        5,
+        2,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        22,
+        9,
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        18.5,
+        6,
+        2,
+        3
+      ]
+    }
+  ]
+}

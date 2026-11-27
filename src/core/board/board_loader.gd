@@ -24,6 +24,7 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 		var r: Array = p["rect"]
 		var piece := TerrainPiece.new(terrain.get_kind(p["kind"]), Rect2(r[0], r[1], r[2], r[3]))
 		piece.circular = piece.kind.id in ["arcane_disc","red_king_portal","red_king_sinkhole_orb"]
+		piece.entrance = str(p.get("entrance","north"))
 		piece.level = p.get("level",null)
 		var profile: Dictionary = p.get("ramp",{})
 		if not profile.is_empty():

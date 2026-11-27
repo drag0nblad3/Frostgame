@@ -10,7 +10,7 @@ const TOKEN := ["id", "pos", "surface_id", "ring_side", "carrier_id", "secured_b
 
 
 static func can_save(c: GameController) -> bool:
-	if c == null or c.state.over:
+	if c == null or c.state.over or (c.deployment!=null and not c.deployment.done):
 		return false
 	var s := c.state
 	return s.pending_intercept.is_empty() and s.pending_cast.is_empty() and s.pending_resistance.is_empty() and s.pending_combat.is_empty() and c._magic.shatter.first.is_empty() and c._magic.shatter.next.is_empty() and not c._magic.shatter.resolving

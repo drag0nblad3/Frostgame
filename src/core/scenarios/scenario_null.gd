@@ -1,6 +1,6 @@
 class_name ScenarioNull
 extends RefCounted
-## The Silent Tower's null field; the exposed terraces replace inaccessible interior floors.
+## The Silent Tower's null field includes its connected ruined buildings and walkways.
 
 static func field_at(board: Board, at: Vector2, margin: float = Figure.BASE_RADIUS) -> bool:
 	if board == null:

@@ -152,5 +152,6 @@
   ],
   "random_encounters": false,
   "forced_combat": true,
-  "museum": true
+  "museum": true,
+  "central_treasure": 0
 }

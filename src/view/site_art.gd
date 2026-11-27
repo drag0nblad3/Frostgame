@@ -24,8 +24,20 @@ static func surface(root: Node3D, p: TerrainPiece, water: bool) -> void:
 
 
 static func shelf(root: Node3D, p: TerrainPiece) -> void:
-	var rect := p.rect
-	var h := p.kind.height
+	if p.rect.size.x>p.rect.size.y:
+		# Build along the local long axis, then rotate the whole bookcase.
+		# Keeps the books, end panels and shelves aligned with collision.
+		var local:=Node3D.new()
+		root.add_child(local)
+		local.position=TableSpace.to_world(p.rect.get_center())
+		local.rotation.y=PI*0.5
+		var size:=Vector2(p.rect.size.y,p.rect.size.x)
+		_shelf(local,p.kind.height,Rect2(-size*0.5,size))
+		return
+	_shelf(root,p.kind.height,p.rect)
+
+
+static func _shelf(root: Node3D,h: float,rect: Rect2) -> void:
 	var c := rect.get_center()
 	var wood := Color(0.24, 0.15, 0.10)
 	# Solid spine and actual shelf tiers, all within the original footprint.
@@ -80,3 +92,19 @@ static func crypt(root: Node3D, p: TerrainPiece) -> void:
 	for i in 4:
 		var at := c + Vector2.RIGHT.rotated(PI*0.25+TAU*i/4.0)*w*0.56
 		MiniatureFactory.box(root,TableSpace.to_world(at,h-0.035),Vector3(0.35,0.06,0.35),BRASS)
+
+	# Four sealed stone doorways, one at the centre of each facade.
+	# The mausoleum's interior is deliberately not playable in this scenario.
+	for side in 4:
+		var face:=Node3D.new()
+		root.add_child(face)
+		var offset:=Vector2(0,-p.rect.size.y*0.5-0.025).rotated(PI*0.5*side)
+		face.position=TableSpace.to_world(c+offset)
+		face.rotation.y=-PI*0.5*side
+		MiniatureFactory.box(face,Vector3(0,0.95,0),Vector3(1.25,1.9,0.045),dark)
+		for x: float in [-0.7,0.7]:
+			MiniatureFactory.box(face,Vector3(x,1.0,0),Vector3(0.16,2.0,0.065),trim)
+		MiniatureFactory.box(face,Vector3(0,2.0,0),Vector3(1.56,0.18,0.08),trim)
+		MiniatureFactory.box(face,Vector3(0,1.0,-0.032),Vector3(0.045,1.85,0.025),BRASS)
+		for x: float in [-0.32,0.32]:
+			MiniatureFactory.box(face,Vector3(x,0.92,-0.045),Vector3(0.13,0.12,0.06),BRASS)

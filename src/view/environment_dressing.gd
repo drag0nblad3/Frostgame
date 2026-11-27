@@ -43,11 +43,9 @@ static func build(board: Board,scenario: String) -> Node3D:
 		if piece.kind.id in ["ruin","hut_wall","tower","null_lower","null_middle","null_upper","null_annex"]:
 			DistrictArchitecture.relief(root,piece,i,scenario)
 		elif piece.kind.id=="haunted_floor":
-			# Worn interior floorboards stay low and out of hut entrances.
-			var center := piece.rect.get_center()
-			for j in 3:
-				var at := Vector2(center.x+(j-1)*0.65,center.y+0.85)
-				EnvironmentProps.paving(root,Vector3(at.x,0.065,at.y),0.27,j,Color("63584d"))
+			# Individual worn floor finishes and fallen furnishings, all flat
+			# so the visual detail cannot introduce fictitious obstacles.
+			HutInterior.decorate(root,piece,i)
 	if snow and GraphicsQuality.mode()>0:
 		SnowBanks.decorate(root,board,scenario)
 	BattlefieldDetail.build(root,board,scenario)

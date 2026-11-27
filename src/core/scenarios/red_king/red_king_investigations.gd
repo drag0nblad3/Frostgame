@@ -116,7 +116,9 @@ static func end_turn(c: GameController) -> void:
 		var exits := {}
 		for side in s.side_count():
 			# Fixed two-sided deployment: north starts at low y, south at high y.
-			var vertical := "south" if side==0 else "north"
+			var zones: Dictionary=s.scenario_data.get("deployment_zones",{})
+			var edge:=int(zones.get(side,0 if side==0 else 2))
+			var vertical := "south" if edge==0 else "north"
 			exits[side]=[vertical,"west" if c.dice.pick(2)==0 else "east"]
 		s.scenario_data["exit_edges"]=exits
 		s.board.field_cache.clear()
