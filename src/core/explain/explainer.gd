@@ -17,8 +17,14 @@ static func text(s: GameState, e: GameEvent) -> String:
 			return "Kalamon Ryce is unconscious. Carry him to safety."
 		"ryce_escaped":
 			return "Kalamon Ryce escapes into the ruins."
+		"hrut_corner_choice":
+			return "Choose a corner for your Hrut hunting party."
 		"hrut_hunt":
 			return "Hrut hunting parties arrive."
+		"convergence_choice":
+			return "Choose where %s lands in the convergence."%name_of(s,d["id"])
+		"convergence_blocked":
+			return "No legal contact placement for %s."%name_of(s,d["id"])
 		"mad_man_crack":
 			return "Reality twists: opposite edge regions exchange positions."
 		"reality_crack":

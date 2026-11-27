@@ -48,7 +48,7 @@ func refresh() -> void:
 	reach = null
 	var f := c.state.active()
 	if c.state.scenario_data.has("rk_priority_choice"):
-		mode="ruins_piece"
+		mode="convergence" if c.state.scenario_data["rk_priority_choice"].get("kind","")=="convergence" else "ruins_piece"
 		preview()
 		return
 	var end_choice: Dictionary=c.state.scenario_data.get("rk_end_choice",{})
@@ -414,6 +414,10 @@ func preview() -> void:
 		"ruins_destination":
 			points.assign(RealityCrackTerrain.shift_points(c,spell_first))
 			hint="Choose a legal new centre for the selected terrain (up to 10″). Figures and treasure on it move too."
+		"convergence":
+			points.assign(RealityConvergence.points(c))
+			var figure := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
+			hint="Convergence: place %s in base contact with a figure already drawn to the centre."%figure.label()
 		"hunt_corner":
 			points.assign(RedKingHunt.points(c))
 			radius=0.9
@@ -904,6 +908,14 @@ func tap(screen: Vector2) -> bool:
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode=="convergence":
+		var best := Vector2(INF,INF)
+		var distance := 0.55
+		for candidate in RealityConvergence.points(c):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RealityConvergence.answer(c,best)
 	if mode in ["hunt_corner","hunt_place"]:
 		var best := Vector2(INF,INF)
 		var distance := 1.5 if mode=="hunt_corner" else 0.55

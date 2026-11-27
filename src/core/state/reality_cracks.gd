@@ -92,8 +92,7 @@ static func apply(c: GameController,effect: int) -> bool:
 		13:
 			RealityCrackTerrain.portal(c)
 		14:
-			_converge(c)
-			clear(c)
+			RealityConvergence.begin(c)
 		15:
 			RealityCrackTerrain.shift_ruins(c)
 		16:
@@ -320,22 +319,3 @@ static func _resolve_exchange(c: GameController,selected: Array[Figure],secret: 
 		f.disengaged.clear()
 		c.emit("forced_relocation",{"id":f.id,"from":old,"at":f.pos,"height":f.elevation})
 
-
-static func _converge(c: GameController) -> void:
-	var s := c.state
-	var center := s.board.size*0.5
-	var moved := {}
-	for i in 6:
-		var end := center+direction(c)*s.board.size.length()
-		var best: Figure=null
-		var score := INF
-		for f in s.figures:
-			if not f.in_play() or moved.has(f.id) or f.pos.distance_to(Geometry2D.get_closest_point_to_segment(f.pos,center,end))>3.0:
-				continue
-			var d := f.pos.distance_squared_to(center)
-			if d<score:
-				best=f
-				score=d
-		if best!=null:
-			moved[best.id]=true
-			ForcedRelocation.relocate(c,best,center)

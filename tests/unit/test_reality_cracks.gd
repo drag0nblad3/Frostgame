@@ -120,3 +120,34 @@ func test_shifting_ruins_player_choices() -> void:
 		var destinations := RealityCrackTerrain.shift_points(restored,second)
 		check(RealityCrackTerrain.answer_shift(restored,second,destinations[0]))
 	check(not restored.state.scenario_data.has("rk_priority_choice"))
+
+
+func test_convergence_placement_and_checkpoint() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.board.pieces.clear()
+	s.board.invalidate_terrain()
+	var anchor := s.figures[0]
+	var f := s.figures[1]
+	anchor.pos=s.board.size*0.5
+	anchor.elevation=0
+	f.pos=anchor.pos+Vector2(0,4)
+	f.elevation=0
+	s.scenario_data["rk_convergence"]={"remaining":0,"moved":[anchor.id]}
+	s.scenario_data["rk_priority_choice"]={"kind":"convergence","id":f.id}
+	var points := RealityConvergence.points(c)
+	check(not points.is_empty())
+	if points.is_empty():
+		return
+	check(not RealityConvergence.answer(c,Vector2(-1,-1)))
+	for at in points:
+		check(Contact.touching(anchor.pos,at))
+		check(at.distance_to(anchor.pos)>=Contact.OVERLAP)
+	var saved := BattleSnapshot.capture(c)
+	var restored := BattleSnapshot.rebuild(saved,s.creature_db)
+	check(restored!=null)
+	if restored==null:
+		return
+	check(RealityConvergence.answer(restored,points[0]))
+	check_eq(restored.state.figure(f.id).pos,points[0])
+	check(not restored.state.scenario_data.has("rk_priority_choice"))

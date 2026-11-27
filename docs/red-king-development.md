@@ -282,3 +282,6 @@ Rivals can use the Cape to withdraw from melee on supported floor graphs, booste
 
 ### Hunting party deployment
 The Demons and the Mad Man pauses at turn two for priority-ordered corner selection and individual legal Hrut placements. The stinger arrives first; reduced parties deploy one warrior rather than two. Rivals still choose automatically. Checkpoints retain the corner and remaining placements; the scenario's reality roll and turn transition wait until all parties are placed. Deployable points use the existing half-inch movement lattice.
+
+### Convergence placement
+Crack 14 now pauses for human-controlled placement of figures after the first centre arrival. Legal destinations contact one of the previously drawn figures, avoid overlap, and respect height and blocking terrain. Uncontrolled creature placement is assigned by a priority-independent roll-off; rivals choose contact positions using ally/enemy proximity. If no legal contact exists, the selected figure stays put and the event log explains it. The half-inch lattice and blocked-centre fallback remain digital approximations.
