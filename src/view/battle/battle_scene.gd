@@ -498,6 +498,13 @@ func _begin_campaign_battle() -> void:
 		RaggedWarbands.fill(_campaign.data,_figures,Dice.new(int(_campaign.data.get("games",0))+1))
 	if not _campaign.save():
 		return
+	var source: Dictionary=JsonFile.read(ScenarioLoader.DIR+_scenario_id+".json")
+	source["warbands"][0]=_campaign.deployment()
+	var candidate := ScenarioLoader.from_dict(source,_figures,_terrain)
+	if candidate.scenario_data.has("deployment_error"):
+		hud.notify(str(candidate.scenario_data["deployment_error"]))
+		_campaign_dialog.refresh(false)
+		return
 	_campaign_battle = true
 	watch_mode = false
 	_campaign_dialog.hide()
@@ -621,13 +628,20 @@ func _choose_plant(candidates: Array[int]) -> void:
 func _finish_campaign_battle(plant_target: int) -> void:
 	if not _campaign_battle:
 		return
-	_campaign_battle=false
 	if is_instance_valid(_plant_dialog):
 		_plant_dialog.hide()
 		_plant_dialog.queue_free()
 		_plant_dialog=null
-	_campaign.settle(controller,controller.dice,0,plant_target)
-	if _campaign.save():
+	var previous := _campaign.data.duplicate(true)
+	if not _campaign.settle(controller,controller.dice,0,plant_target):
+		hud.notify("Campaign settlement could not be applied.")
+		return
+	if not _campaign.save():
+		_campaign.data=previous
+		hud.notify("Could not save campaign settlement. Battle retained.")
+		return
+	_campaign_battle=false
+	if true:
 		var checkpoint := BattleSnapshot.read()
 		if checkpoint.get("meta",{}).get("campaign",false):
 			DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))

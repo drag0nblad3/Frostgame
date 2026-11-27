@@ -108,7 +108,7 @@ static func label(first: int,second: int) -> String:
 
 static func can_study(d: Dictionary,item: Dictionary) -> bool:
 	var info: Dictionary=catalog().get(item.get("gear",""),{})
-	return info.get("artefact",false) and not item.get("unlocked",false) and int(item.get("last_study_game",-1))!=int(d.get("games",0)) and CampaignSuccession.living_wizard(d)
+	return info.get("artefact",false) and not item.get("ragged_sealed",false) and not RaggedWarbands.absent_owner(d,item) and not item.get("unlocked",false) and int(item.get("last_study_game",-1))!=int(d.get("games",0)) and CampaignSuccession.living_wizard(d)
 
 
 static func study(d: Dictionary,index: int,db: FigureDb,dice: Dice) -> bool:
@@ -120,7 +120,7 @@ static func study(d: Dictionary,index: int,db: FigureDb,dice: Dice) -> bool:
 	var info: Dictionary=catalog()[item["gear"]]
 	var wizard: Dictionary={}
 	for u in d["units"]:
-		if u["type"]=="wizard" and not u["dead"]:
+		if u["type"]=="wizard" and BaseResources.alive(u):
 			wizard=u
 			break
 	var bonuses := InjuryRules.bonuses(wizard,d.get("advances",{}))

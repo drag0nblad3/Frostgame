@@ -45,16 +45,24 @@ func deployment() -> Dictionary:
 			bonuses[stat]=int(bonuses.get(stat,0))+int(unit["ragged_bonuses"][stat])
 		entry["stat_bonus"] = bonuses
 		entry["permanent_summon"] = unit.get("permanent_summon", false)
+		if entry["permanent_summon"]:
+			entry["specialist"]=CompanionMantle.specialist(data,unit) or unit["type"] in ["large_construct","foulhorn"]
 		entry["items"] = CampaignInventory.loadout(data, int(unit["id"]))
 		if CasterLoadout.is_caster(unit["type"]):
 			entry["weapons"] = CasterLoadout.carried(data, unit)["weapons"]
 		units.append(entry)
-	if data.get("prepared_zombie", false):
+	if data.get("prepared_zombie",false) and _prepared_caster_present(units,int(data.get("prepared_zombie_caster",-1))):
 		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true,"prepared_zombie_caster":int(data.get("prepared_zombie_caster",-1)),"prepared_zombie_strong":bool(data.get("prepared_zombie_strong",false))})
 	var prepared := Rituals.prepared_illusions(data)
 	var limit := 2 if BaseResources.wizard_item(data,SummonActions.ILLUSION_STAFF) else 1
-	for i in mini(prepared.size(),limit):
-		units.append({"type":prepared[i]["type"],"at":[0,0],"prepared_illusion":true,"prepared_illusion_caster":int(prepared[i]["caster"])})
+	var added := 0
+	for illusion: Dictionary in prepared:
+		if added>=limit:
+			break
+		if not _prepared_caster_present(units,int(illusion["caster"])):
+			continue
+		units.append({"type":illusion["type"],"at":[0,0],"prepared_illusion":true,"prepared_illusion_caster":int(illusion["caster"])})
+		added+=1
 	var demon: Dictionary = data.get("prepared_demon", {})
 	if not demon.is_empty():
 		for entry: Dictionary in units:
@@ -64,24 +72,47 @@ func deployment() -> Dictionary:
 	# Two deployment ranks prevent extra prepared figures from exceeding the table.
 	for i in units.size():
 		units[i]["at"] = [4.5 + 3.0 * (i % 10), 3.0 + 1.5 * floori(i / 10.0)]
-	return {"name": data["name"], "wounded_rules":bool(data.get("wounded_rules",false)), "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": not locked and BaseResources.owns(data, "celestial_telescope"), "red_king_artefact_recovered": bool(data.get("red_king_artefact_recovered",false)), "red_king_secret_hrut": RedKingMindRewards.secret_selected(data)}
+	return {"campaign_roster":true,"name": data["name"], "wounded_rules":bool(data.get("wounded_rules",false)), "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": not locked and BaseResources.owns(data, "celestial_telescope"), "red_king_artefact_recovered": bool(data.get("red_king_artefact_recovered",false)), "red_king_secret_hrut": RedKingMindRewards.secret_selected(data)}
+
+
+static func _prepared_caster_present(units: Array,id: int) -> bool:
+	for entry: Dictionary in units:
+		if entry["type"] in ["wizard","apprentice"] and (id<0 or int(entry.get("campaign_id",-1))==id):
+			return true
+	return false
+
+
+func deployment_blockers() -> Array[String]:
+	var reasons: Array[String]=[]
+	if data.is_empty():
+		return ["Create a campaign first."]
+	if RedKingCampaign.active(data) and RedKingCampaign.next_id(data).is_empty():
+		reasons.append("The story is concluded. Reconcile the warband before continuing.")
+	if not data.get("pending_treasure",[]).is_empty():
+		reasons.append("Resolve the pending treasure choices.")
+	if not BaseResources.fits(data,FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
+		reasons.append("Roster exceeds its current limits. Adjust members or equipment.")
+	if RaggedWarbands.active(data) and RaggedWarbands.has_unassigned(data):
+		reasons.append("Assign or discard unsealed equipment before leaving.")
+	if ScrollShield.campaign_index(data,"roll")>=0:
+		reasons.append("Roll the Scroll Shield in preparation.")
+	var roster: Array=deployment()["figures"]
+	if not CampaignSuccession.living_wizard(data):
+		reasons.append("No living wizard. Resolve succession or start a new campaign.")
+	elif roster.is_empty():
+		reasons.append("No warband members are ready to deploy.")
+	elif RedKingCampaign.next_id(data)=="red_king_mind":
+		var wizard_ready := false
+		for entry: Dictionary in roster:
+			if entry["type"]=="wizard":
+				wizard_ready=true
+		if not wizard_ready:
+			reasons.append("The solo Mindscape requires a recovered wizard.")
+	return reasons
 
 
 func can_deploy() -> bool:
-	if ScrollShield.campaign_index(data,"roll")>=0:
-		return false
-	if RedKingCampaign.active(data) and RedKingCampaign.next_id(data).is_empty():
-		return false
-	if not data.get("pending_treasure", []).is_empty():
-		return false
-	if not BaseResources.fits(data,FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
-		return false
-	if RaggedWarbands.active(data) and RaggedWarbands.has_unassigned(data):
-		return false
-	for unit: Dictionary in data.get("units", []):
-		if unit["type"] == "wizard" and not unit["dead"] and not InjuryRules.blind(unit):
-			return not deployment()["figures"].is_empty()
-	return false
+	return deployment_blockers().is_empty()
 
 
 func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -> bool:

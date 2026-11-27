@@ -411,3 +411,23 @@ func test_all_red_king_equipment_has_implementation() -> void:
 	check_eq(catalog.size(),62)
 	for id: String in catalog:
 		check(bool(catalog[id].get("live",false)),id)
+
+
+func test_campaign_ringworld_full_roster_positions() -> void:
+	var packs := ContentProfile.registered().duplicate(true)
+	packs["red_king"]["status"]="ready"
+	var defs := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.new(["red_king"],packs))
+	var source: Dictionary=JsonFile.read("res://data/scenarios/red_king_ringworld.json")
+	var roster: Dictionary=source["warbands"][0]
+	roster["campaign_roster"]=true
+	for i in 7:
+		roster["figures"].append({"type":"thug","at":[18,3]})
+	var s := ScenarioLoader.from_dict(source,defs,terrain())
+	check(not s.scenario_data.has("deployment_error"))
+	for f in s.figures:
+		if f.side!=0:
+			continue
+		check(s.board.can_stand(f.pos,Figure.BASE_RADIUS))
+		for other in s.figures:
+			if other!=f and other.ring_side==f.ring_side:
+				check(f.pos.distance_to(other.pos)>=Contact.OVERLAP)

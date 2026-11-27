@@ -68,13 +68,19 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				var x := 1.0+1.2*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.2*floori(deploy_index/4.0)]
 			deploy_index += 1
+			if wb.get("campaign_roster",false) and s.scenario_special.begins_with("red_king_") and not RedKingMind.active(s):
+				var repaired: Variant=CampaignDeployment.find(s,Vector2(at[0],at[1]),side,d)
+				if repaired==null:
+					s.scenario_data["deployment_error"]="No legal starting position for "+str(entry["type"])+". Reduce the deployed roster."
+				else:
+					at=[repaired.x,repaired.y]
 			var def := figures.get_def(entry["type"])
 			if entry.has("stat_bonus"):
 				def = def.with_bonuses(entry["stat_bonus"])
 			if entry.get("permanent_summon", false):
 				def = def.with_bonuses({})
 				def.role = "soldier"
-				def.specialist = def.id in ["large_construct","foulhorn"]
+				def.specialist = bool(entry.get("specialist",def.id in ["large_construct","foulhorn"]))
 			if CasterLoadout.is_caster(def.role) and entry.has("weapons"):
 				def = CasterLoadout.definition(def, entry["weapons"], figures)
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())

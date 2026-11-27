@@ -226,3 +226,7 @@ Enchant Weapon can create single-use enchanted ammunition; ordinary quivers carr
 
 ### Mantle of the Bear (or Leopard)
 The item permanently binds to bear or snow leopard and can only be assigned to spellcasters. The supplement's specialist-to-standard companion benefit conflicts with the second-edition core Animal Companion rule, which already classifies animal companions as standard soldiers. A per-campaign opt-in compatibility option implements the supplement classification for bear/leopard; core remains the default. Roster checks prevent removal or transfer of a matching mantle if that makes a roster illegal; a loss can require roster correction before deployment.
+
+## Campaign integration hardening
+
+Deployment repairs crowded or obstructed Red King campaign starts within their starting zones, without moving fixed scenario figures; an impossible deployment is rejected. Prepared summons require an attending caster. Headquarters explains deployment blockers, including the mandatory wizard for Mindscape (ordinary games retain the core wounded-spellcaster absence rule). Sealed artefacts cannot be studied, and the shield's next-game roll closes the after-game preparation window. Settlement retains the battle if persistence fails.

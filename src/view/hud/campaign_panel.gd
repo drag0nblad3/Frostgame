@@ -300,7 +300,7 @@ func refresh(in_battle: bool) -> void:
 	if RaggedWarbands.active(d):
 		lines.append("RAGGED WARBANDS · No hiring, purchases or base benefits. Free random replacements before battle.")
 	for unit: Dictionary in d["units"]:
-		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — resting" if int(unit["miss"]) > 0 else ""), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])
+		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — dismissed" if unit.get("dismissed",false) else (" — separated" if unit.get("ragged_absent",false) else (" — resting" if int(unit["miss"]) > 0 else ""))), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])
 	for unit: Dictionary in d["units"]:
 		for id: String in unit.get("injury_types", {}):
 			lines.append("  #%d: %s ×%d" % [int(unit["id"]) + 1, id.replace("_", " ").capitalize(), unit["injury_types"][id]])
@@ -316,6 +316,9 @@ func refresh(in_battle: bool) -> void:
 	var reserve := BaseResources.reserve_id(d, db)
 	if reserve >= 0:
 		lines.append("Inn reserve: %s #%d" % [db.get_def(d["units"][reserve]["type"]).name, reserve + 1])
+	var blockers := campaign.deployment_blockers()
+	if not in_battle and not blockers.is_empty():
+		lines.append("BEFORE DEPARTURE: "+"; ".join(blockers))
 	lines.append("Base: %s | Stored loot: %d" % [str(d.get("base", "")).capitalize(), d["loot"].size()])
 	lines.append("Stat advances: %s" % str(d.get("advances", {})))
 	members.clear()

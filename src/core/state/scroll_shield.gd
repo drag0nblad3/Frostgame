@@ -7,12 +7,12 @@ static func campaign_index(d: Dictionary,phase: String) -> int:
 	for i in d.get("loot",[]).size():
 		var item: Dictionary=d["loot"][i]
 		var owner := int(item.get("owner",-1))
-		if item.get("gear","")!=ITEM or not item.get("unlocked",false) or item.get("ragged_sealed",false) or owner<0:
+		if item.get("gear","")!=ITEM or not item.get("unlocked",false) or item.get("ragged_sealed",false) or owner<0 or owner>=d.get("units",[]).size():
 			continue
 		var u: Dictionary=d["units"][owner]
 		if not BaseResources.alive(u) or u.get("ragged_absent",false):
 			continue
-		if phase=="roll" and int(item.get("shield_game",-1))!=int(d["games"]) and int(u.get("miss",0))==0:
+		if phase=="roll" and int(item.get("shield_game",-1))!=int(d["games"]) and int(u.get("miss",0))==0 and not InjuryRules.blind(u):
 			return i
 		if phase=="before" and int(item.get("shield_game",-1))==int(d["games"]) and not item.get("shield_used",false) and int(u.get("miss",0))==0:
 			return i
@@ -26,6 +26,7 @@ static func roll(d: Dictionary,dice: Dice) -> bool:
 	if index<0:
 		return false
 	var item: Dictionary=d["loot"][index]
+	d["preparation_started"]=true
 	item["shield_game"]=int(d["games"])
 	item["shield_spell"]=CampaignProgress.random_spell(dice)
 	item["shield_used"]=false

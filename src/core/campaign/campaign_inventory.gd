@@ -228,7 +228,7 @@ static func sell(d: Dictionary, index: int) -> bool:
 static func loadout(d: Dictionary, owner: int) -> Array:
 	var items: Array = []
 	for item: Dictionary in d["loot"]:
-		if int(item.get("owner", -1)) != owner:
+		if int(item.get("owner", -1)) != owner or item.get("ragged_sealed",false):
 			continue
 		if item["kind"] == "potion":
 			items.append({"potion": item["potion"], "campaign_item": true,"enchanted":bool(item.get("enchanted",false))})

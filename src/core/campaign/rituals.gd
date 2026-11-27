@@ -14,7 +14,7 @@ static func choices(d: Dictionary,caster: int,id: String,shield: bool=false) -> 
 	var u: Dictionary = d["units"][caster]
 	if shield and (u["type"]!="wizard" or id=="summon_demon" or ScrollShield.ritual_index(d,id)<0):
 		return out
-	if u["dead"] or u.get("dismissed", false) or int(u["miss"]) > 0 or u["type"] not in ["wizard", "apprentice"]:
+	if u["dead"] or u.get("dismissed", false) or u.get("ragged_absent",false) or InjuryRules.blind(u) or int(u["miss"]) > 0 or u["type"] not in ["wizard", "apprentice"]:
 		return out
 	if RaggedWarbands.active(d) and id=="summon_demon":
 		return out
