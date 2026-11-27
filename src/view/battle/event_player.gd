@@ -6,6 +6,7 @@ extends Node3D
 signal line_logged(text: String)
 signal notice(text: String)
 signal roll_resolved(text: String)
+signal outcome(text: String)
 const NOTICES := ["hut_discovered", "disc_transport", "disc_stay", "well_drink", "worm_emerges", "break_ice", "column_fight", "column_opened", "genie_released", "genie_flee", "genie_escaped", "null_field", "tower_entered"]
 
 ## Animation speed multiplier (higher is faster).
@@ -42,6 +43,8 @@ func _play(e: GameEvent) -> void:
 			notice.emit(line)
 		else:
 			line_logged.emit(line)
+	if not line.is_empty() and e.type in ["damage","heal","out_of_action","spell_effect","spell_expired","poison","shield_absorb","weapon_destroyed","treasure_pickup","treasure_secured","treasure_lost","terrain_fall","ring_switch","creature_transformed"]:
+		outcome.emit(line)
 	var result := RollSummary.describe(state, e)
 	if not result.is_empty():
 		roll_resolved.emit(result)

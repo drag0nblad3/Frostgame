@@ -250,6 +250,10 @@ func set_objective(text: String) -> void:
 
 func notify(text: String) -> void:
 	add_line(text)
+	show_outcome(text)
+
+
+func show_outcome(text: String) -> void:
 	_toast.text = text
 	_toast.show()
 	_toast_timer.start(6.0)

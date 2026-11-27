@@ -21,6 +21,7 @@ var planned_actor := -1
 var planned_target := -1
 var _reach: LayeredReach
 var _jump_plans := {}
+var _preview_tween: Tween
 var _summary: Label
 var _result: Label
 var _row: GridContainer
@@ -550,6 +551,8 @@ func _refresh_donor(p: Dictionary,cast: bool) -> void:
 
 
 func clear_plan() -> void:
+	if _preview_tween!=null and _preview_tween.is_valid():
+		_preview_tween.kill()
 	if planned_actor>=0 and scene.player.views.has(planned_actor):
 		var f := c.state.figure(planned_actor)
 		var v: FigureView=scene.player.views[planned_actor]
@@ -569,7 +572,14 @@ func plan_destination(n: Vector3i) -> void:
 	planned=n
 	planned_actor=f.id
 	var v: FigureView=scene.player.views[f.id]
-	v.position=scene.layout.world(n)
+	var point: Vector3=scene.layout.world(n)
+	if _preview_tween!=null and _preview_tween.is_valid():
+		_preview_tween.kill()
+	if v.position.distance_to(point)<=1.25:
+		_preview_tween=create_tween()
+		_preview_tween.tween_property(v,"position",point,0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	else:
+		v.position=point
 	v.visible=true
 	var points := PackedVector3Array()
 	if mode=="jump":
