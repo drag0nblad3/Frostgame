@@ -22,6 +22,12 @@ func _setup() -> void:
 		if not scene._guide.visible:
 			quit(1)
 			return
+	elif _dialog=="graphics":
+		scene._open_graphics()
+	elif _dialog=="inspector":
+		scene._open_inspector()
+	elif _dialog=="briefing":
+		scene._open_briefing(false)
 	elif _dialog=="maps":
 		scene.player.speed=30.0
 		while not scene.player.idle():
@@ -30,7 +36,7 @@ func _setup() -> void:
 		if scene._picker==null or not scene._picker.visible:
 			quit(1)
 			return
-	elif _dialog == "campaign":
+	elif _dialog in ["campaign","equipment","rituals","base","chronicle"]:
 		var draft := WarbandDraft.new(scene._figures)
 		draft.choose_defaults()
 		scene._campaign.start(draft.as_warband())
@@ -39,6 +45,9 @@ func _setup() -> void:
 		scene._campaign.data["games"] = 2
 		scene._campaign.data["gold"] = 375
 		scene._open_campaign()
+		var sections := {"equipment":2,"rituals":3,"base":4,"chronicle":5}
+		if sections.has(_dialog):
+			scene._campaign_dialog._show_section(sections[_dialog])
 		if not scene._campaign_dialog.visible:
 			quit(1)
 			return

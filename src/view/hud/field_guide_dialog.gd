@@ -1,26 +1,32 @@
 class_name FieldGuideDialog
-extends AcceptDialog
+extends ExpeditionScreen
 ## Read-only, shared reference accessible without instantiating a battle.
-var _topics: OptionButton
+var _topics: ItemList
+var _index := 0
+var _split: BoxContainer
 var _body: RichTextLabel
 var _pages: Array[Dictionary]=[]
 var _heading: Label
 
 
 func _ready() -> void:
+	build("FIELD GUIDE","Return",navigate_back)
 	title="Field guide"
-	theme=BattleTheme.create()
-	exclusive=true
-	var col := VBoxContainer.new()
-	add_child(col)
-	var intro := Label.new()
-	intro.text="Rules & controls • choose a topic"
-	intro.modulate=Color("c6b17d")
-	col.add_child(intro)
-	_topics=OptionButton.new()
-	_topics.fit_to_longest_item=false
-	_topics.custom_minimum_size.y=52
-	col.add_child(_topics)
+	subtitle.text="Rules, controls and scenario reference"
+	_split=BoxContainer.new()
+	_split.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_split.add_theme_constant_override("separation",12)
+	body.add_child(_split)
+	_topics=ItemList.new()
+	_topics.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	_topics.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_topics.size_flags_stretch_ratio=0.9
+	_topics.custom_minimum_size.y=135
+	_topics.add_theme_font_size_override("font_size",24)
+	_topics.add_theme_constant_override("v_separation",17)
+	_split.add_child(_topics)
+	var col := WorkshopUI.column(_split)
+	col.size_flags_stretch_ratio=2.2
 	for block in FieldGuide.OVERVIEW.split("\n\n",false):
 		var lines := block.split("\n",false,1)
 		if lines.size()==2:
@@ -36,13 +42,15 @@ func _ready() -> void:
 	for page in _pages:
 		_topics.add_item(str(page["title"]))
 	_heading=Label.new()
-	_heading.add_theme_font_size_override("font_size",24)
+	_heading.add_theme_font_size_override("font_size",34)
+	_heading.add_theme_color_override("font_color",WorkshopUI.GOLD)
 	_heading.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(_heading)
 	_body=RichTextLabel.new()
 	_body.fit_content=false
 	_body.scroll_active=true
-	_body.add_theme_font_size_override("normal_font_size",22)
+	_body.add_theme_font_size_override("normal_font_size",27)
+	_body.add_theme_constant_override("line_separation",10)
 	_body.add_theme_constant_override("line_separation",7)
 	_body.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	col.add_child(_body)
@@ -50,30 +58,34 @@ func _ready() -> void:
 	col.add_child(row)
 	var prev := Button.new()
 	prev.text="Previous"
-	prev.custom_minimum_size.y=50
+	prev.custom_minimum_size.y=64
 	prev.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	row.add_child(prev)
-	prev.pressed.connect(func() -> void:_show(posmod(_topics.selected-1,_pages.size())))
+	prev.pressed.connect(func() -> void:_show(posmod(_index-1,_pages.size())))
 	var next := Button.new()
 	next.text="Next"
-	next.custom_minimum_size.y=50
+	next.custom_minimum_size.y=64
 	next.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	row.add_child(next)
-	next.pressed.connect(func() -> void:_show(posmod(_topics.selected+1,_pages.size())))
+	next.pressed.connect(func() -> void:_show(posmod(_index+1,_pages.size())))
 	_topics.item_selected.connect(_show)
 	_show(0)
 
 
 func open(close_label: String="Close") -> void:
-	get_ok_button().text=close_label
-	var bounds := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
-	_body.custom_minimum_size=Vector2(minf(760,bounds.x*0.86),minf(410,bounds.y*0.56))
-	PhoneSafeArea.popup_dialog(self)
+	action.text=close_label
+	show_screen()
+
+
+func _reflow() -> void:
+	if _split!=null:
+		_split.vertical=size.x<size.y
 
 
 func _show(index: int) -> void:
 	if index<0 or index>=_pages.size():
 		return
+	_index=index
 	_topics.select(index)
 	_heading.text=str(_pages[index]["title"])
 	_body.text=str(_pages[index]["text"])
