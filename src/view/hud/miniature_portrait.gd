@@ -7,6 +7,8 @@ var _turntable: Node3D
 var _model: Node3D
 var _camera: Camera3D
 var _key := ""
+var tight_frame := false
+var _model_box := AABB()
 
 
 func _ready() -> void:
@@ -17,7 +19,7 @@ func _ready() -> void:
 	_studio.render_target_update_mode = SubViewport.UPDATE_ONCE
 	stretch_shrink=2 if GraphicsQuality.mode()<2 else 1
 	visibility_changed.connect(_request_frame)
-	resized.connect(_request_frame)
+	resized.connect(_fit_camera)
 	_studio.size = Vector2i(300, 300)
 	add_child(_studio)
 	var room := Node3D.new()
@@ -69,13 +71,29 @@ func set_figure(f: Figure, color: Color, school: String = "") -> void:
 	_model = MiniatureFactory.create(f, color, school)
 	_turntable.add_child(_model)
 	_turntable.rotation.y = 0.0
-	var box := _bounds(_model, _model.transform)
-	if box.size.length_squared() > 0.001:
-		var height := box.size.y
-		var center := box.get_center()
-		_camera.size = maxf(2.10, maxf(height * 1.35, maxf(box.size.x, box.size.z) * 1.8))
-		var target := Vector3(0, maxf(0.38, center.y - 0.06), 0)
-		_camera.look_at_from_position(target + Vector3(2.5, 1.15, -4.4), target)
+	_model_box = _bounds(_model, _model.transform)
+	_fit_camera()
+
+
+func _fit_camera() -> void:
+	if not is_instance_valid(_camera) or _model_box.size.length_squared()<=0.001:
+		_request_frame()
+		return
+	var box := _model_box
+	var center := box.get_center()
+	if tight_frame:
+		# Include the plinth and rotation-safe horizontal extent; frame by aspect.
+		var bottom := minf(-0.25,box.position.y)
+		var height := box.end.y-bottom
+		var width := maxf(1.44,Vector2(box.size.x,box.size.z).length())
+		var aspect := maxf(0.2,size.x/maxf(1.0,size.y))
+		_camera.size=maxf(height*1.17,width*1.10/aspect)
+		var target := Vector3(0,(bottom+box.end.y)*0.5,0)
+		_camera.look_at_from_position(target+Vector3(1.7,0.65,-4.4),target)
+	else:
+		_camera.size=maxf(2.10,maxf(box.size.y*1.35,maxf(box.size.x,box.size.z)*1.8))
+		var target := Vector3(0,maxf(0.38,center.y-0.06),0)
+		_camera.look_at_from_position(target+Vector3(2.5,1.15,-4.4),target)
 	_request_frame()
 
 

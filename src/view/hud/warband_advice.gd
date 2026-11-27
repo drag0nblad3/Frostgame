@@ -158,3 +158,23 @@ static func spell(draft: WarbandDraft,id: String) -> String:
 	elif info["kind"]=="unimplemented":
 		result+="\n\nNot yet available in the digital game."
 	return result
+
+
+static func recruit_equipment(d: FigureDef) -> String:
+	var lines: Array[String]=[]
+	for w in d.weapons:
+		var line := "%s · Damage %+d"%[w.name,w.damage_mod]
+		if w.is_ranged():
+			line+=" · Range %d″"%w.range_in
+			if w.needs_reload:
+				line+=" · Reload action"
+		if w.enemy_damage_mod!=0:
+			line+=" · Incoming damage %+d"%w.enemy_damage_mod
+		lines.append(line)
+	if d.shield:
+		lines.append("Shield · already included in Armour")
+	if d.treasure_encumbered():
+		lines.append("Bulky equipment makes carrying treasure harder.")
+	if d.traits.has("animal"):
+		lines.append("Animal · cannot carry treasure")
+	return "\n".join(lines)

@@ -45,9 +45,15 @@ func _setup() -> void:
 	else:
 		scene._open_roster()
 		if _dialog=="spells":
-			scene._setup._tabs.current_tab=1
+			scene._setup.open_spells()
 		elif _dialog=="recruits":
-			scene._setup._tabs.current_tab=2
+			scene._setup.inspect(scene._setup.draft.soldiers.size()+2)
+		elif _dialog=="wizard":
+			scene._setup.inspect(0)
+		elif _dialog=="full-roster":
+			while scene._setup.draft.can_hire("thug"):
+				scene._setup.draft.hire("thug")
+			scene._setup.show_overview()
 		if not scene._setup.visible:
 			quit(1)
 			return

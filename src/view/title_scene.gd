@@ -215,14 +215,13 @@ func _edit_warband() -> void:
 	_editor=WarbandSetup.new()
 	add_child(_editor)
 	_editor.setup(FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,WarbandSlots.content_profile()),WarbandSlots.roster())
-	_editor.get_ok_button().text="Save warband"
 	_editor.drafted.connect(func(roster: Dictionary) -> void:
 		if WarbandSlots.save_roster(roster):
 			_refresh_slots()
 			_notice.text="Warband saved to slot %d."%(WarbandSlots.active()+1)
 		else:
 			_notice.text="Could not save warband. Reopen the editor and try again.")
-	PhoneSafeArea.popup_dialog(_editor,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.96)
+	_editor.open("Save warband")
 
 
 func _open_guide() -> void:

@@ -420,7 +420,6 @@ func _open_roster() -> void:
 		_setup = WarbandSetup.new()
 		add_child(_setup)
 		_setup.setup(_figures,_roster)
-		_setup.get_ok_button().text="Save & deploy"
 		_setup.drafted.connect(func(roster: Dictionary) -> void:
 			if not WarbandSlots.save_roster(roster):
 				hud.notify("Could not save warband.")
@@ -429,7 +428,7 @@ func _open_roster() -> void:
 			_campaign_battle = false
 			watch_mode = false
 			new_game(0))
-	PhoneSafeArea.popup_dialog(_setup,PhoneSafeArea.safe_rect(get_viewport(),14).size*0.94)
+	_setup.open("Save & deploy")
 
 
 func _open_campaign() -> void:
