@@ -38,7 +38,7 @@ static func play(c: GameController, f: Figure) -> bool:
 		# Collect an available token before spending time evaluating other routes.
 		var collected := false
 		for token in c.state.treasures:
-			if c.can_pick_up(token.id) and c.pick_up(token.id):
+			if BattleAction.execute(c,"collect",token.id):
 				acted = true
 				collected = true
 				break
@@ -60,10 +60,10 @@ static func play(c: GameController, f: Figure) -> bool:
 			if moved:
 				acted = true
 				continue
-		if target.frozen and c.break_ice():
+		if target.frozen and BattleAction.execute(c,"break_ice"):
 			acted = true
 			continue
-		if c.pick_up(target.id):
+		if BattleAction.execute(c,"collect",target.id):
 			acted = true
 			continue
 		if not c.can_move():
@@ -83,7 +83,7 @@ static func play(c: GameController, f: Figure) -> bool:
 	if Contact.in_combat(c.state.figures, f) and c.can_act():
 		var enemy := BotTargets.weakest_contact(c.state, f)
 		if enemy != null:
-			c.fight(enemy.id)
+			BattleAction.execute(c,"fight",enemy.id)
 			acted = true
 	return acted
 
@@ -153,7 +153,7 @@ static func _veil_progress(c: GameController,f: Figure) -> bool:
 	# Do not deliberately enter the lethal band; prefer a nearby treasure when
 	# it is already accessible, then advance toward the eventual exit.
 	for token in c.state.treasures:
-		if c.can_pick_up(token.id) and c.pick_up(token.id):
+		if BattleAction.execute(c,"collect",token.id):
 			return true
 	if not c.can_move():
 		return false
