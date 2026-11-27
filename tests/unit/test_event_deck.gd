@@ -22,7 +22,9 @@ func test_seeded_deck_draw_and_reshuffle() -> void:
 func test_development_pack_not_selectable() -> void:
 	var core := ContentProfile.new()
 	check(not core.allows("scenarios","red_king_squatter"))
-	var unfinished := ContentProfile.new(["red_king"])
+	var packs := ContentProfile.registered().duplicate(true)
+	packs["red_king"]["status"]="development"
+	var unfinished := ContentProfile.new(["red_king"],packs)
 	check(not unfinished.errors().is_empty())
 	check(not unfinished.rule("red_king_reality_cracks"))
 	var campaign: Dictionary=JsonFile.read("res://data/campaigns/red_king.json")
