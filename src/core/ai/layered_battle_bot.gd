@@ -211,7 +211,7 @@ static func _cape(c: GameController,f: Figure) -> bool:
 		var distance := 6.0
 		for other in c.state.figures:
 			if other.in_play() and other.side!=f.side:
-				distance=minf(distance,position.distance_to(Vector3(other.pos.x,other.elevation,other.pos.y)))
+				distance=minf(distance,position.distance_to(BattleSpace.center(other)))
 		var score := distance-float(reach.cost[node])*0.05
 		if distance>=3.0 and score>value:
 			value=score
