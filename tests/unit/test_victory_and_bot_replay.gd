@@ -5,8 +5,8 @@ func test_victory_policy_distinguishes_no_override_and_not_finished() -> void:
 	var c := make_game(make_board(),[fig("thug",0,Vector2(2,2)),fig("thug",1,Vector2(20,20))],Dice.new(11))
 	var standing: Array[int]=[0,1]
 	check(RuleHooks.first("scenario_victory",[c,standing])==null)
-	c.state.scenario_special=RedKingRingworld.ID
-	check(RuleHooks.first("scenario_victory",[c,standing])!=null)
+	c.state.scenario_special=RedKingBridge.ID
+	check_eq(RuleHooks.first("scenario_victory",[c,standing]),{})
 	c.state.scenario_special=""
 	check(not c._flow._check_victory())
 	c.state.figure(2).out_of_action=true
