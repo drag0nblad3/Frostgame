@@ -249,8 +249,8 @@ func pick_up(id: int) -> bool:
 	return BattleRecord.run(self,"pick_up",{"id":id},func() -> bool: return _loot.pick_up(id))
 
 
-func drop_treasure(at: Vector2) -> bool:
-	return BattleRecord.run(self,"drop_treasure",{"at":at},func() -> bool: return _loot.drop(at))
+func drop_treasure(at: Vector2,token_id: int=-1) -> bool:
+	return BattleRecord.run(self,"drop_treasure",{"at":at,"token":token_id},func() -> bool: return _loot.drop(at,token_id))
 
 
 func exit_table(node: Vector2i) -> bool:
