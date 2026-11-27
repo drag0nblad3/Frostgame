@@ -93,3 +93,9 @@ func test_replay_verifies_real_activation_and_rejects_divergence() -> void:
 	if not records.is_empty():
 		records[0]["rng_after"]=int(records[0]["rng_after"])+1
 		check(not BattleReplay.verify(checkpoint,db(),records,events).get("ok",true))
+
+
+func test_worm_hunts_authored_starting_positions_are_legal() -> void:
+	var s := ScenarioLoader.load_id("worm_hunts",db(),terrain())
+	for f in s.figures:
+		check(s.board.can_stand(f.pos,Figure.BASE_RADIUS),"Illegal starting position: "+f.label())
