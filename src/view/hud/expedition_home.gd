@@ -57,6 +57,7 @@ func _ready() -> void:
 	_button(card,"warband","Create warband",true)
 	var surface := _panel(_layout,Color(0.035,0.065,0.095,0.95))
 	surface.get_parent().size_flags_stretch_ratio=1.22
+	surface.get_parent().size_flags_vertical=Control.SIZE_EXPAND_FILL
 	var scroll := ScrollContainer.new()
 	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -108,3 +109,4 @@ func _reflow() -> void:
 	_layout.vertical=narrow
 	_title.add_theme_font_size_override("font_size",44 if narrow else 58)
 	_hero.size_flags_stretch_ratio=0.8 if narrow else 1.0
+	_support.columns=2

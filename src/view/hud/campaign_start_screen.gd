@@ -87,7 +87,8 @@ func _reflow() -> void:
 
 func _choose(story: bool) -> void:
 	_story=story and not _story_button.disabled
-	_ordinary.disabled=not _story
+	_ordinary.text="✓ Free-form campaign" if not _story else "Free-form campaign"
+	_story_button.text="✓ The Red King storyline" if _story else "The Red King storyline"
 	_veil.visible=_story
 	_pursuit.visible=_story
 	action.text="Begin The Red King" if _story else "Create free-form campaign"

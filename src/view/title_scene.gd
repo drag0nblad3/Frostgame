@@ -124,7 +124,8 @@ func _refresh_slots() -> void:
 	_home.roster_info.text=("%s · Level %d · %d battles"%[str(progress.data["school"]).capitalize(),progress.data["level"],progress.data["games"]]) if has_campaign else ("Choose your wizard, spells and soldiers." if roster.is_empty() else "%s · %d members · %d gc"%[str(roster.get("school","")).capitalize(),roster.get("figures",[]).size(),roster.get("gold",0)])
 	_buttons["campaign"].text="Continue campaign  ›" if has_campaign else "New campaign  ›"
 	_home.content.text="Save %d / %d · %s"%( [WarbandSlots.active()+1,WarbandSlots.COUNT,"Core + "+", ".join(profile.enabled) if not profile.enabled.is_empty() else "Core rules"] )
-	_notice.hide()
+	_notice.text="Saved battle requires its original rulebook selection and campaign state." if not checkpoint.is_empty() and not compatible else ""
+	_notice.visible=not _notice.text.is_empty()
 
 
 func _select_slot(index: int) -> void:
