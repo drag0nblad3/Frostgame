@@ -47,6 +47,9 @@ var _picker: SkirmishPicker
 var _move_preview_tween: Tween
 var _visible_floor := ""
 var _floor_revision := 0
+var _deployment: DeploymentScreen
+var _deployment_controller: GameController
+var _previous_campaign_battle := false
 
 
 func _ready() -> void:
@@ -72,8 +75,9 @@ func _ready() -> void:
 	_briefing = ScenarioDialog.new()
 	add_child(_briefing)
 	_briefing.start_requested.connect(func() -> void:
+		_previous_campaign_battle=_campaign_battle
 		_campaign_battle = false
-		new_game(0))
+		new_game(0,null,true))
 	hud.new_game_pressed.connect(_open_map_picker)
 	hud.briefing_pressed.connect(func() -> void: _open_briefing(false))
 	_inspector = FigureInspector.new()
@@ -140,7 +144,7 @@ func _ready() -> void:
 		if controller==null:
 			new_game(0)
 	else:
-		new_game(0)
+		new_game(0,null,_launch_intent=="selected_skirmish")
 
 
 func _open_launch_intent() -> void:
@@ -229,7 +233,7 @@ func _open_briefing(start: bool) -> void:
 	_briefing.show_briefing(_scenario_id if start else _active_scenario_id, controller.state if controller != null else null, start)
 
 
-func new_game(seed_value: int,prepared: GameState=null) -> void:
+func new_game(seed_value: int,prepared: GameState=null,manual_deploy: bool=false) -> void:
 	if not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
 		_scenario_id=SCENARIO
 	if _training >= 0:
@@ -238,7 +242,6 @@ func new_game(seed_value: int,prepared: GameState=null) -> void:
 	_training_complete = false
 	_training_failed = false
 	hud.set_training(-1, false)
-	_active_scenario_id = _scenario_id
 	var began := Time.get_ticks_usec()
 	var state := prepared
 	if state==null:
@@ -251,7 +254,46 @@ func new_game(seed_value: int,prepared: GameState=null) -> void:
 		state=ScenarioLoader.from_dict(data,_figures,_terrain)
 	print("Map load: rules state %.1f ms (reused=%s)"%[float(Time.get_ticks_usec()-began)/1000.0,prepared!=null])
 	state.reaction_side = -2 if watch_mode else player_side
-	_attach_battle(GameController.new(state, Dice.new(seed_value)), true)
+	var candidate:=GameController.new(state,Dice.new(seed_value))
+	if DeploymentRules.mode(_scenario_id)!="fixed" and state.side_count()==2:
+		var draft:=DeploymentPlan.new(state,_scenario_id,player_side,candidate.dice)
+		if manual_deploy and not watch_mode:
+			_deployment_controller=candidate
+			if _deployment==null:
+				_deployment=DeploymentScreen.new()
+				add_child(_deployment)
+				_deployment.confirmed.connect(_finish_deployment)
+				_deployment.abandoned.connect(_cancel_deployment)
+			_deployment.open(draft)
+			return
+		if not candidate.apply_deployment(draft):
+			hud.notify("Automatic deployment could not fit the warbands: "+draft.error)
+			return
+	_active_scenario_id=_scenario_id
+	_attach_battle(candidate,true)
+
+
+func _finish_deployment(draft: DeploymentPlan) -> void:
+	if _deployment_controller==null:
+		return
+	if not _deployment_controller.apply_deployment(draft):
+		_deployment.open(draft)
+		return
+	var candidate:=_deployment_controller
+	_deployment_controller=null
+	_active_scenario_id=_scenario_id
+	_launch_intent=""
+	_attach_battle(candidate,true)
+
+
+func _cancel_deployment() -> void:
+	_deployment_controller=null
+	_campaign_battle=_previous_campaign_battle
+	if controller==null:
+		get_tree().change_scene_to_file("res://scenes/title.tscn")
+	else:
+		_scenario_id=_active_scenario_id
+		hud.select_scenario(_scenario_id)
 
 
 func _attach_battle(c: GameController, start: bool) -> void:
@@ -585,9 +627,10 @@ func _open_map_picker() -> void:
 		_picker.selected.connect(func(id: String) -> void:
 			_scenario_id=id
 			hud.select_scenario(id)
+			_previous_campaign_battle=_campaign_battle
 			_campaign_battle=false
 			watch_mode=false
-			new_game(0))
+			new_game(0,null,true))
 	_picker.open(false)
 
 

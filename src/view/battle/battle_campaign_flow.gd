@@ -84,10 +84,11 @@ static func _begin_campaign_battle(bs: BattleScene) -> void:
 		bs.hud.notify(str(candidate.scenario_data["deployment_error"]))
 		bs._campaign_dialog.refresh(false)
 		return
+	bs._previous_campaign_battle=bs._campaign_battle
 	bs._campaign_battle = true
 	bs.watch_mode = false
 	bs._campaign_dialog.hide()
-	bs.new_game(0,candidate)
+	bs.new_game(0,candidate,true)
 
 
 static func _save_battle(bs: BattleScene) -> bool:

@@ -58,6 +58,10 @@ func _run() -> void:
 	scene._open_map_picker()
 	scene._picker._inspect(scene._picker._ids.find("complex_temple"))
 	scene._picker._start()
+	if scene._deployment==null or not scene._deployment.visible or scene.controller!=original:
+		_fail("Deployment must precede first turn")
+		return
+	scene._deployment._confirm()
 	if scene.controller == original or scene.controller.state.scenario_special != "complex_temple":
 		_fail("Confirmed scenario did not start")
 		return

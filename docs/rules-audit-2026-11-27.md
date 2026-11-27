@@ -4,9 +4,9 @@ Source: user-supplied Frostgrave Second Edition (2020) and The Red King (2020). 
 
 | Topic | Reference | Finding / action |
 |---|---|---|
-| Standard deployment | Core 39 | Fixed positions violate 3-inch edge depth; roll-off, edge selection and manual placement needed. |
-| Library setup | Core 144 | Door-radius exception, 6 inches from chosen doorway; review exits. |
-| Corner starts | Red King 34,43,53 | Fire and Herded 6-inch radius; Bridge 4-inch radius. Replace rectangular approximations. |
+| Standard deployment | Core 39 | Fixed positions violate 3-inch edge depth; live roll-off, edge selection and manual/auto placement implemented, pending CI. |
+| Library setup | Core 144 | Door-radius exception, 6 inches from chosen doorway implemented; review exits. |
+| Corner starts | Red King 34,43,53 | Fire and Herded 6-inch radius; Bridge 4-inch radius. Circular zones in live draft; fixture loader still has old coordinates. |
 | Veil start | Red King 29 | Adjacent to short edge; review model base assumptions. |
 | Investigations / Ringworld / Mind | Red King 26,38,56+ | Preserve scenario-specific placements pending source comparison. |
 | Tower | Core 143 | Add actual supporting walls and valid elevated treasure positions; check route links and null-field rules. |
