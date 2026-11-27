@@ -191,7 +191,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 	if bi.mode in ["drop", "drop_shrunk"]:
 		for p in bi.drops:
 			if at.distance_to(p) <= 0.3:
-				return bi.c._loot.drop(p, bi.c.state.active().shrunk_treasure_id if bi.mode == "drop_shrunk" else -1)
+				return bi.c.drop_treasure(p, bi.c.state.active().shrunk_treasure_id if bi.mode == "drop_shrunk" else -1)
 	if bi.mode in BattleMovePlan.MODES:
 		bi.move_plan.choose(bi,at)
 		return false
