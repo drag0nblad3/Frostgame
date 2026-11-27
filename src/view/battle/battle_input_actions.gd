@@ -45,9 +45,9 @@ static func action(bi: BattleInput, key: String) -> bool:
 	if key=="ring_escape":
 		return RedKingRingworld.escape(bi.c,bi.c.state.active())
 	if key == "drink_well":
-		return bi.c.drink_well()
+		return BattleAction.execute(bi.c,"drink_well")
 	if key == "break_ice":
-		return bi.c.break_ice()
+		return BattleAction.execute(bi.c,"break_ice")
 	if key.begins_with("weapon_"):
 		return bi.c.select_melee(key.trim_prefix("weapon_"))
 	if key in ["direction_keep","direction_teetotum","direction_gem"]:
