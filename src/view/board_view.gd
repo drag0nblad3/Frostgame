@@ -176,7 +176,7 @@ static func _piece_key(p: TerrainPiece) -> String:
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 	match piece.kind.id:
 		"rubble":
-			TerrainDressing.rubble(root,piece)
+			BattlefieldDetail.rubble(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 		"museum_statue":
 			TerrainDressing.statue(root,piece)
 		"temple_column":
@@ -201,6 +201,7 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 			if piece.kind.id in ["ruin","tower","wall","platform","hut_wall","null_annex","null_walk","null_lower","null_middle","null_upper"]:
 				RuinSilhouette.decorate(root,piece)
 				RuinedFacade.decorate(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
+				BattlefieldDetail.facade(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 			if board.id=="mausoleum" and piece.kind.id=="ruin" and piece.rect.has_point(board.size*0.5):
 				SiteArt.crypt(root,piece)
 	# Rubble is otherwise dozens of individual shadow-casting meshes.

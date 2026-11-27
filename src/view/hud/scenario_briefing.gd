@@ -4,7 +4,7 @@ extends RefCounted
 
 const ENTRIES := {
 	"sunken_streets": ["Sunken Streets", "Recover treasure from a collapsed city district.", "A sunken courtyard and raised streets offer alternate routes. Follow ramps and stairs to avoid steep climbing costs. Banks can block shots. Five treasures."],
-	"treasure_skirmish": ["Frozen Ruins", "Explore the ruined streets and carry treasure off the table.", "Five treasures. The central marker earns a campaign loot reroll. First collections can attract wandering monsters."],
+	"treasure_skirmish": ["Frozen Ruins", "Explore the ruined streets and carry treasure off the table.", "Five treasures. Raised and sunken streets provide different sightlines; marked stairs and ramps provide cheaper routes. The central marker earns a campaign loot reroll. First collections can attract wandering monsters."],
 	"mausoleum": ["The Mausoleum", "Loot a burial complex defended by skeletons.", "Six treasures; six initial skeletons. A further skeleton enters from a doorway after each Creature phase. No central treasure."],
 	"living_museum": ["The Living Museum", "The statues are more dangerous than they look.", "Collecting treasure requires a Will roll (TN 8). Success awakens a remaining statue as a medium construct. Failed attempts spend an action."],
 	"dreams_well": ["Well of Dreams and Sorrows", "Seek knowledge at an enchanted well.", "A wizard or apprentice touching the well may drink once as an action, earning 50 or 30 XP respectively. A figure pushed into the well is taken out of action."],

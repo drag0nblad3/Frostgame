@@ -37,14 +37,28 @@ func _draw() -> void:
 	for piece in _board.pieces:
 		var tint := Color("61747e")
 		if piece.kind.ground_surface:
-			tint=Color("90a7b5")
+			tint=Color("5f7b91") if piece.surface_height(piece.rect.get_center())<0 else Color("c0aa89")
+			if piece.ramp:
+				tint=Color("95b4b6")
 		elif piece.kind.walkable_top:
 			tint=Color("829aa4")
 		elif piece.kind.id=="rubble":
 			tint=Color("998a79")
 		elif piece.kind.id=="arcane_disc":
 			tint=Color("7e8eaa")
-		draw_rect(Rect2(origin+piece.rect.position*scale_factor,piece.rect.size*scale_factor),tint)
+		var rect:=Rect2(origin+piece.rect.position*scale_factor,piece.rect.size*scale_factor)
+		draw_rect(rect,tint)
+		if piece.kind.ground_surface and piece.ramp:
+			var a:=rect.get_center()-Vector2(0,rect.size.y*0.32) if piece.ramp_rotated else rect.get_center()-Vector2(rect.size.x*0.32,0)
+			var b:=rect.get_center()+(rect.get_center()-a)
+			if piece.ramp_end<piece.ramp_start:
+				var swap:=a
+				a=b
+				b=swap
+			draw_line(a,b,Color("e6d6ac"),2.0)
+			var direction:=(b-a).normalized()
+			draw_line(b,b-direction*4+direction.orthogonal()*3,Color("e6d6ac"),2.0)
+			draw_line(b,b-direction*4-direction.orthogonal()*3,Color("e6d6ac"),2.0)
 	var layout := _board.floor_layout
 	if not layout.is_empty():
 		for surface: Dictionary in layout.get("surfaces",[]):
