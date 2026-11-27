@@ -8,7 +8,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 	if f == null:
 		if bi.c.can_begin_group():
 			bi.available.append("group")
-		if bi.c.can_finish_early_phase():
+		if BattleAction.legal(bi.c,"pass_phase"):
 			bi.available.append("pass_phase")
 		bi.mode = "select"
 		bi.preview()
@@ -42,9 +42,9 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		bi.available.append("ring_switch")
 	if RedKingRingworld.can_escape(bi.c,f):
 		bi.available.append("ring_escape")
-	if bi.c.can_drink_well():
+	if BattleAction.legal(bi.c,"drink_well"):
 		bi.available.append("drink_well")
-	if bi.c.can_break_ice():
+	if BattleAction.legal(bi.c,"break_ice"):
 		bi.available.append("break_ice")
 	for weapon in bi.c.selectable_melee():
 		bi.available.append("weapon_" + weapon.id)
@@ -87,7 +87,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		if p.kind.id == "spell_bridge" and p.caster_id == f.id:
 			bi.available.append("cancel_bridge")
 			break
-	if bi.c.can_use_stored_action():
+	if BattleAction.legal(bi.c,"use_stored_action"):
 		bi.available.append("use_stored_action")
 	if RunForIt.ready(bi.c) and (not bi.is_layered() or LayeredMovement.eligible(bi.c)):
 		bi.available.append("run_for_it")
@@ -109,18 +109,18 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 					bi.available.append("exit")
 					break
 	for enemy in bi.c.state.figures:
-		if bi.c.can_fight_hand(enemy.id) and not bi.available.has("fight_hand"):
+		if BattleAction.legal(bi.c,"fight_hand",enemy.id) and not bi.available.has("fight_hand"):
 			bi.available.append("fight_hand")
-		if bi.c.can_fight(enemy.id) and not bi.available.has("fight"):
+		if BattleAction.legal(bi.c,"fight",enemy.id) and not bi.available.has("fight"):
 			bi.available.append("fight")
-		if bi.c.can_shoot(enemy.id) and not bi.available.has("shoot"):
+		if BattleAction.legal(bi.c,"shoot",enemy.id) and not bi.available.has("shoot"):
 			bi.available.append("shoot")
-		if bi.c.can_shoot(enemy.id,false,true) and not bi.available.has("ammo_shot"):
+		if BattleAction.legal(bi.c,"ammo_shot",enemy.id) and not bi.available.has("ammo_shot"):
 			bi.available.append("ammo_shot")
-		if bi.c.can_shoot(enemy.id,true) and not bi.available.has("wraith_shot"):
+		if BattleAction.legal(bi.c,"wraith_shot",enemy.id) and not bi.available.has("wraith_shot"):
 			bi.available.append("wraith_shot")
 	for token in bi.c.state.treasures:
-		if bi.c.can_pick_up(token.id):
+		if BattleAction.legal(bi.c,"collect",token.id):
 			bi.available.append("collect")
 			break
 	bi.cast_options.assign(SpellAvailability.menu_options(bi.c._magic,f))
@@ -132,7 +132,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		if bi.c._magic.can_cancel(t.id):
 			bi.available.append("cancel_control")
 			break
-	if bi.c.can_reload():
+	if BattleAction.legal(bi.c,"reload"):
 		bi.available.append("reload")
 	bi.drops.clear()
 	for dx in range(-2, 3):
@@ -144,7 +144,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		bi.available.append("drop")
 		if f.second_treasure_id >= 0:
 			bi.available.append("drop_shrunk")
-	if bi.c.can_end_activation():
+	if BattleAction.legal(bi.c,"end"):
 		bi.available.append("end")
 	if bi.is_layered():
 		# Geometry-dependent gear/potions must be migrated before exposure.
