@@ -8,9 +8,10 @@ const BONE := Color(0.85, 0.82, 0.69)
 const SKIN := Color(0.78, 0.61, 0.46)
 
 
-static func create(f: Figure, faction: Color, school_override: String = "") -> Node3D:
+static func create(f: Figure, faction: Color, school_override: String = "", detail_override: int = -1) -> Node3D:
 	var model := Node3D.new()
 	model.set_meta("painted_miniature",true)
+	model.set_meta("sculpt_detail",GraphicsQuality.mode() if detail_override<0 else clampi(detail_override,0,2))
 	var color := faction
 	if RedKingSculpt.create(model, f) or CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
 		MiniatureDetails.decorate(model,f)
@@ -155,12 +156,22 @@ static func box(model: Node3D, pos: Vector3, size: Vector3, color: Color) -> Mes
 	return mesh(model, shape, pos, color)
 
 
+static func detail(model: Node3D) -> int:
+	var at: Node=model
+	while at!=null:
+		if at.has_meta("sculpt_detail"):
+			return int(at.get_meta("sculpt_detail"))
+		at=at.get_parent()
+	return 0
+
+
 static func sphere(model: Node3D, pos: Vector3, size: Vector3, color: Color) -> MeshInstance3D:
 	var shape := SphereMesh.new()
 	shape.radius = 0.5
 	shape.height = 1.0
-	shape.radial_segments = 8
-	shape.rings = 5
+	var quality := detail(model) if maxf(size.x,maxf(size.y,size.z))>=0.13 else 0
+	shape.radial_segments = [8,14,20][quality]
+	shape.rings = [5,9,13][quality]
 	var node := mesh(model, shape, pos, color)
 	node.scale = size
 	return node
@@ -171,6 +182,7 @@ static func cylinder(model: Node3D, pos: Vector3, top: float, bottom: float, hei
 	shape.top_radius = top
 	shape.bottom_radius = bottom
 	shape.height = height
-	shape.radial_segments = 10
+	var quality := detail(model) if maxf(top,bottom)>=0.065 else 0
+	shape.radial_segments = [10,16,22][quality]
 	shape.rings=0
 	return mesh(model, shape, pos, color)

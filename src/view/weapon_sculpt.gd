@@ -46,6 +46,9 @@ static func sword(root: Node3D, length: float, broad: bool) -> void:
 
 static func shield(root: Node3D, knight: bool) -> void:
 	var center := Vector3(-0.33, 0.84, -0.24)
+	if knight:
+		ArmourShapes.heater_shield(root,center)
+		return
 	var shield_color := Color(0.32, 0.42, 0.53)
 	var r := 0.27 if knight else 0.23
 	var rim := MiniatureFactory.cylinder(root, center, r, r, 0.075, BRASS)

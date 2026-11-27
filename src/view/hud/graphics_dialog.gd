@@ -5,9 +5,9 @@ signal quality_changed
 var _choices: Array[Button]=[]
 var _description: Label
 const DETAILS := [
-	"Lower 3D resolution. No dynamic shadows or snow; fewer distant buildings. Recommended if your phone stutters.",
-	"Reduced 3D resolution with lighter shadows and snow. Full miniature detail. Default on phones.",
-	"Full 3D resolution, scenery, shadows and snowfall. Best on fast devices."
+	"Lower 3D resolution and original low-poly figures. No dynamic shadows or snow; fewer distant buildings. Recommended if your phone stutters.",
+	"Reduced 3D resolution with lighter shadows and snow. Enhanced miniature meshes and full-detail dossiers. Default on phones.",
+	"Full 3D resolution, highest-detail miniatures, scenery, shadows and snowfall. Best on fast devices."
 ]
 
 
@@ -41,4 +41,4 @@ func _describe(index: int) -> void:
 	for i in _choices.size():
 		_choices[i].text=("✓ " if i==index else "")+GraphicsQuality.NAMES[i]
 		_choices[i].disabled=i==index
-	_description.text="Interface stays sharp. Scenery density updates on the next battlefield."
+	_description.text="Interface stays sharp. Scenery and miniature mesh detail update on the next battlefield."

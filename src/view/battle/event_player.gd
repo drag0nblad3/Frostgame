@@ -181,7 +181,7 @@ func _animate_layered_move(v: FigureView,path: PackedVector3Array) -> void:
 	var t := create_tween()
 	for i in range(1,path.size()):
 		var destination := path[i]
-		var duration := maxf(0.01,path[i-1].distance_to(destination)*0.06)
+		var duration := maxf(0.01,path[i-1].distance_to(destination)*0.115)
 		t.tween_callback(v.face_toward.bind(destination))
 		t.tween_property(v,"position",destination,duration)
 	t.tween_callback(v.end_move)
@@ -199,7 +199,7 @@ func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 	for i in range(1, path.size()):
 		var destination := TableSpace.to_world(path[i], state.board.height_at(path[i]))
 		var start := TableSpace.to_world(path[i - 1], state.board.height_at(path[i - 1]))
-		var duration := maxf(0.01, start.distance_to(destination) * 0.06)
+		var duration := maxf(0.01, start.distance_to(destination) * 0.115)
 		t.tween_callback(v.face_toward.bind(destination))
 		t.tween_property(v, "position", destination, duration)
 	t.tween_callback(v.end_move)
@@ -220,10 +220,10 @@ func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell:
 		bolt.look_at(destination)
 	bolt.hide()
 	var t := create_tween()
-	t.tween_method(from.cast_pose if magic else from.shot_pose, 0.0, 0.75, 0.14)
+	t.tween_method(from.cast_pose if magic else from.shot_pose, 0.0, 0.88, 0.20).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	t.tween_callback(bolt.show)
 	t.tween_property(bolt, "position", destination, maxf(0.10,start.distance_to(destination)*0.035))
-	t.parallel().tween_method(from.cast_pose if magic else from.shot_pose, 0.75, 0.0, 0.15)
+	t.parallel().tween_method(from.cast_pose if magic else from.shot_pose, 0.88, 0.0, 0.23).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	t.tween_callback(bolt.queue_free)
 	t.tween_callback(BattleEffects.impact.bind(self,destination,color,damaging,magic))
 	if spell == "elemental_ball" and damaging:
@@ -237,14 +237,16 @@ func _animate_lunge(a: FigureView, b: FigureView,tied: bool=false) -> void:
 	var home := a.position
 	var toward := home.lerp(b.position, 0.35)
 	var t := create_tween()
-	t.tween_method(a.attack_pose, 0.0, -0.45, 0.12)
-	t.tween_property(a, "position", toward, 0.13)
-	t.parallel().tween_method(a.attack_pose, -0.45, 1.0, 0.13)
+	t.tween_method(a.attack_pose, 0.0, -0.45, 0.17).set_trans(Tween.TRANS_SINE)
+	t.parallel().tween_method(b.guard_pose,0.0,1.0,0.17)
+	t.tween_property(a, "position", toward, 0.16).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.parallel().tween_method(a.attack_pose, -0.45, 1.0, 0.16)
 	t.tween_callback(BattleEffects.clash.bind(self,toward.lerp(b.position,0.5)+Vector3.UP*0.85,b.position-home,tied))
-	t.tween_method(b.recoil_pose, 0.0, 1.0, 0.10)
+	t.tween_method(b.guard_pose,1.0,0.0,0.06)
+	t.tween_method(b.recoil_pose, 0.0, 0.35 if tied else 1.0, 0.12)
 	t.parallel().tween_property(a, "position", home, 0.20)
 	t.parallel().tween_method(a.attack_pose, 1.0, 0.0, 0.20)
-	t.tween_method(b.recoil_pose, 1.0, 0.0, 0.14)
+	t.tween_method(b.recoil_pose, 0.35 if tied else 1.0, 0.0, 0.18)
 	_wait_for(t)
 
 

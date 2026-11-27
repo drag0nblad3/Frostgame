@@ -39,11 +39,17 @@ static func toad(root: Node3D) -> void:
 		MiniatureFactory.sphere(root,eye,Vector3.ONE*0.23,skin)
 		MiniatureFactory.sphere(root,eye+Vector3(0,0.025,-0.09),Vector3(0.16,0.13,0.08),Color("d0b766"))
 		MiniatureFactory.box(root,eye+Vector3(0,0.025,-0.137),Vector3(0.11,0.033,0.02),DARK)
+		var hind := MiniaturePose.leg(root,1 if side<0 else 3,Vector3(side*0.25,0.32,0.20))
+		var first := root.get_child_count()
 		MiniatureFactory.sphere(root,Vector3(side*0.36,0.23,0.25),Vector3(0.36,0.34,0.53),skin.darkened(0.12))
+		MiniaturePose.attach(root,hind,first)
+		var fore := MiniaturePose.leg(root,0 if side<0 else 2,Vector3(side*0.30,0.37,-0.24))
+		first=root.get_child_count()
 		CreatureSculpt.limb(root,Vector3(side*0.30,0.37,-0.24),Vector3(side*0.39,0.10,-0.35),0.105,skin,0.70)
 		for i in 4:
 			var a := Vector3(side*0.38+(i-1.5)*0.045,0.07,-0.33)
 			CreatureSculpt.limb(root,a,a+Vector3((i-1.5)*0.035,-0.025,-0.16),0.025,skin.lightened(0.1),0.65)
+		MiniaturePose.attach(root,fore,first)
 		for i in 6:
 			var at := Vector3(side*(0.16+0.11*(i%2)),0.56-0.055*(i%2),0.38-i*0.12)
 			MiniatureFactory.sphere(root,at,Vector3.ONE*(0.07+0.02*(i%3)),ICE.darkened(0.18))

@@ -68,7 +68,7 @@ func set_figure(f: Figure, color: Color, school: String = "") -> void:
 	if is_instance_valid(_model):
 		_turntable.remove_child(_model)
 		_model.queue_free()
-	_model = MiniatureFactory.create(f, color, school)
+	_model = MiniatureFactory.create(f, color, school, 2 if tight_frame and GraphicsQuality.mode()>0 else GraphicsQuality.mode())
 	_turntable.add_child(_model)
 	_turntable.rotation.y = 0.0
 	_model_box = _bounds(_model, _model.transform)

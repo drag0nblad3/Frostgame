@@ -68,8 +68,11 @@ static func create(root: Node3D,f: Figure,faction: Color) -> void:
 		SoldierArmor.body(root,plate,heavy,dye)
 	MiniatureFactory.box(root,Vector3(0,0.74,-0.20),Vector3(0.49,0.085,0.095),LEATHER)
 	WeaponSculpt.metal(MiniatureFactory.box(root,Vector3(0,0.74,-0.255),Vector3(0.105,0.10,0.04),BRASS))
+	var head := MiniaturePose.joint(root,root,"Head",Vector3(0,1.20,0))
+	var head_first := root.get_child_count()
 	WizardHead.sculpt(root,skin,hair,index,false)
 	SoldierArmor.head(root,id,coat,dye)
+	MiniaturePose.attach(root,head,head_first)
 	SoldierKit.decorate(root,f,dye,coat)
 	WizardTailoring.satchel(root,posmod(index,4),LEATHER)
 

@@ -18,6 +18,13 @@ static func decorate(root: Node3D,id: String) -> void:
 	var bulk := 1.28 if bear else (1.10 if boar else (0.73 if rat else 1.0))
 	var height := 0.54 if bear else (0.44 if boar or rat else 0.56)
 	var width := 0.33 if bear or boar else (0.24 if cat else 0.22)
+	# Larger overlapping tufts give the winter coat a layered silhouette.
+	if MiniatureFactory.detail(root)>0 and not rat and not boar:
+		for side: float in [-1.0,1.0]:
+			for i in 5:
+				var a := Vector3(side*width*0.74,height+0.20,-0.38+i*0.085)*bulk
+				var b := a+Vector3(side*0.12,-0.12,0.13)*bulk
+				CreatureSculpt.limb(root,a,b,0.077*bulk,fur.lightened(0.09-0.025*(i%3)),0.07)
 	# A few sculpted fur planes along the shoulders rather than fine texture noise.
 	for side: float in [-1.0,1.0]:
 		for i in 3:

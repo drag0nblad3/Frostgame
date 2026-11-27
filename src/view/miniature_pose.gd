@@ -83,3 +83,14 @@ static func bend_leg(root: Node3D,index: int,angle: float) -> void:
 	var knee := root.get_node_or_null("Leg%d/Knee"%index) as Node3D
 	if knee!=null:
 		knee.rotation.x=angle
+
+
+## Move the headwear authored with the wardrobe, leaving shoulders and cape fixed.
+static func attach_headwear(root: Node3D,pivot: Node3D,first: int) -> void:
+	for child in root.get_children().slice(first):
+		if not child is MeshInstance3D or child.position.y<1.24:
+			continue
+		var original: Transform3D=child.transform
+		root.remove_child(child)
+		pivot.add_child(child)
+		child.transform=_relative(root,pivot).affine_inverse()*original

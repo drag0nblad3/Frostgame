@@ -4,38 +4,42 @@ extends RefCounted
 ## All surfaces remain batchable with the existing vertex-color pipeline.
 
 static func skirt(root: Node3D,coat: Color,lining: Color,hem: float,width: float,profile: int,split: bool) -> void:
+	var pivot := MiniaturePose.joint(root,root,"CoatHem",Vector3(0,0.85,0))
+	var first := root.get_child_count()
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	const PANELS := 18
+	var panels: int=[18,26,34][MiniatureFactory.detail(root)]
 	var rows := [0.88,0.72,lerpf(hem,0.72,0.45),hem]
 	var points: Array[Vector3] = []
 	for j in rows.size():
 		var t := float(j)/3.0
-		for i in PANELS+1:
+		for i in panels+1:
 			# A visible front opening on short coats.
-			var theta := lerpf(0.28 if split else 0.0,TAU-0.28 if split else TAU,float(i)/PANELS)
+			var theta := lerpf(0.28 if split else 0.0,TAU-0.28 if split else TAU,float(i)/panels)
 			var fold := cos(theta*9.0+profile*0.9)*0.032*t
 			var radius := lerpf(0.22,width,t)+fold
 			var y: float=rows[j]+0.025*sin(theta*3.0+profile)*t
 			points.append(Vector3(sin(theta)*radius,y,-cos(theta)*radius*0.78))
 	for j in rows.size()-1:
-		for i in PANELS:
-			var a := j*(PANELS+1)+i
-			var b := a+PANELS+1
+		for i in panels:
+			var a := j*(panels+1)+i
+			var b := a+panels+1
 			for k: int in [a,a+1,b,a+1,b+1,b]:
 				st.add_vertex(points[k])
 	st.generate_normals()
 	var node := MiniatureFactory.mesh(root,st.commit(),Vector3.ZERO,coat)
 	var mat: StandardMaterial3D=node.material_override
 	mat.cull_mode=BaseMaterial3D.CULL_DISABLED
-	for i in PANELS:
-		var a := points[3*(PANELS+1)+i]
-		var b := points[3*(PANELS+1)+i+1]
+	for i in panels:
+		var a := points[3*(panels+1)+i]
+		var b := points[3*(panels+1)+i+1]
 		CreatureSculpt.limb(root,a,b,0.017,coat.darkened(0.20),1.0)
 	if split:
-		for i in [0,PANELS]:
+		for i in [0,panels]:
 			for j in 3:
-				CreatureSculpt.limb(root,points[j*(PANELS+1)+i],points[(j+1)*(PANELS+1)+i],0.027,lining,1.0)
+				CreatureSculpt.limb(root,points[j*(panels+1)+i],points[(j+1)*(panels+1)+i],0.027,lining,1.0)
+
+	MiniaturePose.attach(root,pivot,first)
 
 
 static func torso(root: Node3D,coat: Color,lining: Color,profile: int,apprentice: bool) -> void:
