@@ -35,3 +35,19 @@ func test_foreground_cutaway_preserves_distant_city() -> void:
 	CityScenery.update_foreground(root,Vector3(18,40,-20),Vector2(36,36))
 	check(root.get_node("District0").visible)
 	root.free()
+
+
+func test_scenario_ground_changes_only_exterior_material() -> void:
+	var board:=BoardLoader.load_id("sunken_streets",TerrainDb.load_file())
+	var floor:=StoneFinish.floor_surface(board,"sunken_streets")
+	var ground:=DistrictGround.build(board,floor.material_override,"sunken_streets")
+	var original:=floor.material_override as ShaderMaterial
+	check_eq(original.get_shader_parameter("exterior_style"),0)
+	for child in ground.get_children():
+		var mat:=child.material_override as ShaderMaterial
+		check(mat!=original)
+		check_eq(mat.shader,original.shader)
+		check_eq(mat.get_shader_parameter("exterior_style"),1)
+		check_eq(mat.get_shader_parameter("footprint_size"),board.size)
+	ground.free()
+	floor.free()

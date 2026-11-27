@@ -2,7 +2,7 @@ extends TestCase
 
 
 func test_every_named_palette_has_a_distinct_exterior() -> void:
-	var palettes:=JsonFile.read("res://data/visual_palettes.json")
+	var palettes: Dictionary=JsonFile.read("res://data/visual_palettes.json")
 	var seen: Dictionary={}
 	for id: String in palettes:
 		if id.begins_with("_"):
