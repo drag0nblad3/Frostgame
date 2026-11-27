@@ -459,13 +459,13 @@ func _menu_action(id: int) -> void:
 			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)
 
 
-func _open_journal(timeline: Array[Dictionary]=[]) -> void:
+func _open_journal(timeline: Array[Dictionary]=[],frames: Array[Dictionary]=[]) -> void:
 	if ModalInput.blocked():
 		return
 	if _journal==null:
 		_journal=BattleJournal.new()
 		add_child(_journal)
-	_journal.open(_history,timeline)
+	_journal.open(_history,timeline,frames)
 
 
 func select_scenario(id: String) -> void:
