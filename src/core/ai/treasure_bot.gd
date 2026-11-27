@@ -115,7 +115,7 @@ static func _nearest(c: GameController, f: Figure) -> TreasureToken:
 
 static func _escape(c: GameController, f: Figure) -> bool:
 	if RealityCracks.id(c.state)==12:
-		if RealityCracks.exit_center(c):
+		if BattleScenarioAction.execute(c,"reality_exit"):
 			return true
 		if not c.can_move():
 			return false
