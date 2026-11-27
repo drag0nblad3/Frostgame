@@ -86,8 +86,7 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	f.pos=layout.point(n)
 	f.elevation=layout.height(n)
 	f.surface_id=layout.surface_id(n)
-	f.actions_left-=1
-	f.moves_taken+=1
+	c.spend_move(f)
 	c.emit("layered_move",{"id":f.id,"path":plan["path"],"surfaces":[old,f.surface_id],"cost":plan["cost"],"jump":true})
 	LayeredFall.apply(c,f,float(plan["fall"]),f)
 	ScenarioNull.enter(c,f)

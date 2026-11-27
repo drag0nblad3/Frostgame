@@ -18,6 +18,8 @@ var _pieces := {}
 var _decoration: Node3D
 var _ground: Node3D
 var _floor: MeshInstance3D
+var _floor_art: LayeredGatehouseArt
+var _floor_revision := 0
 var _boundary_view: Node3D
 var _boundary_key := ""
 var _ground_key := ""
@@ -64,6 +66,8 @@ func build(board: Board) -> void:
 	_boundary_view=null
 	_boundary_key=""
 	_floor=null
+	_floor_art=null
+	_floor_revision=0
 	_decoration=null
 	_ground_key=""
 	_decoration_key=""
@@ -97,6 +101,13 @@ func build(board: Board) -> void:
 		baked.free()
 
 
+func show_floor(layout: FloorLayout,id: String) -> void:
+	if not is_instance_valid(_floor_art):
+		return
+	var index:=layout.index_of(id)
+	_floor_art.cut_at(INF if index<0 else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level))
+
+
 func scenery_ready() -> bool:
 	return _city_next>=4
 
@@ -106,6 +117,17 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 		build(board)
 		return
 	var scenario := board.id if scenario_id.is_empty() else scenario_id
+	if not board.floor_layout.is_empty():
+		var revision:=board.floor_layout.hash()
+		if not is_instance_valid(_floor_art) or _floor_revision!=revision:
+			_remove(_floor_art)
+			_floor_art=LayeredGatehouseArt.new()
+			add_child(_floor_art)
+			_floor_art.build(FloorLayout.from_dict(board.floor_layout),false)
+			_floor_revision=revision
+	elif is_instance_valid(_floor_art):
+		_remove(_floor_art)
+		_floor_art=null
 	var boundary_key := str(board.boundaries)+str(board.edge_links)+str(board.void_regions)
 	if _boundary_view==null or _boundary_key!=boundary_key:
 		_remove(_boundary_view)

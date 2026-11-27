@@ -78,9 +78,7 @@ static func _apply_move(c: GameController, f: Figure, path: PackedVector2Array, 
 	var engaged := Contact.in_combat(c.state.figures,f)
 	if not intercept.is_empty():
 		path.resize(int(intercept["index"]) + 1)
-	f.spell_effects.erase("petrify")
-	f.actions_left -= 1
-	f.moves_taken += 1
+	c.spend_move(f)
 	if not c._magic.terrain.travel(f, path, cost):
 		if f.in_play():
 			CreatureSenses.reveal_contacts(c,f)

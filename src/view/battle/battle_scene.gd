@@ -45,6 +45,8 @@ var _launch_intent := ""
 var _title_prompt: AcceptDialog
 var _picker: SkirmishPicker
 var _move_preview_tween: Tween
+var _visible_floor := ""
+var _floor_revision := 0
 
 
 func _ready() -> void:
@@ -66,6 +68,7 @@ func _ready() -> void:
 	hud.auto_toggled.connect(func(on: bool) -> void: auto_play = on)
 	hud.watch_toggled.connect(set_watch_mode)
 	hud.action_pressed.connect(_on_action)
+	hud.floor_selected.connect(_select_floor)
 	_briefing = ScenarioDialog.new()
 	add_child(_briefing)
 	_briefing.start_requested.connect(func() -> void:
@@ -118,7 +121,14 @@ func _ready() -> void:
 	if get_tree().root.has_meta("frostgame_launch"):
 		_launch_intent = str(get_tree().root.get_meta("frostgame_launch"))
 		get_tree().root.remove_meta("frostgame_launch")
-	if _launch_intent=="training":
+	if get_tree().root.has_meta("layered_board"):
+		var id:=str(get_tree().root.get_meta("layered_board"))
+		get_tree().root.remove_meta("layered_board")
+		var layered:=LayeredBattle.create(_figures,_terrain,17,id)
+		layered.state.reaction_side=player_side
+		_active_scenario_id="silent_tower" if id=="layered_silent_tower" else "treasure_skirmish"
+		_attach_battle(layered,false)
+	elif _launch_intent=="training":
 		_launch_intent=""
 		_start_training(0)
 	elif _launch_intent=="resume":
@@ -288,6 +298,10 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	controller.event_emitted.connect(_relay)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
 	player_input.move_preview_changed.connect(_move_preview)
+	_visible_floor=""
+	_floor_revision=state.board.floor_layout.hash()
+	hud.set_floors(FloorLayout.from_dict(state.board.floor_layout) if not state.board.floor_layout.is_empty() else null)
+	_rig.frame_board(state.board.size)
 	if start:
 		controller.start_game()
 	else:
@@ -387,7 +401,7 @@ func _human_turn() -> bool:
 
 
 func _on_event(event: GameEvent) -> void:
-	if event.type in ["terrain_changed","boundary_changed"] and not _terrain_pending:
+	if event.type in ["terrain_changed","boundary_changed","floor_layout_changed"] and not _terrain_pending:
 		_terrain_pending=true
 		call_deferred("_sync_terrain")
 	_dirty = true
@@ -400,6 +414,7 @@ func _refresh() -> void:
 	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress() and not controller.awaiting_reaction(), true)
 	if _human_turn():
 		player_input.refresh()
+		_update_floor_view()
 	else:
 		player_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
 
@@ -432,7 +447,41 @@ func _on_plan_drag(at: Vector2) -> void:
 		player_input.plan_drag(at)
 
 
-func _move_preview(id: int,at: Vector2,active: bool) -> void:
+func _select_floor(id: String) -> void:
+	if controller==null or _bots.busy() or not player.idle() or controller.state.board.floor_layout.is_empty():
+		return
+	_visible_floor=id
+	player_input.select_floor(id)
+	_update_floor_view()
+
+
+func _update_floor_view() -> void:
+	if controller.state.board.floor_layout.is_empty() or not player.idle():
+		return
+	var layout:=FloorLayout.from_dict(controller.state.board.floor_layout)
+	var revision:=controller.state.board.floor_layout.hash()
+	if revision!=_floor_revision:
+		_floor_revision=revision
+		if layout.index_of(_visible_floor)<0:
+			_visible_floor=""
+		hud.set_floors(layout,_visible_floor)
+	_board_view.show_floor(layout,_visible_floor)
+	for f in controller.state.figures:
+		if not player.views.has(f.id):
+			continue
+		var surface:=f.surface_id
+		if player_input.move_plan.actor==f.id and player_input.move_plan.destination is Vector3i:
+			surface=layout.surface_id(player_input.move_plan.destination)
+		player.views[f.id].visible=f.in_play() and (_visible_floor.is_empty() or _visible_floor==surface)
+	for t in controller.state.treasures:
+		if not player.treasure_views.has(t.id):
+			continue
+		var carrier:=controller.state.figure(t.carrier_id)
+		var surface:=carrier.surface_id if carrier!=null else t.surface_id
+		player.treasure_views[t.id].visible=t.unresolved() and (_visible_floor.is_empty() or _visible_floor==surface)
+
+
+func _move_preview(id: int,at: Vector3,active: bool) -> void:
 	if not player.views.has(id):
 		return
 	var f := controller.state.figure(id)
@@ -444,12 +493,13 @@ func _move_preview(id: int,at: Vector2,active: bool) -> void:
 	# the exact authoritative position before event animations begin.
 	if _move_preview_tween!=null and _move_preview_tween.is_valid():
 		_move_preview_tween.kill()
-	var point := TableSpace.to_world(at,controller.state.board.height_at(at)) if active else TableSpace.to_world(f.pos,f.elevation)
+	var point := at if active else TableSpace.to_world(f.pos,f.elevation)
 	if active and view.position.distance_to(point)<=1.25:
 		_move_preview_tween=create_tween()
 		_move_preview_tween.tween_property(view,"position",point,0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	else:
 		view.position=point
+	_update_floor_view()
 
 
 func _update_status() -> void:

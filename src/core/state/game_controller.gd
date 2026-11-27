@@ -106,6 +106,23 @@ func cancel_floor_bridge() -> bool:
 	return LayeredBridge.cancel(self)
 
 
+## Movement action bookkeeping is independent of the geometry implementation.
+func spend_move(f: Figure) -> void:
+	f.spell_effects.erase("petrify")
+	f.actions_left-=1
+	f.moves_taken+=1
+
+
+## Canonical interface for player-facing movement. A route retains its
+## surface identity, even if two endpoints share the same table coordinates.
+func movement_options(mode: String="move") -> BattleMovementOptions:
+	return BattleMovementOptions.query(self,mode)
+
+
+func commit_movement(mode: String,node: Variant) -> bool:
+	return BattleMovementOptions.commit(self,mode,node)
+
+
 func reach() -> MoveReach:
 	return ControllerMovement.reach(self)
 

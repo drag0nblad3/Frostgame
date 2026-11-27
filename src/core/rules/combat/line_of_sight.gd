@@ -102,6 +102,8 @@ static func _ray_hits_piece(board: Board, from: Vector2, to: Vector2, piece: Ter
 static func _ray_hits_ground(board: Board,from: Vector2,to: Vector2) -> bool:
 	var a := board.height_at(from)+1.5
 	var b := board.height_at(to)+1.0
+	if board.ground_max<=minf(a,b)+0.001:
+		return false
 	var steps := maxi(1,ceili(from.distance_to(to)/0.10))
 	for i in range(1,steps):
 		var t := float(i)/steps

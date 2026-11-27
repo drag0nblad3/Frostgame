@@ -54,9 +54,7 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 	for step in reachable.path_to(node):
 		path.append(layout.world(step))
 		surfaces.append(layout.surface_id(step))
-	f.spell_effects.erase("petrify")
-	f.actions_left-=1
-	f.moves_taken+=1
+	c.spend_move(f)
 	f.pos=layout.point(node)
 	f.elevation=layout.height(node)
 	f.surface_id=layout.surface_id(node)
