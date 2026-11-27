@@ -22,3 +22,21 @@ static func hold(event: GameEvent,next: GameEvent,notice: bool) -> float:
 	if next!=null and beat(event)=="consequence" and beat(next)=="consequence":
 		return 0.45
 	return 0.8
+
+
+## Only adjacent independent consequences can overlap. A second event on
+## the same miniature, defeat, movement or a new roll is a strict barrier.
+static func batch_size(queue: Array[GameEvent]) -> int:
+	if queue.is_empty():
+		return 0
+	var seen := {}
+	var count := 0
+	for event in queue:
+		var id := int(event.data.get("id",-1))
+		if event.type not in ["damage","heal","magic_impact"] or id<0 or seen.has(id):
+			break
+		seen[id]=true
+		count+=1
+		if count>=4:
+			break
+	return maxi(1,count)
