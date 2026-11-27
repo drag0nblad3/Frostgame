@@ -171,6 +171,8 @@ func force_floor(t: Figure,direction: Vector2,distance: float,ivory_caster: Figu
 	if route.is_empty():
 		return
 	var path: PackedVector3Array=route["path"]
+	if route.get("void_at")!=null and RedKingBridge.forced_void(c,t,route["void_at"],Vector2(path[-1].x,path[-1].z),route["node"]):
+		return
 	var seen: Dictionary={}
 	for i in range(1,path.size()):
 		var from:=Vector2(path[i-1].x,path[i-1].z)
@@ -182,6 +184,12 @@ func force_floor(t: Figure,direction: Vector2,distance: float,ivory_caster: Figu
 			return
 	if path.size()>1:
 		move_floor(t,route["node"],false,true,"",path)
+	if t.in_play() and route.get("blocked_at")!=null:
+		var blocked: Vector3=route["blocked_at"]
+		var last: Vector3=path[-1]
+		RedKingFire.portal_contact(c,t,Vector2(last.x,last.z),Vector2(blocked.x,blocked.z),seen,last.y,blocked.y)
+		if RedKingSinkhole.touches(c.state,Vector2(blocked.x,blocked.z),blocked.y) and not RedKingSinkhole.touches(c.state,t.pos,t.elevation):
+			RedKingSinkhole.contact(c,t,true)
 	if route["collision"] and ivory_caster!=null and t.in_play():
 		c.emit("gear_used",{"id":ivory_caster.id,"target":t.id,"gear":"gear_rk_ivory_hand","damage":3})
 		c._hurt(t,3,ivory_caster,false)

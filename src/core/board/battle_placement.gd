@@ -20,7 +20,7 @@ static func nodes(board: Board,center: Vector2,radius: float,index: int=-1) -> A
 	return out
 
 
-static func floor_open(s: GameState,n: Vector3i,mover: Figure=null,radius: float=Figure.BASE_RADIUS,body: float=1.6,allow_combat: bool=true,ignore: Figure=null,ring_side: int=-1) -> bool:
+static func floor_open(s: GameState,n: Vector3i,mover: Figure=null,radius: float=Figure.BASE_RADIUS,body: float=1.6,allow_combat: bool=true,ignore: Figure=null,ring_side: int=-1,ignore_ids: Array=[] ) -> bool:
 	var layout:=s.board.floor_geometry()
 	if not layout.standable(n,radius,body) or layout.surface_id(n).begins_with("climb:"):
 		return false
@@ -31,7 +31,7 @@ static func floor_open(s: GameState,n: Vector3i,mover: Figure=null,radius: float
 	if TerrainMagic.ward_blocks(s.board,mover,at,h):
 		return false
 	for other in s.figures:
-		if other==mover or other==ignore or not other.in_play() or (mover!=null and other.ring_side!=mover.ring_side) or (mover==null and ring_side>=0 and other.ring_side!=ring_side) or absf(other.elevation-h)>=0.5:
+		if other==mover or other==ignore or ignore_ids.has(other.id) or not other.in_play() or (mover!=null and other.ring_side!=mover.ring_side) or (mover==null and ring_side>=0 and other.ring_side!=ring_side) or absf(other.elevation-h)>=0.5:
 			continue
 		var distance:=other.pos.distance_to(at)
 		if distance<(Contact.OVERLAP if is_equal_approx(radius,Figure.BASE_RADIUS) else Figure.BASE_RADIUS+radius):
@@ -111,3 +111,21 @@ static func nearest_ground(s: GameState,center: Vector2,radius: float,accept: Ca
 		best=n
 		score=d
 	return best
+
+
+static func ground_at(s: GameState,at: Vector2,ring_side: int=-1) -> Variant:
+	var layout:=s.board.floor_geometry()
+	var allowed: Array=s.board.floor_layout.get("spawn_surfaces",s.board.floor_layout.get("exit_surfaces",["street"]))
+	for n in layout.nodes_at(at):
+		if layout.point(n).is_equal_approx(at) and allowed.has(layout.surface_id(n)) and floor_open(s,n,null,Figure.BASE_RADIUS,1.6,true,null,ring_side):
+			return n
+	return null
+
+
+## A horizontal scenario token displacement must not leave its supporting deck.
+static func token_on_support(s: GameState,surface: String,desired: Vector2) -> Variant:
+	var layout:=s.board.floor_geometry()
+	var n:=layout.node(surface,desired)
+	if layout.standable(n,TreasureRules.TOKEN_RADIUS,0.5) and not s.board.over_void(layout.point(n),TreasureRules.TOKEN_RADIUS):
+		return n
+	return null

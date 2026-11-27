@@ -11,6 +11,9 @@ static func play(c: GameController) -> bool:
 
 
 static func perform(c: GameController,f: Figure) -> void:
+	if RedKingHill.is_herald(c.state,f):
+		RedKingHill.play_herald(c,f)
+		return
 	if f.side<0 and (RedKingRingworld.creature_turn(c,f) or RedKingInvestigations.dormant(c.state,f) or RedKingSquatter.dormant(c,f) or ScenarioGenie.flee(c,f)):
 		return
 	if not c.awaiting_reaction() and _cape(c,f):
@@ -98,7 +101,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 			if LayeredLoot.is_exit(c.state,layout,n,f.side):
 				goal=n
 				best=distance
-		elif f.side>=0 and not f.def.traits.has("animal"):
+		elif f.side>=0 and not f.def.traits.has("animal") and not RuleHooks.any("cannot_carry_treasure",[c.state,f]):
 			for token in c.state.treasures:
 				if not token.on_ground() or token.ring_side!=f.ring_side or token.surface_id!=layout.surface_id(n):
 					continue
@@ -123,7 +126,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 			if distance>=best or n==reach.start:
 				continue
 			for enemy in c.state.figures:
-				if not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side or WormRider.ignored(f,enemy) or RingworldBot.protected_key(c.state,f,enemy):
+				if not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side or WormRider.ignored(f,enemy) or RingworldBot.protected_key(c.state,f,enemy) or (RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(enemy)):
 					continue
 				if (quarry!=null and enemy!=quarry) or (quarry==null and not IllusionRules.visible_to(c.state.figures,f,enemy)):
 					continue

@@ -30,6 +30,8 @@ static func destination(s: GameState,f: Figure,desired: Vector2) -> Vector2:
 static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 	if not f.in_play():
 		return false
+	if RedKingBridge.forced_void(c,f,desired,f.pos):
+		return true
 	if not c.state.board.floor_layout.is_empty():
 		if RedKingHerded.contact(c,f,desired) or RedKingVeil.touch(c,f,desired):
 			return true
@@ -37,8 +39,6 @@ static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 		if node==null:
 			return false
 		return apply_floor(c,f,node)
-	if RedKingBridge.forced_void(c,f,desired,f.pos):
-		return true
 	var at := destination(c.state,f,desired)
 	if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
 		return true
@@ -63,7 +63,7 @@ static func relocate(c: GameController,f: Figure,desired: Vector2) -> bool:
 
 ## Forced relocation is not a voluntary movement action. Prefer a legal
 ## location on the original support, or a coplanar adjacent support.
-static func destination_floor(s: GameState,f: Figure,desired: Vector2,accept: Callable=Callable()) -> Variant:
+static func destination_floor(s: GameState,f: Figure,desired: Vector2,accept: Callable=Callable(),ignore_ids: Array=[],reserved: Array=[]) -> Variant:
 	var layout:=s.board.floor_geometry()
 	var margin:=Vector2.ONE*Figure.BASE_RADIUS
 	var target:=desired.clamp(margin,s.board.size-margin)
@@ -74,7 +74,15 @@ static func destination_floor(s: GameState,f: Figure,desired: Vector2,accept: Ca
 		if at.distance_to(target)>6.001 or absf(layout.height(n)-f.elevation)>=0.5 or (accept.is_valid() and not accept.call(at)):
 			continue
 		var value:=at.distance_squared_to(target)+(0.001 if layout.surface_id(n)!=f.surface_id else 0.0)
-		if value<score and BattlePlacement.floor_open(s,n,f):
+		if value>=score or not BattlePlacement.floor_open(s,n,f,Figure.BASE_RADIUS,1.6,true,null,-1,ignore_ids):
+			continue
+		var blocked:=false
+		for reservation: Dictionary in reserved:
+			var world: Vector3=reservation["world"]
+			if int(reservation["ring"])==f.ring_side and absf(world.y-layout.height(n))<0.5 and Vector2(world.x,world.z).distance_to(at)<Contact.OVERLAP:
+				blocked=true
+				break
+		if not blocked:
 			best=n
 			score=value
 	return best
@@ -101,4 +109,38 @@ static func apply_floor(c: GameController,f: Figure,n: Vector3i) -> bool:
 	RedKingMind.collect(c,f,f.pos,f.pos,f.elevation,f.elevation)
 	if f.in_play():
 		c._magic.terrain.trigger_landing(f)
+	return true
+
+
+## Plan all simultaneous shifts before mutating figures, so no participant
+## blocks another's vacated position and no two landings overlap.
+static func group_floor(c: GameController,figures: Array[Figure],targets: Dictionary) -> bool:
+	var s:=c.state
+	var layout:=s.board.floor_geometry()
+	var ids: Array[int]=[]
+	for f in figures:
+		ids.append(f.id)
+	var planned: Dictionary={}
+	var reserved: Array=[]
+	var origins: Dictionary={}
+	for f in figures:
+		var desired: Vector2=targets[f.id]
+		var n: Variant=destination_floor(s,f,desired,Callable(),ids,reserved)
+		if n==null:
+			return false
+		planned[f.id]=n
+		reserved.append({"world":layout.world(n),"ring":f.ring_side})
+		origins[f.id]={"world":Vector3(f.pos.x,f.elevation,f.pos.y),"surface":f.surface_id}
+	for f in figures:
+		var n: Vector3i=planned[f.id]
+		f.pos=layout.point(n)
+		f.elevation=layout.height(n)
+		f.surface_id=layout.surface_id(n)
+		f.disengaged.clear()
+	for f in figures:
+		for other in s.figures:
+			other.disengaged.erase(f.id)
+		var old: Dictionary=origins[f.id]
+		var path:=PackedVector3Array([old["world"],Vector3(f.pos.x,f.elevation,f.pos.y)])
+		c.emit("layered_move",{"id":f.id,"path":path,"surfaces":[old["surface"],f.surface_id],"cost":0.0,"teleport":true})
 	return true

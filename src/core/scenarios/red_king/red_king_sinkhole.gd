@@ -17,8 +17,15 @@ static func distance(s: GameState,at: Vector2,radius: float=Figure.BASE_RADIUS) 
 	return maxf(0.0,at.distance_to(center(s))-RADIUS-radius)
 
 
-static func touches(s: GameState,at: Vector2) -> bool:
-	return active(s) and distance(s,at)<=0.001
+static func touches(s: GameState,at: Vector2,height: float=NAN) -> bool:
+	if not active(s) or distance(s,at)>0.001:
+		return false
+	if s.board.floor_layout.is_empty() or is_nan(height):
+		return true
+	for p in s.board.pieces:
+		if p.kind.id=="red_king_sinkhole_orb":
+			return height<p.base_height+p.kind.height and height+1.6>p.base_height
+	return height<3.0 and height+1.6>0.0
 
 
 static func casting_modifier(s: GameState,f: Figure) -> int:
@@ -29,7 +36,7 @@ static func casting_modifier(s: GameState,f: Figure) -> int:
 
 
 static func contact(c: GameController,f: Figure,forced: bool=false) -> void:
-	if not active(c.state) or not f.in_play() or (not forced and not touches(c.state,f.pos)):
+	if not active(c.state) or not f.in_play() or (not forced and not touches(c.state,f.pos,f.elevation)):
 		return
 	ScenarioNull.cancel_spells(c,f)
 	if not f.in_play():
@@ -85,9 +92,14 @@ static func pull(c: GameController,f: Figure,resist: String="") -> void:
 			return
 	var origin := f.pos
 	var direction := (center(s)-origin).normalized()
-	if direction.is_zero_approx() or touches(s,origin):
+	if direction.is_zero_approx() or touches(s,origin,f.elevation):
 		return
 	var target := origin+direction*minf(1.0,distance(s,origin))
+	if not s.board.floor_layout.is_empty():
+		var route:=FloorDisplacement.trace(c,f,direction,origin.distance_to(target),true)
+		if not route.is_empty() and route["path"].size()>1:
+			ForcedRelocation.apply_floor(c,f,route["node"])
+		return
 	var last := origin
 	for i in range(1,5):
 		var at := origin.lerp(target,float(i)/4.0)
@@ -179,8 +191,13 @@ static func _finish_pull(c: GameController) -> void:
 		if d<=1.0:
 			c._loot.lose(token)
 		else:
-			token.pos+=(center(s)-token.pos).normalized()
-			c.emit("treasure_moved",{"treasure":token.id,"at":token.pos})
+			var desired:=token.pos+(center(s)-token.pos).normalized()
+			if s.board.floor_layout.is_empty():
+				c._loot.relocate_ground(token,desired)
+			else:
+				var n: Variant=BattlePlacement.token_on_support(s,token.surface_id,desired)
+				if n!=null:
+					c._loot.relocate_ground(token,s.board.floor_geometry().point(n),token.surface_id)
 	_respawn(c)
 
 
@@ -188,6 +205,25 @@ static func _respawn(c: GameController) -> void:
 	var s := c.state
 	for dead in s.figures.duplicate():
 		if dead.original_side>=0 or dead.def.id!="nullman" or not dead.out_of_action or dead.spell_effects.has("sinkhole_replaced") or c.dice.d20()<17:
+			continue
+		if not s.board.floor_layout.is_empty():
+			var layout:=s.board.floor_geometry()
+			var best_floor: Variant=null
+			var value:=INF
+			for n in BattlePlacement.nearby_floor(s,center(s),0.0,3.0):
+				var at:=layout.point(n)
+				var radius:=at.distance_to(center(s))
+				if radius<2.0-0.001:
+					continue
+				for target in s.figures:
+					if target.side>=0 and target.in_play():
+						var score:=at.distance_squared_to(target.pos)+100.0*(radius-2.0)
+						if score<value:
+							value=score
+							best_floor=n
+			if best_floor!=null:
+				dead.spell_effects["sinkhole_replaced"]=true
+				c._encounters._spawn_on_floor("nullman",best_floor)
 			continue
 		var best: Variant=null
 		var score := INF

@@ -84,6 +84,15 @@ static func _finish_turn(c: GameController) -> void:
 static func wander(c: GameController,npc: Figure,direction: Vector2) -> void:
 	var s := c.state
 	var start := npc.pos
+	if not s.board.floor_layout.is_empty():
+		var route:=FloorDisplacement.trace(c,npc,direction,6.0,true)
+		if not route.is_empty() and route["path"].size()>1:
+			c._magic.movement.move_floor(npc,route["node"],false,true,"",route["path"])
+		if npc.in_play() and TreasureRules.edge_distance(s.board,npc.pos)<=Figure.BASE_RADIUS+0.01 and not s.board.contains(npc.pos+direction*0.5,Figure.BASE_RADIUS):
+			npc.exited=true
+			c.emit("exit",{"id":npc.id})
+			c.emit("ryce_escaped",{"id":npc.id})
+		return
 	var last := start
 	var travelled := 0.0
 	for i in range(1,25):
@@ -130,14 +139,20 @@ static func reality_crack(c: GameController,horizontal: bool) -> void:
 			origins[f.id]=f.pos
 	# Reserve the transformed positions simultaneously before resolving
 	# blocked landings, preserving adjacent combat pairs where terrain permits.
-	for f in moving:
-		f.pos=s.board.size-f.pos
-		f.elevation=s.board.height_at(f.pos)
-	for f in moving:
-		var intended := f.pos
-		f.pos=ForcedRelocation.destination(s,f,intended)
-		f.elevation=s.board.height_at(f.pos)
-		c.emit("forced_relocation",{"id":f.id,"from":origins[f.id],"at":f.pos,"height":f.elevation})
+	if not s.board.floor_layout.is_empty():
+		var targets: Dictionary={}
+		for f in moving:
+			targets[f.id]=s.board.size-f.pos
+		ForcedRelocation.group_floor(c,moving,targets)
+	else:
+		for f in moving:
+			f.pos=s.board.size-f.pos
+			f.elevation=s.board.height_at(f.pos)
+		for f in moving:
+			var intended := f.pos
+			f.pos=ForcedRelocation.destination(s,f,intended)
+			f.elevation=s.board.height_at(f.pos)
+			c.emit("forced_relocation",{"id":f.id,"from":origins[f.id],"at":f.pos,"height":f.elevation})
 	for side in s.side_count():
 		for f in s.side_figures(side):
 			if f.def.role in ["wizard","apprentice"]:

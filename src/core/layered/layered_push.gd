@@ -26,6 +26,8 @@ static func destination(c: GameController,own: bool,distance: float=1.0) -> Vari
 	if absf(layout.point(node).distance_to(f.pos)-distance)>0.26:
 		return null
 	at=layout.point(node)
+	if RedKingBridge.active(s) and s.board.over_void(at,Figure.BASE_RADIUS):
+		return node
 	if ScenarioObjectives.inside_well(s,at,f.elevation):
 		return node
 	var steps := maxi(4,ceili(f.pos.distance_to(at)*4.0))
@@ -52,6 +54,9 @@ static func apply(c: GameController,own: bool,distance: float=1.0) -> bool:
 	var other := s.figure(s.push_loser if own else s.push_winner)
 	var layout := FloorLayout.from_dict(s.board.floor_layout)
 	var from := Vector3(f.pos.x,f.elevation,f.pos.y)
+	if RedKingBridge.forced_void(c,f,layout.point(node),f.pos):
+		c._displacement.clear()
+		return true
 	if RedKingHerded.contact(c,f,layout.point(node)) or RedKingVeil.touch(c,f,layout.point(node)):
 		c._displacement.clear()
 		return true
