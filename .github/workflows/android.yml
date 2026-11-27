@@ -93,6 +93,14 @@ jobs:
           set -o pipefail
           godot --headless --import 2>&1 | tee "$RUNNER_TEMP/import.log"
           ! grep -E "SCRIPT ERROR|Parse Error" "$RUNNER_TEMP/import.log"
+      - name: Bake visual resources
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb xauth libgl1-mesa-dri
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 320x240 -s tools/bake_visuals.gd 2>&1 | tee "$RUNNER_TEMP/bake.log"
+          ! grep -E "SCRIPT ERROR|Parse Error|Visual bake failed|SHADER ERROR" "$RUNNER_TEMP/bake.log"
+          godot --headless --import
       - name: Export APK
         run: |
           set -euo pipefail
@@ -109,6 +117,9 @@ jobs:
           grep -Fxq 'assets/data/figures.json' "$RUNNER_TEMP/apk-files.txt"
           grep -Fxq 'assets/data/scenarios/underground_library.json' "$RUNNER_TEMP/apk-files.txt"
           grep -Fxq 'assets/data/scenarios/red_king_ringworld.json' "$RUNNER_TEMP/apk-files.txt"
+          grep -Eq '^assets/assets/baked/city/.*\.scn$' "$RUNNER_TEMP/apk-files.txt"
+          grep -Eq '^assets/assets/baked/miniatures/.*\.scn$' "$RUNNER_TEMP/apk-files.txt"
+          grep -Eq '^assets/assets/baked/terrain/.*\.scn$' "$RUNNER_TEMP/apk-files.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: Frostgame-Android

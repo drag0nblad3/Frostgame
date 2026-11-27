@@ -37,7 +37,14 @@ static func preview(bi: BattleInput) -> void:
 
 	if bi.c.state.group.in_progress():
 		s.hint = ("GROUP: Movement · " if bi.c.state.group.movement_pass() else "GROUP: Second action · ") + s.hint
-	bi.hud.set_actions(bi.available, bi.mode, s.hint)
+	var action_info:=CombatHudInfo.action(bi,f)
+	if not action_info.is_empty():
+		s.hint=action_info+"\n"+s.hint
+	if bi.mode in ["spell_target","spell_point","counter_select","treasure_spell","treasure_destination","leap_destination","swap_second"] and bi.c.state.spell_catalog.has(bi.selected_spell):
+		var info: Dictionary=bi.c.state.spell_catalog[bi.selected_spell]
+		var tn:=int(bi.c.state.spellbooks.get(f.side,{}).get(bi.selected_spell,info["number"])) if f!=null else int(info["number"])
+		s.hint="%s · TN %d — %s"%[info["name"],tn,s.hint]
+	bi.hud.set_actions(bi.available,bi.mode,s.hint)
 
 
 

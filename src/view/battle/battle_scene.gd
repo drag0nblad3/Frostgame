@@ -115,10 +115,19 @@ func _ready() -> void:
 	add_child(_markers)
 	_sites = ScenarioMarkers.new()
 	add_child(_sites)
-	new_game(0)
 	if get_tree().root.has_meta("frostgame_launch"):
 		_launch_intent = str(get_tree().root.get_meta("frostgame_launch"))
 		get_tree().root.remove_meta("frostgame_launch")
+	if _launch_intent=="training":
+		_launch_intent=""
+		_start_training(0)
+	elif _launch_intent=="resume":
+		_launch_intent=""
+		_resume_battle()
+		if controller==null:
+			new_game(0)
+	else:
+		new_game(0)
 
 
 func _open_launch_intent() -> void:
@@ -207,7 +216,7 @@ func _open_briefing(start: bool) -> void:
 	_briefing.show_briefing(_scenario_id if start else _active_scenario_id, controller.state if controller != null else null, start)
 
 
-func new_game(seed_value: int) -> void:
+func new_game(seed_value: int,prepared: GameState=null) -> void:
 	if not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
 		_scenario_id=SCENARIO
 	if _training >= 0:
@@ -217,13 +226,17 @@ func new_game(seed_value: int) -> void:
 	_training_failed = false
 	hud.set_training(-1, false)
 	_active_scenario_id = _scenario_id
-	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
-	if _campaign_battle:
-		data["warbands"][0] = _campaign.deployment()
-		data["reality_cracks"]=_campaign.data.get("reality_cracks",false)
-	elif not _roster.is_empty():
-		data["warbands"][0] = _roster.duplicate(true)
-	var state := ScenarioLoader.from_dict(data, _figures, _terrain)
+	var began := Time.get_ticks_usec()
+	var state := prepared
+	if state==null:
+		var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
+		if _campaign_battle:
+			data["warbands"][0] = _campaign.deployment()
+			data["reality_cracks"]=_campaign.data.get("reality_cracks",false)
+		elif not _roster.is_empty():
+			data["warbands"][0] = _roster.duplicate(true)
+		state=ScenarioLoader.from_dict(data,_figures,_terrain)
+	print("Map load: rules state %.1f ms (reused=%s)"%[float(Time.get_ticks_usec()-began)/1000.0,prepared!=null])
 	state.reaction_side = -2 if watch_mode else player_side
 	_attach_battle(GameController.new(state, Dice.new(seed_value)), true)
 
@@ -241,8 +254,10 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_bots.finish()
 	controller = c
 	var state := c.state
+	var began := Time.get_ticks_usec()
 	_board_view.scenario_id = _active_scenario_id
 	_board_view.build(state.board)
+	print("Map load: %s terrain %.1f ms"%[_active_scenario_id,float(Time.get_ticks_usec()-began)/1000.0])
 	_atmosphere.configure(state.board, _active_scenario_id)
 	_sites.reset()
 	_sites.update_sites(state)
@@ -251,6 +266,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player = EventPlayer.new()
 	player.state = state
 	add_child(player)
+	var figures_started:=Time.get_ticks_usec()
 	for f in state.figures:
 		var v := FigureView.new()
 		player.add_child(v)
@@ -262,6 +278,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 			v.take_out()
 		if f.exited:
 			v.visible = false
+	print("Map load: %d miniatures %.1f ms"%[state.figures.size(),float(Time.get_ticks_usec()-figures_started)/1000.0])
 	player.build_treasures()
 	hud.clear_log()
 	player.line_logged.connect(hud.add_line)
@@ -280,6 +297,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 				hud.add_line(line)
 	_update_status()
 	_dirty = true
+	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,float(Time.get_ticks_usec()-began)/1000.0])
 
 
 ## Plays one bot activation for whichever side is to move.

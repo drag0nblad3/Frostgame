@@ -75,3 +75,31 @@ jobs:
           set -o pipefail
           godot --headless --quit-after 120 2>&1 | tee smoke.log
           ! grep -E "SCRIPT ERROR|Parse Error" smoke.log
+
+  bake-assets:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          mv Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Import
+        run: |
+          set -o pipefail
+          godot --headless --import 2>&1 | tee import.log
+          ! grep -E "SCRIPT ERROR|Parse Error" import.log
+      - name: Generate and verify baked scenes
+        run: |
+          set -o pipefail
+          LIBGL_ALWAYS_SOFTWARE=1 xvfb-run -a godot --rendering-method gl_compatibility --resolution 320x240 -s tools/bake_visuals.gd 2>&1 | tee bake.log
+          ! grep -E "SCRIPT ERROR|Parse Error|Visual bake failed" bake.log
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Frostgame-baked-visuals
+          path: |
+            assets/baked/
+            bake.log
+          retention-days: 7

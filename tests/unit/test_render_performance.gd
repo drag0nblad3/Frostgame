@@ -46,3 +46,18 @@ func test_static_step_cache_clears_on_terrain_change() -> void:
 	for h in heights:
 		check(is_nan(h), "height cache cleared")
 		break
+
+
+func test_restarting_same_map_reuses_city() -> void:
+	var terrain := TerrainDb.load_file()
+	var view := BoardView.new()
+	var board := BoardLoader.load_id("frozen_ruins",terrain)
+	view.build(board)
+	var city := view._scenery
+	view.build(BoardLoader.load_id("frozen_ruins",terrain))
+	check_eq(view._scenery,city)
+	check(view.scenery_ready())
+	view.build(BoardLoader.load_id("underground_library",terrain))
+	check(view._scenery!=city)
+	check_eq(view._scenery.get_child_count(),0)
+	view.free()

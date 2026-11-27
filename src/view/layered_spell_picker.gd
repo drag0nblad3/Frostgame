@@ -1,41 +1,50 @@
 class_name LayeredSpellPicker
 extends RefCounted
-## Named figure targets preserve floor identity even when their projections overlap.
+## Inspect the shared spell catalogue, then select an explicit floor-aware target.
 
 
 static func choose(parent: Control,c: GameController,refresh: Callable) -> void:
 	var options := LayeredFigureSpells.options(c)
 	if options.is_empty():
 		return
+	var f := c.state.active()
+	if f==null:
+		return
+	var legal: Array[String]=[]
+	legal.assign(options.keys())
+	var book := BattleSpellbook.new()
+	parent.add_child(book)
+	book.chosen.connect(func(key: String) -> void:
+		book.queue_free()
+		_targets(parent,c,refresh,key.trim_prefix("spell_"),options))
+	book.cancelled.connect(book.queue_free)
+	book.open(f.label(),SpellReference.battle_entries(c.state,f,legal))
+
+
+static func _targets(parent: Control,c: GameController,refresh: Callable,id: String,options: Dictionary) -> void:
+	if not options.has(id):
+		return
 	var dialog := ConfirmationDialog.new()
-	dialog.title="Cast spell"
+	var spell := "enchant_weapon" if id=="enchant_ammo" else id
+	var info: Dictionary=c.state.spell_catalog[spell]
+	dialog.title=str(info["name"])+" · Choose target"
 	dialog.ok_button_text="Roll casting"
 	parent.add_child(dialog)
 	var col := VBoxContainer.new()
 	dialog.add_child(col)
-	var spells := OptionButton.new()
+	var description := WorkshopUI.label(col,str(SpellReference.entry(spell).get("effect","")),24)
+	description.custom_minimum_size.x=360
 	var targets := OptionButton.new()
-	spells.custom_minimum_size.y=44
-	targets.custom_minimum_size.y=44
-	col.add_child(spells)
+	targets.custom_minimum_size.y=60
+	targets.fit_to_longest_item=false
 	col.add_child(targets)
-	for id: String in options:
-		spells.add_item(id.replace("_"," ").capitalize())
-		spells.set_item_metadata(spells.item_count-1,id)
-	var populate := func(index: int) -> void:
-		targets.clear()
-		var id: String = spells.get_item_metadata(index)
-		for figure_id: int in options[id]:
-			var f := c.state.figure(figure_id)
-			targets.add_item("%s #%d • %s • %.1f in" % [f.label(),f.id,f.surface_id,f.elevation])
-			targets.set_item_metadata(targets.item_count-1,f.id)
-		targets.select(0)
-	spells.item_selected.connect(populate)
-	spells.select(0)
-	populate.call(0)
+	for figure_id: int in options[id]:
+		var f := c.state.figure(figure_id)
+		targets.add_item("%s #%d • %s • %.1f in"%[f.label(),f.id,f.surface_id,f.elevation])
+		targets.set_item_metadata(targets.item_count-1,f.id)
+	targets.select(0)
 	dialog.confirmed.connect(func() -> void:
-		var id := str(spells.get_selected_metadata())
-		c.start_cast("enchant_weapon" if id=="enchant_ammo" else id,int(targets.get_selected_metadata()),id=="enchant_ammo")
+		c.start_cast(spell,int(targets.get_selected_metadata()),id=="enchant_ammo")
 		refresh.call()
 		dialog.queue_free())
 	dialog.canceled.connect(dialog.queue_free)

@@ -39,6 +39,18 @@ func _process(_delta: float) -> bool:
 			return _fail("Player selection failed")
 		_stage = 1
 	elif _stage == 1:
+		if _scene.player_input.available.has("cast"):
+			var actions:=c.state.active().actions_left
+			_scene.player_input.action("cast")
+			var book: BattleSpellbook=_scene.hud._casting_book
+			if book==null or not book.visible or not ModalInput.blocked() or book._entries.is_empty():
+				return _fail("Casting reference did not open")
+			book._inspect(book._selected)
+			if c.state.active().actions_left!=actions or not c.state.pending_cast.is_empty():
+				return _fail("Reading a spell spent an action")
+			ModalInput.close_top(root)
+			if book.visible or ModalInput.blocked() or c.state.active().actions_left!=actions:
+				return _fail("Back did not close casting reference safely")
 		if not _scene.player_input.available.has("move"):
 			return _fail("Move not available")
 		_scene.player_input.action("move")

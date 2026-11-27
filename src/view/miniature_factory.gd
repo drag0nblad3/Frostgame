@@ -8,7 +8,25 @@ const BONE := Color(0.85, 0.82, 0.69)
 const SKIN := Color(0.78, 0.61, 0.46)
 
 
+## Match every input that can change the sculpture; custom loadouts safely miss.
+static func baked_path(f: Figure,faction: Color,school_override: String="",detail_override: int=-1) -> String:
+	var detail := GraphicsQuality.mode() if detail_override<0 else clampi(detail_override,0,2)
+	var caster := f.def.role in ["wizard","apprentice"]
+	var humanoid := caster or f.def.role=="soldier" or f.def.id=="vampire"
+	var school := (school_override if not school_override.is_empty() else SchoolArt.of_figure(f)) if caster else ""
+	var identity := WizardSculpt.identity(f) if humanoid else 0
+	var signature := str([f.def.id,f.def.role,f.def.armour,f.def.shield,f.def.traits,
+		f.melee.id if f.melee!=null else "",f.ranged.id if f.ranged!=null else "",
+		faction,school,identity,detail])
+	return BakedVisuals.DIR+"miniatures/%s_%d_%s.scn"%[f.def.id,detail,signature.sha256_text()]
+
+
 static func create(f: Figure, faction: Color, school_override: String = "", detail_override: int = -1) -> Node3D:
+	var baked := BakedVisuals.load_scene(baked_path(f,faction,school_override,detail_override))
+	return baked if baked!=null else create_procedural(f,faction,school_override,detail_override)
+
+
+static func create_procedural(f: Figure, faction: Color, school_override: String = "", detail_override: int = -1) -> Node3D:
 	var model := Node3D.new()
 	model.set_meta("painted_miniature",true)
 	model.set_meta("sculpt_detail",GraphicsQuality.mode() if detail_override<0 else clampi(detail_override,0,2))

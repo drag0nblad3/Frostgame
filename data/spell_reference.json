@@ -1,0 +1,402 @@
+{
+  "crumble": {
+    "target": "Visible eligible ruin, obstruction or magical Wall",
+    "effect": "Removes a 1.5″ strip through the obstruction; destroys a conjured Wall completely.",
+    "duration": "Permanent terrain change. Figures above a removed surface may fall; protected scenario structures are excluded."
+  },
+  "decay": {
+    "target": "Visible other figure's nonmagical weapon, normally within 24″",
+    "effect": "Destroys the selected weapon. The figure switches to another usable weapon or fights unarmed.",
+    "duration": "Permanent for the battle. Natural, unarmed and magical weapons cannot be selected."
+  },
+  "fast_act": {
+    "target": "Visible unactivated ally or neutral creature, within 24″",
+    "effect": "Queues the target for early activation on your side.",
+    "duration": "This turn; not the caster, a previously activated figure or a member of an ongoing group."
+  },
+  "fleet_feet": {
+    "target": "Visible figure or self, within 24″",
+    "effect": "+2 Move.",
+    "duration": "Ongoing until removed or battle ends."
+  },
+  "petrify": {
+    "target": "Visible figure or self, within 24″",
+    "effect": "Will resistance on casting; failure gives −3 Fight (minimum 0) and causes the target to skip an activation.",
+    "duration": "The skip clears after the activation; the Fight penalty remains until removed. Large targets gain +8 on resistance."
+  },
+  "slow": {
+    "target": "Visible figure or self, within 24″",
+    "effect": "Restricts the target to one action per activation.",
+    "duration": "Target may resist against casting result after each activation. Affects action economy rather than Move."
+  },
+  "time_store": {
+    "target": "Self; both actions unused, outside group activation",
+    "effect": "Stores an action for later use and ends this activation.",
+    "duration": "Use the stored action when permitted on a later activation; cannot store another while one is held."
+  },
+  "time_walk": {
+    "target": "Self; wizard phase, wizard only",
+    "effect": "Allows the wizard one additional action in each of the apprentice and soldier phases this turn.",
+    "duration": "This turn only. Consecutive-turn use deals 8 damage to the wizard."
+  },
+  "call_storm": {
+    "target": "Self; affects the battlefield",
+    "effect": "Adds one point to the global shooting penalty, to a maximum of 5.",
+    "duration": "Ongoing; Dispel or Spell Eater can remove one casting."
+  },
+  "destructive_sphere": {
+    "target": "Self; all other figures within 3″",
+    "effect": "Direct magical +5 attacks against every nearby figure, including allies.",
+    "duration": "Immediate. No line of sight required by the current area implementation."
+  },
+  "elemental_ball": {
+    "target": "Visible enemy within 16″",
+    "effect": "Makes separate +5 elemental shooting attacks against target and figures within 1″ of it that are visible from it. Combat participants may also be affected.",
+    "duration": "Immediate; friendly fire possible. Each affected figure defends separately."
+  },
+  "elemental_bolt": {
+    "target": "Visible other figure within 16″",
+    "effect": "+7 magical elemental shooting attack; target defends and armour reduces damage.",
+    "duration": "Immediate; shooting into combat may redirect the attack."
+  },
+  "elemental_hammer": {
+    "target": "Visible figure or self within 24″",
+    "effect": "When the enchanted weapon inflicts positive damage, adds 5 damage. Attacks count as magical.",
+    "duration": "Ongoing until removed. Applies to the ranged weapon if carried, otherwise the melee weapon."
+  },
+  "elemental_shield": {
+    "target": "Self; no existing elemental shield",
+    "effect": "Absorbs up to 3 incoming damage in total.",
+    "duration": "Lasts until depleted or dispelled. Not an Armour bonus."
+  },
+  "scatter_shot": {
+    "target": "Self; visible opposing or neutral figures within 12″",
+    "effect": "Makes a separate +0 magical shooting attack against each eligible figure.",
+    "duration": "Immediate; combat targeting may redirect individual shots."
+  },
+  "wall": {
+    "target": "Legal visible placement; at least part within 10″",
+    "effect": "Creates a 6″ × 1″, 3″-high obstruction that blocks movement and sight; top is climbable. Rotate before placing.",
+    "duration": "From the turn after creation, disappears on a turn-end d20 roll of 1–4; may be dispelled or crumbled."
+  },
+  "animate_construct": {
+    "target": "Campaign preparation; select construct size",
+    "effect": "Adds a permanent construct companion to the roster on success.",
+    "duration": "Small uses normal casting number; medium −3 to roll, large −6. Subject to roster and campaign limits."
+  },
+  "control_construct": {
+    "target": "Visible construct within 24″",
+    "effect": "Target tests Will against casting result. Failure transfers control to the caster's side.",
+    "duration": "One controlled target of this spell type per caster; ongoing until released or dispelled."
+  },
+  "embed_enchantment": {
+    "target": "Campaign aftermath; select an eligible enchanted reward",
+    "effect": "Convert an eligible surviving figure's Enchant Weapon or Enchant Armour effect from the previous battle into a permanent gear item in the vault.",
+    "duration": "One eligible ritual attempt per caster per preparation/aftermath cycle; not a battle action."
+  },
+  "enchant_armour": {
+    "target": "Visible soldier with base Armour 11 or more, within 24″",
+    "effect": "+1 Armour, respecting the usual noncreature Armour cap of 15.",
+    "duration": "Ongoing until removed; cannot apply twice to the same figure."
+  },
+  "enchant_weapon": {
+    "target": "Visible figure or self within 24″",
+    "effect": "Gives +1 to the figure's ranged attack roll if a ranged weapon is carried, otherwise +1 to its melee Fight roll. That weapon counts as magical.",
+    "duration": "Ongoing until removed. The separate Enchant Ammunition option grants one expendable magical shot to a friendly bow/crossbow user (up to one stored, or four with Hunter's Quiver)."
+  },
+  "grenade": {
+    "target": "Visible placement within 14″",
+    "effect": "Makes +3 shooting attacks on figures whose bases overlap the 1.5″ blast radius, including combat participants.",
+    "duration": "Immediate; may affect allies as well as opponents."
+  },
+  "strength": {
+    "target": "Visible figure or self within 24″",
+    "effect": "+2 Fight.",
+    "duration": "Ongoing until removed."
+  },
+  "telekinesis": {
+    "target": "Visible eligible ground treasure within 16″",
+    "effect": "Move treasure up to 6″ to a legal visible location along a visible path.",
+    "duration": "Immediate. Museum treasure and untouched central treasure are excluded; Planar Sinkhole limits displacement to 3″."
+  },
+  "beauty": {
+    "target": "Self; not already protected",
+    "effect": "Ordinary hostile warband figures must pass a Will test against casting result before targeting the caster.",
+    "duration": "Ongoing; failed tests prevent targeting for that turn. Creatures and true sight can bypass this."
+  },
+  "blink": {
+    "target": "Visible figure or self within 12″",
+    "effect": "Displaces target up to 4″ in a randomly selected direction, stopping at obstructions. Enemy may resist.",
+    "duration": "Immediate. Red King gear can extend to 6″ or alter the direction."
+  },
+  "fools_gold": {
+    "target": "Visible figure carrying treasure within 24″",
+    "effect": "Choose a legal drop point within 4″. Target must resist or drop the selected treasure there.",
+    "duration": "Immediate; illusionist staff can increase drop distance to 6″."
+  },
+  "glow": {
+    "target": "Visible figure or self within 24″",
+    "effect": "Attackers gain +3 to shooting and applicable opposed spell-shot attack rolls against this figure.",
+    "duration": "Ongoing until removed; does not directly inflict damage."
+  },
+  "illusionary_soldier": {
+    "target": "Legal visible point within 2″ on caster's level; also campaign preparation",
+    "effect": "Creates an illusory friendly thug in battle; preparation can select an eligible soldier guise.",
+    "duration": "Usually one illusion per warband. True sight can remove illusions; relevant staff can raise limit."
+  },
+  "invisibility": {
+    "target": "Self or figure within 1″",
+    "effect": "Conceals target from ordinary figure targeting.",
+    "duration": "Until revealed by fighting, casting or true sight, or dispelled. Area effects can still matter."
+  },
+  "teleport": {
+    "target": "Self; legal visible destination within 24″",
+    "effect": "Instantly moves caster to destination, ending its action sequence.",
+    "duration": "Immediate. Must land legally; layered maps use their supported surface rules."
+  },
+  "transpose": {
+    "target": "Two distinct visible figures, each within 24″ of caster and within 12″ of each other",
+    "effect": "Swaps positions if the swap is legal and any required resistance fails.",
+    "duration": "Immediate. Choose first figure, then second; no displacement if resistance or landing prevents it."
+  },
+  "animate_skull": {
+    "target": "Legal visible point within 6″",
+    "effect": "Spawns an uncontrolled animated skull.",
+    "duration": "One active skull per caster normally; skull staff and Golden Fang can change summon limits or bonuses."
+  },
+  "bone_dart": {
+    "target": "Visible other figure within 12″",
+    "effect": "+5 shooting attack; target defends and armour reduces damage.",
+    "duration": "Immediate. Current implementation does not treat it as an elemental or magical weapon attack; combat targeting may redirect it."
+  },
+  "bones_of_the_earth": {
+    "target": "Visible non-large figure at ground level within 18″",
+    "effect": "Roots the figure in place.",
+    "duration": "Ongoing until freed, moved by an applicable effect or dispelled. Cannot reapply to an already rooted figure."
+  },
+  "control_undead": {
+    "target": "Visible undead within 24″",
+    "effect": "Target tests Will against casting result. Failure transfers control to caster's side.",
+    "duration": "One controlled target of this spell type per caster; ongoing until released or dispelled."
+  },
+  "raise_zombie": {
+    "target": "Legal visible point within 1.25″ on caster's level; also campaign preparation",
+    "effect": "Creates a friendly zombie; preparation deploys it at the next battle.",
+    "duration": "Normally one per warband. Skull staff can increase limit and improve summon."
+  },
+  "spell_eater": {
+    "target": "Select an eligible ongoing effect, normally within 24″",
+    "effect": "Cancels the selected effect on success, like Dispel. Caster loses 1 Health when declaring the spell.",
+    "duration": "Immediate; works on eligible figure effects, controlled creatures, conjured terrain, words and storm stacks."
+  },
+  "steal_health": {
+    "target": "Visible opposing living nonconstruct figure within 24″",
+    "effect": "On failed Will resistance, target loses 3 Health and caster heals 3.",
+    "duration": "Immediate. Cannot target undead or constructs; healing is capped at maximum Health."
+  },
+  "strike_dead": {
+    "target": "Visible other nonundead, nonconstruct figure within 8″",
+    "effect": "Caster loses 1 Health on declaration. Target must resist or lose all remaining Health.",
+    "duration": "Immediate. High casting number; resistance may be empowered where allowed."
+  },
+  "absorb_knowledge": {
+    "target": "Campaign aftermath; wizard only, not knocked out in the preceding battle",
+    "effect": "Gain 40 campaign XP on success.",
+    "duration": "Immediate campaign reward; cannot be cast in battle."
+  },
+  "bridge": {
+    "target": "Legal terrain crossing; 6″ long × 2″ wide",
+    "effect": "Creates a traversable crossing between valid surfaces; rotate before casting.",
+    "duration": "End of turn: disappears on 1–2. Extended Scroll can create a 9″ bridge with expiration on 1. Can be cancelled."
+  },
+  "draining_word": {
+    "target": "Select a nonritual spell from the catalogue",
+    "effect": "Applies −3 to casting rolls of that named spell for all casters.",
+    "duration": "Ongoing until dispelled. One active word of this type per caster; cannot duplicate same word on same spell."
+  },
+  "explosive_rune": {
+    "target": "Legal visible point within 4″",
+    "effect": "Places a trap. A figure whose base enters its 1″ trigger radius causes separate +5 magical direct attacks against figures overlapping the 2″ blast radius.",
+    "duration": "Remains until triggered, removed, or expires after caster is out of play (11+ at turn end). Up to three active runes per caster."
+  },
+  "furious_quill": {
+    "target": "Visible figure or self within 24″",
+    "effect": "−1 Move, −2 Fight, −4 Shoot and −2 casting modifier.",
+    "duration": "Target attempts Will resistance at start of activation to remove it."
+  },
+  "power_word": {
+    "target": "Select a nonritual spell from the catalogue",
+    "effect": "+3 to casting rolls of that named spell for all casters.",
+    "duration": "Ongoing until dispelled. One active word of this type per caster; cannot duplicate same word on same spell."
+  },
+  "push": {
+    "target": "Visible other figure within 24″",
+    "effect": "Opposed d20 +10 versus target Fight and roll penalties. If attacker wins, pushes target a distance equal to attack total minus Armour (minimum 0).",
+    "duration": "Immediate; ordinary Push inflicts no direct damage. Stops at obstructions; special gear can alter it."
+  },
+  "write_scroll": {
+    "target": "Campaign aftermath; select a known spell or one in an owned grimoire",
+    "effect": "Creates an unassigned scroll for that spell on success.",
+    "duration": "Consumable campaign reward; no Health empowerment of the ritual."
+  },
+  "awareness": {
+    "target": "Campaign preparation",
+    "effect": "Adds +2 to the warband's initiative rolls while the prepared caster is in play; combined Awareness bonus capped at +4.",
+    "duration": "For the next battle only; prepare again between battles."
+  },
+  "combat_awareness": {
+    "target": "Self or figure within 1″",
+    "effect": "+1 Fight and +1 Armour (usual cap applies).",
+    "duration": "Ongoing until removed."
+  },
+  "mind_control": {
+    "target": "Visible noncaster, nonmindless figure within 24″",
+    "effect": "Failed Will resistance transfers control to caster's side.",
+    "duration": "One target per caster. Target retests Will after each activation to break control. Mind Lock prevents or removes it."
+  },
+  "mind_lock": {
+    "target": "Visible figure or self within 24″",
+    "effect": "+2 Will; prevents Mind Control and releases existing Mind Control.",
+    "duration": "Ongoing until removed."
+  },
+  "reveal_secret": {
+    "target": "Campaign preparation",
+    "effect": "For one recovered noncentral treasure, roll two reward results and choose which to accept. Each success adds one such choice.",
+    "duration": "Used during the next battle's treasure settlement. No extra treasure token is placed."
+  },
+  "suggestion": {
+    "target": "Visible other figure within 24″ not protected by Mind Lock",
+    "effect": "Choose destination up to 3″ from target. On failed Will resistance it drops carried treasure and moves there.",
+    "duration": "Immediate. Legal landing and no falling damage required."
+  },
+  "true_sight": {
+    "target": "Self",
+    "effect": "Reveals invisible figures and removes illusionary soldiers within 6″; nearby allies can see through invisibility.",
+    "duration": "Ongoing; the visibility sweep also runs after relevant moves and casts."
+  },
+  "wizard_eye": {
+    "target": "Visible eligible terrain face within 12″",
+    "effect": "Places a remote viewpoint. Subsequent eligible spells can use its outward sight line and measure range from it.",
+    "duration": "One eye per caster; replacing or destroying supporting terrain removes the previous eye."
+  },
+  "control_demon": {
+    "target": "Visible eligible demon within 24″",
+    "effect": "Failed Will resistance transfers control to caster's side.",
+    "duration": "Ongoing; cannot control another when already controlling one or when preparation reserves the slot."
+  },
+  "imp": {
+    "target": "Legal visible placement at least 4″ from all figures",
+    "effect": "Summons an uncontrolled imp that acts as a creature, not a friendly soldier.",
+    "duration": "One per caster; recasting removes the old imp."
+  },
+  "leap": {
+    "target": "Visible friendly figure or self within 24″",
+    "effect": "Choose legal landing up to 10″ away, or 5″ when carrying treasure. Jumps over low obstacles and ends the target's activation.",
+    "duration": "Immediate; illegal arcs, rooted or petrified targets excluded."
+  },
+  "plague_of_insects": {
+    "target": "Visible eligible figure within 24″",
+    "effect": "Affected figures suffer −4 Fight (minimum 0) and −2 casting rolls; nearby susceptible figures can also be affected.",
+    "duration": "Target retests Will at activation end. Large figures, undead and constructs are immune."
+  },
+  "planar_tear": {
+    "target": "Visible legal point within 24″",
+    "effect": "Figures overlapping a 2″ radius make Will resistance tests. On failure demons take damage equal to casting result, other figures take 2.",
+    "duration": "Immediate; may affect allies."
+  },
+  "plane_walk": {
+    "target": "Self; once per turn",
+    "effect": "Drops treasure, removes rooting, becomes untargetable and may move through ordinary obstructions using legal landing points.",
+    "duration": "Ends at turn end. Consecutive-turn attempts incur −5 per previous consecutive attempt, capped at −15."
+  },
+  "possess": {
+    "target": "Visible allied noncaster, nondemon, outside group activation within 24″",
+    "effect": "+2 Fight, +1 Armour, −2 Will; counts as a demon.",
+    "duration": "Ongoing; only one possessed ally per caster, vulnerable to demon-targeting spells."
+  },
+  "summon_demon": {
+    "target": "Legal visible point within 2″ on caster's level; also campaign preparation",
+    "effect": "Creates a controlled imp; margin ≥6 above TN creates minor demon, ≥13 major demon. Natural 1 releases an uncontrolled demon.",
+    "duration": "One controlled demon per caster. Natural 1 always fails and releases a hostile demon. Preparation requires Summoning Circle, wizard knowing Control Demon, and successful separate summoning and control rolls."
+  },
+  "banish": {
+    "target": "Self; visible demons within 24″",
+    "effect": "Each demon tests Will. Failure destroys Will ≤4 demons; stronger demons lose 3 Health per point of failure.",
+    "duration": "Immediate; affects friendly demons as well."
+  },
+  "blinding_light": {
+    "target": "Visible figure or self within 24″",
+    "effect": "Target resists on casting. Failure sets Fight to 0, Move to 1 and prevents most non-touch spells.",
+    "duration": "Target retests Will at turn end to recover."
+  },
+  "circle_of_protection": {
+    "target": "Legal ground placement within 2″ on caster's level",
+    "effect": "Creates a 3″-diameter ward that blocks undead and demons from entering.",
+    "duration": "One active circle per caster. Ends on a turn-end roll of 1–3 or when removed. Cannot place over an existing eligible creature."
+  },
+  "destroy_undead": {
+    "target": "Visible undead within 24″",
+    "effect": "Target tests Will. Failure destroys Will ≤2 undead; stronger undead lose 3 Health per point of failure.",
+    "duration": "Immediate."
+  },
+  "dispel": {
+    "target": "Select an eligible ongoing effect, normally within 24″",
+    "effect": "Cancels one ongoing spell effect, elemental shield, control effect, magical terrain, word effect or storm stack.",
+    "duration": "Immediate. Does not undo instantaneous damage or completed movement."
+  },
+  "heal": {
+    "target": "Visible wounded living nonconstruct figure or self within 6″",
+    "effect": "Restores up to 5 Health, capped at target's maximum.",
+    "duration": "Immediate. Cannot heal undead or constructs with this spell."
+  },
+  "miraculous_cure": {
+    "target": "Campaign aftermath; wizard only, choose eligible injured, recovering or dead member",
+    "effect": "Revives the member and clears permanent injury records on success.",
+    "duration": "−4 casting modifier if target is dead; no battle casting."
+  },
+  "shield": {
+    "target": "Visible figure or self within 24″",
+    "effect": "+2 Armour; ordinary noncreature cap 15 applies.",
+    "duration": "Ongoing until removed; unlike Elemental Shield, does not deplete after damage."
+  },
+  "animal_companion": {
+    "target": "Campaign preparation; choose eligible animal",
+    "effect": "Adds a permanent animal companion to the roster, associated with the caster.",
+    "duration": "Subject to campaign eligibility and companion limits; not a battle spell."
+  },
+  "brew_potion": {
+    "target": "Campaign preparation; choose eligible recipe",
+    "effect": "Creates selected potion in unassigned loot on success.",
+    "duration": "Greater potions cost ingredients and impose −4 to casting roll. Ingredients spent on attempt."
+  },
+  "control_animal": {
+    "target": "Visible eligible animal within 24″",
+    "effect": "Failed Will resistance transfers control to caster's side.",
+    "duration": "One controlled target of this spell type per caster; ongoing until released or dispelled."
+  },
+  "curse": {
+    "target": "Visible figure or self within 24″",
+    "effect": "−2 to rolls affected by the figure's roll penalty (such as combat and casting).",
+    "duration": "Target retests Will at turn end; can combine with wound penalty."
+  },
+  "familiar": {
+    "target": "Campaign preparation",
+    "effect": "The caster starts the next battle with +2 maximum Health.",
+    "duration": "Lost if Health drops to 1 or less; maximum Health then falls by 2. Preparation resets between battles."
+  },
+  "fog": {
+    "target": "Visible legal placement within 24″",
+    "effect": "Creates 6″ × 1″, 3″-high fog that blocks sight but allows movement. Rotate before placing.",
+    "duration": "Disappears on 1–4 at turn end or when dispelled."
+  },
+  "mud": {
+    "target": "Legal visible ground placement within 24″",
+    "effect": "Creates a circular 6″-diameter area of rough ground: movement through it costs double.",
+    "duration": "Ongoing until removed; not a direct damage spell."
+  },
+  "poison_dart": {
+    "target": "Visible other figure within 24″",
+    "effect": "+3 shooting attack; if target loses Health, poisons it, restricting it to one action per activation.",
+    "duration": "Immediate attack, ongoing poison until cured. Combat targeting may redirect it."
+  }
+}
