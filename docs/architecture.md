@@ -160,3 +160,27 @@ this distinction and permits floor filtering. It is a schematic, not a
 full historical 3D scene: solid volumes, boundary effects and moving props
 are not reconstructed in detail. Existing event text remains available
 when no frame exists.
+
+
+### Expansion command and lifecycle boundaries
+
+`BattleScenarioAction` records explicit choices with plain payloads and
+dispatches the `scenario_command` hook. Red King implements exchange,
+sinkhole, veil, memory, ring switching/escape, central escape, convergence,
+hunt placement, hill seams and shifted ruins in `RedKingCommands`.
+Bot ring travel, magical shortcuts and boosted movement use recorded
+commands too. Specific treasure drops retain the selected token in the
+record, with legacy commands defaulting to the carried primary treasure.
+
+`potion_source_allowed` and `potion_consume` are optional hooks for
+expansion-provided potion sources and outcomes. A null result means the
+core uses its normal behavior; false is an explicit restriction or failed
+special consumption. `RedKingPotionHooks` implements reservoirs and
+enchanted vials; ordinary potions require no expansion-specific code.
+
+The ordered lifecycle hooks `battle_prepare`, `turn_priority`,
+`before_phase`, `turn_end` and `turn_end_resume` preserve existing
+Red King processing order and reaction pause points. Scenario victory
+policies and automatic creature decisions are not yet fully migrated.
+Replay remains a partial command audit rather than a guarantee that
+every autonomous decision can be reconstructed from an initial seed.
