@@ -36,7 +36,7 @@ static func _act(c: GameController,f: Figure) -> bool:
 		if f.side<0:
 			PackRules.remember(c.state,f,enemy)
 		return BattleAction.execute(c,"fight",enemy.id)
-	if f.side>=0 and RealityCracks.exit_center(c):
+	if f.side>=0 and BattleScenarioAction.execute(c,"reality_exit"):
 		return true
 	if f.side>=0 and BattleAction.legal(c,"drink_well"):
 		return BattleAction.execute(c,"drink_well")
@@ -148,7 +148,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 		for i in range(route.size()-1,0,-1):
 			if reach.can_reach(route[i]):
 				break
-			if run.can_reach(route[i]) and LayeredMovement.move(c,route[i],false,true,true):
+			if run.can_reach(route[i]) and c.commit_movement("run_boost",route[i]):
 				return true
 	if not safe_route and LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal):
 		return true
@@ -216,7 +216,7 @@ static func _cape(c: GameController,f: Figure) -> bool:
 		if distance>=3.0 and score>value:
 			value=score
 			best=node
-	return best!=null and LayeredMovement.move(c,best,true)
+	return best!=null and c.commit_movement("cape",best)
 
 
 static func _safe_path(c: GameController,layout: FloorLayout,path: Array[Vector3i]) -> bool:
