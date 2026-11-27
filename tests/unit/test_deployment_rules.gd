@@ -34,3 +34,33 @@ func test_deployment_draft_is_atomic_and_rejects_overlap() -> void:
 		if f.side>=0:
 			check(DeploymentRules.zone("silent_tower",s.board.size,p.edge[f.side],f.pos))
 			check_eq(f.surface_id,"street")
+
+
+func test_well_and_investigation_edges() -> void:
+	check_eq(DeploymentRules.choices("dreams_well"),[1,3])
+	check_eq(DeploymentRules.choices("red_king_investigations"),[0,2])
+
+
+func test_ringworld_formation() -> void:
+	var profile:=ContentProfile.new(["red_king"])
+	var catalog:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	var s:=ScenarioLoader.load_id("red_king_ringworld",catalog,TerrainDb.load_file())
+	var c:=GameController.new(s,Dice.new(31))
+	var plan:=DeploymentPlan.new(s,"red_king_ringworld",0,c.dice)
+	check(plan.complete(),plan.error)
+	if not plan.complete():
+		return
+	check(c.apply_deployment(plan))
+	for side in 2:
+		var wizard:Figure=null
+		for f in s.side_figures(side):
+			if f.def.role=="wizard":
+				wizard=f
+		check(wizard!=null)
+		if wizard==null:
+			continue
+		check(wizard.pos.distance_to(s.board.size*0.5)<=8.001)
+		for f in s.side_figures(side):
+			check(f.pos.distance_to(wizard.pos)<=3.001)
+			for rival in s.side_figures(1-side):
+				check(f.pos.distance_to(rival.pos)>=6.999)

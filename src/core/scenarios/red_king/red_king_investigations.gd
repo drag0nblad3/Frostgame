@@ -115,8 +115,9 @@ static func end_turn(c: GameController) -> void:
 	if s.turn==3:
 		var exits := {}
 		for side in s.side_count():
-			# Fixed two-sided deployment: north starts at low y, south at high y.
-			var vertical := "south" if side==0 else "north"
+			# Shift to a corner opposite the actual starting edge (Red King p.27).
+			var entry: Array=s.scenario_data.get("deployment_edges",[0,2])
+			var vertical := "south" if int(entry[side])==0 else "north"
 			exits[side]=[vertical,"west" if c.dice.pick(2)==0 else "east"]
 		s.scenario_data["exit_edges"]=exits
 		s.board.field_cache.clear()

@@ -2,7 +2,7 @@ class_name LineOfSight
 extends RefCounted
 ## Line of sight and cover between two points on the table, centre to centre.
 ## TODO(rules): 2e lets a shot see any part of the target; we trace centre to centre only.
-## TODO(rules): figures do not block line of sight yet.
+## Figure screening contributes shooting modifiers; complete silhouette occlusion remains approximate.
 
 ## A cover piece this close to the target (inches from its footprint) gives
 ## cover; further away it counts as intervening terrain.
@@ -30,7 +30,9 @@ static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -
 		result.clear=false
 		return result
 	if board.floor_layout.is_empty():
-		return check(board,Vector2(at.x,at.z),to.pos,from)
+		result=check(board,Vector2(at.x,at.z),to.pos,from)
+		FigureScreening.apply(board,from,at,to,result)
+		return result
 	var layout := board.floor_geometry()
 	var target := Vector3(to.pos.x,to.elevation,to.pos.y)
 	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(at.x,at.z),to.pos)
@@ -47,6 +49,7 @@ static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -
 		result.clear=false
 	if result.clear:
 		floor_cover(board,at,target,result)
+		FigureScreening.apply(board,from,at,to,result)
 	return result
 
 
