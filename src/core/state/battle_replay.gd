@@ -58,6 +58,7 @@ static func apply(c: GameController,key: String,args: Dictionary) -> bool:
 		"drink_well": return c.drink_well()
 		"break_ice": return c.break_ice()
 		"equipment": return BattleEquipmentAction.execute(c,args["key"],args.get("args",{}))
+		"spell_command": return BattleSpellAction.execute(c,args["key"],args.get("args",{}))
 		"end_activation":
 			if not c.can_end_activation():
 				return false
