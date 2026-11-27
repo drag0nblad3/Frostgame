@@ -5,6 +5,8 @@ extends RefCounted
 var kind: TerrainKind
 var rect := Rect2()
 var circular := false
+## Authored entrance of a scenario site; old checkpoints default to north.
+var entrance := "north"
 var eye_host: TerrainPiece
 var eye_solid: Array=[]
 var eye_direction := Vector2.ZERO

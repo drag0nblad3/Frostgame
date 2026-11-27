@@ -13,6 +13,17 @@ static func treasure_protected(s: GameState,at: Vector2,height: float=NAN) -> bo
 	return (s.scenario_special=="the_keep" and site_at(s,"arcane_disc",at,height)!=null) or ScenarioNull.protected_treasure(s,at)
 
 
+## The occupant waits against the inner wall opposite the actual entrance.
+static func hut_spawn_target(hut: TerrainPiece) -> Vector2:
+	var center:=hut.rect.get_center()
+	var inset:=Figure.BASE_RADIUS
+	match hut.entrance:
+		"south": return Vector2(center.x,hut.rect.position.y+inset)
+		"west": return Vector2(hut.rect.end.x-inset,center.y)
+		"east": return Vector2(hut.rect.position.x+inset,center.y)
+		_: return Vector2(center.x,hut.rect.end.y-inset)
+
+
 static func discover(c: GameController,at: Vector2,side: int,height: float=0.0) -> bool:
 	var s := c.state
 	if s.scenario_special != "haunted_houses" or side < 0 or s.creature_db == null:
@@ -27,22 +38,22 @@ static func discover(c: GameController,at: Vector2,side: int,height: float=0.0) 
 	if kind!="" and not s.board.floor_layout.is_empty():
 		var layout:=s.board.floor_geometry()
 		var center:=hut.rect.get_center()
-		var target:=center+Vector2(0,1.5)
-		var options:=BattlePlacement.nearby_floor(s,center,hut.base_height,2.13,hut.surface_id)
+		var target:=hut_spawn_target(hut)
+		var options:=BattlePlacement.nearby_floor(s,center,hut.base_height,hut.rect.size.length()*0.5,hut.surface_id)
 		options.sort_custom(func(a: Vector3i,b: Vector3i) -> bool: return layout.point(a).distance_squared_to(target)<layout.point(b).distance_squared_to(target))
 		for n in options:
-			var delta:=layout.point(n)-center
-			if absf(delta.x)<=1.5 and absf(delta.y)<=1.5:
+			if hut.rect.grow(-Figure.BASE_RADIUS+0.001).has_point(layout.point(n)):
 				c._encounters._spawn_on_floor(kind,n)
 				found=true
 				break
 	elif kind != "":
 		var grid := MoveGrid.new(s.board, null, s.figures)
-		var target := hut.rect.get_center() + Vector2(0, 1.5)
+		var target := hut_spawn_target(hut)
 		var points: Array[Vector2] = []
-		for x in range(-3, 4):
-			for y in range(-3, 4):
-				var pos := hut.rect.get_center() + Vector2(x, y) * 0.5
+		var inside:=hut.rect.grow(-Figure.BASE_RADIUS+0.001)
+		for x in range(ceili(inside.position.x*2.0),floori(inside.end.x*2.0)+1):
+			for y in range(ceili(inside.position.y*2.0),floori(inside.end.y*2.0)+1):
+				var pos := Vector2(x,y)*0.5
 				if grid.open(MovePlanner.node_at(pos)):
 					points.append(pos)
 		points.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_squared_to(target) < b.distance_squared_to(target))
