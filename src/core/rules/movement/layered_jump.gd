@@ -32,7 +32,7 @@ static func plans(c: GameController) -> Dictionary:
 			continue
 		var delta := layout.point(target)-layout.point(takeoff)
 		var distance := delta.length()
-		if distance<=0.001 or distance>4.0:
+		if distance<=0.001 or distance>(7.0 if s.board.low_gravity else 4.0):
 			continue
 		var run := layout.point(takeoff)-layout.point(start)
 		if run.length()+0.001<distance or run.normalized().dot(delta.normalized())<0.999:

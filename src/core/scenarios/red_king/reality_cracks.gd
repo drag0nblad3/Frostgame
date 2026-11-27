@@ -147,6 +147,8 @@ static func _repeat(c: GameController,effect: int) -> void:
 		for p in s.board.pieces.duplicate():
 			if p.kind.id.begins_with("spell_"):
 				c._magic.terrain.remove(p)
+		for bridge: Dictionary in s.board.floor_layout.get("bridges",[]).duplicate():
+			LayeredBridge.remove(c,str(bridge["surface"]["id"]))
 		s.words.clear()
 		s.fast_acts.clear()
 		c.emit("reality_null",{})
@@ -162,7 +164,7 @@ static func _repeat(c: GameController,effect: int) -> void:
 			if not StatRoll.succeeds(c.dice.d20(),f.effective_move()+MagicEquipment.bonus(f,"move_test")+f.roll_penalty(),18):
 				var margin := Vector2.ONE*TreasureRules.TOKEN_RADIUS
 				var target := (origin+direction(c)*6.0).clamp(margin,s.board.size-margin)
-				c._loot._drop(f,target if s.board.can_stand(target,TreasureRules.TOKEN_RADIUS) else origin,token)
+				_drop_at(c,f,token,target,origin)
 		if delta.is_zero_approx():
 			continue
 		var distance := 6.0 if effect==4 else minf(6.0,delta.length())
@@ -317,7 +319,10 @@ static func _resolve_exchange(c: GameController,selected: Array[Figure],secret: 
 				if c.dice.d20()<13:
 					var margin := Vector2.ONE*TreasureRules.TOKEN_RADIUS
 					var target := (f.pos+direction(c)*2.0).clamp(margin,s.board.size-margin)
-					c._loot._drop(f,target if s.board.can_stand(target,TreasureRules.TOKEN_RADIUS) else f.pos,token)
+					_drop_at(c,f,token,target,f.pos)
+	if not s.board.floor_layout.is_empty():
+		RealityFloorEffects.exchange(c,selected)
+		return
 	for i in selected.size():
 		var f := selected[i]
 		var old := f.pos
@@ -326,3 +331,11 @@ static func _resolve_exchange(c: GameController,selected: Array[Figure],secret: 
 		f.disengaged.clear()
 		c.emit("forced_relocation",{"id":f.id,"from":old,"at":f.pos,"height":f.elevation})
 
+
+static func _drop_at(c: GameController,f: Figure,id: int,target: Vector2,fallback: Vector2) -> void:
+	var s:=c.state
+	if s.board.floor_layout.is_empty():
+		c._loot._drop(f,target if s.board.can_stand(target,TreasureRules.TOKEN_RADIUS) else fallback,id)
+		return
+	var n: Variant=BattlePlacement.token_on_support(s,f.surface_id,target)
+	c._loot._drop(f,s.board.floor_geometry().point(n) if n!=null else fallback,id,f.surface_id)

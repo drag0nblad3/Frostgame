@@ -113,3 +113,57 @@ static func wrapped_sight(b: Board,a: Vector2,z: Vector2,observer: Figure) -> Li
 				result.intervening=intervening
 				return result
 	return result
+
+
+static func world_distance(b: Board,a: Vector3,z: Vector3) -> float:
+	var relation:=cross_relation(b,Vector2(a.x,a.z),Vector2(z.x,z.z))
+	if relation!=0:
+		return 12.0 if relation==1 else INF
+	return Vector2(sight_distance(b,Vector2(a.x,a.z),Vector2(z.x,z.z)),a.y-z.y).length()
+
+
+static func floor_sight(b: Board,layout: FloorLayout,a: Vector3,z: Vector3,observer: Figure,apply_darkness: bool=true) -> LineOfSight.Result:
+	var result:=LineOfSight.Result.new()
+	result.clear=false
+	var limit:=6.0+(observer.elevation if observer!=null else maxf(0.0,a.y-1.5))
+	for dx in range(-1,2):
+		for dy in range(-1,2):
+			var delta:=z+Vector3(dx*b.size.x,0,dy*b.size.y)-a
+			if Vector2(delta.x,delta.z).length()>limit+0.001 or (apply_darkness and b.darkness and delta.length()>12.0):
+				continue
+			var stops: Array[float]=[0.0,1.0]
+			for axis in [0,2]:
+				if absf(delta[axis])<0.0001:
+					continue
+				var extent:=b.size.x if axis==0 else b.size.y
+				for edge in [0.0,extent]:
+					var t: float=(edge-a[axis])/delta[axis]
+					if t>0.0 and t<1.0:
+						stops.append(t)
+			stops.sort()
+			var clear_ray:=true
+			var cover:=0
+			var intervening:=0
+			for i in range(stops.size()-1):
+				if is_equal_approx(stops[i],stops[i+1]):
+					continue
+				var mid:=a+delta*(stops[i]+stops[i+1])*0.5
+				var offset:=Vector3(floorf(mid.x/b.size.x)*b.size.x,0,floorf(mid.z/b.size.y)*b.size.y)
+				var start:=a+delta*stops[i]-offset
+				var end:=a+delta*stops[i+1]-offset
+				if not LineOfSight.physical_floor_ray(b,layout,start,end,observer,false):
+					clear_ray=false
+					break
+				var segment:=LineOfSight.Result.new()
+				LineOfSight.floor_cover(b,start,end,segment)
+				if i==stops.size()-2:
+					cover=segment.cover
+				else:
+					intervening+=int(segment.cover>0)
+				intervening+=segment.intervening
+			if clear_ray:
+				result.clear=true
+				result.cover=cover
+				result.intervening=intervening
+				return result
+	return result

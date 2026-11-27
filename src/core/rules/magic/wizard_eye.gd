@@ -66,14 +66,14 @@ static func floor_origin(b: Board,f: Figure,at: Vector3,limit: float=24.0,target
 	var layout:=b.floor_geometry()
 	var feet:=Vector3(f.pos.x,f.elevation,f.pos.y)
 	var target:=at+Vector3.UP*target_offset
-	if feet.distance_to(at)<=limit+0.001 and LineOfSight.floor_ray(b,layout,feet+Vector3.UP*1.5,target,f):
+	if RealityCrackGeometry.world_distance(b,feet,at)<=limit+0.001 and LineOfSight.floor_ray(b,layout,feet+Vector3.UP*1.5,target,f):
 		return feet+Vector3.UP*1.5
 	var p:=marker(b,f)
 	if p==null or ScenarioNull.muted(f):
 		return null
 	var point:=p.rect.get_center()
 	var remote:=Vector3(point.x,p.base_height,point.y)
-	if p.eye_direction.dot(Vector2(at.x,at.z)-point)>=-0.001 and remote.distance_to(target)<=limit+0.001 and LineOfSight.floor_ray(b,layout,remote,target,f):
+	if p.eye_direction.dot(Vector2(at.x,at.z)-point)>=-0.001 and RealityCrackGeometry.world_distance(b,remote,target)<=limit+0.001 and LineOfSight.floor_ray(b,layout,remote,target,f):
 		return remote
 	return null
 

@@ -33,6 +33,12 @@ static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -
 		return check(board,Vector2(at.x,at.z),to.pos,from)
 	var layout := board.floor_geometry()
 	var target := Vector3(to.pos.x,to.elevation,to.pos.y)
+	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(at.x,at.z),to.pos)
+	if relation!=0:
+		result.clear=relation==1
+		return result
+	if board.reality_sphere:
+		return RealityCrackGeometry.floor_sight(board,layout,at+Vector3.UP*1.5,target+Vector3.UP,from)
 	if board.ringworld and from.ring_side==0 and Vector2(at.x,at.z).distance_to(to.pos)>18.0:
 		result.clear=false
 		return result
@@ -65,6 +71,15 @@ static func floor_cover(board: Board,a: Vector3,b: Vector3,result: Result) -> vo
 ## Floor geometry ray, shared by attacks and all explicit floor-targeted
 ## magic. It includes authored boundaries and magical darkness.
 static func floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Vector3,observer: Figure=null,apply_darkness: bool=true) -> bool:
+	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(a.x,a.z),Vector2(b.x,b.z))
+	if relation!=0:
+		return relation==1
+	if board.reality_sphere:
+		return RealityCrackGeometry.floor_sight(board,layout,a,b,observer,apply_darkness).clear
+	return physical_floor_ray(board,layout,a,b,observer,apply_darkness)
+
+
+static func physical_floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Vector3,observer: Figure=null,apply_darkness: bool=true) -> bool:
 	if not layout.errors.is_empty() or BattleBoundary.blocks_segment(board.boundaries,Vector2(a.x,a.z),Vector2(b.x,b.z),"sight",observer):
 		return false
 	if apply_darkness and board.darkness and a.distance_to(b)>12.0:
@@ -82,13 +97,13 @@ static func floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Vector3,obs
 
 static func floor_point_visible(board: Board,layout: FloorLayout,f: Figure,at: Vector3,limit: float=24.0) -> bool:
 	var start:=Vector3(f.pos.x,f.elevation,f.pos.y)
-	return start.distance_to(at)<=limit+0.001 and floor_ray(board,layout,start+Vector3.UP*1.5,at+Vector3.UP*0.02,f)
+	return RealityCrackGeometry.world_distance(board,start,at)<=limit+0.001 and floor_ray(board,layout,start+Vector3.UP*1.5,at+Vector3.UP*0.02,f)
 
 
 ## Spells that use centre range (not weapon base-edge range) use actual
 ## figure elevations even when two figures share the same horizontal point.
 static func within_centres(board: Board,from: Figure,to: Figure,limit: float=24.0) -> bool:
-	return Vector2(from.pos.distance_to(to.pos),from.elevation-to.elevation).length()<=limit+0.001 and check_figures(board,from,to).clear
+	return RealityCrackGeometry.world_distance(board,Vector3(from.pos.x,from.elevation,from.pos.y),Vector3(to.pos.x,to.elevation,to.pos.y))<=limit+0.001 and check_figures(board,from,to).clear
 
 
 static func spell_visible(board: Board,from: Figure,to: Figure,limit: float=24.0) -> bool:

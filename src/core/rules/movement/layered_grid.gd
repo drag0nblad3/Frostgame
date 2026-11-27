@@ -98,7 +98,10 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 			mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y))
 		if running or (mover!=null and mover.levitates()):
 			mult=1.0
-		out.append({"to":next,"cost":start.distance_to(finish)*mult})
+		var cost:=start.distance_to(finish)*mult
+		if board!=null and board.low_gravity:
+			cost=layout.point(n).distance_to(layout.point(next))
+		out.append({"to":next,"cost":cost})
 	for edge: Dictionary in (reverse_links if reversed else layout.links).get(n,[]):
 		var next: Vector3i = edge["to"]
 		if not open(next) or not (segment_allowed(layout.world(next),start) if reversed else segment_allowed(start,layout.world(next))) or (running and not run_segment_clear(start,layout.world(next))):
@@ -116,6 +119,8 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		var cost: float = edge["cost"]
 		if edge["kind"]=="climb" and mover!=null and (running or mover.def.traits.has("expert_climber") or mover.levitates()):
 			cost=layout.point(n).distance_to(layout.point(next))+ceilf(absf(layout.height(n)-layout.height(next)))
+		if board!=null and board.low_gravity:
+			cost=maxf(MoveGrid.STEP,layout.point(n).distance_to(layout.point(next)))
 		out.append({"to":next,"cost":cost})
 	if board!=null:
 		for next in BoardTopology.floor_destinations(board,layout,n,reversed):

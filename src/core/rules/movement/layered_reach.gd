@@ -15,6 +15,10 @@ static func search(grid: LayeredGrid,from: Vector3i,allowance: float,leave_conta
 	var heap := MinHeap.new()
 	heap.push(0.0,from)
 	RouteSearch.expand(null,grid,heap,r.cost,r.prev,allowance,true,from if leave_contact else null,true)
+	if grid.board!=null:
+		for n: Vector3i in r.cost.keys():
+			if n!=from and BattleBoundary.blocks_end(grid.board.boundaries,grid.layout.point(n)):
+				r.cost.erase(n)
 	return r
 
 
