@@ -41,6 +41,15 @@ static func best(s: GameState,f: Figure,points: Array[Dictionary],zone: int,plac
 		for piece in s.board.pieces:
 			if piece.kind.cover!=TerrainKind.Cover.NONE and Geom.point_rect_distance(at,piece.rect)<=1.8:
 				value-=0.65 if ranged or f.def.role!="soldier" else 0.3
+		# Prefer screened starting positions, but never forbid a legal square.
+		if DeploymentRules.kind(s) in ["edge","door"]:
+			var exposed:=false
+			for other in s.figures:
+				if other.side>=0 and other.side!=f.side and placed.has(other.id) and LineOfSight.check_from_world(s.board,f,Vector3(at.x,h,at.y),other).clear:
+					exposed=true
+					break
+			if exposed:
+				value+=12.0
 		for other in s.figures:
 			if not placed.has(other.id) or other.side!=f.side or other==f:
 				continue

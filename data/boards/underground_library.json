@@ -113,6 +113,42 @@
         3,
         2
       ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        9.5,
+        17.5,
+        3,
+        1
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        23.5,
+        17.5,
+        3,
+        1
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        16,
+        10.5,
+        4,
+        1
+      ]
+    },
+    {
+      "kind": "library_shelf",
+      "rect": [
+        16,
+        24,
+        4,
+        1
+      ]
     }
   ]
 }

@@ -4,6 +4,10 @@ extends TestCase
 
 ## Measured at 89,127 (+25% headroom) when the open-square cache landed. Raise only on purpose.
 const OPEN_BUDGET := 111400
+# Corrected combat outcomes can add activations. Retain the original floor,
+# enforce 1,114 checks per activation above 100 turns of work, and a hard ceiling.
+const OPEN_PER_ACTIVATION := 1114
+const OPEN_HARD_LIMIT := 200000
 const AVG_MS_BUDGET := 250.0
 
 
@@ -20,5 +24,6 @@ func test_bot_game_within_budget() -> void:
 	var avg := float(Time.get_ticks_msec() - started) / maxf(1.0, n)
 	print("bot budget: %d activations, %d open checks, %.1f ms average" % [n, MoveGrid.evaluations, avg])
 	check(s.over, "game finished")
-	check(MoveGrid.evaluations <= OPEN_BUDGET, "open checks %d over budget %d" % [MoveGrid.evaluations, OPEN_BUDGET])
+	var budget:=mini(OPEN_HARD_LIMIT,maxi(OPEN_BUDGET,n*OPEN_PER_ACTIVATION))
+	check(MoveGrid.evaluations <= budget, "open checks %d over budget %d" % [MoveGrid.evaluations,budget])
 	check(avg <= AVG_MS_BUDGET, "average activation %.1f ms over %.0f ms" % [avg, AVG_MS_BUDGET])

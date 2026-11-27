@@ -52,3 +52,23 @@ func test_deployment_all_core_scenarios() -> void:
 				if LineOfSight.check_figures(s.board,a,b).clear:
 					exposed+=1
 		print("Setup audit ",id,": ",exposed," visible opposing pairs at deployment.")
+
+func test_red_king_deployment_matrix() -> void:
+	var profile:=ContentProfile.new(["red_king"])
+	var figures:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	for stage: Dictionary in RedKingCampaign.stages():
+		var id:=str(stage["id"])
+		var s:=ScenarioLoader.load_id(id,figures,terrain())
+		var c:=GameController.new(s,Dice.new(19))
+		var d:=c.begin_deployment(-1)
+		check(d.done,id+" "+d.error)
+		for f in s.figures:
+			if f.side<0 or not f.in_play() or not d.zones.has(f.side):
+				continue
+			var wizard:=Vector2.INF
+			for other in s.side_figures(f.side):
+				if other.def.role=="wizard":
+					wizard=other.pos
+					break
+			check(DeploymentRules.zone(s,int(d.zones[f.side]),f.pos,wizard,f.def.role=="wizard"),id+" zone "+str(f.id))
+			check(DeploymentRules.legal(s,f,DeploymentRules.support(s,f.pos),[]),id+" stand "+str(f.id))
