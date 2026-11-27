@@ -81,6 +81,11 @@ func refresh() -> void:
 		mode = "initiative_choice"
 		preview()
 		return
+	if c.state.scenario_data.has("rk_worm_relocation"):
+		available.assign(["worm_keep"])
+		mode="worm_relocation"
+		preview()
+		return
 	if c.state.scenario_data.has("rk_lightning_absorb"):
 		available.assign(["elemental_absorb","elemental_pass"])
 		mode="elemental_lightning_reaction"
@@ -472,6 +477,9 @@ func preview() -> void:
 		"ruins_destination":
 			points.assign(RealityCrackTerrain.shift_points(c,spell_first))
 			hint="Choose a legal new centre for the selected terrain (up to 10″). Figures and treasure on it move too."
+		"worm_relocation":
+			points.assign(WormRider.relocation_points(c))
+			hint="Rival worm summoning rolled 1. Select a new legal location for the token, or keep its original location."
 		"hill_seam":
 			var unit := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
 			points.assign(RedKingHill.seam_points(c,unit))
@@ -626,6 +634,8 @@ func action(key: String) -> bool:
 		available.clear()
 		preview()
 		return false
+	if key=="worm_keep":
+		return WormRider.answer_relocation(c,c.state.scenario_data["rk_worm_relocation"]["at"])
 	if key in ["sinkhole_accept","sinkhole_fight","sinkhole_will","sinkhole_all"]:
 		return RedKingSinkhole.answer_pull(c,key.trim_prefix("sinkhole_"))
 	if key=="veil_keep":
@@ -998,6 +1008,9 @@ func tap(screen: Vector2) -> bool:
 				best=candidate
 				distance=candidate.distance_to(at)
 		return is_finite(best.x) and RedKingHunt.answer(c,best)
+	if mode=="worm_relocation":
+		var at_grid := at.round()
+		return WormRider.answer_relocation(c,at_grid)
 	if mode=="hill_seam":
 		var unit := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
 		var best := Vector2(INF,INF)

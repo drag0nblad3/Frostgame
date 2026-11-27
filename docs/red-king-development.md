@@ -309,3 +309,6 @@ Rivals can collect same-plane treasure, seek a living Key-Master using wrapped r
 
 ### Pyramid slope choices
 When King of the Hill transforms, human warband members straddling a seam choose a nearby legal point on a slope. A plain priority queue holds further figures and allows checkpointing. The nearest half-inch point on each reasonably close slope is offered, rather than unconstrained continuous tabletop placement. Rival placements remain deterministic. The board is still a planar rules projection, not a deformed physical pyramid.
+
+### Worm Rider miscast placement
+A rival's natural-one summon pauses before marker placement, allowing the human opponent to choose a legal new location or retain the original. The item action is spent exactly once. Human summons with a natural one retain the rival placement heuristic. Placement uses the existing whole-inch grid and occupied/impassable terrain validation.

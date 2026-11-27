@@ -47,6 +47,10 @@ static func summon(c: GameController,at: Vector2) -> bool:
 	if roll!=1 and roll<17:
 		return true
 	if roll==1:
+		if c.state.reaction_side>=0 and c.state.reaction_side!=f.side:
+			c.state.scenario_data["rk_worm_relocation"]={"id":f.id,"at":at,"ring":f.ring_side}
+			c.emit("worm_relocation_offer",{"id":f.id,"at":at})
+			return true
 		# Rival relocates the token toward the summoner's warband.
 		var best := INF
 		var selected := at
@@ -62,8 +66,35 @@ static func summon(c: GameController,at: Vector2) -> bool:
 							best=distance
 							selected=candidate
 		at=selected
+	_place_token(c,at,f.ring_side)
+	return true
+
+
+static func relocation_points(c: GameController) -> Array[Vector2]:
+	var out: Array[Vector2]=[]
+	var offer: Dictionary=c.state.scenario_data.get("rk_worm_relocation",{})
+	if offer.is_empty():
+		return out
+	for x in range(1,int(c.state.board.size.x)):
+		for y in range(1,int(c.state.board.size.y)):
+			var at := Vector2(x,y)
+			if legal(c,at,int(offer["ring"])):
+				out.append(at)
+	return out
+
+
+static func answer_relocation(c: GameController,at: Vector2) -> bool:
+	var offer: Dictionary=c.state.scenario_data.get("rk_worm_relocation",{})
+	if offer.is_empty() or not relocation_points(c).has(at):
+		return false
+	c.state.scenario_data.erase("rk_worm_relocation")
+	_place_token(c,at,int(offer["ring"]))
+	return true
+
+
+static func _place_token(c: GameController,at: Vector2,ring: int) -> void:
 	var pending: Array=c.state.scenario_data.get("rk_worm_tokens",[])
-	pending.append({"at":at,"ring":f.ring_side})
+	pending.append({"at":at,"ring":ring})
 	c.state.scenario_data["rk_worm_tokens"]=pending
 	var kind := TerrainKind.new()
 	kind.id="rk_worm_token"
@@ -74,7 +105,6 @@ static func summon(c: GameController,at: Vector2) -> bool:
 	c.state.board.pieces.append(marker)
 	c.state.board.invalidate_terrain()
 	c.emit("terrain_changed",{"spell":"worm_rider","created":true})
-	return true
 
 
 static func end_turn(c: GameController) -> void:
