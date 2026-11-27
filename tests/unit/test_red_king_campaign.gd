@@ -69,3 +69,22 @@ func test_mind_rewards_consumption_and_fight_scope() -> void:
 	check_eq(Melee.secret_hrut_bonus(f,hrut),1)
 	check_eq(Melee.secret_hrut_bonus(f,rival),0)
 	check_eq(Melee.secret_hrut_bonus(rival,hrut),0)
+
+
+func test_ragged_recovered_members_and_replacement_wizard() -> void:
+	var d := _story(false)
+	while RedKingCampaign.next_id(d)!="red_king_herded":
+		RedKingCampaign.advance(d,RedKingCampaign.next_id(d))
+	for i in 11:
+		d["units"].append({"id":i+1,"type":"thug","miss":0,"dead":false,"injuries":0})
+	check_eq(RaggedWarbands.deployed_ids(d).size(),10)
+	check(RaggedWarbands.deployed_ids(d).has(0))
+	d["units"][0]["dead"]=true
+	var draft := WarbandDraft.new(db())
+	draft.choose_defaults()
+	check(CampaignSuccession.replace_ragged(d,draft.as_warband()))
+	check_eq(RedKingCampaign.next_id(d),"red_king_herded")
+	check_eq(d["units"].size(),1)
+	check(d["ragged_no_apprentice"])
+	check_eq(RaggedWarbands.fill(d,db(),Dice.new(24)),9)
+	check_eq(RaggedWarbands.deployed_ids(d).size(),10)

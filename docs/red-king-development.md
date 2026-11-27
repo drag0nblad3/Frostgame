@@ -230,3 +230,6 @@ The item permanently binds to bear or snow leopard and can only be assigned to s
 ## Campaign integration hardening
 
 Deployment repairs crowded or obstructed Red King campaign starts within their starting zones, without moving fixed scenario figures; an impossible deployment is rejected. Prepared summons require an attending caster. Headquarters explains deployment blockers, including the mandatory wizard for Mindscape (ordinary games retain the core wounded-spellcaster absence rule). Sealed artefacts cannot be studied, and the shield's next-game roll closes the after-game preparation window. Settlement retains the battle if persistence fails.
+
+### Ragged campaign continuity
+Random recruitment is a visible preparation step after permanent summoning rituals and before deployment; returned wounded members above ten enter a deterministic reserve (casters first, then roster order). An eligible promotion retains the story, and a replacement wizard drawn from the current draft can continue the invasion with a new roster, zero spendable starting gold and no apprentice. The story stage and global artefact discovery history are retained; old personal possessions are discarded. Recruitment and story changes are persisted before departure.

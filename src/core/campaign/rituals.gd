@@ -16,7 +16,7 @@ static func choices(d: Dictionary,caster: int,id: String,shield: bool=false) -> 
 		return out
 	if u["dead"] or u.get("dismissed", false) or u.get("ragged_absent",false) or InjuryRules.blind(u) or int(u["miss"]) > 0 or u["type"] not in ["wizard", "apprentice"]:
 		return out
-	if RaggedWarbands.active(d) and id=="summon_demon":
+	if RaggedWarbands.active(d) and (id=="summon_demon" or (id in ["animal_companion","animate_construct"] and int(d.get("ragged_recruitment_game",-1))==int(d.get("games",0)))):
 		return out
 	if not BEFORE.has(id) and not AFTER.has(id):
 		return out

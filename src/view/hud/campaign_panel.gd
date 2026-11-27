@@ -18,6 +18,7 @@ var start: Button
 var story_start: Button
 var story_veil: CheckBox
 var recruit_status: CheckBox
+var roll_recruits: Button
 var reality_option: CheckBox
 var wounded_option: CheckBox
 var mantle_option: CheckBox
@@ -195,6 +196,9 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		campaign.data["red_king_recruit_status"]=on
 		campaign.save())
 	col.add_child(recruit_status)
+	roll_recruits=_command(col,"Roll random recruits",func() -> void:
+		if RaggedWarbands.fill(campaign.data,db,treasure_dice)>0:
+			changed())
 	secret_hrut=CheckBox.new()
 	secret_hrut.text="Use Secret of the Hrut in next battle (+1 Fight vs Hrut)"
 	secret_hrut.toggled.connect(func(on: bool) -> void:
@@ -240,6 +244,8 @@ func refresh(in_battle: bool) -> void:
 	mantle_option.set_pressed_no_signal(bool(d.get(CompanionMantle.OPTION,false)))
 	recruit_status.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty()
 	recruit_status.set_pressed_no_signal(bool(d.get("red_king_recruit_status",false)))
+	roll_recruits.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty() and d.get("pending_treasure",[]).is_empty() and CampaignSuccession.living_wizard(d) and RaggedWarbands.ready_count(d)<10
+	roll_recruits.text="Roll %d random recruits (finish summoning rituals first)"%maxi(0,10-RaggedWarbands.ready_count(d))
 	secret_hrut.visible=bool(d.get("red_king_secret_hrut",false)) and not in_battle and not stage.is_empty() and stage.get("id","")!="red_king_mind"
 	secret_hrut.set_pressed_no_signal(bool(d.get("red_king_use_secret_hrut",false)))
 	reconcile_button.visible=RedKingCampaign.active(d) and stage.is_empty() and RaggedWarbands.active(d) and not in_battle
@@ -298,7 +304,9 @@ func refresh(in_battle: bool) -> void:
 		if RedKingCampaign.economy_locked(d) and not RaggedWarbands.active(d):
 			lines.append("Pursued by the Red King: no purchases, hiring or base benefits before the Veil.")
 	if RaggedWarbands.active(d):
-		lines.append("RAGGED WARBANDS · No hiring, purchases or base benefits. Free random replacements before battle.")
+		lines.append("RAGGED WARBANDS · %d/10 ready. No hiring, purchases or base benefits. Finish summoning rituals, roll replacements, then assign equipment."%mini(10,RaggedWarbands.ready_count(d)))
+		if RaggedWarbands.ready_count(d)>10:
+			lines.append("%d recovered surplus members remain in reserve."%(RaggedWarbands.ready_count(d)-10))
 	for unit: Dictionary in d["units"]:
 		lines.append("%s #%d%s%s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, " — dead" if unit["dead"] else (" — dismissed" if unit.get("dismissed",false) else (" — separated" if unit.get("ragged_absent",false) else (" — resting" if int(unit["miss"]) > 0 else ""))), " — injuries: %d" % unit["injuries"] if int(unit["injuries"]) > 0 else ""])
 	for unit: Dictionary in d["units"]:
@@ -335,7 +343,7 @@ func refresh(in_battle: bool) -> void:
 			grimoire.add_item(str(item["spell"]).capitalize())
 			grimoire.set_item_metadata(grimoire.item_count - 1, i)
 	upgrade.disabled = not CampaignSuccession.living_wizard(d) or bool(d.get("stat_improved", false)) or int(d["xp"]) < 100
-	base_button.disabled = RaggedWarbands.active(d) or int(d["games"]) == 0
+	base_button.disabled = RedKingCampaign.economy_locked(d) or int(d["games"]) == 0
 	for i in base_choice.item_count:
 		var id := str(base_choice.get_item_metadata(i))
 		var proposed := d.duplicate(true)
@@ -343,8 +351,8 @@ func refresh(in_battle: bool) -> void:
 			proposed["base"] = id
 			proposed["resources"] = []
 		base_choice.set_item_disabled(i, not BaseResources.fits(proposed, db))
-	dismiss_button.disabled = RaggedWarbands.active(d) or members.item_count == 0
-	treat_button.disabled = RaggedWarbands.active(d) or members.item_count == 0
+	dismiss_button.disabled = RedKingCampaign.economy_locked(d) or members.item_count == 0
+	treat_button.disabled = RedKingCampaign.economy_locked(d) or members.item_count == 0
 	learn_button.disabled = not CampaignSuccession.living_wizard(d) or grimoire.item_count == 0 or int(d["xp"]) < 100
 	for i in recruit.item_count:
 		var id := str(recruit.get_item_metadata(i))

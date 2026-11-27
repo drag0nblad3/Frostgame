@@ -19,10 +19,11 @@ func start(roster: Dictionary,profile: ContentProfile=null) -> void:
 func deployment() -> Dictionary:
 	var units: Array = []
 	var ragged := RaggedWarbands.active(data)
+	var ragged_ids := RaggedWarbands.deployed_ids(data) if ragged else []
 	var locked := RedKingCampaign.economy_locked(data)
 	var reserve := -1 if locked else BaseResources.reserve_id(data, FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data)))
 	for unit: Dictionary in data["units"]:
-		if unit["dead"] or unit.get("dismissed", false) or (ragged and unit.get("ragged_absent",false)) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
+		if unit["dead"] or unit.get("dismissed", false) or (ragged and not ragged_ids.has(int(unit["id"]))) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
 			continue
 		var entry := {"type": unit["type"], "campaign_id": unit["id"], "at": [4.5 + 3.0 * units.size(), 3.0]}
 		if unit["type"] in ["wizard", "apprentice"]:
@@ -90,10 +91,13 @@ func deployment_blockers() -> Array[String]:
 		reasons.append("The story is concluded. Reconcile the warband before continuing.")
 	if not data.get("pending_treasure",[]).is_empty():
 		reasons.append("Resolve the pending treasure choices.")
-	if not BaseResources.fits(data,FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
+	if not RaggedWarbands.active(data) and not BaseResources.fits(data,FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
 		reasons.append("Roster exceeds its current limits. Adjust members or equipment.")
-	if RaggedWarbands.active(data) and RaggedWarbands.has_unassigned(data):
-		reasons.append("Assign or discard unsealed equipment before leaving.")
+	if RaggedWarbands.active(data):
+		if RaggedWarbands.has_unassigned(data):
+			reasons.append("Assign or discard unsealed equipment before leaving.")
+		if RaggedWarbands.ready_count(data)<10 and CampaignSuccession.living_wizard(data):
+			reasons.append("Roll random recruits after finishing summoning rituals.")
 	if ScrollShield.campaign_index(data,"roll")>=0:
 		reasons.append("Roll the Scroll Shield in preparation.")
 	var roster: Array=deployment()["figures"]
@@ -226,6 +230,7 @@ func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -
 	data["stat_improved"] = false
 	data["ritual_attempts"] = {}
 	data["preparation_started"] = false
+	data.erase("ragged_recruitment_game")
 	data["prepared_zombie"] = false
 	data.erase("prepared_zombie_caster")
 	data.erase("prepared_zombie_strong")

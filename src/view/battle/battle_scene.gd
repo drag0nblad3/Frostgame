@@ -493,9 +493,11 @@ func _begin_campaign_battle() -> void:
 			unit["dead"] = true
 			CampaignInventory.lose_owned(_campaign.data, int(unit["id"]))
 			_campaign.data["last_report"].append("%s retires after losing both eyes." % str(unit["type"]).capitalize())
-	if RaggedWarbands.stage(_scenario_id):
+	if RaggedWarbands.stage(_scenario_id) and not RaggedWarbands.active(_campaign.data):
 		RaggedWarbands.enter(_campaign.data)
-		RaggedWarbands.fill(_campaign.data,_figures,Dice.new(int(_campaign.data.get("games",0))+1))
+		_campaign.save()
+		_campaign_dialog.refresh(false)
+		return
 	if not _campaign.save():
 		return
 	var source: Dictionary=JsonFile.read(ScenarioLoader.DIR+_scenario_id+".json")
@@ -633,16 +635,19 @@ func _finish_campaign_battle(plant_target: int) -> void:
 		_plant_dialog.queue_free()
 		_plant_dialog=null
 	var previous := _campaign.data.duplicate(true)
+	var rng := controller.dice._rng.state
 	if not _campaign.settle(controller,controller.dice,0,plant_target):
+		_campaign.data=previous
+		controller.dice._rng.state=rng
 		hud.notify("Campaign settlement could not be applied.")
 		return
 	if not _campaign.save():
 		_campaign.data=previous
+		controller.dice._rng.state=rng
 		hud.notify("Could not save campaign settlement. Battle retained.")
 		return
 	_campaign_battle=false
-	if true:
-		var checkpoint := BattleSnapshot.read()
-		if checkpoint.get("meta",{}).get("campaign",false):
-			DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
+	var checkpoint := BattleSnapshot.read()
+	if checkpoint.get("meta",{}).get("campaign",false):
+		DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
 	_open_campaign()

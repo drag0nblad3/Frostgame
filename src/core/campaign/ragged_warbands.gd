@@ -45,6 +45,8 @@ static func roll_recruit(db: FigureDb,dice: Dice) -> String:
 static func fill(d: Dictionary,db: FigureDb,dice: Dice) -> int:
 	if not active(d) or not CampaignSuccession.living_wizard(d):
 		return 0
+	d["preparation_started"]=true
+	d["ragged_recruitment_game"]=int(d.get("games",0))
 	var count := 0
 	while ready_count(d)<10:
 		var id := roll_recruit(db,dice)
@@ -131,6 +133,7 @@ static func restore(d: Dictionary,db: FigureDb) -> void:
 	if not active(d):
 		return
 	d.erase("red_king_ragged")
+	d.erase("ragged_recruitment_game")
 	for u: Dictionary in d["units"]:
 		u.erase("ragged_absent")
 		if not u.get("ragged_recruit",false) or not BaseResources.alive(u):
@@ -147,3 +150,13 @@ static func restore(d: Dictionary,db: FigureDb) -> void:
 	for item: Dictionary in d["loot"]:
 		item.erase("ragged_sealed")
 	d["red_king_reconcile_pending"]=true
+
+
+## Recovered members do not disappear and cannot force the deployed group over ten.
+static func deployed_ids(d: Dictionary) -> Array[int]:
+	var ids: Array[int]=[]
+	for caster in [true,false]:
+		for u: Dictionary in d.get("units",[]):
+			if BaseResources.alive(u) and int(u.get("miss",0))==0 and not InjuryRules.blind(u) and CasterLoadout.is_caster(u["type"])==caster and ids.size()<10:
+				ids.append(int(u["id"]))
+	return ids
