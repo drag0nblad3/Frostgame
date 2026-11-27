@@ -35,14 +35,13 @@ static func exit(c: GameController,n: Vector3i) -> bool:
 	var f := c.state.active()
 	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
 	if n!=layout.node(f.surface_id,f.pos):
-		if not c.move_on_floor(n):
-			return false
-	else:
-		c.spend_move(f)
-	for id in f.carried_treasures():
-		c._loot.secure(c.state.treasure(id),f.side)
-	f.exited=true
-	c._magic.summons.enforce_illusion_limit(f)
-	f.actions_left=0
-	c.emit("exit",{"id":f.id})
+		return LayeredMovement.move(c,n,false,false,false,true)
+	c.spend_move(f)
+	complete(c,f)
 	return true
+
+
+static func complete(c: GameController,f: Figure) -> void:
+	var layout:=FloorLayout.from_dict(c.state.board.floor_layout)
+	if f.in_play() and is_exit(c.state,layout,layout.node(f.surface_id,f.pos)) and not Contact.in_combat(c.state.figures,f):
+		c._loot.complete_exit(f)

@@ -77,7 +77,8 @@ static func commit(c: GameController,mode: String,node: Variant) -> bool:
 			"exit":
 				if not c.exit_on_floor(node):
 					return false
-				c.end_activation()
+				if c.state.active()!=null and c.state.active().exited:
+					c.end_activation()
 				return true
 			"run_for_it","run_talisman": return LayeredMovement.move(c,node,false,true,mode=="run_talisman")
 			"gear_cape_move": return LayeredMovement.move(c,node,true)

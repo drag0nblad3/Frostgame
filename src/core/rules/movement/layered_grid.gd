@@ -1,13 +1,18 @@
 class_name LayeredGrid
 extends RefCounted
-## Experimental floor-aware graph. Legacy MoveGrid remains unchanged.
+## Explicit floor graph, with shared contact and movement restrictions.
 var layout: FloorLayout
 var mover: Figure
 var others: Array[Figure] = []
 var null_boundary := false
 var null_board: Board
 var _open_cache := {}
-var running := false
+var running := false:
+	set(value):
+		if running!=value:
+			_open_cache.clear()
+		running=value
+var board: Board
 
 
 func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> void:
@@ -15,11 +20,13 @@ func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> 
 	mover=f
 	if f!=null and f.battle_ref!=null:
 		var s: GameState = f.battle_ref.get_ref()
+		if s!=null:
+			board=s.board
 		if s!=null and s.board.floor_layout.has("null_regions"):
 			null_board=s.board
 			null_boundary=not ScenarioNull.field_at(null_board,f.pos) and (not f.spell_effects.is_empty() or f.elemental_shield>0 or f.controller_id>=0 or f.familiar)
 	for other in figures:
-		if other!=f and other.in_play():
+		if other!=f and other.in_play() and (f==null or f.ring_side==other.ring_side):
 			others.append(other)
 
 
@@ -33,8 +40,11 @@ func _compute_open(n: Vector3i) -> bool:
 	if not layout.standable(n):
 		return false
 	var at := layout.world(n)
+	var point:=layout.point(n)
+	if board!=null and (board.over_void(point,Figure.BASE_RADIUS) or BattleBoundary.blocks_position(board.boundaries,point,mover)):
+		return false
 	for other in others:
-		if absf(other.elevation-at.y)<0.5 and (other.pos.distance_to(layout.point(n))<Contact.OVERLAP or (WormRider.ignored(mover,other) and other.pos.distance_to(layout.point(n))<=Contact.CONTACT) or (running and mover!=null and other.side!=mover.side and other.pos.distance_to(layout.point(n))<1.001)):
+		if MovementContact.blocks(mover,other,others,point,at.y,running,layout.surface_id(n)):
 			return false
 	return true
 
@@ -45,7 +55,7 @@ func stops(n: Vector3i) -> bool:
 	if null_boundary and ScenarioNull.field_at(null_board,layout.point(n)):
 		return true
 	for other in others:
-		if other.side!=mover.side and absf(other.elevation-layout.height(n))<0.5 and Contact.touching(other.pos,layout.point(n)):
+		if other.side!=mover.side and Contact.touches_position(other,layout.point(n),layout.height(n),layout.surface_id(n)):
 			return true
 	return false
 
@@ -60,7 +70,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if not open(next):
 			continue
 		var finish := layout.world(next)
-		if running and not run_segment_clear(start,finish):
+		if not segment_allowed(start,finish) or (running and not run_segment_clear(start,finish)):
 			continue
 		if not layout.clearance(start.lerp(finish,0.5),Figure.BASE_RADIUS,1.6):
 			continue
@@ -70,7 +80,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		out.append({"to":next,"cost":start.distance_to(finish)*mult})
 	for edge: Dictionary in layout.links.get(n,[]):
 		var next: Vector3i = edge["to"]
-		if not open(next) or (running and not run_segment_clear(start,layout.world(next))):
+		if not open(next) or not segment_allowed(start,layout.world(next)) or (running and not run_segment_clear(start,layout.world(next))):
 			continue
 		var cost: float = edge["cost"]
 		if edge["kind"]=="climb" and mover!=null and (running or mover.def.traits.has("expert_climber") or mover.levitates()):
@@ -79,8 +89,9 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 	return out
 
 
+func segment_allowed(a: Vector3,b: Vector3) -> bool:
+	return board==null or not BattleBoundary.blocks_segment(board.boundaries,Vector2(a.x,a.z),Vector2(b.x,b.z),"movement",mover)
+
+
 func run_segment_clear(a: Vector3,b: Vector3) -> bool:
-	for t in others:
-		if mover!=null and t.side!=mover.side and absf(t.elevation-(a.y+b.y)*0.5)<0.5 and Geometry2D.get_closest_point_to_segment(t.pos,Vector2(a.x,a.z),Vector2(b.x,b.z)).distance_to(t.pos)<1.001:
-			return false
-	return true
+	return MovementContact.run_clear(mover,others,Vector2(a.x,a.z),Vector2(b.x,b.z),(a.y+b.y)*0.5)

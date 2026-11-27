@@ -1,7 +1,6 @@
 class_name LayeredMovement
 extends RefCounted
-## Controller-owned experimental movement for ordinary figures.
-## Until reactions and magic are migrated, reject those cases rather than silently skip them.
+## Floor-geometry movement adapter. Common controller owns actions and reactions.
 
 
 static func eligible(c: GameController,cape: bool=false) -> bool:
@@ -9,13 +8,10 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 	var f := s.active()
 	if s.board.floor_layout.is_empty() or not (GearActions.cape_ready(c) if cape else c.can_move()) or f.surface_id.is_empty():
 		return false
-	if s.forced_combat or (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or FuryRules.target(s,f)!=null:
+	if (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or FuryRules.target(s,f)!=null:
 		return false
 	if f.spell_effects.has("plane_walk") or f.spell_effects.has("potion_burrowing") or f.def.traits.has("ethereal") or f.def.traits.has("burrowing"):
 		return false
-	for other in s.figures:
-		if other.in_play() and (other.spell_effects.has("beauty") or other.spell_effects.has("invisibility") or IllusionRules.phantom(other)):
-			return false
 	for piece in s.board.pieces:
 		if piece.cast_turn>=0:
 			return false
@@ -38,28 +34,70 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 	return LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape)
 
 
-static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=false,boost: bool=false) -> bool:
+static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=false,boost: bool=false,exiting: bool=false) -> bool:
 	var reachable := reach(c,cape,run,boost)
 	if node==reachable.start or not reachable.can_reach(node):
 		return false
 	var f := c.state.active()
-	var engaged := Contact.in_combat(c.state.figures,f)
-	if run and boost and not ActiveGear.spend(f,RunForIt.TALISMAN):
-		return false
-	if cape and not GearActions.use_cape(c,f):
-		return false
 	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
 	var path := PackedVector3Array()
 	var surfaces: Array[String] = []
 	for step in reachable.path_to(node):
 		path.append(layout.world(step))
 		surfaces.append(layout.surface_id(step))
+	var cost:=float(reachable.cost[node])
+	var targets:=MovementContact.enemies_at(c.state.figures,f,layout.point(node),layout.height(node),layout.surface_id(node))
+	var ignored: Array[int]=[]
+	if cape:
+		for enemy in Contact.enemies_of(c.state.figures,f):
+			ignored.append(enemy.id)
+	c._magic.beauty.authorize(f,targets,_authorized.bind(c,f,path,surfaces,cost,ignored,cape,run,boost,exiting))
+	return true
+
+
+static func _authorized(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,ignored: Array[int],cape: bool,run: bool,boost: bool,exiting: bool) -> void:
+	if not f.in_play() or (run and boost and not ActiveGear.spend(f,RunForIt.TALISMAN)) or (cape and not GearActions.use_cape(c,f)):
+		return
+	_offer_or_apply(c,f,path,surfaces,cost,ignored,run,boost,exiting)
+
+
+static func _offer_or_apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,ignored: Array[int],run: bool,boost: bool,exiting: bool) -> void:
+	var choice:=c._displacement.intercept_floor(f,path,surfaces,ignored) if c.state.forced_combat and not run else {}
+	if not choice.is_empty() and choice["guard"].side==c.state.reaction_side:
+		c.state.pending_intercept={"floor_route":true,"mover":f.id,"path":path,"surfaces":surfaces,"cost":cost,"ignored":ignored,"choice":choice,"exiting":exiting}
+		c.emit("intercept_offer",{"id":choice["guard"].id,"target":f.id})
+		return
+	_apply(c,f,path,surfaces,cost,choice,run,boost,exiting)
+
+
+static func answer_intercept(c: GameController,p: Dictionary,accept: bool) -> bool:
+	var f:=c.state.figure(p["mover"])
+	if f==null or not f.in_play():
+		return false
+	var surfaces: Array[String]=[]
+	surfaces.assign(p["surfaces"])
+	var path: PackedVector3Array=p["path"]
+	var choice: Dictionary=p["choice"]
+	if accept:
+		_apply(c,f,path,surfaces,float(p["cost"]),choice,false,false,bool(p["exiting"]))
+	else:
+		var ignored: Array[int]=[]
+		ignored.assign(p["ignored"])
+		ignored.append(choice["guard"].id)
+		_offer_or_apply(c,f,path,surfaces,float(p["cost"]),ignored,false,false,bool(p["exiting"]))
+	return true
+
+
+static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,run: bool,boost: bool,exiting: bool) -> void:
+	var engaged:=Contact.in_combat(c.state.figures,f)
+	if not choice.is_empty():
+		path.resize(int(choice["index"])+1)
+		surfaces.resize(path.size())
 	c.spend_move(f)
 	# Maintain authoritative floor, elevation and position at every site
 	# crossing; publish the movement chunk before its consequence.
 	var chunk:=PackedVector3Array([path[0]])
 	var chunk_surfaces: Array[String]=[surfaces[0]]
-	var cost:=float(reachable.cost[node])
 	for i in range(1,path.size()):
 		var point:=path[i]
 		f.pos=Vector2(point.x,point.z)
@@ -76,10 +114,13 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 				c.finish_movement(f,engaged,false)
 				if run:
 					RunForIt.finish(c,f,boost)
-				return true
+				return
 	if chunk.size()>1:
 		c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
+	if not choice.is_empty():
+		c._displacement.force_contact(choice)
 	c.finish_movement(f,engaged)
 	if run:
 		RunForIt.finish(c,f,boost)
-	return true
+	elif exiting and choice.is_empty() and f.in_play() and not Contact.in_combat(c.state.figures,f):
+		LayeredLoot.complete(c,f)

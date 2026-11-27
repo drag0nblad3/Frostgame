@@ -27,9 +27,13 @@ static func in_combat(figures: Array[Figure], f: Figure) -> bool:
 	return not enemies_of(figures, f).is_empty()
 
 
+## Shared spatial contact test. Surfaces disambiguate stacked routes;
+## physical base overlap still applies across adjacent surface identities.
+static func touches_position(f: Figure,at: Vector2,height: float,surface: String="") -> bool:
+	return absf(f.elevation-height)<0.5 and (surface.is_empty() or f.surface_id.is_empty() or f.surface_id==surface) and touching(f.pos,at)
+
+
 static func figures_touch(a: Figure, b: Figure) -> bool:
 	if a.ring_side!=b.ring_side:
 		return false
-	if not a.surface_id.is_empty() and not b.surface_id.is_empty() and a.surface_id!=b.surface_id:
-		return false
-	return absf(a.elevation - b.elevation) < 0.5 and touching(a.pos, b.pos)
+	return touches_position(a,b.pos,b.elevation,b.surface_id)

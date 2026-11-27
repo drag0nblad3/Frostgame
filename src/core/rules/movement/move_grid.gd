@@ -63,12 +63,8 @@ func _open(n: Vector2i) -> bool:
 		return false
 	var height := board.height_at(p)
 	for o in others:
-		if absf(o.elevation - height) < 0.5:
-			var distance := o.pos.distance_to(p)
-			if distance < Contact.OVERLAP or (running and mover!=null and o.side!=mover.side and distance<1.001):
-				return false
-			if mover!=null and o.side!=mover.side and distance<=Contact.CONTACT and (WormRider.ignored(mover,o) or (not IllusionRules.visible_to(others, mover, o) and not CreatureSenses.may_contact(mover,o)) or (mover.battle_ref != null and mover.battle_ref.get_ref() != null and BeautyActions.blocked(mover.battle_ref.get_ref(), mover, o))):
-				return false
+		if MovementContact.blocks(mover,o,others,p,height,running):
+			return false
 	return true
 
 
@@ -81,7 +77,7 @@ func stops(n: Vector2i) -> bool:
 		return true
 	var height := board.height_at(p)
 	for o in others:
-		if o.side != mover.side and absf(o.elevation - height) < 0.5 and Contact.touching(o.pos, p):
+		if o.side != mover.side and Contact.touches_position(o,p,height):
 			return true
 	return false
 
@@ -116,9 +112,8 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
 	if running:
-		for o in others:
-			if mover!=null and o.side!=mover.side and absf(o.elevation-board.height_at(mid))<0.5 and Geometry2D.get_closest_point_to_segment(o.pos,pa,pb).distance_to(o.pos)<1.001:
-				return INF
+		if not MovementContact.run_clear(mover,others,pa,pb,board.height_at(mid)):
+			return INF
 		if ScenarioColumns.contact(board,mid)!=null:
 			return INF
 		if board.has_ground_profiles or board.has_ramps:

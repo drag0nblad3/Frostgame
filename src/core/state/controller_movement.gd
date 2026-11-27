@@ -54,11 +54,8 @@ static func move_to(c: GameController, node: Vector2i,cape: bool=false) -> bool:
 
 
 static func _commit_move(c: GameController, f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int],cape: bool=false) -> bool:
-	var targets: Array[Figure] = []
 	var at := path[path.size() - 1]
-	for t in c.state.figures:
-		if t.in_play() and t.ring_side==f.ring_side and t.side != f.side and absf(t.elevation - c.state.board.height_at(at)) < 0.5 and Contact.touching(t.pos, at):
-			targets.append(t)
+	var targets:=MovementContact.enemies_at(c.state.figures,f,at,c.state.board.height_at(at))
 	c._magic.beauty.authorize(f, targets, c._move_authorized.bind(f,path,cost,ignored,cape))
 	return true
 
@@ -110,6 +107,8 @@ static func answer_intercept(c: GameController, accept: bool) -> bool:
 	if p.is_empty():
 		return false
 	c.state.pending_intercept = {}
+	if p.get("floor_route",false):
+		return LayeredMovement.answer_intercept(c,p,accept)
 	var mover := c.state.figure(p["mover"])
 	var choice: Dictionary = p["choice"]
 	var path: PackedVector2Array = p["path"]

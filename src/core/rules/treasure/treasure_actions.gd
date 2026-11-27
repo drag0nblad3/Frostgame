@@ -171,6 +171,11 @@ func exit_table(node: Vector2i) -> bool:
 		return false
 	if not f.in_play() or f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
 		return true
+	complete_exit(f)
+	return true
+
+
+func complete_exit(f: Figure) -> void:
 	for id in f.carried_treasures():
 		secure(_c.state.treasure(id), f.side)
 	f.exited = true
@@ -179,7 +184,6 @@ func exit_table(node: Vector2i) -> bool:
 	_c.emit("exit", {"id": f.id})
 	if RedKingInvestigations.active(_c.state) and _c.state.turn>3:
 		_c.emit("investigation_xp",{"side":f.side,"xp":10})
-	return true
 
 
 func secure(token: TreasureToken, side: int) -> void:
