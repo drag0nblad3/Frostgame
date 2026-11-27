@@ -232,7 +232,7 @@ func show_roll(text: String) -> void:
 		return
 	_roll_label.text = text
 	_roll_panel.show()
-	_roll_timer.start(3.0)
+	_roll_timer.start(6.0)
 
 
 func set_training(index: int, complete: bool, failed: bool = false) -> void:
@@ -252,7 +252,7 @@ func notify(text: String) -> void:
 	add_line(text)
 	_toast.text = text
 	_toast.show()
-	_toast_timer.start(4.0)
+	_toast_timer.start(6.0)
 
 
 func set_status(text: String) -> void:
@@ -279,8 +279,12 @@ func set_hint(hint: String) -> void:
 
 func set_active_summary(f: Figure) -> void:
 	_summary.visible=f!=null
+	_summary.text=active_summary(f)
+
+
+static func active_summary(f: Figure) -> String:
 	if f==null:
-		return
+		return ""
 	var text := "%s  ·  HP %d/%d\n%d ACTIONS  ·  MOVE %.1f″\nF %+d   S %+d   A %d   W %+d"%[f.label(),f.health,f.def.health,f.actions_left,MoveRules.allowance(f),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
 	if f.melee!=null:
 		text+="\n"+f.melee.name
@@ -290,7 +294,7 @@ func set_active_summary(f: Figure) -> void:
 		text+=" · LOOT %d"%f.carried_treasures().size()
 	if f.poisoned:
 		text+=" · POISONED"
-	_summary.text=text
+	return text
 
 
 func set_actions(available: Array[String], mode: String, hint: String) -> void:

@@ -9,7 +9,10 @@ signal roll_resolved(text: String)
 const NOTICES := ["hut_discovered", "disc_transport", "disc_stay", "well_drink", "worm_emerges", "break_ice", "column_fight", "column_opened", "genie_released", "genie_flee", "genie_escaped", "null_field", "tower_entered"]
 
 ## Animation speed multiplier (higher is faster).
-var speed := 1.0
+var speed := 0.8
+const RESULT_HOLD := 0.8
+const NOTICE_HOLD := 1.3
+const DAMAGE_HOLD := 1.7
 var state: GameState
 var views := {}
 var treasure_views := {}
@@ -75,7 +78,13 @@ func _play(e: GameEvent) -> void:
 			var f := state.figure(d["id"])
 			_view(f.id).position = TableSpace.to_world(f.pos, f.elevation)
 		"allegiance", "spell_effect", "spell_expired", "weapon_selected", "weapon_destroyed", "poison", "null_field", "shield_absorb":
-			_view(d["id"]).refresh(state.figure(d["id"]))
+			var affected := _view(d["id"])
+			affected.refresh(state.figure(d["id"]))
+			if e.type in ["spell_effect","spell_expired","poison","null_field","shield_absorb","weapon_destroyed"]:
+				var effect := str(d.get("spell",e.type)).replace("_"," ").capitalize()
+				if e.type=="spell_expired":
+					effect+=" ends"
+				_float_text(affected,effect,Color("8ed8ef"))
 		"cast_result":
 			if views.has(d["id"]):
 				var caster := _view(d["id"])
@@ -87,6 +96,7 @@ func _play(e: GameEvent) -> void:
 				var pose_tween := create_tween()
 				pose_tween.tween_method(caster.cast_pose,0.0,1.0,0.13)
 				pose_tween.tween_method(caster.cast_pose,1.0,0.0,0.22)
+				pose_tween.tween_interval(0.6)
 				_wait_for(pose_tween)
 		"disc_transport":
 			BattleEffects.pulse(self, _view(d["id"]).position + Vector3.UP * 0.15, Color(1.0,0.78,0.32), 1.6)
@@ -109,7 +119,10 @@ func _play(e: GameEvent) -> void:
 			v.refresh(state.figure(d["id"]))
 			_float_text(v, "-%d" % d["amount"])
 		"out_of_action":
-			_view(d["id"]).take_out()
+			var fallen := _view(d["id"])
+			var defeat := fallen.take_out()
+			defeat.tween_interval(0.7)
+			_wait_for(defeat)
 		"pylon_destroyed":
 			var marker: MeshInstance3D=treasure_views[d["treasure"]]
 			marker.position=TableSpace.to_world(d["at"],state.board.height_at(d["at"])+0.25)
@@ -159,10 +172,19 @@ func _play(e: GameEvent) -> void:
 			token.visible = false
 		"exit":
 			_view(d["id"]).visible = false
+	# Don’t let non-animated results flash by in a single process tick.
+	if not _busy and not line.is_empty() and e.type not in ["activate","end_activation","move","layered_move","push_back","force_combat"]:
+		_hold(NOTICE_HOLD if e.type in NOTICES or e.type.begins_with("reality_") else RESULT_HOLD)
 
 
 func _view(id: int) -> FigureView:
 	return views[id]
+
+
+func _hold(seconds: float) -> void:
+	var t := create_tween()
+	t.tween_interval(seconds)
+	_wait_for(t)
 
 
 func _wait_for(t: Tween) -> void:
@@ -228,6 +250,7 @@ func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell:
 	t.tween_callback(BattleEffects.impact.bind(self,destination,color,damaging,magic))
 	if spell == "elemental_ball" and damaging:
 		t.tween_callback(BattleEffects.pulse.bind(self,to.position+Vector3.UP*0.15,color,1.7))
+	t.tween_interval(0.5)
 	_wait_for(t)
 
 
@@ -247,6 +270,7 @@ func _animate_lunge(a: FigureView, b: FigureView,tied: bool=false) -> void:
 	t.parallel().tween_property(a, "position", home, 0.20)
 	t.parallel().tween_method(a.attack_pose, 1.0, 0.0, 0.20)
 	t.tween_method(b.recoil_pose, 0.35 if tied else 1.0, 0.0, 0.18)
+	t.tween_interval(0.5)
 	_wait_for(t)
 
 
@@ -262,8 +286,9 @@ func _float_text(v: FigureView, text: String, color: Color = Color(1, 0.35, 0.3)
 	add_child(l)
 	l.position = v.position + Vector3(0, v.body_height() + 1.5, 0)
 	var t := create_tween()
-	t.tween_property(l, "position:y", l.position.y + 1.5, 0.7)
-	t.parallel().tween_property(l, "modulate:a", 0.0, 0.7)
+	t.tween_interval(0.45)
+	t.tween_property(l,"position:y",l.position.y+1.2,DAMAGE_HOLD-0.45)
+	t.parallel().tween_property(l,"modulate:a",0.0,0.45).set_delay(DAMAGE_HOLD-0.9)
 	t.tween_callback(l.queue_free)
 	_wait_for(t)
 

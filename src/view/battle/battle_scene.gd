@@ -13,7 +13,7 @@ var _training_complete := false
 var _training_failed := false
 var _training_prompt: AcceptDialog
 ## Pause between bot activations in Auto mode (seconds).
-const AUTO_DELAY := 0.35
+const AUTO_DELAY := 0.8
 
 var controller: GameController
 var player: EventPlayer

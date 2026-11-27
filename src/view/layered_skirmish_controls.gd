@@ -15,6 +15,16 @@ var _resolve_button: Button
 var _donor: OptionButton
 var _stolen: SpinBox
 var _reaction_key := ""
+const PLAN_MODES := ["move","run_for_it","run_talisman","cape_move","jump","exit"]
+var planned: Variant=null
+var planned_actor := -1
+var planned_target := -1
+var _reach: LayeredReach
+var _jump_plans := {}
+var _summary: Label
+var _result: Label
+var _row: GridContainer
+var _scroll: ScrollContainer
 
 
 func setup(host: Node3D) -> void:
@@ -23,20 +33,47 @@ func setup(host: Node3D) -> void:
 	var col := VBoxContainer.new()
 	add_child(col)
 	log_line=Label.new()
-	log_line.text="Experimental skirmish • %d figures, %d treasures" % [c.state.figures.size(),c.state.treasures.size()]
+	log_line.text="Battle • %d figures, %d treasures" % [c.state.figures.size(),c.state.treasures.size()]
 	log_line.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(log_line)
+	log_line.add_theme_font_size_override("font_size",19)
+	_result=Label.new()
+	_result.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_result.modulate=Color("e5c58a")
+	_result.add_theme_font_size_override("font_size",20)
+	_result.hide()
+	col.add_child(_result)
+	_summary=Label.new()
+	_summary.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_summary.modulate=Color("e5c58a")
+	_summary.add_theme_font_size_override("font_size",22)
+	col.add_child(_summary)
 	hint=Label.new()
 	hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(hint)
-	var row := HFlowContainer.new()
-	col.add_child(row)
-	for entry: Array in [["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["death_mask","Toggle Death Mask"],["run_for_it","Run 3″"],["run_talisman","Run 6″ (Talisman)"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["gutter_skip","Skip free flail attack"],["shoot","Shoot"],["ammo_shot","Enchanted shot"],["bottle_imp","Release Bottle Imp"],["resist_fate","Reroll resistance"],["resist_amulet","Use resistance amulet"],["cast_fate","Reroll casting"],["cast_scroll","Use scroll"],["fate_yes","Reroll combat"],["fate_no","Keep combat roll"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
+	_hint_style()
+	_scroll=ScrollContainer.new()
+	_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
+	col.add_child(_scroll)
+	_row=GridContainer.new()
+	_row.columns=2
+	_row.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	_row.add_theme_constant_override("h_separation",10)
+	_row.add_theme_constant_override("v_separation",10)
+	_scroll.add_child(_row)
+	for entry: Array in [["plan_confirm","Confirm move"],["plan_undo","Undo move"],["attack_confirm","Confirm attack"],["attack_cancel","Cancel attack"],["group","Group activation"],["finish_early","Finish phase"],["move","Move"],["death_mask","Toggle Death Mask"],["run_for_it","Run 3″"],["run_talisman","Run 6″ (Talisman)"],["cape_move","Escape (Dazzling Cape)"],["jump","Jump"],["fight","Fight"],["gutter_skip","Skip free flail attack"],["shoot","Shoot"],["ammo_shot","Enchanted shot"],["bottle_imp","Release Bottle Imp"],["resist_fate","Reroll resistance"],["resist_amulet","Use resistance amulet"],["cast_fate","Reroll casting"],["cast_scroll","Use scroll"],["fate_yes","Reroll combat"],["fate_no","Keep combat roll"],["cast","Cast spell"],["collect","Collect"],["exit","Extract"],["teleport","Teleport"],["leap","Leap"],["bridge","Bridge"],["cancel_bridge","Dismiss bridge"],["reload","Reload"],["push_self","Withdraw 1″"],["push_self_5","Back ½″"],["push_self_15","Back 1½″"],["push_self_20","Back 2″"],["push_self_25","Back 2½″"],["push_self_30","Back 3″"],["push_enemy","Push enemy"],["stay","Stay"],["end","End activation"],["rival","Rival activation"]]:
 		var b := Button.new()
 		b.text=entry[1]
-		b.custom_minimum_size.y=44
+		b.custom_minimum_size=Vector2(0,72)
+		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		b.add_theme_font_size_override("font_size",22)
+		b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+		b.tooltip_text=b.text
+		ActionArt.apply(b,str(entry[0]),{})
+		if entry[0] in ["plan_confirm","attack_confirm"]:
+			b.add_theme_stylebox_override("normal",BattleTheme.panel(Color("305664"),Color("e5c58a")))
 		b.pressed.connect(command.bind(str(entry[0])))
-		row.add_child(b)
+		_row.add_child(b)
 		_buttons[entry[0]]=b
 	_cast_row=HBoxContainer.new()
 	col.add_child(_cast_row)
@@ -47,11 +84,11 @@ func setup(host: Node3D) -> void:
 	_cast_row.add_child(_empower)
 	_resolve_button=Button.new()
 	_resolve_button.text="Resolve cast"
-	_resolve_button.custom_minimum_size.y=44
+	_resolve_button.custom_minimum_size.y=64
 	_resolve_button.pressed.connect(_resolve)
 	_cast_row.add_child(_resolve_button)
 	_donor=OptionButton.new()
-	_donor.custom_minimum_size.y=44
+	_donor.custom_minimum_size.y=64
 	col.add_child(_donor)
 	_stolen=SpinBox.new()
 	_stolen.prefix="Steal +"
@@ -74,6 +111,21 @@ func setup(host: Node3D) -> void:
 		if cast:
 			_empower.max_value=c.cast_max_empowerment())
 	scene.player.line_logged.connect(func(line: String) -> void:log_line.text=line)
+	scene.player.notice.connect(func(line: String) -> void:log_line.text=line)
+	scene.player.roll_resolved.connect(func(line: String) -> void:
+		_result.text=line
+		_result.show())
+
+
+func _hint_style() -> void:
+	hint.add_theme_font_size_override("font_size",22)
+
+
+func fit_dock(wide: bool,bounds: Vector2) -> void:
+	custom_minimum_size.x=clampf(bounds.x*0.29,310.0,420.0) if wide else 0.0
+	_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL if wide else Control.SIZE_FILL
+	_scroll.custom_minimum_size.y=0.0 if wide else minf(170.0,bounds.y*0.28)
+	_row.columns=1 if wide else maxi(2,mini(4,floori(bounds.x/190.0)))
 
 
 func human() -> bool:
@@ -89,6 +141,10 @@ func refresh() -> void:
 	var s := c.state
 	var f := s.active()
 	var idle: bool = scene.player.idle()
+	_summary.text=BattleHud.active_summary(f) if idle else ""
+	_summary.visible=not _summary.text.is_empty()
+	if planned!=null and (f==null or f.id!=planned_actor or not idle):
+		clear_plan()
 	for key: String in _buttons:
 		_buttons[key].visible=false
 	_cast_row.hide()
@@ -219,25 +275,27 @@ func refresh() -> void:
 	_show("bridge",LayeredBridge.eligible(c))
 	_show("cancel_bridge",not LayeredBridge.owned(s,f.id).is_empty())
 	if mode=="move" and c.can_move():
-		var reach := c.layered_reach()
-		for n: Vector3i in reach.cost:
-			if n!=reach.start:
+		_reach=c.layered_reach()
+		for n: Vector3i in _reach.cost:
+			if n!=_reach.start:
 				destinations[n]=true
 	elif mode in ["run_for_it","run_talisman"]:
-		var run_reach := LayeredMovement.reach(c,false,true,mode=="run_talisman")
-		for n: Vector3i in run_reach.cost:
-			if n!=run_reach.start:
+		_reach=LayeredMovement.reach(c,false,true,mode=="run_talisman")
+		for n: Vector3i in _reach.cost:
+			if n!=_reach.start:
 				destinations[n]=true
 		hint.text="Choose a run destination; ends activation."
 	elif mode=="cape_move" and LayeredMovement.eligible(c,true):
-		var cape_reach := LayeredMovement.reach(c,true)
-		for n: Vector3i in cape_reach.cost:
-			if n!=cape_reach.start:
+		_reach=LayeredMovement.reach(c,true)
+		for n: Vector3i in _reach.cost:
+			if n!=_reach.start:
 				destinations[n]=true
 		hint.text="Choose a legal escape destination."
 	elif mode=="jump":
+		_jump_plans=jumps
 		destinations=jumps
 	elif mode=="exit":
+		_reach=c.layered_reach()
 		for n in exits:
 			destinations[n]=true
 	elif mode=="teleport" and teleport:
@@ -258,6 +316,15 @@ func refresh() -> void:
 		if LayeredLeap.eligible(c,t):
 			hint.text="Choose a floor, then a legal Leap landing for "+t.label()+"."
 			_leap_points(t)
+	if planned!=null:
+		if destinations.has(planned):
+			_show_plan()
+		else:
+			clear_plan()
+	elif planned_target>=0:
+		_show_attack()
+	elif mode in PLAN_MODES:
+		hint.text+="\nTap or drag to plan, then confirm. Change floors to reach other levels."
 
 
 func _teleport_points(f: Figure) -> void:
@@ -308,6 +375,23 @@ func command(key: String) -> void:
 	if not scene.player.idle() or not _buttons.has(key) or _buttons[key].disabled or not _buttons[key].visible:
 		return
 	match key:
+		"plan_confirm":
+			if planned!=null:
+				var n: Vector3i=planned
+				clear_plan()
+				_commit_destination(n)
+		"plan_undo": clear_plan()
+		"attack_cancel":
+			planned_target=-1
+			scene.clear_plan_art()
+		"attack_confirm":
+			var target:=planned_target
+			planned_target=-1
+			scene.clear_plan_art()
+			if mode=="fight":
+				c.fight(target)
+			else:
+				c.shoot(target,false,mode=="ammo_shot")
 		"cast_fate": c._magic.reroll_fate()
 		"cast_scroll": c._magic.insure()
 		"resist_fate": c._magic.resistance.reroll_fate()
@@ -394,19 +478,28 @@ func tap_figure(screen: Vector2) -> bool:
 		GearActions.gutter_fight(c,chosen.id)
 		mode="move"
 	elif mode=="fight":
-		c.fight(chosen.id)
+		planned_target=chosen.id
+		_show_attack()
 	elif mode=="leap":
 		leap_target=chosen.id
 		mode="leap_land"
 		scene.floor_choice.select(scene.layout.index_of(chosen.surface_id))
 	else:
-		c.shoot(chosen.id,false,mode=="ammo_shot")
+		planned_target=chosen.id
+		_show_attack()
 	return true
 
 
 func choose_destination(n: Vector3i) -> void:
 	if not destinations.has(n) or not human() or not scene.player.idle():
 		return
+	if mode in PLAN_MODES:
+		plan_destination(n)
+		return
+	_commit_destination(n)
+
+
+func _commit_destination(n: Vector3i) -> void:
 	match mode:
 		"bottle_imp":
 			GearActions.bottle_on_floor(c,n)
@@ -454,3 +547,66 @@ func _refresh_donor(p: Dictionary,cast: bool) -> void:
 	_stolen.visible=_donor.visible and selected>0
 	if cast:
 		_empower.max_value=c.cast_max_empowerment()
+
+
+func clear_plan() -> void:
+	if planned_actor>=0 and scene.player.views.has(planned_actor):
+		var f := c.state.figure(planned_actor)
+		var v: FigureView=scene.player.views[planned_actor]
+		if f!=null:
+			v.position=TableSpace.to_world(f.pos,f.elevation)
+	planned=null
+	planned_actor=-1
+	scene.clear_plan_art()
+
+
+func plan_destination(n: Vector3i) -> void:
+	var f := c.state.active()
+	if f==null or not destinations.has(n) or mode not in PLAN_MODES:
+		return
+	if planned==n:
+		return
+	planned=n
+	planned_actor=f.id
+	var v: FigureView=scene.player.views[f.id]
+	v.position=scene.layout.world(n)
+	v.visible=true
+	var points := PackedVector3Array()
+	if mode=="jump":
+		points=_jump_plans[n]["path"]
+	elif _reach!=null:
+		for step in _reach.path_to(n):
+			points.append(scene.layout.world(step))
+	scene.show_plan_art(points,scene.layout.world(n))
+	_show_plan()
+
+
+func _show_plan() -> void:
+	for key in _buttons:
+		_buttons[key].visible=false
+	_show("plan_confirm",true)
+	_show("plan_undo",true)
+	_buttons["plan_confirm"].text="Confirm jump" if mode=="jump" else ("Confirm retreat" if mode=="exit" else "Confirm move")
+	var n: Vector3i=planned
+	var f := c.state.active()
+	var cost: float=float(_jump_plans[n]["cost"]) if mode=="jump" else float(_reach.cost.get(n,0.0))
+	var budget := 3.0 if mode=="run_for_it" else (6.0 if mode=="run_talisman" else MoveRules.allowance(f))
+	hint.text="PREVIEW · %s · %.1f″ elevation\n%.1f″ / %.1f″ movement · %.1f″ remaining\nConfirm or undo. No action spent yet."%[scene.layout.surface_id(n).capitalize(),scene.layout.height(n),cost,budget,maxf(0.0,budget-cost)]
+	if mode=="jump":
+		hint.text+="\nLanding may cause falling damage."
+	elif mode in ["run_for_it","run_talisman"]:
+		hint.text+="\nRunning ends activation."
+
+
+func _show_attack() -> void:
+	var target:=c.state.figure(planned_target)
+	var f:=c.state.active()
+	if target==null or f==null:
+		planned_target=-1
+		return
+	for key in _buttons:
+		_buttons[key].visible=false
+	_show("attack_confirm",true)
+	_show("attack_cancel",true)
+	hint.text="%s · HP %d/%d · Fight %+d · Armour %d\n%s · Confirm to roll or select another target."%[target.label(),target.health,target.def.health,target.effective_fight(),target.effective_armour(),("%s · %.1f″ / %.0f″"%[f.ranged.name,Shooting.distance(f,target),f.ranged.range_in]) if mode!="fight" else f.melee.name]
+	scene.show_plan_art(PackedVector3Array(),TableSpace.to_world(target.pos,target.elevation))
