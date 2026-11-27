@@ -13,7 +13,7 @@ static func can_teleport(c: GameController,n: Vector3i) -> bool:
 		return false
 	if not c._magic.available_spell(f,"teleport") or Contact.in_combat(s.figures,f) or f.spell_effects.has("blinding_light") or s.group.in_progress():
 		return false
-	var layout := FloorLayout.from_dict(s.board.floor_layout)
+	var layout := s.board.floor_geometry()
 	return can_teleport_with(c,n,layout,LayeredGrid.new(layout,f,s.figures))
 
 
@@ -29,29 +29,31 @@ static func can_teleport_with(c: GameController,n: Vector3i,layout: FloorLayout,
 		return false
 	if from.distance_to(to)<0.1:
 		return false
-	for t in s.figures:
-		if t.in_play() and t.side!=f.side and absf(t.elevation-to.y)<0.5 and Contact.touching(t.pos,layout.point(n)):
-			return false
-	return LayeredSight.clear(layout,from+Vector3.UP*1.5,to+Vector3.UP*0.02)
+	if not MovementContact.enemies_at(s.figures,f,layout.point(n),to.y,layout.surface_id(n)).is_empty():
+		return false
+	return LineOfSight.floor_point_visible(s.board,layout,f,to)
 
 
 static func start_teleport(c: GameController,n: Vector3i) -> bool:
 	if not can_teleport(c,n):
 		return false
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	return c._magic._roll("teleport",c.state.active_id,null,false,-1,{"floor_destination":n,"surface_id":layout.surface_id(n)})
 
 
 static func apply_teleport(c: GameController,f: Figure,effect: Dictionary) -> void:
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	var n: Vector3i = effect["floor_destination"]
 	if not layout.standable(n) or layout.surface_id(n)!=effect["surface_id"]:
 		return
 	var start := Vector3(f.pos.x,f.elevation,f.pos.y)
+	var old:=f.surface_id
 	f.pos=layout.point(n)
 	f.elevation=layout.height(n)
 	f.surface_id=layout.surface_id(n)
 	f.spell_effects.erase("bones_of_the_earth")
 	f.magic_exhausted=true
 	f.actions_left=0
-	c.emit("layered_move",{"id":f.id,"path":PackedVector3Array([start,layout.world(n)]),"surfaces":[f.surface_id],"cost":0.0,"teleport":true})
+	c.emit("layered_move",{"id":f.id,"path":PackedVector3Array([start,layout.world(n)]),"surfaces":[old,f.surface_id],"cost":0.0,"teleport":true})
+	c._magic.illusions.after_move(f)
+	ScenarioSites.end_move(c,f)

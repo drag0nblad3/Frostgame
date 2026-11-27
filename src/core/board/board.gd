@@ -7,8 +7,10 @@ var name := ""
 var darkness := false
 var size := Vector2(36, 36)
 var pieces: Array[TerrainPiece] = []
-## Authored experimental floor data. Legacy maps leave this empty.
+## Authored overlapping surfaces. Exposed terrain uses the heightfield provider.
 var floor_layout := {}
+var _floor_geometry: FloorLayout
+var _floor_geometry_hash := 0
 ## Serialized rule boundaries; ordinary battlefields have none.
 var boundaries: Array[Dictionary]=[]
 ## Directed links between edge segments and their destination centers.
@@ -21,6 +23,16 @@ var ringworld := false
 var low_gravity := false
 ## Regions with no traversable surface at any elevation.
 var void_regions: Array[Rect2]=[]
+
+
+## Read-only derived geometry; dynamic bridges invalidate it by changing
+## the authored dictionary. Never modify this layout in place.
+func floor_geometry() -> FloorLayout:
+	var revision:=floor_layout.hash()
+	if _floor_geometry==null or revision!=_floor_geometry_hash:
+		_floor_geometry=FloorLayout.from_dict(floor_layout)
+		_floor_geometry_hash=revision
+	return _floor_geometry
 
 
 func over_void(at: Vector2,radius: float=0.0) -> bool:

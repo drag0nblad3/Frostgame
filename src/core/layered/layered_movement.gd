@@ -23,7 +23,7 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 		return LayeredReach.new()
 	var s := c.state
 	var f := s.active()
-	var layout := FloorLayout.from_dict(s.board.floor_layout)
+	var layout := s.board.floor_geometry()
 	if not layout.errors.is_empty():
 		return LayeredReach.new()
 	var start := layout.node(f.surface_id,f.pos)
@@ -39,7 +39,7 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 	if node==reachable.start or not reachable.can_reach(node):
 		return false
 	var f := c.state.active()
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	var path := PackedVector3Array()
 	var surfaces: Array[String] = []
 	for step in reachable.path_to(node):

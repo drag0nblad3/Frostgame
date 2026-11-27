@@ -26,11 +26,26 @@ static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 	if board.floor_layout.is_empty():
 		return check(board,from.pos,to.pos,from)
 	var result := Result.new()
-	var layout := FloorLayout.from_dict(board.floor_layout)
-	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and layout.errors.is_empty() and LayeredSight.figures_clear(layout,from,to) and not BattleBoundary.blocks_segment(board.boundaries,from.pos,to.pos,"sight",from)
+	var layout := board.floor_geometry()
+	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and floor_ray(board,layout,Vector3(from.pos.x,from.elevation+1.5,from.pos.y),Vector3(to.pos.x,to.elevation+1.0,to.pos.y),from,false)
 	if board.darkness and Shooting.distance(from,to)>12.0:
 		result.clear=false
 	return result
+
+
+## Floor geometry ray, shared by attacks and all explicit floor-targeted
+## magic. It includes authored boundaries and magical darkness.
+static func floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Vector3,observer: Figure=null,apply_darkness: bool=true) -> bool:
+	if not layout.errors.is_empty() or BattleBoundary.blocks_segment(board.boundaries,Vector2(a.x,a.z),Vector2(b.x,b.z),"sight",observer):
+		return false
+	if apply_darkness and board.darkness and a.distance_to(b)>12.0:
+		return false
+	return LayeredSight.clear(layout,a,b)
+
+
+static func floor_point_visible(board: Board,layout: FloorLayout,f: Figure,at: Vector3,limit: float=24.0) -> bool:
+	var start:=Vector3(f.pos.x,f.elevation,f.pos.y)
+	return start.distance_to(at)<=limit+0.001 and floor_ray(board,layout,start+Vector3.UP*1.5,at+Vector3.UP*0.02,f)
 
 
 ## Spells that use centre range (not weapon base-edge range) use actual

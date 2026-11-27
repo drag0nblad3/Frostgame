@@ -36,7 +36,6 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 	var across := Vector2.RIGHT if axis_y else Vector2.DOWN
 	var start := layout.height(a)
 	var end := layout.height(b)
-	var eye := Vector3(f.pos.x,f.elevation+1.5,f.pos.y)
 	var steps := int(length*4)
 	for i in range(steps+1):
 		var ratio := float(i)/steps
@@ -44,7 +43,7 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 		for offset: float in [-1.0,0.0,1.0]:
 			var at := p.lerp(q,ratio)+across*offset
 			var world := Vector3(at.x,h,at.y)
-			if ScenarioNull.field_at(c.state.board,at,0.0) or not c.state.board.contains(at) or not LayeredSight.clear(layout,eye,world+Vector3.UP*0.03):
+			if ScenarioNull.field_at(c.state.board,at,0.0) or not c.state.board.contains(at) or not LineOfSight.floor_point_visible(c.state.board,layout,f,world):
 				return {}
 			if not layout.clearance(world,0.02,0.1):
 				return {}
@@ -72,7 +71,7 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 
 
 static func start(c: GameController,a: Vector3i,b: Vector3i) -> bool:
-	var bridge := proposal(c,a,b,FloorLayout.from_dict(c.state.board.floor_layout))
+	var bridge := proposal(c,a,b,c.state.board.floor_geometry())
 	return not bridge.is_empty() and c._magic._roll("bridge",c.state.active_id,null,false,-1,{"layered_bridge":bridge})
 
 
@@ -102,13 +101,13 @@ static func cancel(c: GameController) -> bool:
 
 static func remove(c: GameController,id: String) -> void:
 	var s := c.state
-	var before := FloorLayout.from_dict(s.board.floor_layout)
+	var before := s.board.floor_geometry()
 	var entries: Array = s.board.floor_layout.get("bridges",[])
 	for i in range(entries.size()-1,-1,-1):
 		if entries[i]["surface"]["id"]==id:
 			entries.remove_at(i)
 	s.board.floor_layout["bridges"]=entries
-	var layout := FloorLayout.from_dict(s.board.floor_layout)
+	var layout := s.board.floor_geometry()
 	c.emit("terrain_changed",{"spell":"bridge","created":false})
 	for f in s.figures:
 		if not f.in_play() or f.surface_id!=id:

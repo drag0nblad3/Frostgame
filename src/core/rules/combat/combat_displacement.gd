@@ -144,7 +144,7 @@ func force_contact(info: Dictionary) -> void:
 
 ## A floor route must not invite a guard through the deck above or below.
 func intercept_floor(mover: Figure,path: PackedVector3Array,surfaces: Array[String],ignored: Array[int]) -> Dictionary:
-	var layout:=FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout:=c.state.board.floor_geometry()
 	for i in range(1,path.size()):
 		var point:=path[i]
 		var p:=Vector2(point.x,point.z)

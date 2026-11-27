@@ -7,7 +7,7 @@ static func exit_nodes(c: GameController) -> Array[Vector3i]:
 	var f := c.state.active()
 	if f==null or f.side<0 or f.control_spell=="mind_control":
 		return out
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	var r := c.layered_reach()
 	for n: Vector3i in r.cost:
 		if is_exit(c.state,layout,n) and float(r.cost[n])+Figure.BASE_RADIUS<=MoveRules.allowance(f)+0.001:
@@ -33,7 +33,7 @@ static func exit(c: GameController,n: Vector3i) -> bool:
 	if not exit_nodes(c).has(n):
 		return false
 	var f := c.state.active()
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	if n!=layout.node(f.surface_id,f.pos):
 		return LayeredMovement.move(c,n,false,false,false,true)
 	c.spend_move(f)
@@ -42,6 +42,6 @@ static func exit(c: GameController,n: Vector3i) -> bool:
 
 
 static func complete(c: GameController,f: Figure) -> void:
-	var layout:=FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout:=c.state.board.floor_geometry()
 	if f.in_play() and is_exit(c.state,layout,layout.node(f.surface_id,f.pos)) and not Contact.in_combat(c.state.figures,f):
 		c._loot.complete_exit(f)
