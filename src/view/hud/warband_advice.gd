@@ -151,7 +151,7 @@ static func spell(draft: WarbandDraft,id: String) -> String:
 	var base := int(info["number"])
 	var chance := clampi(21-tn,0,20)*5
 	var apprentice := clampi(19-tn,0,20)*5
-	var description: String=EFFECTS.get(id,KINDS.get(str(info["kind"]),"Check the spell's targeting instructions in battle."))
+	var description := SpellReference.text(id)
 	var result := "%s\n%s\nBase TN %d + school %d = %d\nUnmodified cast: %d%% wizard · %d%% apprentice\n\n%s"%[info["name"],ActionArt.spell_details(info,tn),base,tn-base,tn,chance,apprentice,description]
 	if Rituals.BEFORE.has(id) or Rituals.AFTER.has(id):
 		result+="\n\nCampaign ritual: "+("before a battle" if Rituals.BEFORE.has(id) else "after a battle")+"."

@@ -97,6 +97,9 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 				bi.available.append("spell_" + id)
 			bi.mode = "spell_menu"
 			bi.preview()
+			var f := bi.c.state.active()
+			if f!=null:
+				bi.hud.open_spellbook(f.label(),SpellReference.battle_entries(bi.c.state,f,bi.cast_options))
 			return false
 		"spell_cancel":
 			bi.c._magic.shatter.first.clear()

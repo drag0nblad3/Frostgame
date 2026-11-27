@@ -22,6 +22,19 @@ func _setup() -> void:
 		if not scene._guide.visible:
 			quit(1)
 			return
+	elif _dialog=="casting":
+		var state: GameState=scene.controller.state
+		var caster: Figure
+		for f in state.figures:
+			if f.side==0 and f.def.role=="wizard":
+				caster=f
+				break
+		if caster==null:
+			quit(1)
+			return
+		var legal: Array[String]=[]
+		legal.assign(state.spellbooks.get(caster.side,{}).keys())
+		scene.hud.open_spellbook(caster.label(),SpellReference.battle_entries(state,caster,legal))
 	elif _dialog=="commands":
 		scene.hud._open_commands()
 	elif _dialog=="graphics":

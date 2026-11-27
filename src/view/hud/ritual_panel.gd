@@ -3,6 +3,7 @@ extends VBoxContainer
 
 var campaign: CampaignProgress
 var choices: OptionButton
+var _ritual_detail: Label
 var cast_button: Button
 var enchant_supply: CheckButton
 var shears: OptionButton
@@ -27,6 +28,8 @@ func setup(p: CampaignProgress, changed: Callable) -> void:
 			callback.call())
 	choices = OptionButton.new()
 	add_child(choices)
+	_ritual_detail=WorkshopUI.label(self,"",24)
+	_ritual_detail.hide()
 	enchant_supply=CheckButton.new()
 	enchant_supply.custom_minimum_size.y=44
 	enchant_supply.hide()
@@ -95,9 +98,16 @@ func _refresh_supply() -> void:
 	shears.clear()
 	enchant_supply.hide()
 	enchant_supply.set_pressed_no_signal(false)
+	_ritual_detail.hide()
 	if choices.item_count==0:
 		return
 	var option: Dictionary=choices.get_selected_metadata()
+	var id_text := str(option["id"])
+	var info: Dictionary=JsonFile.read("res://data/spells.json")[id_text]
+	var tn := int(campaign.data["spells"].get(id_text,info["number"]))
+	var unit: Dictionary=campaign.data["units"][int(option["caster"])]
+	_ritual_detail.text=("Scroll Shield: automatic ritual success." if option.get("shield",false) else "TN %d · %s · No Health empowerment; preparation modifiers may apply."%[tn,str(unit["type"]).capitalize()])+"\n\n"+SpellReference.text(id_text)
+	_ritual_detail.show()
 	if option.get("shield",false):
 		return
 	var db := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(campaign.data))
