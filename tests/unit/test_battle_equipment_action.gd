@@ -50,5 +50,27 @@ func test_point_commands_reject_wrong_geometry_before_consumption() -> void:
 	if not points.is_empty():
 		check(points[0] is Vector3i)
 		check(BattleEquipmentAction.execute(layered,"potion_teleportation",{"at":points[0]}))
-		check_eq(actor.actions_left,1)
+		check_eq(actor.actions_left,0,"Teleport ends the activation")
+		check(actor.magic_exhausted)
+		check_eq(layered.command_history.size(),1)
 		check(actor.items.is_empty())
+
+
+func test_teleportation_potion_exhausts_in_both_geometries() -> void:
+	for layered in [false,true]:
+		var board := BoardLoader.load_id("stacked_gatehouse",terrain()) if layered else make_board()
+		var c := make_game(board,[fig("thug",0,Vector2(2,2)),fig("thug",1,Vector2(15,14))],Dice.new(71))
+		c.state.active_id=1
+		var actor := c.state.active()
+		actor.surface_id="street" if layered else ""
+		actor.actions_left=2
+		actor.items.append({"potion":"teleportation"})
+		var points := BattleEquipmentAction.points(c,"potion_teleportation",0)
+		check(not points.is_empty())
+		if points.is_empty():
+			continue
+		check(BattleEquipmentAction.execute(c,"potion_teleportation",{"at":points[0]}))
+		check_eq(actor.actions_left,0,"Teleportation exhausts the figure")
+		check(actor.magic_exhausted)
+		check(actor.items.is_empty())
+		check_eq(c.command_history.size(),1)
