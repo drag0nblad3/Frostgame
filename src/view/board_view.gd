@@ -73,7 +73,10 @@ func build(board: Board) -> void:
 		_city_key=city_key
 		_city_next=4
 		_city_board=null
-		if cinematic or not is_inside_tree() or RealmScenery.special(scenario) or scenario in ["underground_library","training_yard"]:
+		_scenery=BakedMapAssets.instance(BakedMapAssets.city_path(board,scenario,cinematic))
+		if _scenery!=null:
+			print("Map load: pre-baked city ",scenario)
+		elif cinematic or not is_inside_tree() or RealmScenery.special(scenario) or scenario in ["underground_library","training_yard"]:
 			_scenery=CityScenery.build(board,scenario,cinematic)
 		else:
 			_scenery=Node3D.new()
@@ -86,7 +89,50 @@ func build(board: Board) -> void:
 			_city_started=Time.get_ticks_usec()
 		add_child(_scenery)
 	set_process(not cinematic)
+	_install_baked_terrain(board,scenario)
 	sync_terrain(board)
+
+
+## Transfer independent nodes from the exact-match art bundle. Runtime terrain
+## changes still use sync_terrain; animated hazards and spells are never baked.
+func _install_baked_terrain(board: Board,scenario: String) -> void:
+	var bundle := BakedMapAssets.instance(BakedMapAssets.terrain_path(board,scenario))
+	if bundle==null:
+		return
+	var floor_node := BakedMapAssets.take(bundle,"Floor") as MeshInstance3D
+	var ground_node := BakedMapAssets.take(bundle,"Ground")
+	var decoration_node := BakedMapAssets.take(bundle,"Dressing")
+	var pieces_node := bundle.get_node_or_null("Pieces")
+	if floor_node==null or ground_node==null or decoration_node==null or pieces_node==null:
+		for node in [floor_node,ground_node,decoration_node]:
+			if is_instance_valid(node):
+				node.free()
+		bundle.free()
+		return
+	_floor=floor_node
+	_ground=ground_node
+	_decoration=decoration_node
+	add_child(_ground)
+	add_child(_floor)
+	add_child(_decoration)
+	var ground_parts: Array[String]=[]
+	var static_parts: Array[String]=[]
+	for i in board.pieces.size():
+		var piece := board.pieces[i]
+		var key := _piece_key(piece)
+		if piece.kind.ground_surface:
+			ground_parts.append(key)
+		if piece.cast_turn<0 and not piece.kind.id.begins_with("spell_"):
+			static_parts.append(key)
+		if BakedMapAssets.static_piece(piece):
+			var node := BakedMapAssets.take(pieces_node,"Piece_%d"%i)
+			if node!=null:
+				_pieces[piece]={"node":node,"key":key}
+				add_child(node)
+	_ground_key=str(ground_parts)
+	_decoration_key=str(static_parts)
+	bundle.free()
+	print("Map load: pre-baked terrain ",scenario)
 
 
 func scenery_ready() -> bool:
@@ -152,7 +198,7 @@ func _remove(node: Node) -> void:
 
 
 static func _piece_key(p: TerrainPiece) -> String:
-	return str([p.kind.id,p.kind.height,p.rect,p.circular,p.ramp,p.ramp_rotated,p.ramp_start,p.ramp_end,p.level])
+	return BakedMapAssets.piece_key(p)
 
 
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:

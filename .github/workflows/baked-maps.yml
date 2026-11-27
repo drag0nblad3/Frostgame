@@ -1,0 +1,50 @@
+name: Baked map resources
+on:
+  pull_request:
+    paths: ['src/view/**', 'src/core/board/**', 'data/**', 'tools/bake_maps.*', '.github/workflows/baked-maps.yml', '.github/workflows/android.yml']
+  workflow_dispatch:
+concurrency:
+  group: baked-maps-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  bake:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot and software GL
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          sudo install Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq xvfb xauth libgl1-mesa-dri
+      - name: Import scripts
+        run: |
+          set -o pipefail
+          godot --headless --import 2>&1 | tee import.log
+          ! grep -E "SCRIPT ERROR|Parse Error" import.log
+      - name: Bake and verify assets
+        run: bash tools/bake_maps.sh
+      - name: Test real battle loading with baked resources
+        run: |
+          set -euo pipefail
+          LIBGL_ALWAYS_SOFTWARE=1 timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 800x450 -s tools/capture.gd -- /tmp/baked-battle.png 0 treasure_skirmish 2>&1 | tee baked-battle.log
+          grep -F 'Map load: pre-baked city treasure_skirmish' baked-battle.log
+          grep -F 'Map load: pre-baked terrain treasure_skirmish' baked-battle.log
+          ! grep -E 'SCRIPT ERROR|Parse Error|Shader compilation failed|SHADER ERROR' baked-battle.log
+          test -s /tmp/baked-battle.png
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: baked-map-diagnostics
+          path: |
+            baked-maps-*.log
+            baked-battle.log
+            /tmp/baked-battle.png
+          retention-days: 7
+      - uses: actions/upload-artifact@v4
+        with:
+          name: baked-map-resources
+          path: assets/baked_maps/
+          retention-days: 7

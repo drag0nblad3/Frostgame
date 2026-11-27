@@ -6,3 +6,6 @@
 *.keystore
 *.jks
 *.tmp
+
+/assets/baked_maps/
+/baked-maps-*.log
