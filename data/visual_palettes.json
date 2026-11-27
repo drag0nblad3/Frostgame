@@ -13,12 +13,12 @@
   },
   "treasure_skirmish": {
     "name": "Winter daylight",
-    "sky": "20374a",
+    "sky": "29455b",
     "key": "f4e0c5",
     "fill": "a2cbed",
     "energy": 1.32,
     "ambient": 0.48,
-    "floor": "687781",
+    "floor": "70828d",
     "snow": 0.86,
     "flakes": 96
   },
@@ -40,7 +40,7 @@
     "fill": "b0bfcc",
     "energy": 1.26,
     "ambient": 0.52,
-    "floor": "777572",
+    "floor": "8a8070",
     "snow": 0.3,
     "flakes": 16
   },
@@ -84,7 +84,7 @@
     "fill": "b5b7cf",
     "energy": 1.1,
     "ambient": 0.58,
-    "floor": "5f6578",
+    "floor": "6c657d",
     "snow": 0.79,
     "flakes": 80
   },
@@ -205,7 +205,7 @@
     "fill": "9abde1",
     "energy": 1.26,
     "ambient": 0.56,
-    "floor": "666186",
+    "floor": "6a6089",
     "snow": 0,
     "flakes": 0
   },
@@ -260,7 +260,7 @@
     "fill": "a5a4e3",
     "energy": 1.26,
     "ambient": 0.56,
-    "floor": "73728c",
+    "floor": "494a6e",
     "snow": 0,
     "flakes": 0
   },
@@ -271,8 +271,19 @@
     "fill": "baa4d9",
     "energy": 1.26,
     "ambient": 0.56,
-    "floor": "74617c",
+    "floor": "69465e",
     "snow": 0.25,
     "flakes": 0
+  },
+  "sunken_streets": {
+    "name": "Cold canal morning",
+    "sky": "294759",
+    "key": "f8e0bc",
+    "fill": "92cce4",
+    "energy": 1.32,
+    "ambient": 0.53,
+    "floor": "627e87",
+    "snow": 0.8,
+    "flakes": 72
   }
 }

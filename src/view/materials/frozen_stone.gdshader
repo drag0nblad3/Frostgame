@@ -3,6 +3,8 @@ render_mode diffuse_burley, specular_schlick_ggx;
 // World-space stonework: no stretched UVs, extra geometry or external texture assets.
 uniform vec4 stone_color : source_color = vec4(0.39, 0.43, 0.48, 1.0);
 uniform bool ground = false;
+uniform bool frost_detail = true;
+uniform bool realm_floor = false;
 uniform float snow_amount : hint_range(0.0, 1.0) = 1.0;
 uniform bool blind_arches = false;
 uniform vec2 footprint_origin = vec2(0.0);
@@ -93,6 +95,30 @@ void fragment() {
 		float fracture = abs(fract(u*0.46+noise2(vec2(u,world_pos.y)*1.4)*0.30+world_pos.y*0.20)-0.5);
 		float crack = (1.0-smoothstep(0.010,0.035,fracture))*smoothstep(0.54,0.72,noise2(vec2(u,world_pos.y)*0.54));
 		rock *= 1.0-crack*0.62;
+	}
+	// Frost accumulates in the joints and as narrow chips along exposed tops.
+	// Keep the extra procedural samples off the Performance profile.
+	if (frost_detail && !realm_floor) {
+		float crystalline = noise2(p*3.4+vec2(12.0,5.0));
+		float mortar_frost = (1.0-wide)*smoothstep(0.55,0.83,crystalline)*snow_amount;
+		rock = mix(rock,vec3(0.52,0.64,0.69),mortar_frost*0.63);
+		float flecks = smoothstep(0.77,0.91,chips);
+		rock += vec3(0.040,0.052,0.060)*flecks;
+		if (ground) {
+			float bank = smoothstep(0.57,0.80,drift);
+			ice = mix(ice,vec3(0.90,0.94,0.96),bank*0.62);
+			rock = mix(rock,rock*0.70,smoothstep(0.52,0.80,drift)*0.10);
+		} else if (!top) {
+			float cap = smoothstep(building_height-0.34,building_height-0.05,world_pos.y);
+			rock = mix(rock,vec3(0.69,0.79,0.84),cap*snow_amount*0.5);
+		}
+	}
+	if (realm_floor && ground) {
+		// Broken planes use subdued vein lines rather than ordinary city streets.
+		float vein = abs(fract(horizontal.x*0.22+horizontal.y*0.17+noise2(horizontal*0.12)*0.45)-0.5);
+		float seam = 1.0-smoothstep(0.008,0.024,vein);
+		rock = mix(rock,stone_color.rgb*1.45,seam*0.45);
+		snow = 0.0;
 	}
 	vec3 surface_color = mix(rock, ice, snow * 0.90);
 	if (ground && battle_boundary && top) {

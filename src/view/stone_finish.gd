@@ -28,9 +28,11 @@ static func floor_surface(board: Board, scenario: String = "") -> MeshInstance3D
 	var palette := VisualPalette.for_scenario(board.id if scenario.is_empty() else scenario)
 	var mat := material(Color(str(palette.get("floor", "687781"))), true)
 	mat.set_shader_parameter("snow_amount", float(palette.get("snow", 0.86)))
+	mat.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
+	mat.set_shader_parameter("realm_floor",RealmScenery.special(scenario))
 	mat.set_shader_parameter("footprint_size",board.size)
 	mat.set_shader_parameter("battle_boundary",true)
-	mat.set_shader_parameter("city_paving",scenario not in ["underground_library","worm_hunts","training_yard"] and board.id not in ["underground_library","worm_hunts","training_yard"])
+	mat.set_shader_parameter("city_paving",not RealmScenery.special(scenario) and scenario not in ["underground_library","worm_hunts","training_yard"] and board.id not in ["underground_library","worm_hunts","training_yard"])
 	node.material_override = mat
 	node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return node

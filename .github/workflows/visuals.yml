@@ -126,6 +126,14 @@ jobs:
             ! grep -E "SCRIPT ERROR|Parse Error|Node not inside tree" "menu-$page.log"
             test -s "previews/menu-$page.png"
           done
+      - name: Capture battlefield art pass
+        run: |
+          set -o pipefail
+          for scenario in sunken_streets silent_tower red_king_bridge red_king_tethers; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/capture.gd -- "previews/art-$scenario.png" 0 "$scenario" 2>&1 | tee "art-$scenario.log"
+            ! grep -E "SCRIPT ERROR|Parse Error|Shader compilation failed|SHADER ERROR|Shader error" "art-$scenario.log"
+            test -s "previews/art-$scenario.png"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
