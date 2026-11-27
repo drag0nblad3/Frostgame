@@ -40,7 +40,7 @@ static func shot_value_world(s: GameState,f: Figure,at: Vector3,t: Figure) -> fl
 	if not los.clear:
 		return 0.0
 	var mod := Shooting.target_mod(los)
-	mod += 1 if f.moves_taken>0 or not at.is_equal_approx(Vector3(f.pos.x,f.elevation,f.pos.y)) else 0
+	mod += 1 if f.moves_taken>0 or not at.is_equal_approx(BattleSpace.center(f)) else 0
 	mod -= 2 if t.def.traits.has("large") else 0
 	var attack := mini(10, f.effective_shoot() + MagicEquipment.bonus(f, "shoot", f.ranged.id) - s.storm_penalty + (3 if t.spell_effects.has("glow") else 0)) + f.roll_penalty()
 	var defence := mini(10, t.effective_fight() + mod) + t.roll_penalty() + t.shooting_defence_penalty()
@@ -67,7 +67,7 @@ static func best_legal_shot(c: GameController,f: Figure) -> Figure:
 	var best: Figure=null
 	var value:=0.0
 	for t in c.state.figures:
-		if t.side==f.side or RingworldBot.protected_key(c.state,f,t) or Contact.in_combat(c.state.figures,t) or not c.can_shoot(t.id):
+		if t.side==f.side or RingworldBot.protected_key(c.state,f,t) or Contact.in_combat(c.state.figures,t) or not BattleAction.legal(c,"shoot",t.id):
 			continue
 		var score:=shot_value(c.state,f,f.pos,t)
 		if score>value:
