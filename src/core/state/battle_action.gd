@@ -1,7 +1,7 @@
 class_name BattleAction
 extends RefCounted
 ## Shared typed command entry point. Legality remains owned by the controller.
-const TARGETED := ["fight","shoot","ammo_shot","wraith_shot","cast"]
+const TARGETED := ["fight","shoot","ammo_shot","wraith_shot","cast","collect","fight_hand"]
 
 
 static func legal(c: GameController,key: String,target: int=-1,spell: String="",ammo: bool=false) -> bool:
@@ -11,6 +11,12 @@ static func legal(c: GameController,key: String,target: int=-1,spell: String="",
 		"cast": return c.can_cast(spell,target,ammo)
 		"reload": return c.can_reload()
 		"end": return c.can_end_activation()
+		"collect": return c.can_pick_up(target)
+		"fight_hand": return c.can_fight_hand(target)
+		"pass_phase": return c.can_finish_early_phase()
+		"drink_well": return c.can_drink_well()
+		"break_ice": return c.can_break_ice()
+		"use_stored_action": return c.can_use_stored_action()
 	return false
 
 
@@ -22,6 +28,12 @@ static func execute(c: GameController,key: String,target: int=-1,spell: String="
 		"shoot","ammo_shot","wraith_shot": return c.shoot(target,key=="wraith_shot",key=="ammo_shot")
 		"cast": return c.start_cast(spell,target,ammo)
 		"reload": return c.reload()
+		"collect": return c.pick_up(target)
+		"fight_hand": return c.fight_hand(target)
+		"pass_phase": return c.finish_early_phase()
+		"drink_well": return c.drink_well()
+		"break_ice": return c.break_ice()
+		"use_stored_action": return c.use_stored_action()
 		"end":
 			c.end_activation()
 			return true
