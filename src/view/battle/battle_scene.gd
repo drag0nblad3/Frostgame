@@ -445,6 +445,7 @@ func _open_campaign() -> void:
 		_campaign_dialog.scenario_selected.connect(func(id: String) -> void:
 			_scenario_id=id
 			hud.select_scenario(id))
+	_campaign_dialog._show_section(0)
 	_campaign_dialog.select_scenario(_scenario_id)
 	_campaign_dialog.refresh(_campaign_battle)
 	_campaign_dialog.fit_phone()

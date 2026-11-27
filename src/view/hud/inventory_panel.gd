@@ -17,6 +17,9 @@ var use_button: Button
 var assign_button: Button
 var sell_button: Button
 var discard_button: Button
+var _discard_confirm: ConfirmationDialog
+var study_button: Button
+var _study_result: String=""
 var caster_equipment: OptionButton
 var caster_equipment_button: Button
 var mantle_animal: OptionButton
@@ -43,6 +46,14 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	item_detail=Label.new()
 	item_detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	add_child(item_detail)
+	study_button=_button("Study selected artefact",func() -> void:
+		if loot.selected<0:
+			return
+		var index := int(loot.get_selected_metadata())
+		if RedKingRewards.study(campaign.data,index,db,campaign_dice):
+			_study_result=str(campaign.data["last_report"].back())
+			changed.call())
+	study_button.hide()
 	recipient_choice = OptionButton.new()
 	add_child(recipient_choice)
 	recipient_choice.item_selected.connect(func(_index: int) -> void: _refresh_assignment())
@@ -52,9 +63,17 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	sell_button = _button("Sell selected unassigned item / known grimoire", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.sell(campaign.data, int(loot.get_selected_metadata())):
 			changed.call())
-	discard_button = _button("Discard selected item",func() -> void:
-		if loot.item_count>0 and RaggedWarbands.discard(campaign.data,int(loot.get_selected_metadata())):
+	_discard_confirm=ConfirmationDialog.new()
+	_discard_confirm.title="Discard this item?"
+	_discard_confirm.get_ok_button().text="Discard permanently"
+	add_child(_discard_confirm)
+	_discard_confirm.confirmed.connect(func() -> void:
+		if loot.selected>=0 and RaggedWarbands.discard(campaign.data,int(loot.get_selected_metadata())):
 			changed.call())
+	discard_button = _button("Discard selected item…",func() -> void:
+		if loot.selected>=0:
+			_discard_confirm.dialog_text="Permanently discard "+str(CampaignInventory.catalog()[CampaignInventory.item_id(campaign.data["loot"][int(loot.get_selected_metadata())])]["name"])+"?"
+			PhoneSafeArea.popup_dialog(_discard_confirm))
 	campaign_uses = OptionButton.new()
 	add_child(campaign_uses)
 	use_button = Button.new()
@@ -103,7 +122,9 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if loot.item_count>0 and staff_potion.item_count>0 and RedKingCampaignGear.charge_staff(campaign.data,int(loot.get_selected_metadata()),int(staff_potion.get_selected_metadata())):
 			changed.call())
 	charge_staff.hide()
-	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
+	loot.item_selected.connect(func(_index: int) -> void:
+		_study_result=""
+		_refresh_item_buttons())
 	caster_equipment = OptionButton.new()
 	add_child(caster_equipment)
 	caster_equipment_button = _button("Set spellcaster weapons", func() -> void:
@@ -244,6 +265,7 @@ func _refresh_item_buttons() -> void:
 	book_spell.hide()
 	bind_book.hide()
 	book_spell.clear()
+	study_button.hide()
 	assign_button.disabled = loot.item_count == 0 or recipient_choice.item_count==0
 	sell_button.disabled = loot.item_count == 0
 	discard_button.disabled=true
@@ -306,6 +328,9 @@ func _refresh_assignment() -> void:
 	var d := campaign.data
 	var item: Dictionary=d["loot"][index]
 	var info: Dictionary=CampaignInventory.catalog().get(CampaignInventory.item_id(item),{})
+	study_button.visible=RedKingRewards.can_study(d,item)
+	if study_button.visible:
+		study_button.text="Study artefact · Will TN%d"%int(info.get("unlock_tn",0))
 	var legal: Array[int]=[]
 	for i in recipient_choice.item_count:
 		var owner := int(recipient_choice.get_item_metadata(i))
@@ -325,6 +350,8 @@ func _refresh_assignment() -> void:
 		detail+="\nStudy to unlock before equipping."
 	elif legal.is_empty() and CampaignInventory.is_item(item):
 		detail+="\nNo eligible new recipient. Check slots, item restrictions and equipped gear."
+	if not _study_result.is_empty():
+		detail+="\n"+_study_result
 	item_detail.text=detail.strip_edges()
 
 

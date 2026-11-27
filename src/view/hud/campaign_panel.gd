@@ -16,6 +16,8 @@ var _briefing: Label
 var _depart_status: Label
 var _quick_prepare: Button
 var _quick_gear: Button
+var _quick_warband: Button
+var _quick_report: Button
 const SECTIONS := ["Expedition", "Warband", "Equipment", "Rituals", "Base", "Rules & chronicle"]
 var campaign: CampaignProgress
 var summary: Label
@@ -60,8 +62,6 @@ var treasure_choice: Label
 var keep_treasure: Button
 var alternate_treasure: Button
 var exchange_treasure: Button
-var artefact_choice: OptionButton
-var study_button: Button
 var treasure_dice := Dice.new(0)
 
 
@@ -105,11 +105,6 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 			changed())
 	exchange_treasure=_command(col,"Exchange treasure",func() -> void:
 		if RedKingRewards.exchange(campaign.data,treasure_dice):
-			changed())
-	artefact_choice=OptionButton.new()
-	col.add_child(artefact_choice)
-	study_button=_command(col,"Study artefact",func() -> void:
-		if artefact_choice.item_count>0 and RedKingRewards.study(campaign.data,int(artefact_choice.get_selected_metadata()),db,treasure_dice):
 			changed())
 	spells = OptionButton.new()
 	spells.add_theme_constant_override("icon_max_width",28)
@@ -299,18 +294,6 @@ func refresh(in_battle: bool) -> void:
 	keep_treasure.visible = deciding
 	alternate_treasure.visible = deciding
 	exchange_treasure.visible=false
-	artefact_choice.visible=not d.is_empty() and not in_battle and not deciding
-	study_button.visible=artefact_choice.visible
-	artefact_choice.clear()
-	for i in d.get("loot",[]).size():
-		var item: Dictionary=d["loot"][i]
-		if RedKingRewards.can_study(d,item):
-			var info: Dictionary=RedKingRewards.catalog()[item["gear"]]
-			artefact_choice.add_item("%s · TN%d"%[info["name"],info["unlock_tn"]])
-			artefact_choice.set_item_metadata(artefact_choice.item_count-1,i)
-	artefact_choice.visible=artefact_choice.visible and artefact_choice.item_count>0
-	study_button.visible=artefact_choice.visible
-	study_button.disabled=artefact_choice.item_count==0
 	if deciding:
 		var entry: Dictionary = pending[0]
 		treasure_choice.text = "%d reward choices remaining\nTreasure %d: %s" % [pending.size(), int(entry["token"]) + 1, CampaignProgress.treasure_label(int(entry["first"]))]
@@ -333,8 +316,16 @@ func refresh(in_battle: bool) -> void:
 		control.visible = not d.is_empty() and not in_battle and not deciding
 	_section_picker.visible=not d.is_empty() and not deciding and not in_battle
 	_briefing.visible=_briefing.visible and not deciding and not in_battle
-	_quick_prepare.visible=_section_picker.visible and not stage.is_empty() and RaggedWarbands.active(d)
+	_quick_prepare.visible=_section_picker.visible and (ScrollShield.campaign_index(d,"roll")>=0 or (not stage.is_empty() and RaggedWarbands.active(d)))
+	_quick_prepare.text="Roll Scroll Shield / prepare rituals" if ScrollShield.campaign_index(d,"roll")>=0 else "Prepare summoning rituals first"
 	_quick_gear.visible=_section_picker.visible and RaggedWarbands.has_unassigned(d) and RaggedWarbands.active(d)
+	_quick_warband.visible=_section_picker.visible and not CampaignSuccession.living_wizard(d)
+	_quick_report.visible=_section_picker.visible and not d.get("last_report",[]).is_empty()
+	if deciding:
+		recruit_status.hide()
+		secret_hrut.hide()
+		reconcile_button.hide()
+		continue_skirmishes.hide()
 	if not _section_picker.visible:
 		_show_section(0)
 	if d.is_empty():
@@ -480,6 +471,8 @@ func _build_sections(col: VBoxContainer) -> void:
 	_history_summary=_info_label()
 	_quick_prepare=_command(_sections[0],"Prepare summoning rituals first",func() -> void: _show_section(3))
 	_quick_gear=_command(_sections[0],"Assign or discard new loot",func() -> void: _show_section(2))
+	_quick_warband=_command(_sections[0],"Resolve wizard succession",func() -> void: _show_section(1))
+	_quick_report=_command(_sections[0],"Read latest battle report",func() -> void: _show_section(5))
 	_sections[0].add_child(_briefing)
 	_sections[0].add_child(_depart_status)
 	_sections[1].add_child(_roster_summary)
@@ -491,7 +484,7 @@ func _build_sections(col: VBoxContainer) -> void:
 	_sections[0].move_child(_depart_status,3)
 	_sections[0].move_child(begin,4)
 	_move_controls(1,[spells,improve,stat,upgrade,recruit,hire_button,members,dismiss_button,treat_button,niggle,niggle_button,grimoire,learn_button,succession])
-	_move_controls(2,[artefact_choice,study_button,inventory])
+	_move_controls(2,[inventory])
 	_move_controls(3,[rituals])
 	_move_controls(4,[base_banner,base_choice,base_button,base_upgrades])
 	_move_controls(5,[reality_option,wounded_option,mantle_option])

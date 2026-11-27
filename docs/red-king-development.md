@@ -257,3 +257,5 @@ The campaign dialog is now divided into Expedition, Warband, Equipment, Rituals,
 
 ### Equipment and player guidance
 The equipment page now displays original summaries for all 62 registered expansion gear entries, including random recruit weapons, and shows the selected item's availability. Recipient choices are checked against the existing assignment rules on a deep copy of the campaign. Shopping controls hide when supplies are inaccessible; the current item stays selected when possible. The field guide adds expansion-specific campaign and equipment topics only when enabled. The optional recruitment status toggle sits with recruitment on the Expedition page.
+
+Equipment study now happens on the selected item rather than a separate catalogue; the result is shown immediately. Ragged-warband discards require confirmation. The expedition page opens when returning to headquarters and links to succession, required Scroll Shield preparation, new gear and the latest battle report. Pending reward settlement hides unrelated rule and reconciliation actions.
