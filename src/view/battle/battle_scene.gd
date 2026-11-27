@@ -31,6 +31,7 @@ var _roster: Dictionary = {}
 var _setup: WarbandSetup
 var _campaign := CampaignProgress.new()
 var _campaign_battle := false
+var _expedition_checkpoint_stamp := ""
 var _campaign_dialog: CampaignPanel
 var _plant_dialog: ConfirmationDialog
 var _survival_dialog: ConfirmationDialog
@@ -98,6 +99,7 @@ func _ready() -> void:
 	hud.campaign_pressed.connect(_open_campaign)
 	hud.save_battle_pressed.connect(_save_battle)
 	hud.resume_battle_pressed.connect(_resume_battle)
+	hud.resume_expedition_pressed.connect(func() -> void: BattleCampaignFlow._resume_battle(self,true))
 	hud.scenario_selected.connect(func(id: String) -> void:
 		if not _figures.content_profile.allows("scenarios",id):
 			return
@@ -293,6 +295,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_wait = 0.0
 	_bots.finish()
 	controller = c
+	_expedition_checkpoint_stamp=""
 	var state := c.state
 	var began := Time.get_ticks_usec()
 	_board_view.scenario_id = _active_scenario_id
@@ -476,6 +479,18 @@ func _refresh() -> void:
 	else:
 		player_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
 	_update_floor_view()
+	_checkpoint_expedition()
+
+
+func _checkpoint_expedition() -> void:
+	if not _campaign_battle or not player.idle() or not BattleSnapshot.can_save(controller):
+		return
+	var s := controller.state
+	var stamp := "%s:%s"%[s.turn,s.phase]
+	if stamp==_expedition_checkpoint_stamp:
+		return
+	if CampaignBattleCheckpoint.save(controller,_active_scenario_id,_campaign_fingerprint(),watch_mode):
+		_expedition_checkpoint_stamp=stamp
 
 
 func _lock_after_action() -> void:
