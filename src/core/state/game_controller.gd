@@ -10,6 +10,8 @@ var dice: Dice
 var history: Array[GameEvent] = []
 var command_history: Array[Dictionary] = []
 var recording_command := false
+var capture_frames := false
+var replay_frames: Array[Dictionary]=[]
 var _flow: TurnFlow
 var _loot: TreasureActions
 var _displacement: CombatDisplacement
@@ -60,6 +62,7 @@ func start_game() -> void:
 	RedKingVeil.prepare(self)
 	RedKingMind.prepare(self)
 	_flow.start_turn()
+	BattleFrame.record(self)
 
 
 ## Figures the side to play may activate now.
