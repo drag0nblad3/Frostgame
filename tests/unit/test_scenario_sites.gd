@@ -110,7 +110,13 @@ func test_haunted_hut_wall_spacing_and_entrances() -> void:
 			check_eq(Vector2(dx,dy).length(),6.0)
 		check_eq(s.treasures[i].pos,hut.rect.get_center())
 		check(ScenarioSites.discover(c,hut.rect.get_center(),0))
-		check_eq(s.figures.back().pos,ScenarioSites.hut_spawn_target(hut))
+		var occupant:=s.figures.back()
+		var target:=ScenarioSites.hut_spawn_target(hut)
+		# A base touching the wall exactly can be rejected by the half-inch
+		# standability lattice. The closest legal node may be one step inward.
+		check(occupant.pos.distance_to(target)<=0.501)
+		check(hut.rect.grow(-Figure.BASE_RADIUS+0.001).has_point(occupant.pos))
+		check(s.board.can_stand(occupant.pos,Figure.BASE_RADIUS))
 	check_eq(directions.size(),4)
 	var restored:=BattleSnapshot.rebuild(BattleSnapshot.capture(c),db())
 	for i in s.board.pieces.size():

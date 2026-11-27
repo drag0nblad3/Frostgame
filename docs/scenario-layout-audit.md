@@ -30,3 +30,7 @@ Source: Frostgrave Second Edition (2020) and The Red King (2020), printed pages.
 | Ringworld, p57 | 30x36; five markers, corner markers 8 inches inward along diagonal, 4 key-masters and 4 groups of 4 Hrut. | Marker locations and counts match, both planes represented. Alien structures remain stylized and should become more varied and traversable. |
 
 This is a close assessment of the shipped selections, not a claim that every printed scenario exists or that every possible line-of-sight, path or deployment formation has been tested. Priority follow-ups: tent and roofless temple, standard layout variety, tower route checks, all-edge opening visibility and reachability. Additional unimplemented book scenarios are separate feature work.
+
+## Opening visibility result
+
+The 2026-11-27 CI seed-19 diagnostic reports zero visible opposing pairs on all twelve core boards after the earlier terrain and deployment changes. It still reports views of central objectives at deployment on Sunken Streets (5 figures), Frozen Ruins and Worm Hunts (6 each), Living Museum (8) and Keep (7). This is a real outstanding terrain requirement; do not confuse the absence of direct warband-to-warband sight with a full setup pass. Haunted Houses reports zero on both metrics. A full all-edge, multi-seed audit is still required.
