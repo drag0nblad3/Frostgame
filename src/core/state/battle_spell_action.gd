@@ -48,6 +48,21 @@ static func _apply(c: GameController,key: String,args: Dictionary) -> bool:
 		"golden_fang": return c._magic.toggle_golden_fang()
 		"gem": return c._magic.toggle_gem(str(args.get("option","")))
 		"single_shatter": return c._magic.single_shatter()
+		"cancel_declaration":
+			if c._magic.shatter.first.is_empty():
+				return false
+			c._magic.shatter.first.clear()
+			return true
+		"vampire_donor","vampire_adjust":
+			var cast := bool(args.get("cast",false))
+			var pending := c.state.pending_cast if cast else c.state.pending_resistance
+			if pending.is_empty():
+				return false
+			if key=="vampire_donor":
+				return VampireStaff.cycle(c,pending,cast)
+			var before := int(pending.get("vampire_amount",0))
+			VampireStaff.adjust(c,pending,cast,clampi(int(args.get("delta",0)),-1,1))
+			return int(pending.get("vampire_amount",0))!=before
 	return false
 
 
