@@ -14,7 +14,9 @@ static func verify(checkpoint: Dictionary,db: FigureDb,commands: Array,events: A
 		var last := int(record.get("event_end",-1))
 		if first!=c.history.size() or last<first or last>events.size() or c.dice._rng.state!=record.get("rng_before"):
 			return {"ok":false,"reason":"Missing history or RNG mismatch","verified":verified}
-		if not apply(c,str(record.get("key","")),record.get("args",{})):
+		var count := c.command_history.size()
+		var accepted := apply(c,str(record.get("key","")),record.get("args",{}))
+		if accepted!=bool(record.get("accepted",true)) or c.command_history.size()!=count+1:
 			return {"ok":false,"reason":"Unsupported or rejected command: "+str(record.get("key","")),"verified":verified}
 		if c.dice._rng.state!=record.get("rng_after") or c.history.size()!=last:
 			return {"ok":false,"reason":"Command diverged","verified":verified}
