@@ -72,6 +72,11 @@ func refresh() -> void:
 		mode="veil_target"
 		preview()
 		return
+	if end_choice.get("kind","")=="random_exchange_single":
+		available.assign(["exchange_join","exchange_decline"])
+		mode="random_exchange_single"
+		preview()
+		return
 	if end_choice.get("kind","")=="exchange":
 		mode="secret_exchange"
 		preview()
@@ -521,6 +526,11 @@ func preview() -> void:
 					targets.append(target)
 			radius=0.65
 			hint="Fractured Reality targets %s. Keep this target or tap another ally (+1 to the enemy's roll)." % original.label()
+		"random_exchange_single":
+			var unit := c.state.figure(int(c.state.scenario_data["rk_end_choice"]["options"][0]))
+			points.append(unit.pos)
+			radius=0.65
+			hint="%s is your last figure. Participate in the random exchange or remain in place?"%unit.label()
 		"secret_exchange":
 			for id: int in c.state.scenario_data["rk_end_choice"]["options"]:
 				var target := c.state.figure(id)
@@ -634,6 +644,10 @@ func action(key: String) -> bool:
 		available.clear()
 		preview()
 		return false
+	if key=="exchange_join":
+		return RealityCracks.answer_exchange(c,int(c.state.scenario_data["rk_end_choice"]["options"][0]))
+	if key=="exchange_decline":
+		return RealityCracks.answer_exchange(c,-1)
 	if key=="worm_keep":
 		return WormRider.answer_relocation(c,c.state.scenario_data["rk_worm_relocation"]["at"])
 	if key in ["sinkhole_accept","sinkhole_fight","sinkhole_will","sinkhole_all"]:

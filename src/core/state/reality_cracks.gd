@@ -237,12 +237,12 @@ static func exit_center(c: GameController) -> bool:
 
 static func _exchange(c: GameController,secret: bool) -> void:
 	var s := c.state
-	var selected: Array[Figure]=[]
+	var committed: Array[int]=[]
 	var human_options: Array[int]=[]
-	var order := s.order.duplicate()
-	if order.is_empty():
-		for side in s.side_count():
-			order.append(side)
+	var order: Array[int]=[]
+	var first := s.order[0] if not s.order.is_empty() else 0
+	for i in s.side_count():
+		order.append((first+i)%s.side_count())
 	for side: int in order:
 		var candidates: Array[Figure]=[]
 		for f in s.side_figures(side):
@@ -253,47 +253,55 @@ static func _exchange(c: GameController,secret: bool) -> void:
 				for candidate in candidates:
 					human_options.append(candidate.id)
 			else:
-				selected.append(candidates[c.dice.pick(candidates.size())])
-	if not human_options.is_empty() and not selected.is_empty():
-		var committed: Array[int]=[]
-		for f in selected:
-			committed.append(f.id)
-		s.scenario_data["rk_end_choice"]={"kind":"exchange","options":human_options,"committed":committed,"order":order}
+				committed.append(candidates[c.dice.pick(candidates.size())].id)
+		elif not secret and candidates.size()==1:
+			if side==s.reaction_side:
+				human_options.append(candidates[0].id)
+			elif candidates[0].treasure_id<0:
+				committed.append(candidates[0].id)
+	if not human_options.is_empty() and not committed.is_empty():
+		s.scenario_data["rk_end_choice"]={"kind":"exchange" if secret else "random_exchange_single","options":human_options,"committed":committed,"order":order,"secret":secret}
 		c.emit("reality_choice",{})
 		return
-	if secret and selected.size()<2:
-		clear(c)
-		return
-	if selected.size()==1:
-		if secret:
-			clear(c)
-			return
-		for other in s.side_figures(selected[0].side):
-			if other!=selected[0]:
-				selected.append(other)
-				break
-	if selected.size()<2:
-		return
-	_resolve_exchange(c,selected,secret)
+	# A lone eligible secret-exchange player ends the effect. A lone
+	# optional ordinary participant cannot swap with themselves.
+	_finish_exchange(c,committed,order,secret)
 
 
 static func answer_exchange(c: GameController,id: int) -> bool:
 	var s := c.state
 	var choice: Dictionary=s.scenario_data.get("rk_end_choice",{})
-	if choice.get("kind","")!="exchange" or not choice.get("options",[]).has(id):
+	var kind := str(choice.get("kind",""))
+	if kind not in ["exchange","random_exchange_single"] or (not choice.get("options",[]).has(id) and not (kind=="random_exchange_single" and id==-1)):
 		return false
-	var selected: Array[Figure]=[]
 	var ids: Array=choice["committed"].duplicate()
-	ids.append(id)
-	for side: int in choice["order"]:
+	if id>=0:
+		ids.append(id)
+	s.scenario_data.erase("rk_end_choice")
+	_finish_exchange(c,ids,choice["order"],bool(choice.get("secret",kind=="exchange")))
+	c._flow.resume_end_turn()
+	return true
+
+
+static func _finish_exchange(c: GameController,ids: Array,order: Array,secret: bool) -> void:
+	var s := c.state
+	var selected: Array[Figure]=[]
+	for side: int in order:
 		for chosen: int in ids:
 			var f := s.figure(chosen)
 			if f!=null and f.in_play() and f.side==side:
 				selected.append(f)
-	s.scenario_data.erase("rk_end_choice")
-	_resolve_exchange(c,selected,true)
-	c._flow.resume_end_turn()
-	return true
+	if secret and selected.size()<2:
+		clear(c)
+		return
+	if selected.size()==1:
+		var candidates: Array[Figure]=[]
+		for other in s.side_figures(selected[0].side):
+			if other!=selected[0]:
+				candidates.append(other)
+		if not candidates.is_empty():
+			selected.append(candidates[c.dice.pick(candidates.size())])
+	_resolve_exchange(c,selected,secret)
 
 
 static func _resolve_exchange(c: GameController,selected: Array[Figure],secret: bool) -> void:

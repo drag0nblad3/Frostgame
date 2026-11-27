@@ -312,3 +312,6 @@ When King of the Hill transforms, human warband members straddling a seam choose
 
 ### Worm Rider miscast placement
 A rival's natural-one summon pauses before marker placement, allowing the human opponent to choose a legal new location or retain the original. The item action is spent exactly once. Human summons with a natural one retain the rival placement heuristic. Placement uses the existing whole-inch grid and occupied/impassable terrain validation.
+
+### Random exchange fidelity
+Reality Crack 11 now asks a human with one remaining figure whether to participate. When only a single eligible player participates, the second figure from that warband is randomized rather than selected by roster order. Both exchange effects follow circular seating order starting at priority, not sorted priority order. A rival's sole remaining carrier opts out to protect its treasure.

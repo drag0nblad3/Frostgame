@@ -173,3 +173,21 @@ func test_lightning_front_waits_for_absorption() -> void:
 	check_eq(f.health,hp-4)
 	check(ActiveGear.ready(f,RedKingElemental.AMULET))
 	check(not s.scenario_data.has("rk_lightning_queue"))
+
+
+func test_last_figure_can_decline_random_exchange() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	s.order.assign([0,1])
+	var f := s.side_figures(0)[0]
+	for other in s.side_figures(0):
+		if other!=f:
+			other.out_of_action=true
+	var before := f.pos
+	check(RealityCracks.apply(c,11))
+	RealityCracks.on_end_turn(c)
+	check_eq(s.scenario_data.get("rk_end_choice",{}).get("kind",""),"random_exchange_single")
+	check(RealityCracks.answer_exchange(c,-1))
+	check_eq(f.pos,before)
+	check(not s.scenario_data.has("rk_end_choice"))
