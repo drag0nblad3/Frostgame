@@ -1,8 +1,11 @@
 class_name PortalView
 extends RefCounted
-## Three lightweight meshes per portal, with no dynamic lights or particles.
+## Lightweight static geometry with no dynamic lights or particles.
 static func build(root: Node3D,p: TerrainPiece) -> void:
 	var at := p.rect.get_center()
+	var fracture := p.kind.id=="reality_portal"
+	var rim_color := Color("6ae3e6") if fracture else Color("ed6448")
+	var disc_color := Color(0.18,0.55,0.68,0.72) if fracture else Color(0.63,0.18,0.62,0.72)
 	var base := CylinderMesh.new()
 	base.top_radius=0.96
 	base.bottom_radius=1.0
@@ -14,14 +17,14 @@ static func build(root: Node3D,p: TerrainPiece) -> void:
 	ring.outer_radius=1.08
 	ring.rings=24
 	ring.ring_segments=8
-	var rim := _mesh(root,ring,TableSpace.to_world(at,1.3),Color("ed6448"),true)
+	var rim := _mesh(root,ring,TableSpace.to_world(at,1.3),rim_color,true)
 	rim.rotation.x=PI*0.5
 	var disc := CylinderMesh.new()
 	disc.top_radius=0.88
 	disc.bottom_radius=0.88
 	disc.height=0.07
 	disc.radial_segments=24
-	var veil := _mesh(root,disc,TableSpace.to_world(at,1.3),Color(0.63,0.18,0.62,0.72),true)
+	var veil := _mesh(root,disc,TableSpace.to_world(at,1.3),disc_color,true)
 	veil.rotation.x=PI*0.5
 	# Ground rim communicates the full gameplay footprint from overhead.
 	var footprint := TorusMesh.new()
@@ -29,14 +32,14 @@ static func build(root: Node3D,p: TerrainPiece) -> void:
 	footprint.outer_radius=p.rect.size.x*0.5
 	footprint.rings=24
 	footprint.ring_segments=5
-	_mesh(root,footprint,TableSpace.to_world(at,0.035),Color("f48b55"),true)
+	_mesh(root,footprint,TableSpace.to_world(at,0.035),rim_color,true)
 	for i in 2:
 		var arc := TorusMesh.new()
 		arc.inner_radius=0.64-0.16*i
 		arc.outer_radius=0.69-0.16*i
 		arc.rings=20
 		arc.ring_segments=5
-		var swirl := _mesh(root,arc,TableSpace.to_world(at,1.3),Color("eab5f2"),true)
+		var swirl := _mesh(root,arc,TableSpace.to_world(at,1.3),Color("aaf5ff") if fracture else Color("eab5f2"),true)
 		swirl.rotation=Vector3(PI*0.5,0.3+0.5*i,0.4*i)
 
 

@@ -40,6 +40,11 @@ func _setup() -> void:
 		printerr("Wrong board for capture: ", _scene.controller.state.board.id)
 		quit(1)
 		return
+	if args.size()>3:
+		if not RealityCracks.apply(_scene.controller,int(args[3])):
+			printerr("Unable to apply preview reality crack: ",args[3])
+			quit(1)
+			return
 	_ready_to_capture = true
 
 

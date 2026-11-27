@@ -129,8 +129,12 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 			TerrainDressing.column(root,piece)
 		"red_king_portal","reality_portal":
 			PortalView.build(root,piece)
-		"red_king_sinkhole_orb","reality_hoof":
+		"red_king_sinkhole_orb":
 			SinkholeView.build(root,piece)
+		"reality_hoof":
+			RealityHazardView.hoof(root,piece,board)
+		"rk_worm_token":
+			RealityHazardView.worm(root,piece,board)
 		"library_shelf":
 			SiteArt.shelf(root,piece)
 		"arcane_disc","dreams_well":

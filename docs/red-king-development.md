@@ -285,3 +285,6 @@ The Demons and the Mad Man pauses at turn two for priority-ordered corner select
 
 ### Convergence placement
 Crack 14 now pauses for human-controlled placement of figures after the first centre arrival. Legal destinations contact one of the previously drawn figures, avoid overlap, and respect height and blocking terrain. Uncontrolled creature placement is assigned by a priority-independent roll-off; rivals choose contact positions using ally/enemy proximity. If no legal contact exists, the selected figure stays put and the event log explains it. The half-inch lattice and blocked-centre fallback remain digital approximations.
+
+### Distinct reality hazard art
+Cloven Hoof now uses a split, scorched hoof silhouette and amber danger ring instead of reusing the antimagic sphere. Random reality portals have cyan accents rather than the scenario's red portals. Worm summoning tokens use a small gold rune ring. Geometry has no dynamic lights or additional particle systems. Visual CI captures the portal and hoof with explicitly applied cracks.

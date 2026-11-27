@@ -66,6 +66,14 @@ jobs:
             test -s "previews/$scenario.png"
             if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed' "$scenario.log"; then exit 1; fi
           done
+      - name: Capture Reality Crack hazards
+        run: |
+          set -euo pipefail
+          for effect in 13 16; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- "previews/reality-crack-$effect.png" 0 red_king_squatter "$effect" 2>&1 | tee "reality-crack-$effect.log"
+            test -s "previews/reality-crack-$effect.png"
+            if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed' "reality-crack-$effect.log"; then exit 1; fi
+          done
       - name: Capture scenario environment refinements
         run: |
           set -o pipefail
