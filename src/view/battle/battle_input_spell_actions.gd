@@ -48,7 +48,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 		"cancel_bridge":
 			return bi.c._magic.terrain.cancel_bridge(bi.c.state.active())
 		"use_stored_action":
-			return bi.c.use_stored_action()
+			return BattleAction.execute(bi.c,"use_stored_action")
 		"resist_plus", "resist_minus":
 			bi.empower = clampi(bi.empower + (1 if key == "resist_plus" else -1), 0, int(bi.c.state.pending_resistance["max"]))
 			bi._resist_buttons()
@@ -166,13 +166,14 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			bi.mode = ""
 			return true
 		"pass_phase":
-			return bi.c.finish_early_phase()
+			return BattleAction.execute(bi.c,"pass_phase")
 		"reload":
 			return BattleAction.execute(bi.c,"reload")
 		"end":
-			bi.c.end_activation()
-			bi.mode = ""
-			return true
+			var ended := BattleAction.execute(bi.c,"end")
+			if ended:
+				bi.mode = ""
+			return ended
 	bi.mode = key
 	bi.preview()
 	return false
