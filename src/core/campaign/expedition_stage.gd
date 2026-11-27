@@ -8,6 +8,8 @@ static func current(data: Dictionary,in_battle: bool,ready: bool) -> String:
 		return "Create warband"
 	if in_battle:
 		return "Expedition in progress"
+	if not data.get("pending_treasure",[]).is_empty():
+		return "After-action reward choices"
 	if not ready:
 		return "Recovery & preparation"
 	return "Ready for expedition"
