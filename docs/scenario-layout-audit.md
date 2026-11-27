@@ -39,3 +39,14 @@ The 2026-11-27 CI seed-19 diagnostic reports zero visible opposing pairs on all 
 ## Follow-up: actual playable terrain
 
 Haunted Houses implementation was verified in the existing branch: exact outer-wall gaps, four entrance directions, actual opposite-wall spawn selection and interior decorations. The next pass adds physical sight-blocking ruins to Frozen Ruins, Sunken Streets and Keep; Living Museum now has taller broken walls on the existing 12-inch perimeter rather than four low strips. No objective coordinates, core scenario rules, or deployment zones were moved in these four maps. Worm Hunts and Genie now have separate board data with changed non-objective ruins while retaining the previous standard treasure and elevation layout. Automatic deployment prefers concealment from the central token on exposed-heightfield boards, without forbidding otherwise legal player choices. Further checks: complete all-edge visibility and path access, correct expansion tent and temple architecture, and inspect actual rendered layouts; these changes are not a claim that every permitted position hides every objective. The 3-inch temple-column gap interpretation is not changed without explicit approval.
+
+
+## Architecture follow-up
+
+- Library: four six-inch clear edge openings framed by tall jambs and real perimeter masonry. Existing exit authorization remains the rules authority; shelves retain their climbable tops. Door openings tested at the board edge and on the interior approach.
+- Complex Temple: adopted the wall-to-wall interpretation for the one-inch columns, placing the centres four inches apart (three inches clear). Guardian token supports and contact tests updated. Added broken outer temple walls with large openings.
+- Investigations: six-inch stepped circular approximation, two opposed open entrances, solid hide panels with visible seams/poles, no opaque roof so figures remain selectable. Seven stands and initial guards untouched. The authored lattice uses rectangular collision pieces instead of rotated circular segments.
+- Back Into the Fire: broken stone corner gateways and edge walls, preserving existing corner deployment and exit rules and keeping the central court open. Portals now form the prescribed approximately six-inch circle, with 2-inch diameter.
+- Ringworld: replaced generic ruin boxes with carved alien ribs, monoliths and climbable terraces. Preserved marker positions, guards, wrapping and plane rules.
+- Silent Tower: new route-graph regression traverses all reachable physical floor nodes from the street, checks both directions of every authored connection, every one-inch climb interval, and base-contact access to each treasure. Tests are geometry-level without opposing figures and do not establish AI tactics or every camera cutaway.
+- All new terrain types participate in the existing asset pre-bake pipeline. No APK build or merge requested.
