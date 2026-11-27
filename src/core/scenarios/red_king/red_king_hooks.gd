@@ -14,6 +14,12 @@ static func install() -> void:
 	RuleHooks.add("turn_end",RedKingTurnHooks.end_turn)
 	RuleHooks.add("turn_end_resume",RedKingTurnHooks.after_end_turn)
 	RuleHooks.add("before_phase",RedKingVeil.before_phase)
+	RuleHooks.add("victory_before_turn",RedKingVictory.before_turn)
+	RuleHooks.add("turn_limit",RedKingVictory.turn_limit)
+	RuleHooks.add("victory_at_limit",RedKingVictory.at_limit)
+	RuleHooks.add("victory_after_turn",RedKingVictory.check_after_turn)
+	RuleHooks.add("scenario_victory",RedKingVictory.check)
+	RuleHooks.add("sticky_treasure",RedKingGear.sticky)
 	RuleHooks.add("potion_source_allowed",RedKingPotionHooks.source_allowed)
 	RuleHooks.add("potion_consume",RedKingPotionHooks.consume)
 	# Figures that never lend support in a fight (Mad Man hunters).
