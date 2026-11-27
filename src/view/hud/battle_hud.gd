@@ -96,7 +96,8 @@ func _ready() -> void:
 	_auto.toggle_mode = true
 	top.add_child(_auto)
 	_menu=_button("Menu",_open_commands)
-	_menu.custom_minimum_size=Vector2(108,62)
+	_menu.custom_minimum_size=Vector2(108,64)
+	MenuSymbols.apply(_menu,"menu","Open battle commands")
 	top.add_child(_menu)
 	# Home and Maps remain in the full command menu; keep the board header compact.
 	var scenarios := OptionButton.new()

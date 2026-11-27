@@ -6,6 +6,8 @@ var body: VBoxContainer
 var heading: Label
 var action: Button
 var subtitle: Label
+var back_button: Button
+var close_button: Button
 
 
 func _init() -> void:
@@ -25,9 +27,14 @@ func build(title_text: String, action_text: String, run: Callable) -> void:
 	var col := WorkshopUI.column(panel)
 	var top := HBoxContainer.new()
 	col.add_child(top)
-	WorkshopUI.button(top,"‹ Back",navigate_back)
+	back_button=WorkshopUI.button(top,"",navigate_back)
+	back_button.name="MenuBack"
+	MenuSymbols.apply(back_button,"back","Back",true)
 	heading=WorkshopUI.label(top,title_text,30,WorkshopUI.GOLD)
 	heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	close_button=WorkshopUI.button(top,"",navigate_back)
+	close_button.name="MenuClose"
+	MenuSymbols.apply(close_button,"close","Close menu without confirming",true)
 	subtitle=WorkshopUI.label(col,"",23,WorkshopUI.MUTED)
 	body=WorkshopUI.column(col)
 	action=WorkshopUI.button(col,action_text,run,true)
