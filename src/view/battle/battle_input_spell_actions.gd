@@ -46,7 +46,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 		"transfer_confirm":
 			return BattleEquipmentAction.execute(bi.c,"transfer",{"target":bi.transfer_target,"amount":bi.transfer_amount})
 		"cancel_bridge":
-			return bi.c._magic.terrain.cancel_bridge(bi.c.state.active())
+			return BattleSpellAction.execute(bi.c,"cancel_bridge")
 		"use_stored_action":
 			return BattleAction.execute(bi.c,"use_stored_action")
 		"resist_plus", "resist_minus":
@@ -55,24 +55,24 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			bi.preview()
 			return false
 		"resist_fate":
-			bi.c._magic.resistance.reroll_fate()
+			BattleSpellAction.execute(bi.c,"resist_fate")
 			bi.empower = 0
 			bi._resist_buttons()
 			bi.preview()
 			return false
 		"cast_fate":
-			bi.c._magic.reroll_fate()
+			BattleSpellAction.execute(bi.c,"cast_fate")
 			bi.empower = 0
 			bi._empower_buttons()
 			bi.preview()
 			return false
 		"resist_amulet":
-			bi.c._magic.resistance.use_amulet()
+			BattleSpellAction.execute(bi.c,"resist_amulet")
 			bi._resist_buttons()
 			bi.preview()
 			return false
 		"resist_confirm":
-			return bi.c._magic.resistance.answer(bi.empower)
+			return BattleSpellAction.execute(bi.c,"resist",{"health":bi.empower})
 		"counter_previous", "counter_next":
 			bi.counter_index = posmod(bi.counter_index + (1 if key == "counter_next" else -1), bi.counter_choices.size())
 			bi.preview()
@@ -80,7 +80,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 		"counter_confirm":
 			if bi.selected_spell == "horn":
 				return BattleEquipmentAction.execute(bi.c,"horn",{"piece":bi.c.state.board.pieces.find(bi.counter_choices[bi.counter_index]["piece"])})
-			return bi._declared(bi.c._magic.start_counter(bi.selected_spell, bi.counter_index))
+			return bi._declared(BattleSpellAction.execute(bi.c,"counter",{"spell":bi.selected_spell,"index":bi.counter_index}))
 		"extend_bridge":
 			bi.spell_extended=not bi.spell_extended
 			bi.preview()
@@ -126,14 +126,14 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 			bi.preview()
 			return false
 		"cast_scroll":
-			return bi.c._magic.insure()
+			return BattleSpellAction.execute(bi.c,"insure")
 		"gem_extend","gem_reroll":
-			bi.c._magic.toggle_gem(key)
+			BattleSpellAction.execute(bi.c,"gem",{"option":key})
 			bi._empower_buttons()
 			bi.preview()
 			return false
 		"cast_fang":
-			bi.c._magic.toggle_golden_fang()
+			BattleSpellAction.execute(bi.c,"golden_fang")
 			bi._empower_buttons()
 			bi.preview()
 			return false
