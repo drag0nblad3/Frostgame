@@ -17,6 +17,9 @@ var _candidate := ""
 var _filter := "All"
 var _title: Label
 var _tag: Label
+var _details_column: VBoxContainer
+var _action: Button
+var _action_note: Label
 
 
 func setup(value: WarbandDraft) -> void:
@@ -37,8 +40,12 @@ func setup(value: WarbandDraft) -> void:
 	portrait.custom_minimum_size=Vector2(0,200)
 	_visual.add_child(portrait)
 	WorkshopUI.label(_visual,"Drag to rotate miniature",18,WorkshopUI.MUTED).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-	_detail=WorkshopUI.scroll(_split)
-	_detail.get_parent().size_flags_stretch_ratio=1.2
+	_details_column=WorkshopUI.column(_split)
+	_details_column.size_flags_stretch_ratio=1.2
+	_detail=WorkshopUI.scroll(_details_column)
+	_action_note=WorkshopUI.label(_details_column,"",22,Color("edaa91"))
+	_action=WorkshopUI.button(_details_column,"Hire",_primary_action,true)
+	_action.custom_minimum_size.y=70
 	_chooser=WorkshopUI.column(_split)
 	_chooser.size_flags_stretch_ratio=0.86
 
@@ -80,7 +87,7 @@ func _build_choices() -> void:
 	_selection=ItemList.new()
 	_selection.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	_selection.custom_minimum_size.y=130
-	_selection.add_theme_font_size_override("font_size",22)
+	_selection.add_theme_font_size_override("font_size",25)
 	_selection.add_theme_constant_override("v_separation",17)
 	_chooser.add_child(_selection)
 	if slot==0:
@@ -100,6 +107,8 @@ func _build_choices() -> void:
 			_selection.set_item_metadata(_selection.item_count-1,id)
 			if id==_candidate:
 				_selection.select(_selection.item_count-1)
+		if _selection.item_count==0:
+			_candidate=""
 		if _selection.item_count>0 and _selection.get_selected_items().is_empty():
 			_selection.select(0)
 			_candidate=str(_selection.get_item_metadata(0))
@@ -128,10 +137,16 @@ func _refresh_detail() -> void:
 	WorkshopUI.clear(_detail)
 	var caster := slot<2
 	var hiring := _hiring()
+	_action.visible=not caster
+	_action_note.visible=false
+	portrait.visible=true
 	var f: Figure
 	if hiring:
 		if _candidate.is_empty() or not draft.db.available(_candidate):
 			_title.text="No recruits match"
+			_tag.text="Choose another filter"
+			portrait.visible=false
+			_action.disabled=true
 			return
 		f=Figure.new(0,draft.db.get_def(_candidate),0,Vector2.ZERO,draft.db.unarmed())
 	else:
@@ -147,15 +162,23 @@ func _refresh_detail() -> void:
 		WorkshopUI.label(_detail,"BATTLEFIELD ROLE",17,WorkshopUI.GOLD)
 		WorkshopUI.label(_detail,WarbandAdvice.ROLES.get(d.id,"A warband soldier."),23)
 		WorkshopUI.label(_detail,"EQUIPMENT",17,WorkshopUI.GOLD)
-		WorkshopUI.label(_detail,WarbandAdvice.loadout(d)+(" Shield included." if d.shield else ""),22)
+		WorkshopUI.label(_detail,WarbandAdvice.recruit_equipment(d),24)
 		if hiring:
 			var reason := WarbandAdvice.hire_reason(draft,d)
-			var b := WorkshopUI.button(_detail,"Hire %s · %d gc"%[d.name,d.cost],_hire,true)
-			b.disabled=not draft.can_hire(d.id)
-			if not reason.is_empty():
-				WorkshopUI.label(_detail,reason,20,Color("edaa91"))
+			_action.text="Hire %s · %d gc"%[d.name,d.cost]
+			_action.disabled=not draft.can_hire(d.id)
+			_action_note.text=reason
+			_action_note.visible=not reason.is_empty()
 		else:
-			WorkshopUI.button(_detail,"Remove from warband",_remove)
+			_action.text="Remove from warband"
+			_action.disabled=false
+
+
+func _primary_action() -> void:
+	if _hiring():
+		_hire()
+	else:
+		_remove()
 
 
 func _hire() -> void:

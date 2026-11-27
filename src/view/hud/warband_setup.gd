@@ -41,7 +41,7 @@ func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	var header := HBoxContainer.new()
 	frame.add_child(header)
 	_back=WorkshopUI.button(header,"‹ Home",navigate_back)
-	_heading=WorkshopUI.label(header,"YOUR EXPEDITION",28,WorkshopUI.GOLD)
+	_heading=WorkshopUI.label(header,"YOUR EXPEDITION",30,WorkshopUI.GOLD)
 	_heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_save=WorkshopUI.button(header,"Save warband",_confirm,true)
 	_summary=WorkshopUI.label(frame,"",22,WorkshopUI.GOLD)

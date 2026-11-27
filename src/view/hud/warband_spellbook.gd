@@ -11,6 +11,7 @@ var _slots: VBoxContainer
 var _choices: ItemList
 var _detail: VBoxContainer
 var _choice_heading: Label
+var _apply_button: Button
 
 
 func setup(value: WarbandDraft) -> void:
@@ -29,14 +30,17 @@ func setup(value: WarbandDraft) -> void:
 	_choices=ItemList.new()
 	_choices.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	_choices.custom_minimum_size.y=125
-	_choices.add_theme_font_size_override("font_size",22)
+	_choices.add_theme_font_size_override("font_size",25)
 	_choices.add_theme_constant_override("v_separation",18)
 	choices.add_child(_choices)
 	_choices.item_selected.connect(func(index: int) -> void:
 		candidate=str(_choices.get_item_metadata(index))
 		_describe())
-	_detail=WorkshopUI.scroll(_split)
-	_detail.get_parent().size_flags_stretch_ratio=1.35
+	var detail_column := WorkshopUI.column(_split)
+	detail_column.size_flags_stretch_ratio=1.35
+	_detail=WorkshopUI.scroll(detail_column)
+	_apply_button=WorkshopUI.button(detail_column,"Choose spell",_apply,true)
+	_apply_button.custom_minimum_size.y=70
 
 
 func reflow(narrow: bool) -> void:
@@ -97,8 +101,8 @@ func _describe() -> void:
 	var conflict := _conflict(candidate)
 	if conflict:
 		WorkshopUI.label(_detail,"Already selected, or conflicts with the other neutral school.",20,Color("edaa91"))
-	var b := WorkshopUI.button(_detail,"Equipped in this slot" if candidate==draft.spells[slot] else "Choose spell for slot %d"%(slot+1),_apply,true)
-	b.disabled=conflict or candidate==draft.spells[slot]
+	_apply_button.text="Equipped in this slot" if candidate==draft.spells[slot] else "Choose spell for slot %d"%(slot+1)
+	_apply_button.disabled=conflict or candidate==draft.spells[slot]
 
 
 func _apply() -> void:

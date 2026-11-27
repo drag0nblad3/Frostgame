@@ -62,8 +62,8 @@ func refresh() -> void:
 	for i in 10:
 		var title := "Wizard" if i==0 else ("Apprentice" if i==1 and draft.apprentice else ("+ Apprentice" if i==1 else ("+ Soldier" if i-2>=draft.soldiers.size() else draft.db.get_def(draft.soldiers[i-2]).name)))
 		var b := WorkshopUI.button(_slots,title,inspect.emit.bind(i))
-		b.custom_minimum_size.x=108
-		b.add_theme_font_size_override("font_size",20)
+		b.custom_minimum_size=Vector2(108,58)
+		b.add_theme_font_size_override("font_size",23)
 		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 
 

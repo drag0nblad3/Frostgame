@@ -9,6 +9,7 @@ var _stage: Node3D
 var _models: Dictionary={}
 var _key := ""
 var _draft: WarbandDraft
+var _floor: Node3D
 
 
 func _ready() -> void:
@@ -36,6 +37,9 @@ func _ready() -> void:
 		light.light_color=Color("ffe2b6") if i==0 else Color("a6d7ff")
 		light.light_energy=1.35 if i==0 else 0.85
 		room.add_child(light)
+	_floor=Node3D.new()
+	room.add_child(_floor)
+	_build_studio()
 	_stage=Node3D.new()
 	room.add_child(_stage)
 	_camera=Camera3D.new()
@@ -85,13 +89,28 @@ func _frame() -> void:
 		var row := floori(float(i)/columns)
 		var row_count := mini(columns,count-row*columns)
 		var x := (float(row_count-1)*0.5-float(i%columns))*spacing
-		var z := (float(row)-float(rows-1)*0.5)*2.0
+		var z := (float(row)-float(rows-1)*0.5)*2.7
+		if rows>1:
+			x+=0.36 if row%2==0 else -0.36
 		_models[slot].position=Vector3(x,0,z)
 		i+=1
 	var target := Vector3(0,0.83,0)
-	_camera.look_at_from_position(target+Vector3(0,4.7,-9),target)
-	_camera.size=maxf(2.7+float(rows-1)*1.20,(float(columns)*spacing+0.35)/aspect)
+	_camera.look_at_from_position(target+Vector3(0,5.8 if rows>1 else 2.8,-9),target)
+	_camera.size=maxf(2.6+float(rows-1)*1.65,(float(columns)*spacing+0.6)/aspect)
 	_request_frame()
+
+
+func _build_studio() -> void:
+	# Low-contrast frozen stone backdrop; no extra lights or particle systems.
+	MiniatureFactory.box(_floor,Vector3(0,-0.42,0),Vector3(18,0.25,10),Color("354c5b"))
+	for x in range(-8,9,2):
+		for z in range(-4,5,2):
+			MiniatureFactory.box(_floor,Vector3(x,-0.27,z),Vector3(1.94,0.04,1.94),Color("526a76") if (x+z)%4==0 else Color("495e6b"))
+	for x in [-7,-4,4,7]:
+		var h := 1.2 if abs(x)==4 else 2.1
+		MiniatureFactory.box(_floor,Vector3(x,h*0.5-0.2,4.0),Vector3(0.75,h,0.82),Color("385160"))
+		MiniatureFactory.box(_floor,Vector3(x,h-0.16,4.0),Vector3(0.91,0.10,0.98),Color("a5bcc6"))
+	MiniatureBatch.bake(_floor)
 
 
 func _pick(event: InputEvent) -> void:

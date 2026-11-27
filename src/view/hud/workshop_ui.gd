@@ -6,7 +6,7 @@ const PAPER := Color("e6edf0")
 const MUTED := Color("b9ccd6")
 
 
-static func label(parent: Node,value: String,font: int=22,color: Color=PAPER) -> Label:
+static func label(parent: Node,value: String,font: int=25,color: Color=PAPER) -> Label:
 	var l := Label.new()
 	l.text=value
 	l.add_theme_font_size_override("font_size",font)
@@ -19,8 +19,8 @@ static func label(parent: Node,value: String,font: int=22,color: Color=PAPER) ->
 static func button(parent: Node,value: String,action: Callable,primary: bool=false) -> Button:
 	var b := Button.new()
 	b.text=value
-	b.custom_minimum_size.y=54
-	b.add_theme_font_size_override("font_size",22)
+	b.custom_minimum_size.y=64
+	b.add_theme_font_size_override("font_size",25)
 	b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	if primary:
 		b.add_theme_stylebox_override("normal",BattleTheme.panel(Color("305664"),GOLD))
@@ -69,8 +69,8 @@ static func stats(parent: Node,d: FigureDef) -> void:
 		grid.add_child(card)
 		var col := column(card)
 		col.add_theme_constant_override("separation",0)
-		label(col,names[i],15,MUTED).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-		label(col,values[i],31,GOLD).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+		label(col,names[i],18,MUTED).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+		label(col,values[i],37,GOLD).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 
 
 static func figure(draft: WarbandDraft,slot: int) -> Figure:
