@@ -47,11 +47,17 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 
 ## Could `shooter` shoot `target` if it stood at `at`? (range, sight, target free)
 static func possible_from(board: Board, figures: Array[Figure], shooter: Figure, at: Vector2, target: Figure) -> bool:
-	if shooter.ring_side!=target.ring_side or shooter.ranged == null or not IllusionRules.visible_to(figures, shooter, target) or Contact.in_combat(figures, target):
+	return possible_from_world(board,figures,shooter,Vector3(at.x,board.height_at(at),at.y),target)
+
+
+## Shared candidate-shot test for the movement planner. Current-shot
+## authorization still goes through GameController.can_shoot.
+static func possible_from_world(board: Board,figures: Array[Figure],shooter: Figure,at: Vector3,target: Figure) -> bool:
+	if shooter.ring_side!=target.ring_side or shooter.ranged==null or not target.in_play() or not IllusionRules.visible_to(figures,shooter,target) or Contact.in_combat(figures,target):
 		return false
-	if maxf(Vector2(at.distance_to(target.pos),board.height_at(at)-target.elevation).length() - 2.0 * Figure.BASE_RADIUS, 0.0) > shooter.ranged.range_in:
+	if maxf(at.distance_to(Vector3(target.pos.x,target.elevation,target.pos.y))-2.0*Figure.BASE_RADIUS,0.0)>shooter.ranged.range_in:
 		return false
-	return LineOfSight.check(board, at, target.pos,shooter).clear
+	return LineOfSight.check_from_world(board,shooter,at,target).clear
 
 
 ## Bonus to the target's roll from terrain.

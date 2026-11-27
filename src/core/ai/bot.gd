@@ -25,22 +25,16 @@ static func resume_activation(c: GameController) -> bool:
 		_use_healing(c,f)
 		if c.awaiting_reaction():
 			return true
+	if f.side >= 0:
+		if RedKingBot.prepare(c,f):
+			if c.awaiting_reaction() or c.state.active()!=f:
+				return true
 	if not c.state.board.floor_layout.is_empty():
 		if FuryRules.target(c.state,f)!=null:
 			FuryRules.play(c,f)
 		else:
 			LayeredBattleBot.perform(c,f)
-		if c.awaiting_reaction() or c.state.active()!=f:
-			return true
-		if c.state.push_winner>=0:
-			if not c.resolve_push(c.state.figure(c.state.push_winner).treasure_id>=0):
-				c.stay_in_combat()
-		c.end_activation()
-		return true
-	if f.side >= 0:
-		if RedKingBot.prepare(c,f):
-			if c.awaiting_reaction() or c.state.active()!=f:
-				return true
+		return _finish(c,f)
 	if RedKingRingworld.active(c.state) and f.side>=0 and RingworldBot.play(c,f):
 		pass
 	elif RedKingMind.is_wizard(c.state,f):
@@ -62,7 +56,12 @@ static func resume_activation(c: GameController) -> bool:
 			_play_shooter(c, f)
 		else:
 			_play_fighter(c, f)
-	if c.awaiting_reaction():
+	return _finish(c,f)
+
+
+## The same reaction and withdrawal policy applies after either route provider.
+static func _finish(c: GameController,f: Figure) -> bool:
+	if c.awaiting_reaction() or c.state.active()!=f:
 		return true
 	if c.state.push_winner == f.id and f.side >= 0:
 		var loser := c.state.figure(c.state.push_loser)
@@ -124,7 +123,7 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 	if f.ranged.needs_reload and not f.loaded:
 		if not c.reload() or not c.can_act():
 			return
-	var t := BotTargets.best_shot(c.state, f)
+	var t := BotTargets.best_legal_shot(c,f)
 	if RedKingBot.special_shot(c,f,t):
 		return
 	if t != null:

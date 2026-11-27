@@ -149,7 +149,7 @@ func intercept_floor(mover: Figure,path: PackedVector3Array,surfaces: Array[Stri
 		var point:=path[i]
 		var p:=Vector2(point.x,point.z)
 		for guard in c.state.figures:
-			if not guard_can_intercept(mover,guard,ignored) or guard.surface_id!=surfaces[i] or absf(guard.elevation-point.y)>=0.5:
+			if not guard_can_intercept(mover,guard,ignored) or absf(guard.elevation-point.y)>=0.5:
 				continue
 			var distance:=p.distance_to(guard.pos)
 			if distance>2.0 or distance<=Contact.CONTACT or (mover.disengaged.has(guard.id) and distance>=float(mover.disengaged[guard.id])-0.001):
@@ -161,6 +161,8 @@ func intercept_floor(mover: Figure,path: PackedVector3Array,surfaces: Array[Stri
 			var dest:=layout.point(n)
 			var h:=layout.height(n)
 			if absf(h-point.y)>=0.5 or dest.distance_to(p)<Contact.OVERLAP or not Contact.touching(dest,p):
+				continue
+			if guard.surface_id!=surfaces[i] and not LineOfSight.floor_ray(c.state.board,layout,Vector3(dest.x,h+0.5,dest.y),point+Vector3.UP*0.5,guard,false):
 				continue
 			var from:=Vector3(guard.pos.x,guard.elevation,guard.pos.y)
 			var to:=layout.world(n)
@@ -192,5 +194,6 @@ func force_floor_contact(info: Dictionary) -> void:
 	guard.surface_id=str(info["floor"])
 	var to:=Vector3(guard.pos.x,guard.elevation,guard.pos.y)
 	c.emit("layered_move",{"id":guard.id,"path":PackedVector3Array([from,to]),"surfaces":[guard.surface_id,guard.surface_id],"cost":0.0})
+	c._magic.terrain.trigger_landing(guard)
 	ScenarioSites.end_move(c,guard)
 	c._magic.illusions.after_move(guard)

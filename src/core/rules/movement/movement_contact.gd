@@ -13,7 +13,7 @@ static func blocks(mover: Figure,other: Figure,figures: Array[Figure],at: Vector
 		return false
 	if running and distance<1.001:
 		return true
-	if distance>Contact.CONTACT or (not surface.is_empty() and not other.surface_id.is_empty() and other.surface_id!=surface):
+	if not Contact.touches_position(other,at,height,surface):
 		return false
 	if WormRider.ignored(mover,other) or (not IllusionRules.visible_to(figures,mover,other) and not CreatureSenses.may_contact(mover,other)):
 		return true

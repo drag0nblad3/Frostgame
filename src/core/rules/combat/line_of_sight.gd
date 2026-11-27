@@ -19,19 +19,25 @@ class Result:
 
 ## Canonical figure-to-figure sight. A geometry provider supplies the physical obstruction test.
 static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
-	if from.ring_side!=to.ring_side:
-		var blocked := Result.new()
-		blocked.clear=false
-		return blocked
-	if board.floor_layout.is_empty():
-		return check(board,from.pos,to.pos,from)
+	return check_from_world(board,from,Vector3(from.pos.x,from.elevation,from.pos.y),to)
+
+
+## Physical sight from an actual or hypothetical legal standing position.
+## The caller supplies the true height; no mutation or highest-floor lookup.
+static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -> Result:
 	var result := Result.new()
+	if from.ring_side!=to.ring_side:
+		result.clear=false
+		return result
+	if board.floor_layout.is_empty():
+		return check(board,Vector2(at.x,at.z),to.pos,from)
 	var layout := board.floor_geometry()
-	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and floor_ray(board,layout,Vector3(from.pos.x,from.elevation+1.5,from.pos.y),Vector3(to.pos.x,to.elevation+1.0,to.pos.y),from,false)
-	if board.darkness and Shooting.distance(from,to)>12.0:
+	var target := Vector3(to.pos.x,to.elevation,to.pos.y)
+	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and floor_ray(board,layout,at+Vector3.UP*1.5,target+Vector3.UP,from,false)
+	if board.darkness and maxf(0.0,at.distance_to(target)-2.0*Figure.BASE_RADIUS)>12.0:
 		result.clear=false
 	if result.clear:
-		floor_cover(board,Vector3(from.pos.x,from.elevation,from.pos.y),Vector3(to.pos.x,to.elevation,to.pos.y),result)
+		floor_cover(board,at,target,result)
 	return result
 
 
