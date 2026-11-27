@@ -168,7 +168,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 		"pass_phase":
 			return bi.c.finish_early_phase()
 		"reload":
-			return bi.c.reload()
+			return BattleAction.execute(bi.c,"reload")
 		"end":
 			bi.c.end_activation()
 			bi.mode = ""
