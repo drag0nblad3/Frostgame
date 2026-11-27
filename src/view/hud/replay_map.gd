@@ -1,14 +1,17 @@
 class_name ReplayMap
 extends Control
 ## Draw-only tactical reconstruction from plain data, independent of live 3D.
+signal figure_selected(text: String)
 var frame: Dictionary={}
+var _markers: Array[Dictionary]=[]
 var floor_id:=""
 var _font: Font
 
 
 func _ready() -> void:
 	custom_minimum_size=Vector2(140,140)
-	mouse_filter=Control.MOUSE_FILTER_IGNORE
+	mouse_filter=Control.MOUSE_FILTER_STOP
+	gui_input.connect(_pick)
 	_font=ThemeDB.fallback_font
 	resized.connect(queue_redraw)
 
@@ -16,10 +19,13 @@ func _ready() -> void:
 func show_frame(value: Dictionary,surface: String="") -> void:
 	frame=value
 	floor_id=surface
+	_markers.clear()
+	figure_selected.emit("")
 	queue_redraw()
 
 
 func _draw() -> void:
+	_markers.clear()
 	if frame.is_empty() or _font==null:
 		return
 	var board: Vector2=frame["size"]
@@ -67,6 +73,7 @@ func _draw() -> void:
 		var color:=Color("b79be9") if side<0 else (Color("6ba9f8") if side==0 else Color("ef8a7a"))
 		draw_circle(p,radius+1.5,Color("101923"))
 		draw_circle(p,radius,color)
+		_markers.append({"at":p,"figure":f,"radius":radius})
 		if int(f["id"])==int(frame["active"]):
 			draw_arc(p,radius+3,0,TAU,24,Color("ffe39b"),2)
 		var text:="%d"%int(f["id"])
@@ -74,3 +81,20 @@ func _draw() -> void:
 			text+=" · %.1f"%float(f["height"])
 		draw_string(_font,p+Vector2(radius+2,4),text,HORIZONTAL_ALIGNMENT_LEFT,-1,12,Color.WHITE)
 	draw_rect(area,Color("8b9ba6"),false,1.5)
+
+
+func _pick(event: InputEvent) -> void:
+	if not event is InputEventMouseButton or not event.pressed or event.button_index!=MOUSE_BUTTON_LEFT:
+		return
+	var best: Dictionary={}
+	var distance:=INF
+	for marker: Dictionary in _markers:
+		var d: float=event.position.distance_to(marker["at"])
+		if d<=maxf(18.0,float(marker["radius"])+5.0) and d<distance:
+			distance=d
+			best=marker["figure"]
+	if best.is_empty():
+		figure_selected.emit("")
+	else:
+		figure_selected.emit("#%d %s · Health %d/%d · %.1f in high · %s"%[best["id"],best["name"],best["health"],best["max_health"],best["height"],str(best["surface"]).replace("_"," ") if not str(best["surface"]).is_empty() else "Ground"])
+	accept_event()
