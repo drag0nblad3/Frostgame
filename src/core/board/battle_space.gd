@@ -22,5 +22,5 @@ static func contact(a: Figure,b: Figure) -> bool:
 	return Contact.figures_touch(a,b)
 
 
-static func movement(c: GameController,mode: String="move") -> BattleMovementOptions:
-	return c.movement_options(mode)
+static func movement(c: GameController,mode: String="move",cached: MoveReach=null) -> BattleMovementOptions:
+	return BattleMovementOptions.query(c,mode,cached)
