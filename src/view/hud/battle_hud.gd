@@ -17,6 +17,7 @@ signal guide_pressed
 signal atmosphere_toggled
 signal graphics_requested
 signal camera_requested(mode: int)
+signal presentation_changed(speed: float,cinematic: bool)
 signal title_requested
 signal training_requested
 signal training_next
@@ -57,6 +58,10 @@ var _toast: Label
 var _toast_timer: Timer
 var _context_tip: Label
 var _tips_enabled := true
+var _pace := 0
+var _cinematic := false
+const PACE_NAMES := ["Normal","Fast","Cinematic"]
+const PACE_SPEEDS := [0.8,1.6,0.55]
 var _training_panel: VBoxContainer
 var _training_text: Label
 var _training_next_button: Button
@@ -418,7 +423,7 @@ func _open_commands() -> void:
 		_command_screen=BattleCommandScreen.new()
 		add_child(_command_screen)
 		_command_screen.chosen.connect(_menu_action)
-	_command_screen.open(_status.text,_objective.text,_log_panel.visible,_tips_enabled)
+	_command_screen.open(_status.text,_objective.text,_log_panel.visible,_tips_enabled,PACE_NAMES[_pace],_cinematic)
 
 
 func _menu_action(id: int) -> void:
@@ -443,6 +448,12 @@ func _menu_action(id: int) -> void:
 		14: title_requested.emit()
 		15: graphics_requested.emit()
 		16: _open_journal()
+		17:
+			_pace=(_pace+1)%PACE_NAMES.size()
+			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)
+		18:
+			_cinematic=not _cinematic
+			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)
 
 
 func _open_journal() -> void:
