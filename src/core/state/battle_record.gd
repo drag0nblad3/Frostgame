@@ -31,4 +31,5 @@ static func run(c: GameController,key: String,args: Dictionary,apply: Callable) 
 	c.recording_command=false
 	if accepted:
 		c.command_history.append({"key":key,"args":args.duplicate(true),"rng_before":rng_before,"rng_after":c.dice._rng.state,"event_start":first,"event_end":c.history.size()})
+		BattleFrame.record(c)
 	return accepted
