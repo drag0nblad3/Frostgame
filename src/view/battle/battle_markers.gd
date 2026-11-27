@@ -89,14 +89,20 @@ func show_move_plan(path: PackedVector2Array) -> void:
 	_plan.add_child(end)
 	if path.size()<2:
 		return
-	var shape := ImmediateMesh.new()
-	shape.surface_begin(Mesh.PRIMITIVE_LINES,mat)
+	var vertices := PackedVector3Array()
 	for i in range(1,path.size()):
 		# A linked edge can jump across the board: do not draw a false route.
-		if path[i-1].distance_to(path[i])>1.5:
+		var length := path[i-1].distance_to(path[i])
+		if length>1.5 or length<0.001:
 			continue
 		for p in [path[i-1],path[i]]:
-			shape.surface_add_vertex(TableSpace.to_world(p,board.height_at(p)+0.12))
+			vertices.append(TableSpace.to_world(p,board.height_at(p)+0.12))
+	if vertices.is_empty():
+		return
+	var shape := ImmediateMesh.new()
+	shape.surface_begin(Mesh.PRIMITIVE_LINES,mat)
+	for vertex in vertices:
+		shape.surface_add_vertex(vertex)
 	shape.surface_end()
 	var line := MeshInstance3D.new()
 	line.mesh=shape

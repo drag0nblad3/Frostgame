@@ -93,7 +93,7 @@ func _ready() -> void:
 	_auto.toggle_mode = true
 	top.add_child(_auto)
 	_menu=_button("Menu",_open_commands)
-	_menu.custom_minimum_size=Vector2(100,48)
+	_menu.custom_minimum_size=Vector2(108,62)
 	top.add_child(_menu)
 	# Home and Maps remain in the full command menu; keep the board header compact.
 	var scenarios := OptionButton.new()
@@ -282,6 +282,8 @@ func set_active_summary(f: Figure) -> void:
 	if f==null:
 		return
 	var text := "%s  ·  HP %d/%d\n%d ACTIONS  ·  MOVE %.1f″\nF %+d   S %+d   A %d   W %+d"%[f.label(),f.health,f.def.health,f.actions_left,MoveRules.allowance(f),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
+	if f.melee!=null:
+		text+="\n"+f.melee.name
 	if f.ranged!=null:
 		text+="\n%s · %.0f″%s"%[f.ranged.name,f.ranged.range_in," · RELOAD" if f.ranged.needs_reload and not f.loaded else ""]
 	if f.treasure_id>=0:
@@ -303,6 +305,8 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 		b.disabled = not available.has(key)
 		b.visible = available.has(key)
 		b.set_pressed_no_signal(key == mode and b.toggle_mode)
+		if key=="move_confirm":
+			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else "Confirm move")
 	if changed:
 		for i in available.size():
 			if _buttons.has(available[i]):
@@ -401,7 +405,7 @@ func _fit_actions() -> void:
 	_dock.size_flags_vertical=Control.SIZE_EXPAND_FILL if wide else Control.SIZE_FILL
 	_dock.size_flags_horizontal=Control.SIZE_FILL
 	_action_scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL if wide else Control.SIZE_FILL
-	var long_list := _mode in ["spell_menu","items_menu"] or _last_actions.size()>8
+	var long_list := _mode in ["spell_menu","items_menu"] or _last_actions.size()>8 or _last_actions.has("move_confirm") or _last_actions.has("attack_confirm")
 	_action_row.columns=1 if wide and long_list else (2 if wide else maxi(2,mini(4,floori(bounds.size.x/190.0))))
 	var rows := maxi(1,ceili(float(_last_actions.size())/float(_action_row.columns)))
 	_action_scroll.custom_minimum_size.y=0.0 if wide else minf(float(rows)*82.0,bounds.size.y*0.30)

@@ -59,6 +59,9 @@ func _process(_delta: float) -> bool:
 			if not bi.available.has("move_confirm") or not bi.available.has("move_undo"):
 				return _fail("Movement confirmation missing")
 			bi.action("move_undo")
+			var figure_view: FigureView=_scene.player.views[c.state.active().id]
+			if figure_view.position!=TableSpace.to_world(start,c.state.active().elevation):
+				return _fail("Undo did not restore miniature position")
 			if bi.move_plan.destination!=null or c.state.active().pos!=start or c.state.active().moves_taken!=before_moves or c.dice._rng.state!=before_rng or c.history.size()!=before_history:
 				return _fail("Undo changed state or revealed a roll")
 			bi.tap(p)

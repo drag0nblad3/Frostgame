@@ -91,7 +91,7 @@ func plan_attack(id: int) -> void:
 	if mode=="shoot":
 		info+="\nRange %.1f″ / %.0f″ · %s"%[Shooting.distance(f,t),f.ranged.range_in,f.ranged.name]
 		var los := LineOfSight.check_figures(c.state.board,f,t)
-		info+=" · cover %+d"%Shooting.target_mod(los)
+		info+=" · cover/intervening %+d"%Shooting.target_mod(los)
 	else:
 		info+="\nOpposed Fight rolls · weapon %s"%f.melee.name
 	markers.show_move_plan(PackedVector2Array([t.pos]))
@@ -99,7 +99,7 @@ func plan_attack(id: int) -> void:
 
 
 func plan_drag(screen: Vector2) -> void:
-	if mode!="move":
+	if mode not in BattleMovePlan.MODES:
 		return
 	var hit: Variant=_surface_at(screen)
 	if hit!=null:

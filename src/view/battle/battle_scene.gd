@@ -44,6 +44,7 @@ var _bots := BotRunner.new()
 var _launch_intent := ""
 var _title_prompt: AcceptDialog
 var _picker: SkirmishPicker
+var _move_preview_tween: Tween
 
 
 func _ready() -> void:
@@ -228,6 +229,8 @@ func new_game(seed_value: int) -> void:
 
 
 func _attach_battle(c: GameController, start: bool) -> void:
+	if _move_preview_tween!=null and _move_preview_tween.is_valid():
+		_move_preview_tween.kill()
 	if player != null:
 		remove_child(player)
 		player.queue_free()
@@ -417,8 +420,17 @@ func _move_preview(id: int,at: Vector2,active: bool) -> void:
 	if f==null:
 		return
 	var view: FigureView=player.views[id]
-	# Only the presentation node moves; undo snaps it back before any event.
-	view.position=TableSpace.to_world(at,controller.state.board.height_at(at)) if active else TableSpace.to_world(f.pos,f.elevation)
+	# Only presentation moves. Interpolate nearby drag updates; snap on a
+	# distant tap rather than animating through walls. Undo always restores
+	# the exact authoritative position before event animations begin.
+	if _move_preview_tween!=null and _move_preview_tween.is_valid():
+		_move_preview_tween.kill()
+	var point := TableSpace.to_world(at,controller.state.board.height_at(at)) if active else TableSpace.to_world(f.pos,f.elevation)
+	if active and view.position.distance_to(point)<=1.25:
+		_move_preview_tween=create_tween()
+		_move_preview_tween.tween_property(view,"position",point,0.08).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	else:
+		view.position=point
 
 
 func _update_status() -> void:
