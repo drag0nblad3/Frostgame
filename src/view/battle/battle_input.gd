@@ -121,17 +121,20 @@ func plan_attack(id: int) -> void:
 	var t := c.state.figure(id)
 	if f==null or t==null:
 		return
-	if not BattleAction.legal(c,mode,id):
+	var details := BattleAction.attack_preview(c,mode,id)
+	if details.is_empty():
 		return
 	attack_target=id
 	available.assign(["attack_confirm","attack_cancel"])
-	var info := "%s · HP %d/%d · Fight %+d · Armour %d"%[t.label(),t.health,t.def.health,t.effective_fight(),t.effective_armour()]
-	if mode in ["shoot","ammo_shot","wraith_shot"]:
-		info+="\nRange %.1f″ / %.0f″ · %s"%[Shooting.distance(f,t),f.ranged.range_in,f.ranged.name]
-		var los := BattleSpace.sight(c.state.board,f,t)
-		info+=" · cover/intervening %+d"%Shooting.target_mod(los)
+	var info := "%s · HP %d/%d · Fight %+d · Armour %d"%[t.label(),details["health"],details["max_health"],details["fight"],details["armour"]]
+	if details.has("range"):
+		info+="\nRange %.1f″ / %.0f″ · %s"%[details["range"],details["maximum_range"],details["weapon"]]
+		info+=" · situational defence %+d"%details["defence_modifier"]
+		if details["random_target"]:
+			info+="\nShot into combat: the actual target is determined by a roll."
 	else:
-		info+="\nOpposed Fight rolls · weapon %s"%(f.melee.name if f.melee!=null else "Unarmed")
+		info+="\nOpposed Fight rolls · weapon %s"%details["weapon"]
+	info+="\nCosts %d action."%details["cost"]
 	markers.show_world_plan(PackedVector3Array([TableSpace.to_world(t.pos,t.elevation)]))
 	hud.set_actions(available,mode,info+"\nConfirm attack to roll, or tap another legal target.")
 
