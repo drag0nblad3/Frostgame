@@ -135,18 +135,18 @@
       "tower_roof"
     ],
     [
-      10,
-      12,
-      "street"
+      15.5,
+      20.5,
+      "tower_first"
     ],
     [
-      26,
-      12,
-      "street"
+      23,
+      19.5,
+      "east_walk"
     ],
     [
       10,
-      24,
+      12,
       "street"
     ],
     [

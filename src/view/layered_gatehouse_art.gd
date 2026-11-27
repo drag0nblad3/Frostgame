@@ -34,13 +34,14 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 		stone.set_shader_parameter("building_height",solid.end.y)
 		stone.set_shader_parameter("walkable_roof",solid.size.y<=0.5)
 		slab.material_override=stone
+		slab.set_meta("cut_height",solid.end.y if solid.size.y<=0.5 else solid.position.y+0.12)
 		if solid.size.y<=0.5:
 			_deck_edge(solid)
 		elif solid.size.y>=1.7:
 			var relief:=Node3D.new()
 			add_child(relief)
 			relief.position.y=solid.position.y
-			relief.set_meta("cut_height",solid.get_center().y)
+			relief.set_meta("cut_height",solid.position.y+0.12)
 			BattlefieldDetail.wall_relief(relief,Rect2(solid.position.x,solid.position.z,solid.size.x,solid.size.z),solid.size.y,scenario)
 			if roof:
 				upper_nodes.append(relief)
@@ -53,7 +54,8 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 		for i in range(1,5):
 			var p := solid.get_center()
 			p.y=solid.position.y+solid.size.y*float(i)/5.0
-			_box(p,Vector3(solid.size.x+0.035,0.035,solid.size.z+0.035),Color(0.23,0.32,0.39),false)
+			var course:=_box(p,Vector3(solid.size.x+0.035,0.035,solid.size.z+0.035),Color(0.23,0.32,0.39),false)
+			course.set_meta("cut_height",solid.position.y+0.12)
 
 
 func _bridge(s: FloorSurface) -> void:
