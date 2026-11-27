@@ -11,10 +11,7 @@ const INTERVENING := 1
 
 ## Range is measured base edge to base edge.
 static func distance(a: Figure, b: Figure) -> float:
-	var special: Variant = RuleHooks.first("range", [a, b])
-	if special != null:
-		return float(special)
-	return maxf(Vector3(a.pos.x, a.elevation, a.pos.y).distance_to(Vector3(b.pos.x, b.elevation, b.pos.y)) - 2.0 * Figure.BASE_RADIUS, 0.0)
+	return BattleSpace.edge_distance(a,b)
 
 
 ## Why `shooter` can't shoot `target`, or "" if the shot is allowed.
