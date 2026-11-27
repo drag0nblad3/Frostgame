@@ -187,7 +187,8 @@ func _save(path: String,source: Node3D) -> void:
 func _outside_board(node: Node3D,parent: Transform3D,rect: Rect2) -> bool:
 	var world:=parent*node.transform
 	if node is MeshInstance3D and node.mesh!=null:
-		var bounds:=world*node.mesh.get_aabb()
+		var mesh_node:=node as MeshInstance3D
+		var bounds: AABB=world*mesh_node.mesh.get_aabb()
 		var footprint:=Rect2(Vector2(bounds.position.x,bounds.position.z),Vector2(bounds.size.x,bounds.size.z))
 		if footprint.intersects(rect):
 			printerr("Exterior overlap at ",node.name,": ",footprint)

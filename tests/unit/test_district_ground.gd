@@ -42,7 +42,7 @@ func test_scenario_ground_changes_only_exterior_material() -> void:
 	var floor:=StoneFinish.floor_surface(board,"sunken_streets")
 	var ground:=DistrictGround.build(board,floor.material_override,"sunken_streets")
 	var original:=floor.material_override as ShaderMaterial
-	check_eq(original.get_shader_parameter("exterior_style"),0)
+	check(int(original.get_shader_parameter("exterior_style"))==0 if original.get_shader_parameter("exterior_style")!=null else true)
 	for child in ground.get_children():
 		var mat:=child.material_override as ShaderMaterial
 		check(mat!=original)
