@@ -15,6 +15,7 @@ var _encounters: EncounterActions
 var _magic: SpellActions
 var _potions: PotionActions
 var _fate_combat: FateCombat
+var deployment: BattleDeployment
 
 
 func _init(s: GameState, d: Dice) -> void:
@@ -40,7 +41,17 @@ func emit(type: String, data: Dictionary = {}) -> void:
 		RedKingInvestigations.observe_event(self,type,data)
 
 
+func begin_deployment(human_side: int=-1) -> BattleDeployment:
+	deployment=BattleDeployment.new(self,human_side)
+	deployment.begin()
+	return deployment
+
+
 func start_game() -> void:
+	if deployment!=null and not deployment.done:
+		return
+	if state.turn>0:
+		return
 	DeathMask.prepare(self)
 	CircletDefence.prepare(self)
 	ScrollShield.prepare(self)
