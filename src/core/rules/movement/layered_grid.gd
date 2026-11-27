@@ -13,6 +13,20 @@ var running := false:
 			_open_cache.clear()
 		running=value
 var board: Board
+## A reverse distance field must follow incoming one-way connections.
+var reverse_links: Dictionary={}
+var reversed:=false
+
+
+func reverse_connections() -> void:
+	reversed=true
+	reverse_links.clear()
+	for from: Vector3i in layout.links:
+		for edge: Dictionary in layout.links[from]:
+			var to: Vector3i=edge["to"]
+			if not reverse_links.has(to):
+				reverse_links[to]=[]
+			reverse_links[to].append({"to":from,"cost":edge["cost"],"kind":edge["kind"]})
 
 
 func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> void:
@@ -81,9 +95,9 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if running or (mover!=null and mover.levitates()):
 			mult=1.0
 		out.append({"to":next,"cost":start.distance_to(finish)*mult})
-	for edge: Dictionary in layout.links.get(n,[]):
+	for edge: Dictionary in (reverse_links if reversed else layout.links).get(n,[]):
 		var next: Vector3i = edge["to"]
-		if not open(next) or not segment_allowed(start,layout.world(next)) or (running and not run_segment_clear(start,layout.world(next))):
+		if not open(next) or not (segment_allowed(layout.world(next),start) if reversed else segment_allowed(start,layout.world(next))) or (running and not run_segment_clear(start,layout.world(next))):
 			continue
 		if not layout.magic_solids.is_empty():
 			var finish:=layout.world(next)

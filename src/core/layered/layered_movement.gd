@@ -8,7 +8,7 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 	var f := s.active()
 	if s.board.floor_layout.is_empty() or not (GearActions.cape_ready(c) if cape else c.can_move()) or f.surface_id.is_empty():
 		return false
-	if (not s.scenario_special.is_empty() and s.scenario_special!="silent_tower") or FuryRules.target(s,f)!=null:
+	if not s.scenario_special.is_empty() and s.scenario_special!="silent_tower":
 		return false
 	if cape and PlaneWalk.uses_direct(f):
 		return false
@@ -27,10 +27,10 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 	if not layout.standable(start) or not layout.point(start).is_equal_approx(f.pos) or not is_equal_approx(layout.height(start),f.elevation):
 		return LayeredReach.new()
 	if PlaneWalk.uses_direct(f):
-		return LayeredReach.new() if run or cape else PlaneWalk.floor_reach(s,f)
+		return LayeredReach.new() if run or cape else FuryRules.restrict_floor(s,f,PlaneWalk.floor_reach(s,f))
 	var grid := LayeredGrid.new(layout,f,s.figures)
 	grid.running=run
-	return LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape)
+	return FuryRules.restrict_floor(s,f,LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape))
 
 
 static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=false,boost: bool=false,exiting: bool=false) -> bool:

@@ -26,7 +26,10 @@ static func resume_activation(c: GameController) -> bool:
 		if c.awaiting_reaction():
 			return true
 	if not c.state.board.floor_layout.is_empty():
-		LayeredBattleBot.perform(c,f)
+		if FuryRules.target(c.state,f)!=null:
+			FuryRules.play(c,f)
+		else:
+			LayeredBattleBot.perform(c,f)
 		if c.awaiting_reaction() or c.state.active()!=f:
 			return true
 		if c.state.push_winner>=0:

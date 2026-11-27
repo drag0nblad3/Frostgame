@@ -5,7 +5,7 @@ extends RefCounted
 static func exit_nodes(c: GameController) -> Array[Vector3i]:
 	var out: Array[Vector3i] = []
 	var f := c.state.active()
-	if f==null or f.side<0 or f.control_spell=="mind_control":
+	if f==null or f.side<0 or f.control_spell=="mind_control" or FuryRules.target(c.state,f)!=null:
 		return out
 	var layout := c.state.board.floor_geometry()
 	var r := c.layered_reach()

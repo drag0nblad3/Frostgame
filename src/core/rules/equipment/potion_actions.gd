@@ -6,7 +6,7 @@ var catalog: Dictionary
 const POINTS := ["explosive_cocktail", "teleportation"]
 const COATINGS := ["poison", "fairy_dust"]
 ## Only effects that still need floor-aware placement/route contracts.
-const FLOOR_PENDING := ["fury","shatterstar"]
+const FLOOR_PENDING := ["shatterstar"]
 
 
 func _init(controller: GameController) -> void:

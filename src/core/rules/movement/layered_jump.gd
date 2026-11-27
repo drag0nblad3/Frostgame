@@ -10,6 +10,8 @@ static func plans(c: GameController) -> Dictionary:
 		return out
 	var s := c.state
 	var f := s.active()
+	if FuryRules.target(s,f)!=null or PlaneWalk.uses_direct(f):
+		return out
 	var layout := FloorLayout.from_dict(s.board.floor_layout)
 	if not layout.errors.is_empty():
 		return out
