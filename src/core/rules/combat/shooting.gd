@@ -85,6 +85,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 			los=special
 		else:
 			los.intervening+=1
+	FigureCover.apply(board,shooter,target,Vector3(shooter.pos.x,shooter.elevation+1.5,shooter.pos.y),los)
 	var mod := target_mod(los) + (1 if shooter.moves_taken > 0 else 0)
 	if target.def.traits.has("large"):
 		mod -= 2

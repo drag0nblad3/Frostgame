@@ -133,3 +133,18 @@ func test_hunter_quiver_replaces_caster_quiver_slot() -> void:
 	var unit := {"id":0,"type":"wizard","weapons":["staff","bow","dagger"]}
 	var d := {"loot":[{"kind":"gear","gear":MagicAmmo.ITEM,"owner":0}]}
 	check_eq(CasterLoadout.carried(d,unit)["slots"],3)
+
+func test_figures_contribute_intervening_or_contact_cover() -> void:
+	var a:=fig("archer",0,Vector2(10,10))
+	var b:=fig("thug",1,Vector2(20,10))
+	var obstacle:=fig("thug",1,Vector2(15,10))
+	var units: Array[Figure]=[a,b,obstacle]
+	var c:=make_game(make_board(),units,Dice.new(3))
+	check_eq(Shooting.resolve_rolls(c.state.board,a,b,10,10)["mod"],1)
+	obstacle.pos=Vector2(19,10)
+	check_eq(Shooting.resolve_rolls(c.state.board,a,b,10,10)["mod"],2)
+	obstacle.pos=Vector2(11,10)
+	check_eq(Shooting.resolve_rolls(c.state.board,a,b,10,10)["mod"],0)
+	obstacle.pos=Vector2(15,10)
+	obstacle.elevation=4.0
+	check_eq(Shooting.resolve_rolls(c.state.board,a,b,10,10)["mod"],0)

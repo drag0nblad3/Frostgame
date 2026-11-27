@@ -24,5 +24,6 @@ func test_tower_objectives_have_real_vertical_spacing() -> void:
 func test_tower_keeps_main_entry_and_roof_support() -> void:
 	var s:=ScenarioLoader.load_id("silent_tower",db(),terrain())
 	var l:=s.board.floor_geometry()
+	check(l.errors.is_empty(),str(l.errors))
 	for row in [["street",Vector2(18,15.5)],["tower_roof",Vector2(18,18)],["west_walk",Vector2(12,17.5)],["east_walk",Vector2(23,19.5)]]:
 		check(l.standable(l.node(str(row[0]),row[1]),Figure.BASE_RADIUS,1.6),str(row))
