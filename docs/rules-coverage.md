@@ -322,3 +322,7 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 ## Unified battle geometry update
 
 The earlier elevation milestones above are historical. The current unified-battle branch uses the ordinary battle UI and action controller for authored overlapping floors, including campaign deployment in Silent Tower, shared combat/spell/gear actions, actual-support treasure and encounter placement, and core scenario sites. Flat, sloped and stacked movement/contact parity is covered by regression tests. Red King special scenario conversions are explicitly deferred until their spatial hazards, topology and objectives are audited; those maps still use their existing geometry. See `docs/unified-battle.md` for the detailed integration history and remaining limitations.
+
+## Fresh source-based audit — November 27
+
+Core pp.38–39,143: Silent Tower must be a ruined, at least 10-inch tall three-floor structure joined to two smaller buildings. Supporting walls and surrounding cover added. Two ordinary tokens now lie within 6–8 inches of the summit in true 3D; two farther street tokens remain. Review route links and initial sightlines in regression simulations. Full audit is tracked in docs/rules-audit-2026-11-27.md.
