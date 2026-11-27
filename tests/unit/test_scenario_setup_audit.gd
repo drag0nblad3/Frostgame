@@ -19,7 +19,7 @@ func test_standard_objective_spacing() -> void:
 			else:
 				check(TreasureRules.edge_distance(s.board,t.pos)>9.0,id+" edge "+str(i))
 			for j in range(i):
-				check(at.distance_to(_world(s,s.treasures[j]))>=6.0-0.001,id+" spacing "+str(i)+"/"+str(j))
+				check(at.distance_to(_world(s,s.treasures[j]))>6.0 if i>2 else at.distance_to(_world(s,s.treasures[j]))>=6.0-0.001,id+" spacing "+str(i)+"/"+str(j))
 
 
 func test_special_objective_positions() -> void:
@@ -51,7 +51,17 @@ func test_deployment_all_core_scenarios() -> void:
 			for b in s.side_figures(1):
 				if LineOfSight.check_figures(s.board,a,b).clear:
 					exposed+=1
-		print("Setup audit ",id,": ",exposed," visible opposing pairs at deployment.")
+		var objective_visible:=0
+		for t in s.treasures:
+			if not t.central:
+				continue
+			for f in s.figures:
+				if f.side<0:
+					continue
+				var visible:=LineOfSight.check(s.board,f.pos,t.pos,f).clear if s.board.floor_layout.is_empty() else LineOfSight.floor_point_visible(s.board,s.board.floor_geometry(),f,_world(s,t),INF)
+				if visible:
+					objective_visible+=1
+		print("Setup audit ",id,": ",exposed," visible opposing pairs; ",objective_visible," views of central objective at deployment.")
 
 func test_red_king_deployment_matrix() -> void:
 	var profile:=ContentProfile.new(["red_king"])
