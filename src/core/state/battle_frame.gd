@@ -17,9 +17,10 @@ static func capture(c: GameController) -> Dictionary:
 			tokens.append({"id":t.id,"pos":t.pos,"surface":t.surface_id})
 	for p in s.board.pieces:
 		terrain.append({"rect":p.rect,"surface":p.surface_id,"solid":p.kind.blocks_move,"circular":p.circular})
-	for surface: Dictionary in s.board.floor_layout.get("surfaces",[]):
-		var r: Array=surface["rect"]
-		floors.append({"id":surface["id"],"rect":Rect2(r[0],r[1],r[2],r[3]),"height":surface.get("level",0.0)})
+	if not s.board.floor_layout.is_empty():
+		for surface in s.board.floor_geometry().surfaces:
+			if not surface.id.begins_with("climb:"):
+				floors.append({"id":surface.id,"rect":surface.rect,"height":surface.level})
 	return {"event_end":c.history.size(),"turn":s.turn,"active":s.active_id,"size":s.board.size,"figures":figures,"tokens":tokens,"terrain":terrain,"floors":floors,"voids":s.board.void_regions.duplicate()}
 
 
@@ -41,7 +42,7 @@ static func at_or_before(frames: Array[Dictionary],event_end: int) -> Dictionary
 	var lo := 0
 	var hi := frames.size()
 	while lo<hi:
-		var mid := (lo+hi)/2
+		var mid := (lo+hi)>>1
 		if int(frames[mid]["event_end"])<=event_end:
 			lo=mid+1
 		else:
