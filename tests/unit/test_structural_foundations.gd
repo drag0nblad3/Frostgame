@@ -63,3 +63,33 @@ func test_expedition_stage_derived_from_existing_data() -> void:
 	check_eq(ExpeditionStage.current({"name":"Test"},true,false),"Expedition in progress")
 	check_eq(ExpeditionStage.current({"name":"Test"},false,false),"Recovery & preparation")
 	check_eq(ExpeditionStage.current({"name":"Test"},false,true),"Ready for expedition")
+
+
+func test_rotated_assembly_keeps_entrance_and_ramp_aligned() -> void:
+	var source := {"kits":{"stair":[{"kind":"wall","rect":[1,2,3,4],"entrance":"north","ramp":{"axis":"y","start":0,"end":2}}]},"assemblies":[{"kit":"stair","origin":[10,10],"quarter_turns":1}]}
+	var piece: Dictionary=TerrainAssembly.pieces(source)[0]
+	check_eq(piece["rect"],[4.0,11.0,4.0,3.0])
+	check_eq(piece["entrance"],"east")
+	check_eq(piece["ramp"],{"axis":"x","start":2,"end":0.0})
+	check_eq(source["kits"]["stair"][0]["ramp"]["axis"],"y")
+
+
+func test_replay_verifies_real_activation_and_rejects_divergence() -> void:
+	var c := make_game(make_board(),[fig("wizard",0,Vector2(10,10)),fig("wizard",1,Vector2(20,20))],Dice.new(4242))
+	c.state.creature_db=db()
+	c.start_game()
+	var checkpoint := BattleSnapshot.capture(c)
+	check(not checkpoint.is_empty())
+	var options := c.activatable()
+	check(not options.is_empty())
+	if checkpoint.is_empty() or options.is_empty():
+		return
+	check(c.activate(options[0].id))
+	c.end_activation()
+	var events := BattleRecord.pack(c.history)
+	var records := c.command_history.duplicate(true)
+	var result := BattleReplay.verify(checkpoint,db(),records,events)
+	check(result.get("ok",false),str(result))
+	if not records.is_empty():
+		records[0]["rng_after"]=int(records[0]["rng_after"])+1
+		check(not BattleReplay.verify(checkpoint,db(),records,events).get("ok",true))
