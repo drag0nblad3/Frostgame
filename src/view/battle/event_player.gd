@@ -93,17 +93,17 @@ func _play(e: GameEvent) -> void:
 		"heal":
 			var healed := _view(d["id"])
 			healed.refresh(state.figure(d["id"]))
-			BattleEffects.pulse(self, healed.position + Vector3.UP * 0.15, Color(0.40,0.95,0.59))
+			BattleEffects.restore(self, healed.position + Vector3.UP * 0.15)
 			_float_text(healed, "+%d" % d["amount"], Color(0.45, 1.0, 0.63))
 		"shoot", "spell_shot":
-			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot",str(d.get("spell","")),d.get("origin",null))
+			_animate_shot(_view(d["id"]), _view(d["target"]), e.type == "spell_shot",str(d.get("spell","")),d.get("origin",null),int(d.get("dmg",int(d.get("attack",1))>int(d.get("defence",0))))>0)
 		"fight":
 			var a := _view(d["id"])
 			var b := _view(d["target"])
 			if int(d["winner"]) == int(d["target"]):
 				_animate_lunge(b, a)
 			else:
-				_animate_lunge(a, b)
+				_animate_lunge(a, b,int(d["winner"])<0)
 		"damage":
 			var v := _view(d["id"])
 			v.refresh(state.figure(d["id"]))
@@ -206,7 +206,7 @@ func _animate_move(v: FigureView, path: PackedVector2Array) -> void:
 	_wait_for(t)
 
 
-func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell: String = "", origin: Variant = null) -> void:
+func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell: String = "", origin: Variant = null, damaging: bool = true) -> void:
 	from.face_toward(to.position)
 	var color := SpellVisuals.color_for(spell,state) if magic else Color(0.92,0.78,0.50)
 	var bolt := SpellVisuals.projectile(spell,magic,color)
@@ -225,13 +225,13 @@ func _animate_shot(from: FigureView, to: FigureView, magic: bool = false, spell:
 	t.tween_property(bolt, "position", destination, maxf(0.10,start.distance_to(destination)*0.035))
 	t.parallel().tween_method(from.cast_pose if magic else from.shot_pose, 0.75, 0.0, 0.15)
 	t.tween_callback(bolt.queue_free)
-	t.tween_callback(BattleEffects.burst.bind(self,destination,color))
-	if spell == "elemental_ball":
+	t.tween_callback(BattleEffects.impact.bind(self,destination,color,damaging,magic))
+	if spell == "elemental_ball" and damaging:
 		t.tween_callback(BattleEffects.pulse.bind(self,to.position+Vector3.UP*0.15,color,1.7))
 	_wait_for(t)
 
 
-func _animate_lunge(a: FigureView, b: FigureView) -> void:
+func _animate_lunge(a: FigureView, b: FigureView,tied: bool=false) -> void:
 	a.face_toward(b.position)
 	b.face_toward(a.position)
 	var home := a.position
@@ -240,7 +240,7 @@ func _animate_lunge(a: FigureView, b: FigureView) -> void:
 	t.tween_method(a.attack_pose, 0.0, -0.45, 0.12)
 	t.tween_property(a, "position", toward, 0.13)
 	t.parallel().tween_method(a.attack_pose, -0.45, 1.0, 0.13)
-	t.tween_callback(BattleEffects.burst.bind(self, toward.lerp(b.position, 0.5) + Vector3.UP * 0.85, Color(1.0, 0.78, 0.38)))
+	t.tween_callback(BattleEffects.clash.bind(self,toward.lerp(b.position,0.5)+Vector3.UP*0.85,b.position-home,tied))
 	t.tween_method(b.recoil_pose, 0.0, 1.0, 0.10)
 	t.parallel().tween_property(a, "position", home, 0.20)
 	t.parallel().tween_method(a.attack_pose, 1.0, 0.0, 0.20)

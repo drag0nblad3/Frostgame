@@ -77,6 +77,14 @@ func _run() -> void:
 	if scene._guide.visible or ModalInput.blocked() or scene.controller!=before_guide:
 		_fail("Back did not dismiss guide safely")
 		return
+	scene.hud._open_commands()
+	if not ModalInput.blocked() or not scene.hud._command_screen.visible or scene.hud._command_screen._buttons.size()!=16:
+		_fail("Battle command screen unavailable")
+		return
+	ModalInput.close_top(root)
+	if ModalInput.blocked() or scene.controller!=before_guide:
+		_fail("Closing command screen changed battle")
+		return
 	scene._camera_preset(1)
 	if scene._rig.pitch < deg_to_rad(80.0):
 		_fail("Overhead preset did not change camera")

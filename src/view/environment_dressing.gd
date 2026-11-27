@@ -10,13 +10,13 @@ const DIRT := Color("746d62")
 static func build(board: Board,scenario: String) -> Node3D:
 	var root := Node3D.new()
 	root.name="EnvironmentDressing"
-	if scenario=="red_king_mind":
+	if RealmScenery.special(scenario):
 		return root
 	var seed := absi(hash(board.id))
 	var indoor := scenario=="underground_library"
 	var snow := not indoor and scenario not in ["worm_hunts","red_king_bridge","red_king_ringworld"]
 	# Low, irregular patches near existing architecture, never across ramps.
-	for i in 64:
+	for i in (42 if GraphicsQuality.mode()==0 else 76):
 		var x := 0.75+float(posmod(seed+i*73,997))/997.0*(board.size.x-1.5)
 		var z := 0.75+float(posmod(seed+i*137,991))/991.0*(board.size.y-1.5)
 		var at := Vector2(x,z)
@@ -50,6 +50,8 @@ static func build(board: Board,scenario: String) -> Node3D:
 			for j in 3:
 				var at := Vector2(center.x+(j-1)*0.65,center.y+0.85)
 				EnvironmentProps.paving(root,Vector3(at.x,0.065,at.y),0.27,j,Color("63584d"))
+	if snow and GraphicsQuality.mode()>0:
+		SnowBanks.decorate(root,board,scenario)
 	MiniatureBatch.bake(root)
 	return root
 

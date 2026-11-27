@@ -9,6 +9,9 @@ static func build(board: Board, scenario: String, cinematic: bool = false) -> No
 	root.name = "CityScenery"
 	if scenario in ["underground_library", "training_yard"]:
 		return root
+	if RealmScenery.special(scenario):
+		RealmScenery.build(root,board,scenario)
+		return root
 	var palette := VisualPalette.for_scenario(scenario)
 	var sky := Color(str(palette.get("sky","233849")))
 	var ground_y := 0.008
@@ -34,6 +37,9 @@ static func build(board: Board, scenario: String, cinematic: bool = false) -> No
 					h += 2.0+float(posmod(seed,7))*0.35
 				var w := 2.5+float(posmod(seed,5))*0.30
 				var d := 2.8+float(posmod(seed,7))*0.21
+				if i==count/2 and layer==0 and GraphicsQuality.mode()>0:
+					SkylineLandmarks.build(district,at,ground_y,tone,scenario,side,seed)
+					continue
 				_building(district,at,ground_y,h,w,d,tone,seed)
 				if GraphicsQuality.mode()>0:
 					DistrictArchitecture.finish(district,at,ground_y,h,w,d,tone,seed)

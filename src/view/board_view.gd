@@ -146,6 +146,7 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 			TabletopDetails.decorate(root,piece)
 			if piece.kind.id in ["ruin","tower","wall","platform","hut_wall","null_annex","null_walk","null_lower","null_middle","null_upper"]:
 				RuinSilhouette.decorate(root,piece)
+				RuinedFacade.decorate(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 			if board.id=="mausoleum" and piece.kind.id=="ruin" and piece.rect.has_point(board.size*0.5):
 				SiteArt.crypt(root,piece)
 	# Rubble is otherwise dozens of individual shadow-casting meshes.
@@ -178,7 +179,10 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 		mi.rotation.x = -slope if piece.ramp_rotated else 0.0
 		mi.rotation.z = 0.0 if piece.ramp_rotated else slope
 		mi.position = TableSpace.to_world(piece.rect.get_center(), (piece.ramp_start + piece.ramp_end) * 0.5 - 0.04)
-		mi.material_override = _mat(Color(0.87, 0.72, 0.38), 0.8)
+		var ramp_material := StoneFinish.material(Color("aa9975"))
+		ramp_material.set_shader_parameter("snow_amount",0.20)
+		ramp_material.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
+		mi.material_override=ramp_material
 		return mi
 	if piece.circular:
 		var cylinder := CylinderMesh.new()
@@ -214,7 +218,10 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 		var stone := StoneFinish.material(col,false,piece.kind.id in ["ruin","tower","hut_wall","null_lower","null_middle","null_upper"],piece.rect.position)
 		stone.set_shader_parameter("footprint_size",piece.rect.size)
 		stone.set_shader_parameter("walkable_roof",piece.kind.walkable_top)
+		stone.set_shader_parameter("facade_style",RuinedFacade.style(piece,scenario_id))
 		stone.set_shader_parameter("building_height",h)
+		stone.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
+		stone.set_shader_parameter("snow_amount",float(VisualPalette.for_scenario(scenario_id).get("snow",0.86)))
 		mi.material_override = stone
 	else:
 		mi.material_override = mat

@@ -9,6 +9,8 @@ var _left := 12
 var _frames := 0
 var _ready_to_capture := false
 var _scenario := "treasure_skirmish"
+var _effects := false
+var _effect_frame := -1
 
 
 func _initialize() -> void:
@@ -40,7 +42,9 @@ func _setup() -> void:
 		printerr("Wrong board for capture: ", _scene.controller.state.board.id)
 		quit(1)
 		return
-	if args.size()>3:
+	if args.size()>3 and args[3]=="effects":
+		_effects=true
+	elif args.size()>3:
 		if not RealityCracks.apply(_scene.controller,int(args[3])):
 			printerr("Unable to apply preview reality crack: ",args[3])
 			quit(1)
@@ -63,6 +67,15 @@ func _process(_delta: float) -> bool:
 		_left -= 1
 		return false
 	if _frames < 40:
+		return false
+	if _effects and _effect_frame<0:
+		_effect_frame=_frames
+		var state: GameState=_scene.controller.state
+		var center := state.board.size*0.5
+		SpellVisuals.sigil(_scene.player,TableSpace.to_world(center+Vector2(-3,0),0.14),Color("6ddaff"),1.7)
+		BattleEffects.impact(_scene.player,TableSpace.to_world(center+Vector2(0,0),1.0),Color("ffb36a"),true,true)
+		BattleEffects.restore(_scene.player,TableSpace.to_world(center+Vector2(3,0),0.14))
+	if _effects and _frames<_effect_frame+6:
 		return false
 	var img := root.get_viewport().get_texture().get_image()
 	if img == null or img.save_png(_out) != OK:

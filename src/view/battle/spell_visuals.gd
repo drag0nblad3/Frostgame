@@ -25,9 +25,10 @@ static func projectile(spell: String, magic: bool, color: Color) -> Node3D:
 	var orb := spell in ["elemental_bolt","elemental_ball","fire_breath"] or (magic and spell.is_empty())
 	if orb:
 		var size := 0.32 if spell == "elemental_ball" else 0.18
-		_shine(MiniatureFactory.sphere(root,Vector3.ZERO,Vector3.ONE*size,color),color)
-		for i in 4:
-			var angle := TAU*i/4.0
+		_shine(MiniatureFactory.sphere(root,Vector3.ZERO,Vector3.ONE*size*1.45,color),color)
+		_shine(MiniatureFactory.sphere(root,Vector3(0,0,-size*0.28),Vector3.ONE*size*0.72,color.lightened(0.75)),color.lightened(0.75))
+		for i in (3 if GraphicsQuality.mode()==0 else 5):
+			var angle := TAU*i/5.0
 			var a := Vector3(cos(angle)*size*0.40,sin(angle)*size*0.40,0.03)
 			_shine(CreatureSculpt.limb(root,a,a+Vector3(0,0,0.36+0.09*i),size*0.19,color,0.08),color)
 	else:
@@ -36,6 +37,7 @@ static func projectile(spell: String, magic: bool, color: Color) -> Node3D:
 		var tip := CreatureSculpt.limb(root,Vector3(0,0,-0.09),Vector3(0,0,-0.26),0.065,color,0.0)
 		if magic:
 			_shine(tip,color)
+			_shine(CreatureSculpt.limb(root,Vector3(0,0,0.30),Vector3(0,0,0.85),0.022,color.lightened(0.25),0.01),color)
 		for i in 3:
 			var a := TAU*i/3.0
 			var fin := MiniatureFactory.box(root,Vector3(cos(a)*0.034,sin(a)*0.034,0.30),Vector3(0.04,0.095,0.13),color)
@@ -82,6 +84,13 @@ static func sigil(root: Node3D, at: Vector3, color: Color, radius: float = 1.0) 
 		m.rotation.y = -angle+PI*0.25
 		m.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		node.add_child(m)
+	if GraphicsQuality.mode()>0:
+		# Four raised arcane motes provide a readable vertical silhouette.
+		for i in 4:
+			var angle := TAU*i/4.0
+			var mote := MiniatureFactory.sphere(node,Vector3(cos(angle)*0.70,0.18,sin(angle)*0.70),Vector3(0.10,0.25,0.10),color.lightened(0.3))
+			mote.material_override=mat
+			mote.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.scale = Vector3(0.55,1,0.55)
 	var t := node.create_tween().set_parallel(true)
 	t.tween_property(node,"scale",Vector3(radius,1,radius),0.55)

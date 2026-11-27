@@ -3,8 +3,11 @@ render_mode diffuse_burley, specular_schlick_ggx;
 // World-space stonework: no stretched UVs, extra geometry or external texture assets.
 uniform vec4 stone_color : source_color = vec4(0.39, 0.43, 0.48, 1.0);
 uniform bool ground = false;
+uniform bool frost_detail = true;
+uniform bool realm_floor = false;
 uniform float snow_amount : hint_range(0.0, 1.0) = 1.0;
 uniform bool blind_arches = false;
+uniform int facade_style = 0;
 uniform vec2 footprint_origin = vec2(0.0);
 uniform vec2 footprint_size = vec2(36.0);
 uniform bool city_paving = false;
@@ -94,6 +97,45 @@ void fragment() {
 		float crack = (1.0-smoothstep(0.010,0.035,fracture))*smoothstep(0.54,0.72,noise2(vec2(u,world_pos.y)*0.54));
 		rock *= 1.0-crack*0.62;
 	}
+	// Architectural finishes share geometry: weathered temple ashlar,
+	// timber-and-stone infill, and dark tower bands.
+	if (!ground && !top) {
+		if (facade_style == 1) {
+			float panel = step(0.18,fract(local_u*0.5))*step(0.12,fract(world_pos.y*0.42));
+			rock = mix(rock,rock*0.90+vec3(0.10,0.07,0.035),panel*0.68);
+		} else if (facade_style == 2) {
+			float timber = 1.0-smoothstep(0.045,0.08,abs(fract(local_u*0.55)-0.5));
+			timber = max(timber,1.0-smoothstep(0.028,0.055,abs(fract(world_pos.y*0.70)-0.5)));
+			rock = mix(rock,vec3(0.22,0.15,0.10),timber*0.75);
+		} else if (facade_style == 3) {
+			float course = 1.0-smoothstep(0.06,0.12,abs(fract(world_pos.y*0.58)-0.5));
+			rock = mix(rock,rock*0.56,course*0.8);
+		}
+	}
+	// Frost accumulates in the joints and as narrow chips along exposed tops.
+	// Keep the extra procedural samples off the Performance profile.
+	if (frost_detail && !realm_floor) {
+		float crystalline = noise2(p*3.4+vec2(12.0,5.0));
+		float mortar_frost = (1.0-wide)*smoothstep(0.55,0.83,crystalline)*snow_amount;
+		rock = mix(rock,vec3(0.52,0.64,0.69),mortar_frost*0.63);
+		float flecks = smoothstep(0.77,0.91,chips);
+		rock += vec3(0.040,0.052,0.060)*flecks;
+		if (ground) {
+			float bank = smoothstep(0.57,0.80,drift);
+			ice = mix(ice,vec3(0.90,0.94,0.96),bank*0.62);
+			rock = mix(rock,rock*0.70,smoothstep(0.52,0.80,drift)*0.10);
+		} else if (!top) {
+			float cap = smoothstep(building_height-0.34,building_height-0.05,world_pos.y);
+			rock = mix(rock,vec3(0.69,0.79,0.84),cap*snow_amount*0.5);
+		}
+	}
+	if (realm_floor && ground) {
+		// Broken planes use subdued vein lines rather than ordinary city streets.
+		float vein = abs(fract(horizontal.x*0.22+horizontal.y*0.17+noise2(horizontal*0.12)*0.45)-0.5);
+		float seam = 1.0-smoothstep(0.008,0.024,vein);
+		rock = mix(rock,stone_color.rgb*1.45,seam*0.45);
+		snow = 0.0;
+	}
 	vec3 surface_color = mix(rock, ice, snow * 0.90);
 	if (ground && battle_boundary && top) {
 		// The playable extent is marked by a thin inlaid stone band, not a raised frame.
@@ -105,7 +147,15 @@ void fragment() {
 		float beyond = 1.0-smoothstep(-3.0,-0.15,boundary);
 		surface_color *= 1.0-beyond*0.12;
 	}
+	// Ice is an irregular sheen between drifts, not a new slippery rules area.
+	float glazed = 0.0;
+	if (ground && top && frost_detail && !realm_floor) {
+		glazed = smoothstep(0.48,0.80,drift)*(1.0-smoothstep(0.48,0.90,snow))*snow_amount;
+		float hairline = 1.0-smoothstep(0.012,0.036,abs(fract(horizontal.x*0.61+horizontal.y*0.43+drift*0.65)-0.5));
+		surface_color = mix(surface_color,vec3(0.44,0.62,0.72),glazed*0.45);
+		surface_color += vec3(0.085,0.12,0.14)*hairline*glazed;
+	}
 	ALBEDO = surface_color;
-	ROUGHNESS = mix(0.93, 0.64, snow);
-	SPECULAR = mix(0.21, 0.33, snow);
+	ROUGHNESS = mix(mix(0.93,0.70,snow),0.34,glazed*0.82);
+	SPECULAR = mix(0.21,0.52,max(snow*0.4,glazed));
 }

@@ -22,6 +22,8 @@ func _setup() -> void:
 		if not scene._guide.visible:
 			quit(1)
 			return
+	elif _dialog=="commands":
+		scene.hud._open_commands()
 	elif _dialog=="graphics":
 		scene._open_graphics()
 	elif _dialog=="inspector":
