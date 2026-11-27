@@ -8,6 +8,7 @@ static func install() -> void:
 	# Figures that are objectives rather than combatants (tether pylons).
 	RuleHooks.add("objective_figure", RedKingTethers.pylon)
 	RuleHooks.add("equipment_command",_equipment_command)
+	RuleHooks.add("scenario_command",RedKingCommands.execute)
 	# Figures that never lend support in a fight (Mad Man hunters).
 	RuleHooks.add("no_support", RedKingMadMan.hunter)
 	RuleHooks.add("fight_bonus", _secret_hrut_bonus)
