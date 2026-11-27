@@ -29,7 +29,7 @@ func _run() -> void:
 		quit(1)
 		return
 	title_scene._guide._show(1)
-	if title_scene._guide._topics.selected!=1:
+	if title_scene._guide._index!=1:
 		printerr("Field guide topic navigation failed")
 		quit(1)
 		return

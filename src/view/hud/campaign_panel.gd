@@ -1,5 +1,5 @@
 class_name CampaignPanel
-extends AcceptDialog
+extends ExpeditionScreen
 ## Between-battle campaign overview. Starting a campaign is an explicit action.
 signal start_requested
 signal story_requested(include_veil: bool, strict_pursuit: bool)
@@ -10,6 +10,11 @@ var _scroll: ScrollContainer
 var _scenario: OptionButton
 var _sections: Array[VBoxContainer]=[]
 var _section_picker: OptionButton
+var _nav: GridContainer
+var _nav_buttons: Array[Button]=[]
+var _layout: BoxContainer
+var _sidebar: VBoxContainer
+var _campaign_header: Label
 var _roster_summary: Label
 var _history_summary: Label
 var _briefing: Label
@@ -69,28 +74,32 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 	campaign = progress
 	db = figures
 	_spell_catalog = JsonFile.read("res://data/spells.json")
-	theme = BattleTheme.create()
-	title = "Campaign headquarters"
-	get_ok_button().text = "Close"
-	var scroll := ScrollContainer.new()
-	_scroll=scroll
-	scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
-	var root := VBoxContainer.new()
-	add_child(root)
+	build("CAMPAIGN HEADQUARTERS","Return to battle",navigate_back)
+	title="Campaign headquarters"
+	action.hide()
+	_campaign_header=subtitle
+	_layout=BoxContainer.new()
+	_layout.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_layout.add_theme_constant_override("separation",12)
+	body.add_child(_layout)
+	_sidebar=WorkshopUI.column(_layout)
+	_sidebar.size_flags_stretch_ratio=0.72
+	_nav=GridContainer.new()
+	_nav.columns=1
+	_sidebar.add_child(_nav)
 	_section_picker=OptionButton.new()
-	_section_picker.custom_minimum_size.y=48
-	for section: String in SECTIONS:
-		_section_picker.add_item(section)
-	root.add_child(_section_picker)
-	_section_picker.item_selected.connect(_show_section)
-	fit_phone()
-	root.add_child(scroll)
-	scroll.size_flags_vertical=Control.SIZE_EXPAND_FILL
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(col)
-	base_banner = BaseBanner.new()
-	col.add_child(base_banner)
+	_section_picker.hide()
+	_sidebar.add_child(_section_picker)
+	for i in SECTIONS.size():
+		_section_picker.add_item(SECTIONS[i])
+		var b := WorkshopUI.button(_nav,SECTIONS[i],_show_section.bind(i))
+		b.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+		_nav_buttons.append(b)
+	base_banner=BaseBanner.new()
+	_sidebar.add_child(base_banner)
+	var col := WorkshopUI.scroll(_layout)
+	_scroll=col.get_parent() as ScrollContainer
+	_scroll.size_flags_stretch_ratio=2.1
 	summary = Label.new()
 	summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.add_child(summary)
@@ -314,22 +323,25 @@ func refresh(in_battle: bool) -> void:
 		exchange_treasure.text="Exchange for artefact" if exchange=="artefact" else "Exchange for Red King treasure"
 	for control in controls:
 		control.visible = not d.is_empty() and not in_battle and not deciding
-	_section_picker.visible=not d.is_empty() and not deciding and not in_battle
+	_nav.visible=not d.is_empty() and not deciding and not in_battle
+	_section_picker.hide()
 	_briefing.visible=_briefing.visible and not deciding and not in_battle
-	_quick_prepare.visible=_section_picker.visible and (ScrollShield.campaign_index(d,"roll")>=0 or (not stage.is_empty() and RaggedWarbands.active(d)))
+	_quick_prepare.visible=_nav.visible and (ScrollShield.campaign_index(d,"roll")>=0 or (not stage.is_empty() and RaggedWarbands.active(d)))
 	_quick_prepare.text="Roll Scroll Shield / prepare rituals" if ScrollShield.campaign_index(d,"roll")>=0 else "Prepare summoning rituals first"
-	_quick_gear.visible=_section_picker.visible and RaggedWarbands.has_unassigned(d) and RaggedWarbands.active(d)
-	_quick_warband.visible=_section_picker.visible and not CampaignSuccession.living_wizard(d)
-	_quick_report.visible=_section_picker.visible and not d.get("last_report",[]).is_empty()
+	_quick_gear.visible=_nav.visible and RaggedWarbands.has_unassigned(d) and RaggedWarbands.active(d)
+	_quick_warband.visible=_nav.visible and not CampaignSuccession.living_wizard(d)
+	_quick_report.visible=_nav.visible and not d.get("last_report",[]).is_empty()
 	if deciding:
 		recruit_status.hide()
 		secret_hrut.hide()
 		reconcile_button.hide()
 		continue_skirmishes.hide()
-	if not _section_picker.visible:
+	if not _nav.visible:
 		_show_section(0)
 	if d.is_empty():
+		_campaign_header.text="Choose your campaign"
 		_depart_status.hide()
+		summary.show()
 		summary.text = "Choose a campaign. Your saved warband or a default draft will be used. Progress is saved between battles."
 		return
 	inventory.refresh()
@@ -413,7 +425,9 @@ func refresh(in_battle: bool) -> void:
 	_history_summary.text="\n".join(history_lines)
 	if in_battle:
 		lines.append("Campaign battle in progress. Close to return.")
-	summary.text = "\n".join(lines)
+	_campaign_header.text="%s  •  Level %d  •  %d XP  •  %d gc  •  %d battles"%[d["name"],d["level"],d["xp"],d["gold"],d["games"]]
+	summary.text = "\n".join(lines.slice(1))
+	summary.visible=not summary.text.is_empty()
 	spells.clear()
 	for id: String in d["spells"]:
 		if int(d["spells"][id]) <= 5:
@@ -445,8 +459,18 @@ func _command(parent: Control, label: String, callback: Callable) -> Button:
 
 
 func fit_phone() -> void:
-	var bounds := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
-	_scroll.custom_minimum_size=Vector2(bounds.x*0.90,maxf(180,bounds.y-190.0))
+	_reflow()
+
+
+func _reflow() -> void:
+	if _layout==null:
+		return
+	var narrow := size.x<size.y
+	_layout.vertical=narrow
+	_nav.columns=3 if narrow else 1
+	base_banner._art.custom_minimum_size.y=100 if narrow else 165
+	if inventory!=null:
+		inventory.reflow(narrow)
 
 
 func select_scenario(id: String) -> void:
@@ -486,7 +510,7 @@ func _build_sections(col: VBoxContainer) -> void:
 	_move_controls(1,[spells,improve,stat,upgrade,recruit,hire_button,members,dismiss_button,treat_button,niggle,niggle_button,grimoire,learn_button,succession])
 	_move_controls(2,[inventory])
 	_move_controls(3,[rituals])
-	_move_controls(4,[base_banner,base_choice,base_button,base_upgrades])
+	_move_controls(4,[base_choice,base_button,base_upgrades])
 	_move_controls(5,[reality_option,wounded_option,mantle_option])
 	_touch_controls(col)
 	_show_section(0)
@@ -506,7 +530,11 @@ func _info_label() -> Label:
 func _touch_controls(node: Node) -> void:
 	for child in node.get_children():
 		if child is BaseButton:
-			child.custom_minimum_size.y=maxf(48,child.custom_minimum_size.y)
+			child.custom_minimum_size.y=maxf(60,child.custom_minimum_size.y)
+			child.add_theme_font_size_override("font_size",23)
+		if child is Label:
+			child.add_theme_font_size_override("font_size",23)
+			child.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 		if child is OptionButton:
 			child.fit_to_longest_item=false
 			child.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -522,6 +550,8 @@ func _show_section(index: int) -> void:
 	if index<0 or index>=_sections.size():
 		return
 	_section_picker.select(index)
+	for i in _nav_buttons.size():
+		_nav_buttons[i].disabled=i==index
 	for i in _sections.size():
 		_sections[i].visible=i==index
 	_scroll.scroll_vertical=0

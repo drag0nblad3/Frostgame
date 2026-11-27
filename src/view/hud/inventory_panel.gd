@@ -32,6 +32,9 @@ var ivory_staff: OptionButton
 var ivory_graft: Button
 var staff_potion: OptionButton
 var charge_staff: Button
+var _split: BoxContainer
+var _vault: VBoxContainer
+var _market: VBoxContainer
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -142,6 +145,7 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	buy_button=_button("Buy item", func() -> void:
 		if shop.item_count > 0 and CampaignInventory.buy(campaign.data, str(shop.get_selected_metadata()), campaign_dice):
 			changed.call())
+	_arrange()
 
 
 func refresh() -> void:
@@ -366,3 +370,25 @@ func _refresh_shop() -> void:
 		var info: Dictionary=CampaignInventory.catalog().get(str(shop.get_selected_metadata()),{})
 		shop_detail.text=str(info.get("help",info.get("description","")))
 		shop_detail.visible=not shop_detail.text.is_empty()
+
+
+func _arrange() -> void:
+	_split=BoxContainer.new()
+	_split.add_theme_constant_override("separation",18)
+	add_child(_split)
+	_vault=WorkshopUI.column(_split)
+	_market=WorkshopUI.column(_split)
+	_vault.size_flags_stretch_ratio=1.3
+	WorkshopUI.label(_vault,"VAULT & ASSIGNMENT",24,WorkshopUI.GOLD)
+	WorkshopUI.label(_market,"SUPPLIES & OUTFITTING",24,WorkshopUI.GOLD)
+	for control in [summary,loot,item_detail,study_button,recipient_choice,assign_button,sell_button,discard_button,mantle_animal,bind_mantle,book_spell,bind_book,split_fang,mask_start,ivory_staff,ivory_graft,staff_potion,charge_staff]:
+		control.reparent(_vault,false)
+	for control in [shop,shop_detail,buy_button,caster_equipment,caster_equipment_button,campaign_uses,use_button]:
+		control.reparent(_market,false)
+	_vault.add_theme_constant_override("separation",9)
+	_market.add_theme_constant_override("separation",9)
+
+
+func reflow(narrow: bool) -> void:
+	if _split!=null:
+		_split.vertical=narrow

@@ -19,7 +19,7 @@ static func _open_campaign(bs: BattleScene) -> void:
 	bs._campaign_dialog.select_scenario(bs._scenario_id)
 	bs._campaign_dialog.refresh(bs._campaign_battle)
 	bs._campaign_dialog.fit_phone()
-	PhoneSafeArea.popup_dialog(bs._campaign_dialog,PhoneSafeArea.safe_rect(bs.get_viewport(),14).size*0.92)
+	bs._campaign_dialog.show_screen()
 
 
 static func _create_campaign(bs: BattleScene) -> void:

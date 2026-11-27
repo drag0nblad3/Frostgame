@@ -27,6 +27,7 @@ func _ready() -> void:
 	_caption = Label.new()
 	_caption.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_caption.modulate = Color(0.95,0.87,0.68)
+	_caption.add_theme_font_size_override("font_size",22)
 	add_child(_caption)
 	_resources = HFlowContainer.new()
 	add_child(_resources)
@@ -59,7 +60,7 @@ func refresh(data: Dictionary) -> void:
 		row.add_child(icon)
 		var label := Label.new()
 		label.text = str(info.get("name",resource.capitalize()))
-		label.add_theme_font_size_override("font_size",14)
+		label.add_theme_font_size_override("font_size",19)
 		row.add_child(label)
 		tag.tooltip_text = str(info.get("benefit",""))
 		_resources.add_child(tag)

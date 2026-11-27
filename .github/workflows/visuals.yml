@@ -118,6 +118,14 @@ jobs:
               test -s "previews/launch-$orientation-$page.png"
             done
           done
+      - name: Capture unified campaign and reference pages
+        run: |
+          set -o pipefail
+          for page in campaign equipment rituals base chronicle guide graphics inspector briefing; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/interface_capture.gd -- "previews/menu-$page.png" "$page" 2>&1 | tee "menu-$page.log"
+            ! grep -E "SCRIPT ERROR|Parse Error|Node not inside tree" "menu-$page.log"
+            test -s "previews/menu-$page.png"
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:
