@@ -6,3 +6,5 @@
 *.keystore
 *.jks
 *.tmp
+
+/assets/baked/
