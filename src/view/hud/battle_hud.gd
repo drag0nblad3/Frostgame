@@ -12,6 +12,7 @@ signal save_battle_pressed
 signal resume_battle_pressed
 signal resume_expedition_pressed
 signal scenario_selected(id: String)
+signal journal_requested
 signal briefing_pressed
 signal inspect_pressed
 signal guide_pressed
@@ -448,7 +449,7 @@ func _menu_action(id: int) -> void:
 		13: camera_requested.emit(2)
 		14: title_requested.emit()
 		15: graphics_requested.emit()
-		16: _open_journal()
+		16: journal_requested.emit()
 		19: resume_expedition_pressed.emit()
 		17:
 			_pace=(_pace+1)%PACE_NAMES.size()
@@ -458,13 +459,13 @@ func _menu_action(id: int) -> void:
 			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)
 
 
-func _open_journal() -> void:
+func _open_journal(timeline: Array[Dictionary]=[]) -> void:
 	if ModalInput.blocked():
 		return
 	if _journal==null:
 		_journal=BattleJournal.new()
 		add_child(_journal)
-	_journal.open(_history)
+	_journal.open(_history,timeline)
 
 
 func select_scenario(id: String) -> void:
