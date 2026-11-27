@@ -55,25 +55,31 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 		path.append(layout.world(step))
 		surfaces.append(layout.surface_id(step))
 	c.spend_move(f)
-	f.pos=layout.point(node)
-	f.elevation=layout.height(node)
-	f.surface_id=layout.surface_id(node)
-	c.emit("layered_move",{"id":f.id,"path":path,"surfaces":surfaces,"cost":float(reachable.cost[node])})
-	for point in path:
-		if ScenarioNull.field_at(c.state.board,Vector2(point.x,point.z)):
-			# Record any crossing, including an interior waypoint rather than
-			# only the final position. Cancellation is permanent on entry.
-			var finish := f.pos
-			f.pos=Vector2(point.x,point.z)
+	# Maintain authoritative floor, elevation and position at every site
+	# crossing; publish the movement chunk before its consequence.
+	var chunk:=PackedVector3Array([path[0]])
+	var chunk_surfaces: Array[String]=[surfaces[0]]
+	var cost:=float(reachable.cost[node])
+	for i in range(1,path.size()):
+		var point:=path[i]
+		f.pos=Vector2(point.x,point.z)
+		f.elevation=point.y
+		f.surface_id=surfaces[i]
+		chunk.append(point)
+		chunk_surfaces.append(surfaces[i])
+		if ScenarioNull.field_at(c.state.board,f.pos):
+			c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
+			chunk=PackedVector3Array([point])
+			chunk_surfaces=[surfaces[i]]
 			ScenarioNull.enter(c,f)
-			f.pos=finish
 			if not f.in_play():
-				break
-	ScenarioNull.enter(c,f)
+				c.finish_movement(f,engaged,false)
+				if run:
+					RunForIt.finish(c,f,boost)
+				return true
+	if chunk.size()>1:
+		c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
+	c.finish_movement(f,engaged)
 	if run:
-		f.actions_left=0
-		c.emit("run_for_it",{"id":f.id,"boost":boost})
-		c.end_activation()
-	else:
-		GearActions.gutter_after_move(c,f,engaged)
+		RunForIt.finish(c,f,boost)
 	return true

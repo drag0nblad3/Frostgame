@@ -7,8 +7,6 @@ extends RefCounted
 ## Activates the next figure for the side to play and plays it out.
 ## Returns false if there was nothing to do.
 static func play_activation(c: GameController) -> bool:
-	if not c.state.board.floor_layout.is_empty():
-		return LayeredBattleBot.play(c)
 	var f := _pick(c)
 	if f == null or not c.activate(f.id):
 		return false
@@ -16,8 +14,6 @@ static func play_activation(c: GameController) -> bool:
 
 
 static func resume_activation(c: GameController) -> bool:
-	if not c.state.board.floor_layout.is_empty():
-		return LayeredBattleBot.play(c)
 	var f := c.state.active()
 	if f == null or c.awaiting_reaction():
 		return false
@@ -25,6 +21,15 @@ static func resume_activation(c: GameController) -> bool:
 		MagicBot.resolve(c)
 		if c.awaiting_reaction():
 			return true
+	if not c.state.board.floor_layout.is_empty():
+		LayeredBattleBot.perform(c,f)
+		if c.awaiting_reaction() or c.state.active()!=f:
+			return true
+		if c.state.push_winner>=0:
+			if not c.resolve_push(c.state.figure(c.state.push_winner).treasure_id>=0):
+				c.stay_in_combat()
+		c.end_activation()
+		return true
 	if f.side >= 0:
 		_use_healing(c, f)
 		if c.awaiting_reaction():

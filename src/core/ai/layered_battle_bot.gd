@@ -4,34 +4,25 @@ extends RefCounted
 ## controller moves. Selective shortcuts use the same action validators.
 
 
+## Compatibility entry point. Activation selection, pending casts and
+## end-of-activation bookkeeping are owned by Bot for every geometry.
 static func play(c: GameController) -> bool:
-	if c.state.over:
-		return false
-	var f := c.state.active()
-	if f==null:
-		var options := c.activatable()
-		if options.is_empty() or not c.activate(options[0].id):
-			return false
-		f=c.state.active()
-	if not c.awaiting_reaction() and not c.state.pending_cast.is_empty():
-		MagicBot.resolve(c)
+	return Bot.play_activation(c) if c.state.active()==null else Bot.resume_activation(c)
+
+
+static func perform(c: GameController,f: Figure) -> void:
 	if not c.awaiting_reaction() and _cape(c,f):
 		if c.state.active()!=f or c.awaiting_reaction():
-			return true
+			return
 	for i in 2:
 		if not f.in_play() or f.actions_left<=0 or c.awaiting_reaction():
+			break
+		if not c.state.pending_cast.is_empty():
 			break
 		if _act(c,f):
 			continue
 		if not _move(c,f):
 			break
-	if c.awaiting_reaction() or c.state.active()!=f:
-		return true
-	if c.state.push_winner>=0:
-		if not c.resolve_push(c.state.figure(c.state.push_winner).treasure_id>=0):
-			c.stay_in_combat()
-	c.end_activation()
-	return true
 
 
 static func _act(c: GameController,f: Figure) -> bool:
@@ -42,6 +33,8 @@ static func _act(c: GameController,f: Figure) -> bool:
 	for token in c.state.treasures:
 		if c.can_pick_up(token.id):
 			return c.pick_up(token.id)
+	if MagicBot.play(c,f):
+		return true
 	# Treasure seekers prioritize movement; missile units may take a shot.
 	if f.treasure_id<0 and f.ranged!=null:
 		if c.can_reload():

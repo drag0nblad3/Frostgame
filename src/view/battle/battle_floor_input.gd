@@ -101,7 +101,8 @@ static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> voi
 	var selected:=PackedVector3Array()
 	var f:=bi.c.state.active()
 	if not bi.floor_points.is_empty():
-		var index:=_index(bi,f) if f!=null else -1
+		var actor:=bi.c.state.figure(bi.spell_first) if bi.mode=="floor_leap" else f
+		var index:=_index(bi,actor) if actor!=null else -1
 		for n: Vector3i in bi.floor_points:
 			if n.z==index:
 				world.append(bi.floor_points[n])

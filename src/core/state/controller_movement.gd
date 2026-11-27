@@ -80,19 +80,11 @@ static func _apply_move(c: GameController, f: Figure, path: PackedVector2Array, 
 		path.resize(int(intercept["index"]) + 1)
 	c.spend_move(f)
 	if not c._magic.terrain.travel(f, path, cost):
-		if f.in_play():
-			CreatureSenses.reveal_contacts(c,f)
-			c._magic.illusions.after_move(f)
-			GearActions.gutter_after_move(c,f,engaged)
+		c.finish_movement(f,engaged,false)
 		return true
 	if not intercept.is_empty():
 		c._displacement.force_contact(intercept)
-	ScenarioSites.end_move(c, f)
-	RedKingSquatter.record_contact(c)
-	RedKingSinkhole.record_xp(c,f)
-	CreatureSenses.reveal_contacts(c,f)
-	c._magic.illusions.after_move(f)
-	GearActions.gutter_after_move(c,f,engaged)
+	c.finish_movement(f,engaged)
 	return true
 
 

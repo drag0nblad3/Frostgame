@@ -115,6 +115,18 @@ func spend_move(f: Figure) -> void:
 
 ## Canonical interface for player-facing movement. A route retains its
 ## surface identity, even if two endpoints share the same table coordinates.
+func finish_movement(f: Figure,engaged: bool,arrived: bool=true) -> void:
+	if arrived:
+		ScenarioSites.end_move(self,f)
+		RedKingSquatter.record_contact(self)
+		RedKingSinkhole.record_xp(self,f)
+	elif not f.in_play():
+		return
+	CreatureSenses.reveal_contacts(self,f)
+	_magic.illusions.after_move(f)
+	GearActions.gutter_after_move(self,f,engaged)
+
+
 func movement_options(mode: String="move") -> BattleMovementOptions:
 	return BattleMovementOptions.query(self,mode)
 

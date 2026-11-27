@@ -455,7 +455,10 @@ func _select_floor(id: String) -> void:
 	if controller==null or _bots.busy() or not player.idle() or controller.state.board.floor_layout.is_empty():
 		return
 	_visible_floor=id
-	player_input.select_floor(id)
+	if _human_turn() and not _dirty:
+		player_input.select_floor(id)
+	else:
+		player_input.floor_id=id
 	_update_floor_view()
 
 

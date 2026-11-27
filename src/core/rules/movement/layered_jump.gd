@@ -80,6 +80,7 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	if not options.has(n):
 		return false
 	var f := c.state.active()
+	var engaged:=Contact.in_combat(c.state.figures,f)
 	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
 	var plan: Dictionary = options[n]
 	var old := f.surface_id
@@ -89,5 +90,5 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	c.spend_move(f)
 	c.emit("layered_move",{"id":f.id,"path":plan["path"],"surfaces":[old,f.surface_id],"cost":plan["cost"],"jump":true})
 	LayeredFall.apply(c,f,float(plan["fall"]),f)
-	ScenarioNull.enter(c,f)
+	c.finish_movement(f,engaged,f.in_play())
 	return true

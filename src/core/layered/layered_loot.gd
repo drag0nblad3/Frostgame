@@ -38,8 +38,7 @@ static func exit(c: GameController,n: Vector3i) -> bool:
 		if not c.move_on_floor(n):
 			return false
 	else:
-		f.moves_taken+=1
-		f.actions_left-=1
+		c.spend_move(f)
 	for id in f.carried_treasures():
 		c._loot.secure(c.state.treasure(id),f.side)
 	f.exited=true
