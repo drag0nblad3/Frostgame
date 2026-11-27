@@ -23,7 +23,7 @@ static func handles_action(bi: BattleInput,key: String) -> bool:
 
 static func action(bi: BattleInput,key: String) -> bool:
 	match key:
-		"cancel_bridge": return bi.c.cancel_floor_bridge()
+		"cancel_bridge": return BattleSpellAction.execute(bi.c,"cancel_bridge")
 		"spell_teleport":
 			bi.mode="floor_teleport"
 			bi.selected_spell="teleport"
@@ -228,17 +228,17 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		bi.move_plan.choose_node(bi,node)
 		return false
 	match bi.mode:
-		"floor_teleport","floor_spell_point": return bi._declared(bi.c._magic.start_floor_at(bi.selected_spell,node,bi.spell_rotated))
+		"floor_teleport","floor_spell_point": return bi._declared(BattleSpellAction.execute(bi.c,"place",{"spell":bi.selected_spell,"at":node,"rotated":bi.spell_rotated}))
 		"floor_ring_teleport": return BattleEquipmentAction.execute(bi.c,"ring_teleport",{"at":node})
 		"floor_potion_teleport": return BattleEquipmentAction.execute(bi.c,"potion_teleportation",{"at":node})
 		"floor_cocktail": return BattleEquipmentAction.execute(bi.c,"potion_explosive_cocktail",{"at":node})
-		"floor_suggestion": return bi._declared(bi.c._magic.start_floor_suggestion(bi.spell_first,node))
-		"floor_treasure_destination": return bi._declared(bi.c._magic.start_floor_treasure(bi.selected_spell,bi.spell_first,node))
-		"floor_leap": return bi._declared(bi.c.leap_on_floor(bi.spell_first,node))
+		"floor_suggestion": return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"suggestion","target":bi.spell_first,"at":node}))
+		"floor_treasure_destination": return bi._declared(BattleSpellAction.execute(bi.c,"treasure",{"spell":bi.selected_spell,"target":bi.spell_first,"at":node}))
+		"floor_leap": return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"leap","target":bi.spell_first,"at":node}))
 		"floor_bottle": return BattleEquipmentAction.execute(bi.c,"bottle_imp",{"at":node})
 		"floor_bridge":
 			bi.bridge_start=node
 			bi.mode="floor_bridge_end"
 			bi.preview()
-		"floor_bridge_end": return bi._declared(bi.c.bridge_on_floors(bi.bridge_start,node))
+		"floor_bridge_end": return bi._declared(BattleSpellAction.execute(bi.c,"bridge",{"at":bi.bridge_start,"end":node}))
 	return false
