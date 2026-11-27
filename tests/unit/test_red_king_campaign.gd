@@ -231,3 +231,27 @@ func test_pursuit_intermission_releases_base_and_preserves_legal_roster() -> voi
 	check(not RedKingCampaign.suppress_base_after(normal,"red_king_back_into_fire"))
 	check(RedKingCampaign.advance(normal,"red_king_back_into_fire"))
 	check(not RedKingCampaign.economy_locked(normal))
+
+
+func test_survival_offer_preserves_campaign_and_rng() -> void:
+	var p := CampaignProgress.new()
+	p.data=_story(false)
+	p.data["red_king_survival_reroll"]=true
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f,fig("thug",1,Vector2(20,20))],Dice.new(15))
+	f.campaign_id=0
+	f.out_of_action=true
+	c.state.over=true
+	c.state.scenario_special="red_king_squatter"
+	var original := p.data.duplicate(true)
+	var rng := c.dice._rng.state
+	var offer := p.survival_offer(c,c.dice,0,-1)
+	check(not offer.is_empty())
+	check_eq(p.data,original)
+	check_eq(c.dice._rng.state,rng)
+	if offer.is_empty():
+		return
+	check(p.settle(c,c.dice,0,-1,{"choice":1}))
+	check(not p.data.has("red_king_survival_reroll"))
+	var report: String=" ".join(p.data["last_report"])
+	check(report.contains("Mindscape survival protection: %d → %d"%[offer["first"],offer["first"]]))

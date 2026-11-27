@@ -40,13 +40,34 @@ static func settle(data: Dictionary,c: GameController,side: int) -> bool:
 
 
 static func secret_selected(data: Dictionary) -> bool:
-	return bool(data.get("red_king_secret_hrut",false)) and bool(data.get("red_king_use_secret_hrut",false)) and RedKingCampaign.active(data) and RedKingCampaign.next_id(data)!="red_king_mind"
+	return bool(data.get("red_king_secret_hrut",false)) and bool(data.get("red_king_use_secret_hrut",false)) and RedKingCampaign.next_id(data)!="red_king_mind"
 
 
-## The next wizard survival check consumes the entitlement. Digital policy:
-## retain the original if already fully recovered; otherwise keep the higher roll.
-static func survival_roll(data: Dictionary,raw: int,dice: Dice) -> int:
+## Choice: 0 decline, 1 reroll but keep original, 2 accept reroll.
+## Headless callers retain the previous automatic policy.
+static func survival_roll(data: Dictionary,raw: int,dice: Dice,choice: int=-1) -> int:
 	if not data.get("red_king_survival_reroll",false):
 		return raw
 	data.erase("red_king_survival_reroll")
+	if choice==0:
+		return raw
+	if choice in [1,2]:
+		var second := dice.d20()
+		return raw if choice==1 else second
 	return maxi(raw,dice.d20()) if raw+1<=8 else raw
+
+
+static func survival_outcome(data: Dictionary,s: GameState,f: Figure,raw: int) -> String:
+	var roll := raw+(0 if f.used_gear.get(DeathMask.EVER,false) else 1)
+	if ActiveGear.has(f,"gear_rk_ring_of_destiny"):
+		roll=RedKingGear.destiny_survival(roll)
+	var outcome := "Full recovery"
+	if roll<=2:
+		outcome="Death"
+	elif roll<=4:
+		outcome="Permanent injury"
+	elif roll<=6:
+		outcome="Recover with sarcophagus" if not RedKingCampaign.suppress_base_after(data,s.scenario_special) and data.get("resources",[]).has("sarcophagus_of_healing") else "Miss next battle"
+	elif roll<=8:
+		outcome="Lose carried items"
+	return "%d — %s"%[roll,outcome]

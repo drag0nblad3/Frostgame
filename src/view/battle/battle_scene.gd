@@ -32,6 +32,7 @@ var _campaign := CampaignProgress.new()
 var _campaign_battle := false
 var _campaign_dialog: CampaignPanel
 var _plant_dialog: ConfirmationDialog
+var _survival_dialog: ConfirmationDialog
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
@@ -332,6 +333,8 @@ func _process(delta: float) -> void:
 		return
 	var s := controller.state
 	if s.over and _campaign_battle:
+		if is_instance_valid(_survival_dialog):
+			return
 		var candidates := RedKingCampaignGear.plant_choices(_campaign.data,controller,0)
 		if candidates.is_empty():
 			_finish_campaign_battle(-1)
@@ -631,16 +634,21 @@ func _choose_plant(candidates: Array[int]) -> void:
 	PhoneSafeArea.popup_dialog(_plant_dialog,Vector2(360,220))
 
 
-func _finish_campaign_battle(plant_target: int) -> void:
+func _finish_campaign_battle(plant_target: int,survival_choice: int=-1) -> void:
 	if not _campaign_battle:
 		return
 	if is_instance_valid(_plant_dialog):
 		_plant_dialog.hide()
 		_plant_dialog.queue_free()
 		_plant_dialog=null
+	if survival_choice<0 and not watch_mode:
+		var offer := _campaign.survival_offer(controller,controller.dice,0,plant_target)
+		if not offer.is_empty():
+			_choose_survival(plant_target,offer,false)
+			return
 	var previous := _campaign.data.duplicate(true)
 	var rng := controller.dice._rng.state
-	if not _campaign.settle(controller,controller.dice,0,plant_target):
+	if not _campaign.settle(controller,controller.dice,0,plant_target,{"choice":survival_choice}):
 		_campaign.data=previous
 		controller.dice._rng.state=rng
 		hud.notify("Campaign settlement could not be applied.")
@@ -655,3 +663,34 @@ func _finish_campaign_battle(plant_target: int) -> void:
 	if checkpoint.get("meta",{}).get("campaign",false):
 		DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
 	_open_campaign()
+
+
+func _choose_survival(plant_target: int,offer: Dictionary,rolled: bool) -> void:
+	if is_instance_valid(_survival_dialog):
+		_survival_dialog.hide()
+		_survival_dialog.queue_free()
+	_survival_dialog=ConfirmationDialog.new()
+	_survival_dialog.title="Mindscape survival reward"
+	_survival_dialog.dialog_text="Original roll: %d\nAdjusted outcome: %s"%[offer["first"],offer["first_outcome"]]
+	if rolled:
+		_survival_dialog.dialog_text+="\nNew roll: %d\nAdjusted outcome: %s\nChoose which result to keep."%[offer["second"],offer["second_outcome"]]
+		_survival_dialog.ok_button_text="Keep new roll"
+		_survival_dialog.cancel_button_text="Keep original"
+		_survival_dialog.confirmed.connect(func() -> void: _commit_survival(plant_target,2))
+		_survival_dialog.canceled.connect(func() -> void: _commit_survival(plant_target,1))
+	else:
+		_survival_dialog.dialog_text+="\nSpend the one-time reroll? You can keep either result."
+		_survival_dialog.ok_button_text="Roll again"
+		_survival_dialog.cancel_button_text="Keep original"
+		_survival_dialog.confirmed.connect(func() -> void: _choose_survival(plant_target,offer,true))
+		_survival_dialog.canceled.connect(func() -> void: _commit_survival(plant_target,0))
+	add_child(_survival_dialog)
+	PhoneSafeArea.popup_dialog(_survival_dialog,Vector2(460,280))
+
+
+func _commit_survival(plant_target: int,choice: int) -> void:
+	if is_instance_valid(_survival_dialog):
+		_survival_dialog.hide()
+		_survival_dialog.queue_free()
+		_survival_dialog=null
+	_finish_campaign_battle(plant_target,choice)

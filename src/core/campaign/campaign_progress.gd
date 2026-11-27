@@ -121,7 +121,21 @@ func can_deploy() -> bool:
 	return deployment_blockers().is_empty()
 
 
-func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -> bool:
+## Preview on a deep copy and an independent RNG. The actual settlement
+## replays the same rolls, including preceding casualties, only when committed.
+func survival_offer(c: GameController,dice: Dice,side: int,plant_target: int) -> Dictionary:
+	if not data.get("red_king_survival_reroll",false) or RedKingMind.active(c.state):
+		return {}
+	var copy := CampaignProgress.new()
+	copy.data=data.duplicate(true)
+	var preview_dice := Dice.new(1)
+	preview_dice._rng.state=dice._rng.state
+	var decision := {"preview":true}
+	copy.settle(c,preview_dice,side,plant_target,decision)
+	return decision.get("offer",{})
+
+
+func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1,survival_decision: Dictionary={}) -> bool:
 	if data.is_empty() or not c.state.over or not data.get("pending_treasure", []).is_empty():
 		return false
 	if not RedKingCampaign.permits(data,c.state.scenario_special):
@@ -281,7 +295,11 @@ func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1) -
 				raw=RedKingCampaignGear.plant_roll(data,raw,report)
 			if f.def.role=="wizard" and data.get("red_king_survival_reroll",false):
 				var previous := raw
-				raw=RedKingMindRewards.survival_roll(data,raw,dice)
+				if survival_decision.get("preview",false):
+					var second := dice.d20()
+					survival_decision["offer"]={"first":raw,"second":second,"first_outcome":RedKingMindRewards.survival_outcome(data,c.state,f,raw),"second_outcome":RedKingMindRewards.survival_outcome(data,c.state,f,second)}
+					return false
+				raw=RedKingMindRewards.survival_roll(data,raw,dice,int(survival_decision.get("choice",-1)))
 				report.append("Mindscape survival protection: %d → %d."%[previous,raw])
 			var caster := f.def.role in ["wizard", "apprentice"]
 			if RaggedWarbands.active(data) and not caster:

@@ -276,7 +276,7 @@ func refresh(in_battle: bool) -> void:
 	recruit_status.set_pressed_no_signal(bool(d.get("red_king_recruit_status",false)))
 	roll_recruits.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty() and d.get("pending_treasure",[]).is_empty() and CampaignSuccession.living_wizard(d) and RaggedWarbands.ready_count(d)<10
 	roll_recruits.text="Roll %d replacement recruits"%maxi(0,10-RaggedWarbands.ready_count(d))
-	secret_hrut.visible=bool(d.get("red_king_secret_hrut",false)) and not in_battle and not stage.is_empty() and stage.get("id","")!="red_king_mind"
+	secret_hrut.visible=bool(d.get("red_king_secret_hrut",false)) and not in_battle and (not RedKingCampaign.active(d) or (not stage.is_empty() and stage.get("id","")!="red_king_mind"))
 	secret_hrut.set_pressed_no_signal(bool(d.get("red_king_use_secret_hrut",false)))
 	skip_mind_button.visible=RedKingCampaign.next_id(d)=="red_king_mind" and not in_battle
 	skip_mind_button.disabled=not d.get("pending_treasure",[]).is_empty()
