@@ -36,7 +36,7 @@ static func apply(c: GameController,key: String,args: Dictionary) -> bool:
 		"shoot": return c.shoot(args["target"],args.get("wraith",false),args.get("ammo",false))
 		"reload": return c.reload()
 		"pick_up": return c.pick_up(args["id"])
-		"drop_treasure": return c.drop_treasure(args["at"])
+		"drop_treasure": return c.drop_treasure(args["at"],args.get("token",-1))
 		"exit_table": return c.exit_table(args["node"])
 		"exit_on_floor": return c.exit_on_floor(args["node"])
 		"start_cast": return c.start_cast(args["spell"],args["target"],args.get("ammo",false))
