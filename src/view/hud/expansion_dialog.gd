@@ -63,6 +63,11 @@ func open(slot: int) -> void:
 		detail.text=str(pack.get("description","Optional expansion content."))
 		detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 		_rows.add_child(detail)
+		if id=="red_king" and ContentProfile.playable(pack):
+			var hint := Label.new()
+			hint.text="After applying: open Campaign, then choose Start The Red King storyline on a new campaign save. Individual encounters also appear under Skirmish."
+			hint.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+			_rows.add_child(hint)
 	if _checks.is_empty():
 		var empty := Label.new()
 		empty.text="No expansion books are registered yet. New books will appear here when their digital content is installed."

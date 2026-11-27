@@ -46,7 +46,13 @@ func _populate() -> void:
 	for id: String in entries:
 		var entry: Array=entries[id]
 		var data: Dictionary=JsonFile.read(ScenarioLoader.DIR+id+".json")
-		_card(id,entry[0],entry[1]+"\n"+entry[2],str(data["board"]))
+		var heading := str(entry[0])
+		if id.begins_with("red_king_"):
+			for stage: Dictionary in RedKingCampaign.stages():
+				if stage["id"]==id:
+					heading="Red King · %02d · %s"%[stage["number"],heading]
+					break
+		_card(id,heading,entry[1]+"\n"+entry[2],str(data["board"]))
 	_scroll.scroll_vertical=0
 
 

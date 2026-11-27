@@ -24,6 +24,17 @@ func _process(_delta: float) -> bool:
 	CampaignInventory.buy(scene._campaign.data, "healing")
 	CampaignInventory.buy(scene._campaign.data, "gear_hand_weapon_damage")
 	scene._open_campaign()
+	var hq: CampaignPanel=scene._campaign_dialog
+	if hq._sections.size()!=6 or not hq._sections[0].visible or hq._sections[2].visible or hq.begin.get_parent()!=hq._sections[0]:
+		printerr("Campaign section navigation missing")
+		quit(1)
+		return true
+	hq._show_section(2)
+	if not hq.inventory.is_visible_in_tree() or hq._sections[0].visible:
+		printerr("Equipment page navigation failed")
+		quit(1)
+		return true
+	hq._show_section(0)
 	var banner: BaseBanner = scene._campaign_dialog.base_banner
 	if banner._art.texture == null or not banner._caption.text.contains("Expedition camp"):
 		printerr("Headquarters art unavailable")
