@@ -87,7 +87,7 @@ static func _begin_campaign_battle(bs: BattleScene) -> void:
 	bs._campaign_battle = true
 	bs.watch_mode = false
 	bs._campaign_dialog.hide()
-	bs.new_game(0,candidate)
+	bs.new_game(0,candidate,true)
 
 
 static func _save_battle(bs: BattleScene) -> bool:

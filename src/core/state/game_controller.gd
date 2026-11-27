@@ -50,8 +50,6 @@ func begin_deployment(human_side: int=-1) -> BattleDeployment:
 func start_game() -> void:
 	if deployment!=null and not deployment.done:
 		return
-	if state.turn>0:
-		return
 	DeathMask.prepare(self)
 	CircletDefence.prepare(self)
 	ScrollShield.prepare(self)

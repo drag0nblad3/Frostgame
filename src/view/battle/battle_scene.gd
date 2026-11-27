@@ -47,6 +47,7 @@ var _picker: SkirmishPicker
 var _move_preview_tween: Tween
 var _visible_floor := ""
 var _floor_revision := 0
+var _deployment_panel: BattleDeploymentPanel
 
 
 func _ready() -> void:
@@ -73,7 +74,7 @@ func _ready() -> void:
 	add_child(_briefing)
 	_briefing.start_requested.connect(func() -> void:
 		_campaign_battle = false
-		new_game(0))
+		new_game(0,null,true))
 	hud.new_game_pressed.connect(_open_map_picker)
 	hud.briefing_pressed.connect(func() -> void: _open_briefing(false))
 	_inspector = FigureInspector.new()
@@ -140,7 +141,7 @@ func _ready() -> void:
 		if controller==null:
 			new_game(0)
 	else:
-		new_game(0)
+		new_game(0,null,_launch_intent=="selected_skirmish")
 
 
 func _open_launch_intent() -> void:
@@ -229,7 +230,7 @@ func _open_briefing(start: bool) -> void:
 	_briefing.show_briefing(_scenario_id if start else _active_scenario_id, controller.state if controller != null else null, start)
 
 
-func new_game(seed_value: int,prepared: GameState=null) -> void:
+func new_game(seed_value: int,prepared: GameState=null,deploy: bool=false) -> void:
 	if not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
 		_scenario_id=SCENARIO
 	if _training >= 0:
@@ -251,10 +252,26 @@ func new_game(seed_value: int,prepared: GameState=null) -> void:
 		state=ScenarioLoader.from_dict(data,_figures,_terrain)
 	print("Map load: rules state %.1f ms (reused=%s)"%[float(Time.get_ticks_usec()-began)/1000.0,prepared!=null])
 	state.reaction_side = -2 if watch_mode else player_side
-	_attach_battle(GameController.new(state, Dice.new(seed_value)), true)
+	var game:=GameController.new(state,Dice.new(seed_value))
+	if deploy:
+		# Headless smoke runs use the same automatic placement, never a blocking UI.
+		var interactive:=not watch_mode and DisplayServer.get_name()!="headless"
+		var setup:=game.begin_deployment(player_side if interactive else -1)
+		_attach_battle(game,setup.done)
+		if not setup.done:
+			_rig.frame_board(state.board.size)
+			_deployment_panel=BattleDeploymentPanel.new()
+			add_child(_deployment_panel)
+			_deployment_panel.open(self)
+			player_input.lock("Deploy your warband before Turn 1.")
+		return
+	_attach_battle(game,true)
 
 
 func _attach_battle(c: GameController, start: bool) -> void:
+	if is_instance_valid(_deployment_panel):
+		_deployment_panel.queue_free()
+		_deployment_panel=null
 	if _move_preview_tween!=null and _move_preview_tween.is_valid():
 		_move_preview_tween.kill()
 	if player != null:
@@ -318,9 +335,27 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,float(Time.get_ticks_usec()-began)/1000.0])
 
 
+func _deployment_complete() -> void:
+	if controller.deployment==null or not controller.deployment.done:
+		return
+	if is_instance_valid(_deployment_panel):
+		_deployment_panel.hide()
+		_deployment_panel.queue_free()
+		_deployment_panel=null
+	_markers.clear()
+	for f in controller.state.figures:
+		var v: FigureView=player.views.get(f.id)
+		if v!=null:
+			v.visible=f.in_play()
+			v.position=TableSpace.to_world(f.pos,f.elevation)
+			v.set_active(false)
+	controller.start_game()
+	_dirty=true
+
+
 ## Plays one bot activation for whichever side is to move.
 func step() -> void:
-	if ModalInput.blocked():
+	if is_instance_valid(_deployment_panel) or ModalInput.blocked():
 		return
 	if controller.state.over or not player.idle() or controller.awaiting_reaction():
 		return
@@ -355,6 +390,8 @@ func _process(delta: float) -> void:
 		_collect_bot_turn()
 	if ModalInput.blocked():
 		_rig.cancel_gesture()
+	if is_instance_valid(_deployment_panel):
+		return
 	if not _launch_intent.is_empty() and controller!=null and not ModalInput.blocked():
 		_open_launch_intent()
 		return
@@ -390,6 +427,9 @@ func _process(delta: float) -> void:
 
 
 func set_watch_mode(on: bool) -> void:
+	if is_instance_valid(_deployment_panel):
+		hud.set_watch(watch_mode,false,false)
+		return
 	if _training >= 0 or controller.state.active() != null or controller.state.group.in_progress() or controller.awaiting_reaction() or not player.idle():
 		hud.set_watch(watch_mode, false, false)
 		return
@@ -401,7 +441,7 @@ func set_watch_mode(on: bool) -> void:
 
 
 func _human_turn() -> bool:
-	return not (_training >= 0 and (_training_complete or _training_failed)) and not _info_open() and (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
+	return not is_instance_valid(_deployment_panel) and not (_training >= 0 and (_training_complete or _training_failed)) and not _info_open() and (_setup == null or not _setup.visible) and not watch_mode and not controller.state.over and ((controller.state.current_side() == player_side and (controller.state.active() == null or controller.state.active().side >= 0)) or controller.awaiting_reaction())
 
 
 func _on_event(event: GameEvent) -> void:
@@ -437,6 +477,10 @@ func _on_action(key: String) -> void:
 
 
 func _on_tap(at: Vector2) -> void:
+	if is_instance_valid(_deployment_panel):
+		if not _info_open() and not hud.blocks_tap(at):
+			_deployment_panel.tap(at)
+		return
 	if _human_turn() and player.idle() and not _dirty and not hud.blocks_tap(at):
 		if player_input.tap(at):
 			_lock_after_action()
@@ -511,6 +555,9 @@ func _move_preview(id: int,at: Vector3,active: bool) -> void:
 
 func _update_status() -> void:
 	var s := controller.state
+	if controller.deployment!=null and not controller.deployment.done:
+		hud.set_status("Deployment · before Turn 1")
+		return
 	hud.set_objective(("Training Yard" if _training >= 0 else ScenarioBriefing.title(_active_scenario_id)) + " | " + ScenarioBriefing.progress(s))
 	hud.set_training(_training, _training_complete, _training_failed)
 	var score := ""
@@ -538,7 +585,7 @@ func _open_roster() -> void:
 			_roster = roster
 			_campaign_battle = false
 			watch_mode = false
-			new_game(0))
+			new_game(0,null,true))
 	_setup.open("Save & deploy")
 
 
@@ -587,7 +634,7 @@ func _open_map_picker() -> void:
 			hud.select_scenario(id)
 			_campaign_battle=false
 			watch_mode=false
-			new_game(0))
+			new_game(0,null,true))
 	_picker.open(false)
 
 
