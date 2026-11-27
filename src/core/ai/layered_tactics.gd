@@ -72,10 +72,4 @@ static func shortcut(c: GameController,f: Figure,layout: FloorLayout,reach: Laye
 
 
 static func resolve(c: GameController) -> bool:
-	var f := c.state.active()
-	var p := c.state.pending_cast
-	if p.is_empty():
-		return false
-	var missing := maxi(0,int(p["tn"])-int(p["total"]))
-	var spend := missing if missing<=mini(2,mini(c.cast_max_empowerment(),f.health-3)) else 0
-	return c.finish_cast(spend)
+	return MagicBot.resolve(c)

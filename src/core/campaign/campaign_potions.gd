@@ -10,7 +10,7 @@ static func preserved(d: Dictionary, u: Dictionary) -> bool:
 
 
 static func recently_dead(d: Dictionary, u: Dictionary) -> bool:
-	return u["dead"] and (int(u.get("death_game", -1)) == int(d["games"]) or preserved(d, u))
+	return u["dead"] and not u.get("worm_devoured",false) and (int(u.get("death_game", -1)) == int(d["games"]) or preserved(d, u))
 
 
 static func choices(d: Dictionary, index: int, db: FigureDb) -> Array[int]:
@@ -18,13 +18,15 @@ static func choices(d: Dictionary, index: int, db: FigureDb) -> Array[int]:
 	if index < 0 or index >= d["loot"].size():
 		return out
 	var item: Dictionary = d["loot"][index]
+	if RaggedWarbands.active(d) and item.get("ragged_sealed",false):
+		return out
 	var id := str(item.get("potion", ""))
 	if int(item.get("owner", -1)) >= 0 or (id not in AFTER and id != "dreams"):
 		return out
 	if id in AFTER and (int(d["games"]) == 0 or d.get("preparation_started", false)):
 		return out
 	for u: Dictionary in d["units"]:
-		if u.get("dismissed", false):
+		if u.get("dismissed", false) or u.get("ragged_absent",false):
 			continue
 		var eligible := false
 		match id:
@@ -48,7 +50,9 @@ static func use(d: Dictionary, index: int, unit_id: int, db: FigureDb, dice: Dic
 		return false
 	var id: String = d["loot"][index]["potion"]
 	var u: Dictionary = d["units"][unit_id]
-	d["loot"].remove_at(index)
+	var vial_roll := RedKingMaterials.use_potion(d["loot"],index,dice)
+	if vial_roll>0:
+		d["last_report"].append("Enchanted vial: %d; %s."%[vial_roll,"potion retained" if vial_roll>=19 else "potion consumed"])
 	match id:
 		"construct_oil":
 			u["construct_oiled"] = true

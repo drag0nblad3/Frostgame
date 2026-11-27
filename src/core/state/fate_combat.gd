@@ -11,8 +11,8 @@ func _init(controller: GameController) -> void:
 	c = controller
 
 
-func start(a: Figure, b: Figure, kind: String, declared: int = -1) -> void:
-	c.state.pending_combat = {"a": a.id, "b": b.id, "kind": kind, "declared": declared, "rolls": [c.dice.d20(), c.dice.d20()], "stage": 0}
+func start(a: Figure, b: Figure, kind: String, declared: int = -1,wraith: bool=false,ammo: bool=false) -> void:
+	c.state.pending_combat = {"a": a.id, "b": b.id, "kind": kind, "declared": declared,"wraith":wraith,"ammo":ammo, "rolls": [c.dice.d20(), c.dice.d20()], "stage": 0}
 	advance()
 
 
@@ -22,7 +22,10 @@ func result(p: Dictionary) -> Dictionary:
 	var rolls: Array = p["rolls"]
 	if p["kind"] == "fight":
 		return Melee.resolve_rolls(c.state.figures, a, b, rolls[0], rolls[1], c.state.critical_hits)
-	return Shooting.resolve_rolls(c.state.board, a, b, rolls[0], rolls[1], c.state.critical_hits, c.state.storm_penalty)
+	var res := Shooting.resolve_rolls(c.state.board,a,b,rolls[0],rolls[1],c.state.critical_hits,c.state.storm_penalty,bool(p.get("wraith",false)),bool(p.get("ammo",false)))
+	res["wraith"]=p.get("wraith",false)
+	res["ammo"]=p.get("ammo",false)
+	return res
 
 
 func advance() -> void:
@@ -45,9 +48,18 @@ func advance() -> void:
 				reroll(p, f)
 		p["stage"] = i + 1
 	var res := result(p)
-	c.state.pending_combat = {}
 	var a := c.state.figure(p["a"])
 	var b := c.state.figure(p["b"])
+	var options: Dictionary=p.get("elemental_choices",{})
+	if p["kind"]=="fight":
+		if not RedKingMadMan.is_ryce(b):
+			if _offer_absorption(p,options,a,b,int(res["b_dmg"]),int(res["a_roll"]),false) or _offer_absorption(p,options,b,a,int(res["a_dmg"]),int(res["b_roll"]),false):
+				return
+	else:
+		if _offer_absorption(p,options,a,b,int(res["dmg"]),int(res["s_roll"]),true):
+			return
+	res["elemental_choices"]=options
+	c.state.pending_combat = {}
 	if p["kind"] == "fight":
 		c.finish_fate_fight(a, b, res)
 	else:
@@ -65,7 +77,7 @@ func reroll(p: Dictionary, f: Figure) -> void:
 
 func answer(use: bool) -> bool:
 	var p := c.state.pending_combat
-	if p.is_empty() or not p.has("roller"):
+	if p.is_empty() or p.has("absorb_target") or not p.has("roller"):
 		return false
 	var f := c.state.figure(p["roller"])
 	if f == null or f.side != c.state.reaction_side:
@@ -73,5 +85,33 @@ func answer(use: bool) -> bool:
 	if use:
 		reroll(p, f)
 	p["stage"] = int(p["stage"]) + 1
+	advance()
+	return true
+
+
+## Only after both Fate Stone opportunities have resolved is damage known.
+## Store choices in the pending opposed roll, without changing either figure.
+func _offer_absorption(p: Dictionary,options: Dictionary,attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool) -> bool:
+	if options.has(target.id) or target.side!=c.state.reaction_side or not ActiveGear.ready(target,RedKingElemental.AMULET):
+		return false
+	var parts := RedKingElemental.weapon_parts(attacker,target,damage,raw,ranged)
+	if parts.y<=0:
+		return false
+	p["absorb_target"]=target.id
+	p["absorb_normal"]=parts.x
+	p["absorb_elemental"]=parts.y
+	p["elemental_choices"]=options
+	return true
+
+
+func answer_absorption(use: bool) -> bool:
+	var p := c.state.pending_combat
+	if p.is_empty() or not p.has("absorb_target"):
+		return false
+	var target := c.state.figure(int(p["absorb_target"]))
+	if target==null or target.side!=c.state.reaction_side:
+		return false
+	p["elemental_choices"][target.id]=int(use)
+	p.erase("absorb_target")
 	advance()
 	return true

@@ -27,7 +27,7 @@ static func compatible(def: FigureDef, info: Dictionary) -> bool:
 
 
 static func bonus(f: Figure, stat: String, weapon: String = "") -> int:
-	if ScenarioNull.muted(f):
+	if suppressed(f):
 		return 0
 	var total := 0
 	for item: Dictionary in f.items:
@@ -44,3 +44,18 @@ static func bonus(f: Figure, stat: String, weapon: String = "") -> int:
 				continue
 		total += int(info["bonus"].get(stat, 0))
 	return total
+
+
+## Anti-magic creatures temporarily suppress carried magical items in melee.
+static func suppressed(f: Figure) -> bool:
+	if f==null or ScenarioNull.muted(f) or RealityCracks.null_wave(f):
+		return true
+	if f.battle_ref==null:
+		return false
+	var s: GameState=f.battle_ref.get_ref()
+	if s==null:
+		return false
+	for enemy in Contact.enemies_of(s.figures,f):
+		if enemy.def.traits.has("antithetical_magic"):
+			return true
+	return false

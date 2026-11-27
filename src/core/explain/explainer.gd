@@ -13,6 +13,89 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"ryce_unconscious":
+			return "Kalamon Ryce is unconscious. Carry him to safety."
+		"ryce_escaped":
+			return "Kalamon Ryce escapes into the ruins."
+		"hrut_corner_choice":
+			return "Choose a corner for your Hrut hunting party."
+		"hrut_hunt":
+			return "Hrut hunting parties arrive."
+		"convergence_choice":
+			return "Choose where %s lands in the convergence."%name_of(s,d["id"])
+		"convergence_blocked":
+			return "No legal contact placement for %s."%name_of(s,d["id"])
+		"mad_man_crack":
+			return "Reality twists: opposite edge regions exchange positions."
+		"reality_crack":
+			return "Reality Crack %d — %s."%[d["number"],d["name"]]
+		"reality_stable":
+			return "Reality stabilizes."
+		"reality_school":
+			return "%s magic: %+d casting this turn."%[str(d["school"]).capitalize(),d["bonus"]]
+		"reality_null":
+			return "Null wave: active spells cancelled and magic items suppressed this turn."
+		"ring_switch":
+			return "%s shifts to the %s of the ring."%[name_of(s,d["id"]),"inside" if d["plane"]==1 else "outside"]
+		"ring_reinforcements":
+			return "Hrut arrive at marker %d (%s)."%[d["marker"],"inside" if d["plane"]==1 else "outside"]
+		"ring_finale":
+			return "The four Key-Masters are destroyed. Frostgrave is saved; those left behind are lost." if d["success"] else "The warbands leave the Ringworld without destroying every Key-Master."
+		"bridge_veil":
+			return "The dimensional veil shifts to edge markers %d and %d."%[d["left"],d["right"]]
+		"bridge_void":
+			return "%s is forced toward the void: %s."%[name_of(s,d["id"]),"caught the edge" if d["success"] else "fell into the void"]
+		"pylon_destroyed":
+			return "A tether shatters, revealing treasure."
+		"tethers_crack":
+			return "The battlefield folds into three connected strips."
+		"tethers_restored":
+			return "All tethers destroyed. The battlefield returns to normal; exits open."
+		"hill_crack":
+			return "Reality cracks: the battlefield becomes four planar slopes."
+		"hill_balance":
+			return "%s attempts to keep balance: %s."%[name_of(s,d["id"]),"passed" if d["success"] else "fell downhill"]
+		"sinkhole_contact":
+			return "%s touches the anti-magic orb: %d damage."%[name_of(s,d["id"]),d["amount"]]
+		"sinkhole_resist":
+			return "%s attempts to resist the pull: %s."%[name_of(s,d["id"]),"success" if d["success"] else "failed"]
+		"herd_veil":
+			return "The veil advances %d inches. Escape before it reaches you!"%d["distance"]
+		"herd_contact":
+			return "%s is caught by the advancing veil."%name_of(s,d["id"])
+		"mind_event":
+			return "Mindscape event: %s of hearts."%d["card"]
+		"mind_memory":
+			return "%s recovers a memory."%name_of(s,d["id"])
+		"mind_rewards":
+			return "Memory reward cards: "+", ".join(d["cards"])
+		"artefact_unlock":
+			return "%s attempts to unlock the artefact: %s."%[name_of(s,d["id"]),"success" if d["success"] else "failed"]
+		"portal_contact":
+			return "%s touches a portal (%d elemental damage)."%[name_of(s,d["id"]),d["amount"]]
+		"portal_emergence":
+			return "A Hrut warrior emerges from a portal."
+		"veil_contact":
+			return "%s touches the veil and is taken out of action!"%name_of(s,d["id"])
+		"fractured_reality":
+			return "Reality fractures around %s (roll %d)."%[name_of(s,d["id"]),d["roll"]]
+		"investigation_alarm":
+			return "The camp is alerted: %s!"%d["reason"]
+		"investigation_routes":
+			var routes: Array[String]=[]
+			for side in d["edges"]:
+				routes.append("%s: %s"%[s.side_names[side],", ".join(d["edges"][side])])
+			return "Reality shifts. Escape edges — "+"; ".join(routes)
+		"stand_investigated":
+			return "%s searches an offering: %s."%[name_of(s,d["id"]),("+%d gc if recovered"%d["gold"]) if int(d["gold"])>0 else "a cursed offering"]
+		"stand_will":
+			return "Offering Will test: %s."%("passed" if d["success"] else "failed")
+		"investigation_skip":
+			return "%s loses this activation."%name_of(s,d["id"])
+		"troll_awake":
+			return "The snow troll awakens!"
+		"squatter_will":
+			return "Central room Will test: %s."%("passed" if d["success"] else "failed")
 		"pack_start":
 			return "%s leads a pack of %d creatures." % [name_of(s, d["id"]), d["members"].size()]
 		"null_field":

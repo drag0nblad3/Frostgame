@@ -20,3 +20,13 @@ func test_eye_sight_and_host_removal() -> void:
 	c._magic.terrain.remove(p)
 	check(WizardEye.marker(c.state.board, f) == null)
 	check(c.state.board.pieces.is_empty())
+
+
+func test_tiger_eye_ring_penalty() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],LoadedDice.new([1]))
+	f.items.append({"gear":TigerEye.ITEM,"gear_info":RedKingRewards.catalog()[TigerEye.ITEM]})
+	check(TigerEye.active(f))
+	var hp := f.health
+	TigerEye.test_use(c,f)
+	check_eq(f.health,hp-3)

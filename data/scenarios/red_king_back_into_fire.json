@@ -1,0 +1,201 @@
+{
+  "id": "red_king_back_into_fire",
+  "name": "Back Into the Fire",
+  "board": "red_king_back_into_fire",
+  "warbands": [
+    {
+      "name": "Elementalist",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            3
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            15,
+            3
+          ]
+        },
+        {
+          "type": "knight",
+          "at": [
+            20,
+            4.5
+          ]
+        },
+        {
+          "type": "man_at_arms",
+          "at": [
+            13,
+            4.5
+          ]
+        },
+        {
+          "type": "infantryman",
+          "at": [
+            22,
+            3
+          ]
+        },
+        {
+          "type": "archer",
+          "at": [
+            10,
+            3
+          ]
+        },
+        {
+          "type": "crossbowman",
+          "at": [
+            26,
+            3
+          ]
+        }
+      ],
+      "spells": {
+        "elemental_bolt": 12,
+        "elemental_shield": 10,
+        "fleet_feet": 12,
+        "strength": 12,
+        "heal": 12,
+        "combat_awareness": 16
+      }
+    },
+    {
+      "name": "Necromancer",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            33
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            21,
+            33
+          ]
+        },
+        {
+          "type": "barbarian",
+          "at": [
+            16,
+            31.5
+          ]
+        },
+        {
+          "type": "treasure_hunter",
+          "at": [
+            23,
+            31.5
+          ]
+        },
+        {
+          "type": "thug",
+          "at": [
+            19,
+            31.5
+          ]
+        },
+        {
+          "type": "ranger",
+          "at": [
+            12,
+            33
+          ]
+        },
+        {
+          "type": "marksman",
+          "at": [
+            26,
+            33
+          ]
+        }
+      ],
+      "spells": {
+        "bone_dart": 10,
+        "steal_health": 10,
+        "fleet_feet": 12,
+        "glow": 14,
+        "mind_lock": 16,
+        "strength": 14
+      }
+    }
+  ],
+  "treasures": [
+    [
+      18,
+      18
+    ],
+    [
+      7,
+      26
+    ],
+    [
+      29,
+      26
+    ],
+    [
+      13,
+      33
+    ],
+    [
+      23,
+      33
+    ]
+  ],
+  "random_encounters": false,
+  "forced_combat": true,
+  "special": "red_king_back_into_fire",
+  "central_treasure": 0,
+  "creatures": [
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        12,
+        16.5
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        14,
+        14
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        16.5,
+        12
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        19.5,
+        12
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        22,
+        14
+      ]
+    },
+    {
+      "type": "blood_marked_berserker",
+      "at": [
+        24,
+        16.5
+      ]
+    }
+  ]
+}

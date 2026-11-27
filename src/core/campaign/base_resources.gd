@@ -8,11 +8,11 @@ static func catalog() -> Dictionary:
 
 
 static func owns(d: Dictionary, id: String) -> bool:
-	return d.get("resources", []).has(id)
+	return not RedKingCampaign.economy_locked(d) and d.get("resources", []).has(id)
 
 
 static func buy(d: Dictionary, id: String) -> bool:
-	if d.is_empty() or str(d.get("base", "")) == "" or owns(d, id):
+	if RedKingCampaign.economy_locked(d) or d.is_empty() or str(d.get("base", "")) == "" or owns(d, id) or not ContentProfile.from_campaign(d).allows("base_resources",id):
 		return false
 	var info: Dictionary = catalog().get(id, {})
 	if not info.get("live", false) or int(d["gold"]) < int(info.get("cost", 0)):
@@ -43,48 +43,78 @@ static func casting_bonus(d: Dictionary, spell: String) -> int:
 
 
 static func alive(unit: Dictionary) -> bool:
-	return not unit.get("dead", false) and not unit.get("dismissed", false)
+	return not unit.get("dead", false) and not unit.get("dismissed", false) and not unit.get("ragged_absent",false)
 
 
 static func soldier(unit: Dictionary, db: FigureDb) -> bool:
 	return db.get_def(unit["type"]).role == "soldier" or unit.get("permanent_summon", false)
 
 
-static func specialist(unit: Dictionary, db: FigureDb) -> bool:
-	return db.get_def(unit["type"]).specialist or unit["type"] == "large_construct"
+static func specialist(unit: Dictionary, db: FigureDb,d: Dictionary={}) -> bool:
+	if CompanionMantle.enabled(d) and unit.has("companion_of") and CompanionMantle.ANIMALS.has(unit["type"]):
+		return CompanionMantle.specialist(d,unit)
+	return db.get_def(unit["type"]).specialist or unit["type"] in ["large_construct","foulhorn"]
 
 
-static func counts(d: Dictionary, db: FigureDb, extra_type: String = "") -> Vector2i:
+static func wizard_item(d: Dictionary,id: String) -> bool:
+	for item: Dictionary in d.get("loot",[]):
+		var owner := int(item.get("owner",-1))
+		if item.get("gear","")==id and item.get("unlocked",true) and owner>=0 and owner<d.get("units",[]).size():
+			var u: Dictionary=d["units"][owner]
+			if u["type"]=="wizard" and alive(u):
+				return true
+	return false
+
+
+static func specialist_limit(d: Dictionary) -> int:
+	return 4+int(wizard_item(d,"gear_rk_amulet_of_charisma"))
+
+
+static func wisdom_eligible(unit: Dictionary,db: FigureDb) -> bool:
+	return unit["type"] in ["monk","mystic_warrior"] and specialist(unit,db)
+
+
+static func counts(d: Dictionary, db: FigureDb, extra_type: String = "",companion: int=-1) -> Vector2i:
 	var count := Vector2i.ZERO
 	var kennel := false
+	var wisdom := false
 	for unit: Dictionary in d.get("units", []):
 		if not alive(unit) or not soldier(unit, db):
 			continue
 		count.x += 1
-		if specialist(unit, db):
+		if specialist(unit,db,d):
 			count.y += 1
+			wisdom=wisdom or wisdom_eligible(unit,db)
 		if unit["type"] in ["war_hound", "wolf"]:
 			kennel = true
 	if extra_type != "":
 		count.x += 1
-		if db.get_def(extra_type).specialist or extra_type == "large_construct":
+		var proposed := {"type":extra_type}
+		if companion>=0:
+			proposed["companion_of"]=companion
+		if specialist(proposed,db,d):
 			count.y += 1
+			wisdom=wisdom or wisdom_eligible({"type":extra_type},db)
 		if extra_type in ["war_hound", "wolf"]:
 			kennel = true
 	if kennel and owns(d, "kennel"):
 		count.x -= 1
+	if wisdom and wizard_item(d,"gear_rk_book_of_wisdom"):
+		count.y-=1
 	return count
 
 
-static func fits(d: Dictionary, db: FigureDb, extra_type: String = "") -> bool:
-	var count := counts(d, db, extra_type)
+static func fits(d: Dictionary, db: FigureDb, extra_type: String = "",companion: int=-1) -> bool:
+	if RaggedWarbands.active(d):
+		return RaggedWarbands.ready_count(d)+(0 if extra_type.is_empty() else 1)<=10
+	var count := counts(d,db,extra_type,companion)
 	var extra := 1 if d.get("base", "") == "inn" else 0
-	return count.x <= 8 + extra and count.y <= 4 + extra
+	return count.x <= 8 + extra and count.y <= specialist_limit(d) + extra
 
 
 static func reserve_candidates(d: Dictionary, db: FigureDb) -> Array[int]:
 	var candidates: Array[int] = []
-	if d.get("base", "") != "inn":
+	if RedKingCampaign.economy_locked(d) or d.get("base", "") != "inn":
 		return candidates
 	var ready: Array[Dictionary] = []
 	var kennel_id := -1
@@ -96,12 +126,20 @@ static func reserve_candidates(d: Dictionary, db: FigureDb) -> Array[int]:
 			kennel_id = int(unit["id"])
 			continue
 		ready.append(unit)
-		if specialist(unit, db):
+		if specialist(unit,db,d):
 			specialists += 1
-	if ready.size() <= 8 and specialists <= 4:
+	var limit := specialist_limit(d)
+	var wisdom_count := 0
+	if wizard_item(d,"gear_rk_book_of_wisdom"):
+		for unit in ready:
+			if wisdom_eligible(unit,db):
+				wisdom_count+=1
+	var effective := specialists-int(wisdom_count>0)
+	if ready.size() <= 8 and effective <= limit:
 		return candidates
 	for unit in ready:
-		if specialists <= 4 or specialist(unit, db):
+		var after := effective-int(specialist(unit,db,d))+int(wisdom_count==1 and wisdom_eligible(unit,db))
+		if after<=limit:
 			candidates.append(int(unit["id"]))
 	return candidates
 

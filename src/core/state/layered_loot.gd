@@ -43,6 +43,7 @@ static func exit(c: GameController,n: Vector3i) -> bool:
 	for id in f.carried_treasures():
 		c._loot.secure(c.state.treasure(id),f.side)
 	f.exited=true
+	c._magic.summons.enforce_illusion_limit(f)
 	f.actions_left=0
 	c.emit("exit",{"id":f.id})
 	return true

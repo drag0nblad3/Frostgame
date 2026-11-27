@@ -23,3 +23,18 @@ func test_illusion_cannot_damage_or_collect() -> void:
 	check(not TreasureRules.can_pick_up(c.state, phantom, token))
 	c._hurt(phantom, 1, target)
 	check(not phantom.in_play())
+
+
+func test_illusion_staff_allows_second_and_penalizes_will() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var c := make_game(make_board(),[f],Dice.new(1))
+	c.state.creature_db=db()
+	f.items.append({"gear":SummonActions.ILLUSION_STAFF,"gear_info":RedKingRewards.catalog()[SummonActions.ILLUSION_STAFF]})
+	var base := f.effective_will()
+	c._magic.summons.spawn(f,"illusionary_soldier",Vector2(11.5,10),15,8)
+	check(c._magic.summons.can_place(f,"illusionary_soldier",Vector2(8.5,10)))
+	c._magic.summons.spawn(f,"illusionary_soldier",Vector2(8.5,10),15,8)
+	check_eq(f.effective_will(),base-2)
+	check(not c._magic.summons.can_place(f,"illusionary_soldier",Vector2(10,12)))
+	c._hurt(f,f.health,f,false)
+	check_eq(SummonActions.count_summoned(c.state,f,"illusionary_soldier",true),1)

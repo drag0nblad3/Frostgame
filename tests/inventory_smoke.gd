@@ -24,6 +24,17 @@ func _process(_delta: float) -> bool:
 	CampaignInventory.buy(scene._campaign.data, "healing")
 	CampaignInventory.buy(scene._campaign.data, "gear_hand_weapon_damage")
 	scene._open_campaign()
+	var hq: CampaignPanel=scene._campaign_dialog
+	if hq._sections.size()!=6 or not hq._sections[0].visible or hq._sections[2].visible or hq.begin.get_parent()!=hq._sections[0]:
+		printerr("Campaign section navigation missing")
+		quit(1)
+		return true
+	hq._show_section(2)
+	if not hq.inventory.is_visible_in_tree() or hq._sections[0].visible:
+		printerr("Equipment page navigation failed")
+		quit(1)
+		return true
+	hq._show_section(0)
 	var banner: BaseBanner = scene._campaign_dialog.base_banner
 	if banner._art.texture == null or not banner._caption.text.contains("Expedition camp"):
 		printerr("Headquarters art unavailable")
@@ -40,6 +51,13 @@ func _process(_delta: float) -> bool:
 	var panel: InventoryPanel = scene._campaign_dialog.inventory
 	if panel.loot.item_count != 2 or panel.recipient_choice.item_count < 4:
 		printerr("Inventory controls failed")
+		quit(1)
+		return true
+	var before := JSON.stringify(scene._campaign.data)
+	panel.loot.select(1)
+	panel._refresh_item_buttons()
+	if panel.item_detail.text.is_empty() or JSON.stringify(scene._campaign.data)!=before:
+		printerr("Equipment selection changed the save or lacks a description")
 		quit(1)
 		return true
 	if not CampaignInventory.assign_item(scene._campaign.data, 1, 2, scene._figures):

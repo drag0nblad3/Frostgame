@@ -3,10 +3,10 @@ extends RefCounted
 ## Local, versioned checkpoint. No objects or suspended callbacks are deserialized.
 const VERSION := 1
 const PATH := "user://frostgame_battle_v1.dat"
-const STATE := ["side_names", "side_schools", "turn", "phase", "push_winner", "push_loser", "forced_combat", "reaction_side", "random_encounters", "museum", "scenario_special", "worm_spawned", "well_drinkers", "discovered_huts", "disc_travellers", "lamp_token", "genie_id", "genie_kills", "tower_visitors", "column_fighters", "reinforcement_points", "spellbooks", "spell_catalog", "storm_penalty", "words", "fast_acts", "pack_queue", "pack_leader", "pack_target", "pack_heading", "telescope_ready", "pending_initiative", "order", "order_index", "active_id", "winner", "over", "critical_hits"]
+const STATE := ["wounded_rules", "side_names", "side_schools", "turn", "phase", "pending_gutter", "push_winner", "push_loser", "push_tie", "push_tie_second", "forced_combat", "reaction_side", "random_encounters", "museum", "scenario_special", "scenario_data", "worm_spawned", "well_drinkers", "discovered_huts", "disc_travellers", "lamp_token", "genie_id", "genie_kills", "tower_visitors", "column_fighters", "reinforcement_points", "spellbooks", "spell_catalog", "storm_penalty", "words", "fast_acts", "pack_queue", "pack_leader", "pack_target", "pack_heading", "telescope_ready", "pending_initiative", "order", "order_index", "active_id", "winner", "over", "critical_hits"]
 const EARLY := ["leaders", "eligible", "used", "closed"]
 const GROUP := ["stage", "side", "members", "pending"]
-const TOKEN := ["id", "pos", "surface_id", "carrier_id", "secured_by", "lost", "ever_collected", "central", "frozen"]
+const TOKEN := ["id", "pos", "surface_id", "ring_side", "carrier_id", "secured_by", "lost", "ever_collected", "central", "frozen", "investigation", "bonus_gold"]
 
 
 static func can_save(c: GameController) -> bool:
@@ -56,7 +56,9 @@ static func capture(c: GameController, meta: Dictionary = {}) -> Dictionary:
 	if not can_save(c):
 		return {}
 	var s := c.state
-	var out := {"version": VERSION, "meta": meta.duplicate(true), "state": pack(s, STATE), "early": pack(s.early, EARLY), "group": pack(s.group, GROUP), "board": BattleSnapshotParts.board_data(s.board), "figures": [], "treasures": [], "history": [], "rng": c.dice._rng.state}
+	var saved_meta := meta.duplicate(true)
+	saved_meta["expansions"]=s.content_profile.enabled.duplicate()
+	var out := {"version": VERSION, "meta": saved_meta, "state": pack(s, STATE), "early": pack(s.early, EARLY), "group": pack(s.group, GROUP), "board": BattleSnapshotParts.board_data(s.board), "figures": [], "treasures": [], "history": [], "rng": c.dice._rng.state}
 	for figure in s.figures:
 		out["figures"].append(BattleSnapshotParts.figure_data(figure))
 	for token in s.treasures:
@@ -73,7 +75,11 @@ static func rebuild(d: Dictionary, db: FigureDb) -> GameController:
 	for key: String in ["state", "early", "group", "board", "figures", "treasures", "history", "rng"]:
 		if not d.has(key):
 			return null
+	var profile := ContentProfile.new(d.get("meta",{}).get("expansions",[]),db.content_profile.packs)
+	if not profile.errors().is_empty() or not db.content_profile.same(profile.enabled):
+		return null
 	var s := GameState.new()
+	s.content_profile=profile
 	s.creature_db = db
 	s.board = BattleSnapshotParts.make_board(d["board"])
 	restore(s, d["state"], STATE)

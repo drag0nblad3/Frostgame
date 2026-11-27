@@ -91,6 +91,8 @@ func setup(f: Figure, _side_name: String) -> void:
 func refresh(f: Figure) -> void:
 	var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	var base_color := color.darkened(0.12)
+	if f.ring_side==1:
+		base_color=base_color.lerp(Color(0.31,0.85,0.76),0.65)
 	if _base.material_override==null or _base.material_override.albedo_color!=base_color:
 		_base.material_override = BoardView._mat(base_color,0.62)
 	_profile=MiniatureMotion.profile(f)
@@ -98,12 +100,12 @@ func refresh(f: Figure) -> void:
 	_ranged=f.ranged.id if f.ranged!=null else ""
 	var phantom := IllusionRules.phantom(f)
 	var transparent := f.spell_effects.has("invisibility") or phantom
-	var key := "%d:%s:%s:%s:%s" % [f.side, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", transparent,SchoolArt.of_figure(f)]
+	var key := "%s:%d:%s:%s:%s:%s" % [f.def.id, f.side, f.melee.id if f.melee != null else "", f.ranged.id if f.ranged != null else "", transparent,SchoolArt.of_figure(f)]
 	if key != _model_key or _model == null:
 		if _model != null:
 			remove_child(_model)
 			_model.queue_free()
-		_model = MiniatureFactory.create(f, color)
+		_model = TetherView.build() if RedKingTethers.pylon(f) else MiniatureFactory.create(f, color)
 		_model.position.y += 0.12
 		_model_rest_y = _model.position.y
 		_model.rotation.y = _facing
@@ -120,6 +122,8 @@ func refresh(f: Figure) -> void:
 		_height = 2.35
 	elif f.def.id == "genie":
 		_height = 1.85
+	if RedKingTethers.pylon(f):
+		_height=2.8
 	_plate.position.y = _height + 0.42
 	var ratio := clampf(float(f.health) / maxf(1.0, float(f.def.health)), 0.0, 1.0)
 	_health_fill.scale.x = maxf(0.01, ratio)
@@ -130,6 +134,8 @@ func refresh(f: Figure) -> void:
 	_shield_ring.visible = f.elemental_shield > 0 or f.spell_effects.has("shield")
 	var suffix := " · Illusion" if phantom else (" · Invisible" if transparent else "")
 	var status := " · Loot" if f.treasure_id >= 0 else ""
+	if RedKingRingworld.active(RedKingVeil.of(f)):
+		status+=" · INSIDE" if f.ring_side==1 else " · OUTSIDE"
 	if f.poisoned:
 		status += " · Poison"
 	if ScenarioNull.muted(f):

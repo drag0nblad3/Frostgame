@@ -5,12 +5,16 @@ extends RefCounted
 var id: int
 var pos: Vector2
 var surface_id := ""
+var ring_side := 0
 var carrier_id := -1
 var secured_by := -1
 var lost := false
 var ever_collected := false
 var central := false
 var frozen := false
+## Unsearched objective marker, not yet a treasure.
+var investigation := false
+var bonus_gold := 0
 
 
 func _init(token_id: int, at: Vector2) -> void:

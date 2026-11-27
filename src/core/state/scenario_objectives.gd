@@ -97,7 +97,23 @@ static func exit_distance(s: GameState, at: Vector2) -> float:
 	return distance
 
 
-static func exit_allowed(s: GameState, at: Vector2) -> bool:
+static func exit_allowed(s: GameState, at: Vector2,side: int=-1) -> bool:
+	if RealityCracks.blocks_exit(s):
+		return false
+	if RedKingRingworld.active(s):
+		return false
+	if RedKingBridge.active(s):
+		return RedKingBridge.exit_allowed(s,at)
+	if RedKingTethers.active(s) and RedKingTethers.remaining(s)>0:
+		return false
+	if RedKingHerded.active(s):
+		return at.y>=s.board.size.y-Figure.BASE_RADIUS-0.01
+	if RedKingFire.active(s):
+		return RedKingFire.exit_allowed(s,at)
+	if RedKingVeil.active(s):
+		return RedKingVeil.exit_allowed(s,at,side)
+	if RedKingInvestigations.active(s):
+		return RedKingInvestigations.exit_allowed(s,at,side)
 	if s.scenario_special != "underground_library":
 		return true
 	var size := s.board.size

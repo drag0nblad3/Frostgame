@@ -12,7 +12,7 @@ static func create(f: Figure, faction: Color, school_override: String = "") -> N
 	var model := Node3D.new()
 	model.set_meta("painted_miniature",true)
 	var color := faction
-	if CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
+	if RedKingSculpt.create(model, f) or CreatureSculpt.create(model, f, faction) or MonsterSculpt.create(model, f):
 		MiniatureDetails.decorate(model,f)
 		MiniatureBatch.bake(model)
 		return model

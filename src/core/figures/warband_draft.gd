@@ -20,8 +20,8 @@ var db: FigureDb
 
 func _init(figures: FigureDb) -> void:
 	db = figures
-	schools = JsonFile.read("res://data/schools.json")
-	catalog = JsonFile.read("res://data/spells.json")
+	schools = db.content_profile.filter("schools",JsonFile.read("res://data/schools.json"))
+	catalog = db.content_profile.filter("spells",JsonFile.read("res://data/spells.json"))
 
 
 func school_modifier(other: String) -> int:
@@ -95,6 +95,12 @@ func errors() -> Array[String]:
 	if spells.size() != 8:
 		result.append("Select eight spells.")
 		return result
+	for id in soldiers:
+		if not db.available(id):
+			result.append("Recruit requires an enabled content pack: "+id)
+	for id in wizard_weapons+apprentice_weapons:
+		if not db.content_profile.allows("weapons",str(id)):
+			result.append("Weapon requires an enabled content pack: "+str(id))
 	var used := {}
 	var neutral := {}
 	for slot in spells.size():
@@ -113,7 +119,7 @@ func errors() -> Array[String]:
 
 
 func can_hire(id: String) -> bool:
-	if not db.figures.has(id):
+	if not db.available(id):
 		return false
 	var d := db.get_def(id)
 	return d.role == "soldier" and soldiers.size() < MAX_SOLDIERS and cost() + d.cost <= BUDGET and (not d.specialist or specialists() < MAX_SPECIALISTS)
@@ -160,7 +166,7 @@ func restore_roster(saved: Dictionary) -> bool:
 		elif id=="apprentice":
 			other.apprentice=true
 			other.apprentice_weapons=entry.get("weapons",other.apprentice_weapons).duplicate()
-		elif db.figures.has(id) and db.get_def(id).role=="soldier":
+		elif db.available(id) and db.get_def(id).role=="soldier":
 			other.soldiers.append(id)
 		else:
 			return false

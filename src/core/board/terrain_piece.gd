@@ -14,6 +14,8 @@ var ramp_start := 0.0
 var ramp_end := 0.0
 var cast_turn := -1
 var caster_id := -1
+var extended_bridge := false
+var elemental_wall := false
 
 
 func _init(k: TerrainKind = null, r: Rect2 = Rect2()) -> void:

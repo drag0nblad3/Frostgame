@@ -10,7 +10,7 @@ func _init(controller: GameController) -> void:
 
 func can_target(f: Figure, id: String, token: TreasureToken) -> bool:
 	var s := c.state
-	if not token.unresolved() or token.frozen or ScenarioSites.treasure_protected(s, origin(token)):
+	if token.ring_side!=f.ring_side or RedKingHill.guarded(s,token) or token.investigation or not token.unresolved() or token.frozen or ScenarioSites.treasure_protected(s, origin(token)):
 		return false
 	if id == "telekinesis":
 		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and Vector2(f.pos.distance_to(token.pos), f.elevation - s.board.height_at(token.pos)).length() <= 16.0 and WizardEye.visible(s.board, f, token.pos)
@@ -30,7 +30,7 @@ func can_place(f: Figure, id: String, token: TreasureToken, at: Vector2) -> bool
 		return false
 	var s := c.state
 	var from := origin(token)
-	var limit := 6.0 if id == "telekinesis" else 4.0
+	var limit := (3.0 if RedKingSinkhole.active(s) else 6.0) if id == "telekinesis" else (6.0 if SummonActions.illusion_staff(f) else 4.0)
 	if Vector2(from.distance_to(at), s.board.height_at(from) - s.board.height_at(at)).length() > limit + 0.001 or not s.board.can_stand(at, TreasureRules.TOKEN_RADIUS):
 		return false
 	if not WizardEye.visible(s.board, f, at):
@@ -48,7 +48,7 @@ func can_place(f: Figure, id: String, token: TreasureToken, at: Vector2) -> bool
 func points(f: Figure, id: String, token: TreasureToken, first_only: bool = false) -> Array[Vector2]:
 	var out: Array[Vector2] = []
 	var center := MovePlanner.node_at(origin(token))
-	var radius := 12 if id == "telekinesis" else 8
+	var radius := 12 if id=="telekinesis" or SummonActions.illusion_staff(f) else 8
 	for dx in range(-radius, radius + 1):
 		for dy in range(-radius, radius + 1):
 			var at := MoveGrid.to_pos(center + Vector2i(dx, dy))

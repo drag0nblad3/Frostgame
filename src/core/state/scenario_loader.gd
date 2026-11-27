@@ -16,6 +16,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	s.random_encounters = d.get("random_encounters", false)
 	s.museum = d.get("museum", false)
 	s.scenario_special = str(d.get("special", ""))
+	s.scenario_data["reality_enabled"]=bool(d.get("reality_cracks",false))
 	if s.scenario_special == "dreams_well":
 		for piece in s.board.pieces:
 			if piece.kind.id == "dreams_well":
@@ -24,9 +25,11 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		s.reinforcement_points.append(Vector2(at[0], at[1]))
 	s.forced_combat = d.get("forced_combat", false)
 	s.creature_db = figures
-	s.spell_catalog = JsonFile.read("res://data/spells.json")
+	s.content_profile=figures.content_profile
+	s.spell_catalog = s.content_profile.filter("spells",JsonFile.read("res://data/spells.json"))
 	var next_id := 1
 	var warbands: Array = d.get("warbands", [])
+	s.wounded_rules=bool(d.get("wounded_rules",false)) or (not warbands.is_empty() and bool(warbands[0].get("wounded_rules",false)))
 	for side in warbands.size():
 		var wb: Dictionary = warbands[side]
 		s.side_names.append(wb.get("name", "Warband %d" % (side + 1)))
@@ -34,34 +37,61 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		var school := str(wb.get("school", wb.get("name", ""))).to_lower()
 		if schools.has(school):
 			s.side_schools[side] = school
-		s.spellbooks[side] = wb.get("spells", {})
+		s.spellbooks[side] = s.content_profile.filter("spells",wb.get("spells",{}))
+		if wb.get("red_king_secret_hrut",false) and s.content_profile.enabled.has("red_king"):
+			s.scenario_data["secret_hrut_%d"%side]=true
 		if wb.get("telescope", false):
 			s.telescope_ready[side] = true
 		var deploy_index := 0
 		for entry: Dictionary in wb.get("figures", []):
-			var at: Array = entry["at"]
+			if RedKingMind.active(s) and (side!=0 or entry["type"]!="wizard"):
+				continue
+			var at: Array = [0.5,0.5] if RedKingMind.active(s) else entry["at"]
 			if s.scenario_special == "underground_library":
 				var position := Vector2(15.0 + float(deploy_index % 5) * 1.5, 1.5 + floori(deploy_index / 5.0) * 1.5)
 				if side == 1:
 					position.y = s.board.size.y - position.y
 				at = [position.x, position.y]
+			if RedKingVeil.active(s) and side==0:
+				at=[2.0+float(deploy_index%8)*2.7,1.0+1.5*floori(deploy_index/8.0)]
+			if RedKingFire.active(s):
+				var x := 1.0+1.1*float(deploy_index%4)
+				at=[x if side==0 else s.board.size.x-x,1.0+1.1*floori(deploy_index/4.0)]
+			if RedKingRingworld.active(s):
+				var offsets: Array[Vector2]=[Vector2.ZERO,Vector2(1,0),Vector2(-1,0),Vector2(0,1),Vector2(0,-1),Vector2(1,1),Vector2(-1,1),Vector2(1,-1),Vector2(-1,-1),Vector2(0,2)]
+				var p := Vector2(8.0 if side==0 else 22.0,18.0)+offsets[deploy_index%offsets.size()]
+				at=[p.x,p.y]
+			if RedKingBridge.active(s):
+				var p := RedKingBridge.deployment(s,side,deploy_index)
+				at=[p.x,p.y]
+			if RedKingHerded.active(s):
+				var x := 1.0+1.2*float(deploy_index%4)
+				at=[x if side==0 else s.board.size.x-x,1.0+1.2*floori(deploy_index/4.0)]
 			deploy_index += 1
+			if wb.get("campaign_roster",false) and s.scenario_special.begins_with("red_king_") and not RedKingMind.active(s):
+				var repaired: Variant=CampaignDeployment.find(s,Vector2(at[0],at[1]),side,d)
+				if repaired==null:
+					s.scenario_data["deployment_error"]="No legal starting position for "+str(entry["type"])+". Reduce the deployed roster."
+				else:
+					at=[repaired.x,repaired.y]
 			var def := figures.get_def(entry["type"])
 			if entry.has("stat_bonus"):
 				def = def.with_bonuses(entry["stat_bonus"])
 			if entry.get("permanent_summon", false):
 				def = def.with_bonuses({})
 				def.role = "soldier"
-				def.specialist = def.id == "large_construct"
+				def.specialist = bool(entry.get("specialist",def.id in ["large_construct","foulhorn"]))
 			if CasterLoadout.is_caster(def.role) and entry.has("weapons"):
 				def = CasterLoadout.definition(def, entry["weapons"], figures)
 			var unit := Figure.new(next_id, def, side, Vector2(at[0], at[1]), figures.unarmed())
 			if entry.get("prepared_zombie", false) or entry.get("prepared_illusion", false):
 				unit.summon_spell = "raise_zombie" if entry.get("prepared_zombie", false) else "illusionary_soldier"
 				for caster in s.figures:
-					if caster.side == side and caster.def.role in ["wizard", "apprentice"]:
+					if caster.side == side and caster.def.role in ["wizard", "apprentice"] and (int(entry.get("prepared_zombie_caster",entry.get("prepared_illusion_caster",-1)))<0 or caster.campaign_id==int(entry.get("prepared_zombie_caster",entry.get("prepared_illusion_caster",-1)))):
 						unit.summoned_by = caster.id
 						break
+				if entry.get("prepared_zombie_strong",false):
+					unit.used_gear["rk_skull_strong"]=true
 			if entry.has("prepared_demon"):
 				var demon: Dictionary = entry["prepared_demon"]
 				for caster in s.figures:
@@ -74,6 +104,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 						unit.summon_spell = "summon_demon"
 						unit.control_roll = int(demon["control_roll"])
 						break
+			if RedKingFire.active(s):
+				unit.spell_effects["invisibility"]=true
 			unit.campaign_base = str(entry.get("campaign_base", ""))
 			unit.familiar = entry.get("familiar", false)
 			if entry.get("awareness", false):
@@ -90,11 +122,41 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		var at: Array = entry["at"]
 		var creature := Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed())
 		creature.elevation = s.board.height_at(creature.pos)
+		creature.ring_side=int(entry.get("ring_side",0))
 		s.figures.append(creature)
 		next_id += 1
 	for at: Array in d.get("treasures", []):
 		var token := TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1]))
 		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
-		token.frozen = (s.scenario_special == "underground_library" and token.central) or s.scenario_special == "complex_temple"
+		token.frozen = (s.scenario_special == "underground_library" and token.central) or s.scenario_special == "complex_temple" or (RedKingFire.active(s) and token.central)
 		s.treasures.append(token)
+	for at: Array in d.get("investigation_stands",[]):
+		var stand := TreasureToken.new(s.treasures.size(),Vector2(at[0],at[1]))
+		stand.central=false
+		stand.investigation=true
+		s.treasures.append(stand)
+	if RedKingRingworld.active(s):
+		RedKingRingworld.setup(s)
+	if RedKingTethers.active(s):
+		RedKingTethers.setup(s)
+	if RedKingHerded.active(s):
+		s.board.darkness=true
+		RedKingHerded.setup(s)
+	if RedKingMadMan.active(s):
+		# Keep a reserved hidden objective ID so UI and checkpoint token maps
+		# remain stable when Ryce becomes unconscious.
+		var rescue := TreasureToken.new(s.treasures.size(),s.board.size*0.5)
+		rescue.central=false
+		rescue.lost=true
+		s.treasures.append(rescue)
+		s.scenario_data["ryce_token"]=rescue.id
+		s.scenario_data["crack_clock"]=1
+		s.scenario_data["hunters_deployed"]=false
+		for npc in s.figures:
+			if RedKingMadMan.is_ryce(npc):
+				s.scenario_data["ryce_id"]=npc.id
+				break
+		for side in warbands.size():
+			if warbands[side].get("red_king_artefact_recovered",false):
+				s.scenario_data["reduced_hunters_%d"%side]=true
 	return s

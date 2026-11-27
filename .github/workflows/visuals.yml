@@ -41,6 +41,9 @@ jobs:
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1600x1000 -s tools/miniature_gallery.gd -- previews/soldiers.png soldiers 2>&1 | tee soldiers.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1600x1000 -s tools/miniature_gallery.gd -- previews/beasts.png beasts 2>&1 | tee beasts.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1920x1200 -s tools/miniature_gallery.gd -- previews/supernatural.png supernatural 2>&1 | tee supernatural.log
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1920x1200 -s tools/miniature_gallery.gd -- previews/red-king-bestiary.png red_king 2>&1 | tee red-king-gallery.log
+          test -s previews/red-king-bestiary.png
+          if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree' red-king-gallery.log; then exit 1; fi
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/frozen-ruins.png 0 treasure_skirmish 2>&1 | tee ruins.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/complex-temple.png 0 complex_temple 2>&1 | tee temple.log
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- previews/library.png 0 underground_library 2>&1 | tee library.log
@@ -55,6 +58,22 @@ jobs:
           grep -F 'scenario=dreams_well board=dreams_well' well.log
           grep -F 'scenario=the_keep board=the_keep' keep.log
           for file in tower-upper tower-cutaway gatehouse-upper gatehouse-cutaway sunken-streets roster headquarters title miniatures bestiary schools apprentices soldiers beasts supernatural frozen-ruins complex-temple library well keep; do test -s "previews/$file.png"; done
+      - name: Capture Red King encounter art
+        run: |
+          set -euo pipefail
+          for scenario in red_king_back_into_fire red_king_sinkhole red_king_mind red_king_ringworld; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- "previews/$scenario.png" 0 "$scenario" 2>&1 | tee "$scenario.log"
+            test -s "previews/$scenario.png"
+            if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed' "$scenario.log"; then exit 1; fi
+          done
+      - name: Capture Reality Crack hazards
+        run: |
+          set -euo pipefail
+          for effect in 13 16; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- "previews/reality-crack-$effect.png" 0 red_king_squatter "$effect" 2>&1 | tee "reality-crack-$effect.log"
+            test -s "previews/reality-crack-$effect.png"
+            if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed' "reality-crack-$effect.log"; then exit 1; fi
+          done
       - name: Capture scenario environment refinements
         run: |
           set -o pipefail

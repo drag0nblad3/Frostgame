@@ -4,6 +4,13 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+  pull_request:
+    paths:
+      - 'src/**'
+      - 'data/**'
+      - 'project.godot'
+      - 'export_presets.cfg'
+      - '.github/workflows/android.yml'
 
 permissions:
   contents: read
@@ -59,6 +66,7 @@ jobs:
         env:
           DEBUG_KEYSTORE_B64: ${{ secrets.FROSTGAME_DEBUG_KEYSTORE_B64 }}
           DEBUG_KEYSTORE_PASSWORD: ${{ secrets.FROSTGAME_DEBUG_KEYSTORE_PASSWORD }}
+          DEBUG_KEYSTORE_ALIAS: ${{ secrets.FROSTGAME_DEBUG_KEYSTORE_ALIAS }}
         run: |
           set -euo pipefail
           mkdir -p "$HOME/.config/godot"
@@ -71,15 +79,22 @@ jobs:
           EOF
           key="$RUNNER_TEMP/frostgame-debug.keystore"
           password="${DEBUG_KEYSTORE_PASSWORD:-android}"
+          alias="${DEBUG_KEYSTORE_ALIAS:-androiddebugkey}"
           if [ -n "$DEBUG_KEYSTORE_B64" ]; then
             printf '%s' "$DEBUG_KEYSTORE_B64" | base64 --decode > "$key"
           else
             keytool -genkeypair -keystore "$key" -storepass android -keypass android -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -dname 'CN=Android Debug,O=Android,C=US'
             password=android
+            alias=androiddebugkey
+            echo "::warning::No persistent debug keystore configured; this build may not upgrade an existing installation."
+          fi
+          if ! keytool -list -keystore "$key" -storepass "$password" -alias "$alias" >/dev/null 2>&1; then
+            echo "::error::Debug signing configuration does not match the supplied keystore. Check FROSTGAME_DEBUG_KEYSTORE_PASSWORD and optional FROSTGAME_DEBUG_KEYSTORE_ALIAS; keep the original signing key to preserve upgrades."
+            exit 1
           fi
           {
             echo "GODOT_ANDROID_KEYSTORE_DEBUG_PATH=$key"
-            echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=androiddebugkey"
+            echo "GODOT_ANDROID_KEYSTORE_DEBUG_USER=$alias"
             echo "GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD=$password"
           } >> "$GITHUB_ENV"
       - name: Import project
@@ -102,6 +117,7 @@ jobs:
           grep -F "assets/data/" "$RUNNER_TEMP/apk-files.txt"
           grep -Fxq 'assets/data/figures.json' "$RUNNER_TEMP/apk-files.txt"
           grep -Fxq 'assets/data/scenarios/underground_library.json' "$RUNNER_TEMP/apk-files.txt"
+          grep -Fxq 'assets/data/scenarios/red_king_ringworld.json' "$RUNNER_TEMP/apk-files.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: Frostgame-Android

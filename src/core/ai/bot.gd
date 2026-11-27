@@ -27,7 +27,16 @@ static func resume_activation(c: GameController) -> bool:
 			return true
 	if f.side >= 0:
 		_use_healing(c, f)
-	if FuryRules.target(c.state, f) != null:
+		if c.awaiting_reaction():
+			return true
+		if RedKingBot.prepare(c,f):
+			if c.awaiting_reaction() or c.state.active()!=f:
+				return true
+	if RedKingRingworld.active(c.state) and f.side>=0 and RingworldBot.play(c,f):
+		pass
+	elif RedKingMind.is_wizard(c.state,f):
+		RedKingBot.mind(c,f)
+	elif FuryRules.target(c.state, f) != null:
 		FuryRules.play(c, f)
 	elif f.side < 0:
 		CreatureBot.play(c, f)
@@ -77,7 +86,7 @@ static func _fight_if_engaged(c: GameController, f: Figure) -> bool:
 	var t := BotTargets.weakest_contact(c.state, f)
 	if t == null:
 		return false
-	if c.can_act():
+	if c.can_act() and c.state.push_winner<0:
 		c.fight(t.id)
 	return true
 
@@ -107,8 +116,10 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 		if not c.reload() or not c.can_act():
 			return
 	var t := BotTargets.best_shot(c.state, f)
+	if RedKingBot.special_shot(c,f,t):
+		return
 	if t != null:
-		c.shoot(t.id)
+		c.shoot(t.id,false,c.can_shoot(t.id,false,true))
 		return
 	if not c.can_move():
 		return
@@ -117,7 +128,7 @@ static func _play_shooter(c: GameController, f: Figure) -> void:
 	if not spot.is_empty():
 		c.move_to(spot["node"])
 		if c.can_shoot(spot["target"].id):
-			c.shoot(spot["target"].id)
+			c.shoot(spot["target"].id,false,c.can_shoot(spot["target"].id,false,true))
 		return
 	_advance(c, f, r)
 

@@ -5,7 +5,7 @@ extends RefCounted
 
 ## Can a mundane/magical attack actually damage this target?
 static func can_harm(f: Figure, t: Figure, weapon: WeaponDef) -> bool:
-	if weapon == null:
+	if weapon == null or (RedKingTethers.pylon(t) and weapon.is_ranged() and not WeaponActions.magic_attack(f,weapon) and MagicAmmo.count(f)==0) or (RedKingMadMan.is_ryce(t) and (RedKingMadMan.hunter(f) or weapon.is_ranged())):
 		return false
 	if t.def.traits.has("immune_normal") or t.spell_effects.has("potion_invulnerability"):
 		return not ScenarioNull.muted(t) and WeaponActions.magic_attack(f, weapon)
@@ -16,6 +16,10 @@ static func can_harm(f: Figure, t: Figure, weapon: WeaponDef) -> bool:
 static func weakest_contact(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	for e in Contact.enemies_of(s.figures, f):
+		if RingworldBot.protected_key(s,f,e):
+			continue
+		if RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(e):
+			continue
 		var score := float(e.health) / MagicTactics.importance(e) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
 		var previous := INF if best == null else float(best.health) / MagicTactics.importance(best) + (0.0 if can_harm(f, best, f.melee) else 1000.0)
 		if score < previous:
@@ -41,7 +45,7 @@ static func best_shot(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	var best_v := 0.0
 	for t in s.figures:
-		if t.side == f.side or Contact.in_combat(s.figures, t) or Shooting.blocked_reason(s.board, s.figures, f, t) != "":
+		if t.side == f.side or RingworldBot.protected_key(s,f,t) or Contact.in_combat(s.figures, t) or Shooting.blocked_reason(s.board, s.figures, f, t) != "":
 			continue
 		var v := shot_value(s, f, f.pos, t)
 		if v > best_v:
@@ -59,7 +63,7 @@ static func shooting_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 		if _touches_enemy(s, f, at):
 			continue
 		for t in s.figures:
-			if t.side == f.side or not t.in_play():
+			if t.side == f.side or not t.in_play() or RingworldBot.protected_key(s,f,t):
 				continue
 			if not Shooting.possible_from(s.board, s.figures, f, at, t):
 				continue
@@ -77,9 +81,11 @@ static func charge_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 	for n: Vector2i in r.nodes():
 		var at := MoveGrid.to_pos(n)
 		for t in s.figures:
-			if t.side == f.side or not t.in_play() or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos) or absf(s.board.height_at(at) - t.elevation) >= 0.5:
+			if t.side == f.side or not t.in_play() or RingworldBot.protected_key(s,f,t) or t.ring_side!=f.ring_side or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos) or absf(s.board.height_at(at) - t.elevation) >= 0.5:
 				continue
 			var score: float = t.health * 10.0 + r.cost[n] + (0.0 if can_harm(f, t, f.melee) else 1000.0)
+			if RedKingTethers.pylon(t) or RedKingRingworld.key_master(t) or RedKingMadMan.is_ryce(t):
+				score-=50.0
 			if score < best_score:
 				best_score = score
 				best = {"node": n, "target": t}
@@ -88,7 +94,7 @@ static func charge_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 
 static func _touches_enemy(s: GameState, f: Figure, at: Vector2) -> bool:
 	for t in s.figures:
-		if t.side != f.side and t.in_play() and absf(s.board.height_at(at) - t.elevation) < 0.5 and Contact.touching(at, t.pos):
+		if t.side != f.side and t.in_play() and t.ring_side==f.ring_side and absf(s.board.height_at(at) - t.elevation) < 0.5 and Contact.touching(at, t.pos):
 			return true
 	return false
 
@@ -96,7 +102,7 @@ static func _touches_enemy(s: GameState, f: Figure, at: Vector2) -> bool:
 static func nearest_enemy(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	for t in s.figures:
-		if t.side != f.side and t.in_play() and IllusionRules.visible_to(s.figures, f, t):
+		if t.side != f.side and t.in_play() and t.ring_side==f.ring_side and IllusionRules.visible_to(s.figures, f, t):
 			if best == null or f.pos.distance_to(t.pos) < f.pos.distance_to(best.pos):
 				best = t
 	return best

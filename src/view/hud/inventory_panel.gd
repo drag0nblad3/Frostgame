@@ -7,14 +7,31 @@ var loot: OptionButton
 var recipient_choice: OptionButton
 var shop: OptionButton
 var summary: Label
+var item_detail: Label
+var shop_detail: Label
+var buy_button: Button
 var changed: Callable
 var campaign_dice := Dice.new(0)
 var campaign_uses: OptionButton
 var use_button: Button
 var assign_button: Button
 var sell_button: Button
+var discard_button: Button
+var _discard_confirm: ConfirmationDialog
+var study_button: Button
+var _study_result: String=""
 var caster_equipment: OptionButton
 var caster_equipment_button: Button
+var mantle_animal: OptionButton
+var bind_mantle: Button
+var book_spell: OptionButton
+var bind_book: Button
+var split_fang: Button
+var mask_start: Button
+var ivory_staff: OptionButton
+var ivory_graft: Button
+var staff_potion: OptionButton
+var charge_staff: Button
 
 
 func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
@@ -26,14 +43,37 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 	add_child(summary)
 	loot = OptionButton.new()
 	add_child(loot)
+	item_detail=Label.new()
+	item_detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	add_child(item_detail)
+	study_button=_button("Study selected artefact",func() -> void:
+		if loot.selected<0:
+			return
+		var index := int(loot.get_selected_metadata())
+		if RedKingRewards.study(campaign.data,index,db,campaign_dice):
+			_study_result=str(campaign.data["last_report"].back())
+			changed.call())
+	study_button.hide()
 	recipient_choice = OptionButton.new()
 	add_child(recipient_choice)
+	recipient_choice.item_selected.connect(func(_index: int) -> void: _refresh_assignment())
 	assign_button = _button("Assign selected item", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.assign_item(campaign.data, int(loot.get_selected_metadata()), int(recipient_choice.get_selected_metadata()), db):
 			changed.call())
 	sell_button = _button("Sell selected unassigned item / known grimoire", func() -> void:
 		if loot.item_count > 0 and CampaignInventory.sell(campaign.data, int(loot.get_selected_metadata())):
 			changed.call())
+	_discard_confirm=ConfirmationDialog.new()
+	_discard_confirm.title="Discard this item?"
+	_discard_confirm.get_ok_button().text="Discard permanently"
+	add_child(_discard_confirm)
+	_discard_confirm.confirmed.connect(func() -> void:
+		if loot.selected>=0 and RaggedWarbands.discard(campaign.data,int(loot.get_selected_metadata())):
+			changed.call())
+	discard_button = _button("Discard selected item…",func() -> void:
+		if loot.selected>=0:
+			_discard_confirm.dialog_text="Permanently discard "+str(CampaignInventory.catalog()[CampaignInventory.item_id(campaign.data["loot"][int(loot.get_selected_metadata())])]["name"])+"?"
+			PhoneSafeArea.popup_dialog(_discard_confirm))
 	campaign_uses = OptionButton.new()
 	add_child(campaign_uses)
 	use_button = Button.new()
@@ -45,7 +85,46 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if CampaignPotions.use(campaign.data, option["item"], option["unit"], db, campaign_dice):
 			changed.call())
 	add_child(use_button)
-	loot.item_selected.connect(func(_index: int) -> void: _refresh_item_buttons())
+	mantle_animal=OptionButton.new()
+	for animal: String in CompanionMantle.ANIMALS:
+		mantle_animal.add_item(animal.replace("_"," ").capitalize())
+		mantle_animal.set_item_metadata(mantle_animal.item_count-1,animal)
+	add_child(mantle_animal)
+	bind_mantle=_button("Permanently choose mantle animal",func() -> void:
+		if loot.item_count>0 and CompanionMantle.bind(campaign.data,int(loot.get_selected_metadata()),str(mantle_animal.get_selected_metadata())):
+			changed.call())
+	mantle_animal.hide()
+	bind_mantle.hide()
+	book_spell=OptionButton.new()
+	add_child(book_spell)
+	bind_book=_button("Permanently bind selected item to spell",func() -> void:
+		if loot.item_count>0 and book_spell.item_count>0 and CampaignInventory.bind_incunabula(campaign.data,int(loot.get_selected_metadata()),str(book_spell.get_selected_metadata())):
+			changed.call())
+	split_fang=_button("Split off one golden fang",func() -> void:
+		if loot.item_count>0 and RedKingMaterials.split_fang(campaign.data,int(loot.get_selected_metadata())):
+			changed.call())
+	split_fang.hide()
+	mask_start=_button("Toggle starting mask state",func() -> void:
+		if loot.item_count>0 and CampaignInventory.toggle_mask_start(campaign.data,int(loot.get_selected_metadata())):
+			changed.call())
+	mask_start.hide()
+	ivory_staff=OptionButton.new()
+	ivory_staff.hide()
+	add_child(ivory_staff)
+	ivory_graft=_button("Graft Ivory Hand onto staff (500 gc)",func() -> void:
+		if loot.item_count>0 and ivory_staff.item_count>0 and CampaignInventory.graft_ivory(campaign.data,int(loot.get_selected_metadata()),int(ivory_staff.get_selected_metadata())):
+			changed.call())
+	ivory_graft.hide()
+	staff_potion=OptionButton.new()
+	staff_potion.hide()
+	add_child(staff_potion)
+	charge_staff=_button("Sacrifice potion to staff",func() -> void:
+		if loot.item_count>0 and staff_potion.item_count>0 and RedKingCampaignGear.charge_staff(campaign.data,int(loot.get_selected_metadata()),int(staff_potion.get_selected_metadata())):
+			changed.call())
+	charge_staff.hide()
+	loot.item_selected.connect(func(_index: int) -> void:
+		_study_result=""
+		_refresh_item_buttons())
 	caster_equipment = OptionButton.new()
 	add_child(caster_equipment)
 	caster_equipment_button = _button("Set spellcaster weapons", func() -> void:
@@ -56,14 +135,24 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 			changed.call())
 	shop = OptionButton.new()
 	add_child(shop)
-	_button("Buy item", func() -> void:
+	shop_detail=Label.new()
+	shop_detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	add_child(shop_detail)
+	shop.item_selected.connect(func(_index: int) -> void: _refresh_shop())
+	buy_button=_button("Buy item", func() -> void:
 		if shop.item_count > 0 and CampaignInventory.buy(campaign.data, str(shop.get_selected_metadata()), campaign_dice):
 			changed.call())
 
 
 func refresh() -> void:
 	var d := campaign.data
+	var previous := int(loot.get_selected_metadata()) if loot.selected>=0 else -1
 	loot.clear()
+	mantle_animal.hide()
+	bind_mantle.hide()
+	book_spell.clear()
+	book_spell.hide()
+	bind_book.hide()
 	recipient_choice.clear()
 	shop.clear()
 	caster_equipment.clear()
@@ -72,6 +161,9 @@ func refresh() -> void:
 	use_button.disabled = true
 	if d.is_empty():
 		return
+	var ragged := RaggedWarbands.active(d)
+	discard_button.visible=ragged
+	summary.text="Carried items · Assign or discard new loot before battle" if ragged else "Equipment and potion vault"
 	var catalog := CampaignInventory.catalog()
 	for i in d["loot"].size():
 		var item: Dictionary = d["loot"][i]
@@ -82,24 +174,51 @@ func refresh() -> void:
 		var info: Dictionary = catalog[CampaignInventory.item_id(item)]
 		var assigned := int(item.get("owner", -1))
 		var suffix := "Vault" if assigned < 0 else "%s #%d" % [d["units"][assigned]["type"], assigned + 1]
+		if ragged and item.get("ragged_sealed",false):
+			suffix="Inaccessible vault"
+		elif ragged and RaggedWarbands.absent_owner(d,item):
+			suffix+=" (separated)"
+		elif ragged and assigned<0 and CampaignInventory.is_item(item):
+			suffix="Assign or discard"
+		if info.get("artefact",false):
+			suffix+=" · "+("Unlocked" if item.get("unlocked",false) else "Locked TN%d"%info["unlock_tn"])
 		if item["kind"] == "grimoire":
 			suffix = "Known spell; may sell" if d["spells"].has(item["spell"]) else "Unlearned; may learn in campaign"
+		if CampaignInventory.item_id(item)==CompanionMantle.ITEM:
+			suffix+=" · "+str(item.get("mantle_animal","Choose animal")).replace("_"," ").capitalize()
+		if CampaignInventory.item_id(item) in ["gear_rk_golden_incunabula",CircletDefence.ITEM]:
+			suffix+=" · "+str(item.get("casting_spell","Choose spell")).replace("_"," ").capitalize()
 		if CampaignInventory.item_id(item) == "gear_staff_casting":
 			suffix += " · " + str(item.get("casting_spell", "unknown")).replace("_", " ").capitalize()
 		if CampaignInventory.item_id(item) == PowerPool.ORB:
 			suffix += " · %d power" % PowerPool.remaining(item)
+		if RedKingMaterials.is_supply(CampaignInventory.item_id(item)):
+			suffix+=" · %d uses" % RedKingMaterials.amount(item)
+		if item.get("gear","")==DeathMask.ITEM:
+			suffix+=" · Starts "+("worn" if item.get("mask_start_worn",false) else "unworn")
+		if item.get("enchanted",false):
+			suffix+=" · Enchanted"
+		if item.get("ivory_graft",false):
+			suffix+=" · Ivory Hand graft"
+		if item.has("stored_potion"):
+			suffix+=" · "+str(item["stored_potion"]).capitalize()
+		if int(item.get("bottle_doses",0))>0:
+			suffix+=" · %s (%d doses)"%[str(item["bottle_potion"]).capitalize(),int(item["bottle_doses"])]
 		loot.add_item("%s · %s%s" % [info["name"], suffix, "" if info["live"] else " · effect pending"])
 		loot.set_item_metadata(loot.item_count - 1, i)
+		if i==previous:
+			loot.select(loot.item_count-1)
 		for unit_id in CampaignPotions.choices(d, i, db):
 			var unit: Dictionary = d["units"][unit_id]
 			campaign_uses.add_item("%s → %s #%d" % [info["name"], str(unit["type"]).capitalize(), unit_id + 1])
 			campaign_uses.set_item_metadata(campaign_uses.item_count - 1, {"item": i, "unit": unit_id})
 	use_button.disabled = campaign_uses.item_count == 0
-	recipient_choice.add_item("Vault")
-	recipient_choice.set_item_metadata(0, -1)
+	if not ragged:
+		recipient_choice.add_item("Vault")
+		recipient_choice.set_item_metadata(0, -1)
 	for unit: Dictionary in d["units"]:
 		var capacity := CampaignInventory.slots(unit, db)
-		if unit["dead"] or unit.get("dismissed", false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"]):
+		if unit["dead"] or unit.get("dismissed", false) or unit.get("ragged_absent",false) or (capacity == 0 and unit["type"] not in ["medium_construct", "large_construct"] and not (db.content_profile.enabled.has("red_king") and (db.get_def(unit["type"]).traits.has("animal") or db.get_def(unit["type"]).traits.has("construct")))):
 			continue
 		var items := CampaignInventory.loadout(d, int(unit["id"]))
 		var used := items.size()
@@ -113,30 +232,80 @@ func refresh() -> void:
 				caster_equipment.add_item("%s #%d · %s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, preset])
 				caster_equipment.set_item_metadata(caster_equipment.item_count - 1, {"owner": int(unit["id"]), "preset": preset})
 		if capacity == 0:
-			recipient_choice.add_item("%s #%d · Hammer graft only" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1])
+			var special := "Special equipment only" if db.content_profile.enabled.has("red_king") else "Hammer graft only"
+			recipient_choice.add_item("%s #%d · %s" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1,special])
 		else:
 			recipient_choice.add_item("%s #%d · %d/%d slots" % [str(unit["type"]).capitalize(), int(unit["id"]) + 1, used, capacity])
 		recipient_choice.set_item_metadata(recipient_choice.item_count - 1, int(unit["id"]))
 	for id: String in catalog:
 		var info: Dictionary = catalog[id]
-		if not info["live"] or int(info["buy"]) <= 0:
+		if RedKingCampaign.economy_locked(d) or not info["live"] or int(info["buy"]) <= 0 or not ContentProfile.from_campaign(d).item_allowed(id):
 			continue
-		shop.add_item("%s · %d gc" % [info["name"], info["buy"]])
+		shop.add_item("%s · %d gc%s" % [info["name"],info["buy"]," per use" if info.get("material",false) else ""])
 		shop.set_item_metadata(shop.item_count - 1, id)
 		shop.set_item_disabled(shop.item_count - 1, int(d["gold"]) < int(info["buy"]))
 
 
 	caster_equipment_button.disabled = caster_equipment.item_count == 0
 	_refresh_item_buttons()
+	_refresh_shop()
 
 
 func _refresh_item_buttons() -> void:
-	assign_button.disabled = loot.item_count == 0
+	mantle_animal.hide()
+	bind_mantle.hide()
+	mask_start.hide()
+	staff_potion.clear()
+	staff_potion.hide()
+	charge_staff.hide()
+	ivory_staff.clear()
+	ivory_staff.hide()
+	ivory_graft.hide()
+	split_fang.hide()
+	book_spell.hide()
+	bind_book.hide()
+	book_spell.clear()
+	study_button.hide()
+	assign_button.disabled = loot.item_count == 0 or recipient_choice.item_count==0
 	sell_button.disabled = loot.item_count == 0
+	discard_button.disabled=true
 	if loot.item_count == 0:
+		item_detail.text="No equipment or grimoires yet."
 		return
-	var item: Dictionary = campaign.data["loot"][int(loot.get_selected_metadata())]
-	assign_button.disabled = not CampaignInventory.is_item(item)
+	var index := int(loot.get_selected_metadata())
+	var item: Dictionary = campaign.data["loot"][index]
+	if item.get("gear","")==CompanionMantle.ITEM and str(item.get("mantle_animal","")).is_empty() and not item.get("ragged_sealed",false):
+		mantle_animal.show()
+		bind_mantle.show()
+	if item.get("gear","")==DeathMask.ITEM and item.get("unlocked",false) and not item.get("ragged_sealed",false):
+		mask_start.text="Start with mask %s (toggle)" % ("on" if item.get("mask_start_worn",false) else "off")
+		mask_start.show()
+	for potion_index in RedKingCampaignGear.staff_potions(campaign.data,index):
+		var potion: Dictionary=campaign.data["loot"][potion_index]
+		staff_potion.add_item(str(CampaignInventory.catalog()[potion["potion"]]["name"]))
+		staff_potion.set_item_metadata(staff_potion.item_count-1,potion_index)
+	if staff_potion.item_count>0:
+		staff_potion.show()
+		charge_staff.show()
+	for staff_index in CampaignInventory.ivory_staff_choices(campaign.data,index):
+		var staff: Dictionary=campaign.data["loot"][staff_index]
+		ivory_staff.add_item(str(CampaignInventory.catalog()[staff["gear"]]["name"]))
+		ivory_staff.set_item_metadata(ivory_staff.item_count-1,staff_index)
+	if ivory_staff.item_count>0:
+		ivory_staff.show()
+		ivory_graft.show()
+	if item.get("gear","")==RedKingMaterials.FANGS and RedKingMaterials.amount(item)>1 and not RaggedWarbands.active(campaign.data) and not item.get("ragged_sealed",false):
+		split_fang.show()
+	if item.get("gear","") in ["gear_rk_golden_incunabula",CircletDefence.ITEM] and str(item.get("casting_spell","")).is_empty() and not item.get("ragged_sealed",false):
+		var spells: Dictionary = JsonFile.read("res://data/spells.json")
+		for id: String in spells:
+			if db.content_profile.allows("spells",id) and (item.get("gear","")!=CircletDefence.ITEM or CircletDefence.SPELLS.has(id)):
+				book_spell.add_item(str(spells[id]["name"]))
+				book_spell.set_item_metadata(book_spell.item_count-1,id)
+		book_spell.show()
+		bind_book.show()
+	_refresh_assignment()
+	discard_button.disabled=not RaggedWarbands.active(campaign.data) or not CampaignInventory.is_item(item) or item.get("ragged_sealed",false) or RaggedWarbands.absent_owner(campaign.data,item) or (item.get("gear","")=="gear_rk_construct_spikes" and int(item.get("owner",-1))>=0)
 	sell_button.disabled = not CampaignInventory.can_sell(campaign.data, item)
 
 
@@ -147,3 +316,53 @@ func _button(label: String, action: Callable) -> Button:
 	add_child(b)
 
 	return b
+
+
+## Check assignments against a copy: use the real rules, including conflicting
+## gear, slots, locked artefacts and permanent grafts, without mutating the save.
+func _refresh_assignment() -> void:
+	assign_button.disabled=true
+	if loot.selected<0:
+		return
+	var index := int(loot.get_selected_metadata())
+	var d := campaign.data
+	var item: Dictionary=d["loot"][index]
+	var info: Dictionary=CampaignInventory.catalog().get(CampaignInventory.item_id(item),{})
+	study_button.visible=RedKingRewards.can_study(d,item)
+	if study_button.visible:
+		study_button.text="Study artefact · Will TN%d"%int(info.get("unlock_tn",0))
+	var legal: Array[int]=[]
+	for i in recipient_choice.item_count:
+		var owner := int(recipient_choice.get_item_metadata(i))
+		var allowed := CampaignInventory.assign_item(d.duplicate(true),index,owner,db) and owner!=int(item.get("owner",-1))
+		recipient_choice.set_item_disabled(i,not allowed)
+		if allowed:
+			legal.append(i)
+	if not legal.is_empty() and not legal.has(recipient_choice.selected):
+		recipient_choice.select(legal[0])
+	assign_button.disabled=not legal.has(recipient_choice.selected)
+	var detail := loot.get_item_text(loot.selected)+"\n"+str(info.get("help",info.get("description","")))
+	if item.get("ragged_sealed",false):
+		detail+="\nSealed until the invasion ends."
+	elif RaggedWarbands.absent_owner(d,item):
+		detail+="\nThe separated member retains this item."
+	elif info.get("artefact",false) and not item.get("unlocked",false):
+		detail+="\nStudy to unlock before equipping."
+	elif legal.is_empty() and CampaignInventory.is_item(item):
+		detail+="\nNo eligible new recipient. Check slots, item restrictions and equipped gear."
+	if not _study_result.is_empty():
+		detail+="\n"+_study_result
+	item_detail.text=detail.strip_edges()
+
+
+func _refresh_shop() -> void:
+	var available := not RedKingCampaign.economy_locked(campaign.data) and shop.item_count>0
+	shop.visible=available
+	shop_detail.visible=available
+	buy_button.visible=available
+	buy_button.disabled=not available or shop.selected<0
+	if available and shop.selected>=0:
+		buy_button.disabled=shop.is_item_disabled(shop.selected)
+		var info: Dictionary=CampaignInventory.catalog().get(str(shop.get_selected_metadata()),{})
+		shop_detail.text=str(info.get("help",info.get("description","")))
+		shop_detail.visible=not shop_detail.text.is_empty()

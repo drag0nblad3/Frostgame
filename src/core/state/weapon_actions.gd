@@ -9,7 +9,7 @@ func _init(controller: GameController) -> void:
 
 
 static func magical(t: Figure, w: WeaponDef) -> bool:
-	if ScenarioNull.muted(t):
+	if MagicEquipment.suppressed(t):
 		return false
 	if not w.is_ranged() and t.spell_effects.get("potion_fairy_dust", "") == w.id:
 		return true

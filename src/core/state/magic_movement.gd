@@ -10,10 +10,10 @@ func _init(controller: GameController) -> void:
 
 func landing(t: Figure, at: Vector2, allow_combat: bool = false) -> bool:
 	var b := c.state.board
-	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at):
+	if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or BattleBoundary.blocks_position(b.boundaries,at,t) or BattleBoundary.blocks_end(b.boundaries,at):
 		return false
 	for other in c.state.figures:
-		if other == t or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
+		if other == t or other.ring_side!=t.ring_side or not other.in_play() or absf(other.elevation - b.height_at(at)) >= 0.5:
 			continue
 		var dist := other.pos.distance_to(at)
 		if dist < Contact.OVERLAP or (not allow_combat and other.side != t.side and dist <= Contact.CONTACT):
@@ -26,8 +26,12 @@ func can_land(f: Figure, t: Figure, id: String, at: Vector2) -> bool:
 	if not landing(t, at) or at.distance_to(t.pos) < 0.1:
 		return false
 	if id == "teleport":
-		return f == t and f.pos.distance_to(at) <= 24.0 and LineOfSight.check(b, f.pos, at).clear
+		return f == t and RealityCrackGeometry.sight_distance(b,f.pos,at)<=24.0 and LineOfSight.check(b,f.pos,at,f).clear
 	if id != "leap" or t.side != f.side:
+		return false
+	if RedKingBridge.crosses_void(b,t.pos,at) or BattleBoundary.blocks_segment(b.boundaries,t.pos,at,"movement",t):
+		return false
+	if RedKingSinkhole.active(c.state) and Geometry2D.get_closest_point_to_segment(RedKingSinkhole.center(c.state),t.pos,at).distance_to(RedKingSinkhole.center(c.state))<RedKingSinkhole.RADIUS+Figure.BASE_RADIUS-0.001:
 		return false
 	var delta := Vector2(t.pos.distance_to(at), b.height_at(at) - t.elevation)
 	var limit := 5.0 if t.treasure_id >= 0 else 10.0
@@ -61,11 +65,18 @@ func points(f: Figure, t: Figure, id: String, first_only: bool = false) -> Array
 
 
 func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, sites: bool = true) -> void:
+	if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
+		return
+	# A teleport has no intervening path; test its landing.
+	RedKingFire.portal_contact(c,t,at,at,{})
+	if not t.in_play():
+		return
 	t.spell_effects.erase("bones_of_the_earth")
 	var old := t.pos
 	var height := t.elevation
 	t.pos = at
 	t.elevation = c.state.board.height_at(at)
+	RedKingMind.collect(c,t,at,at)
 	if exhaust:
 		t.magic_exhausted = true
 		t.actions_left = 0
@@ -73,29 +84,50 @@ func move(t: Figure, at: Vector2, exhaust: bool = false, falling: bool = false, 
 	c._magic.terrain.trigger_landing(t)
 	c._magic.illusions.after_move(t)
 	if falling:
-		var dmg := ElevationRules.fall_damage(height - t.elevation)
+		var dmg := ElevationRules.fall_damage(height - t.elevation - (3.0 if c.state.board.low_gravity else 0.0))
 		if dmg > 0 and MagicEquipment.bonus(t, "slow_fall") == 0:
 			c._hurt(t, dmg, t, false)
 	if sites:
 		ScenarioSites.end_move(c, t)
 
 
-func force(t: Figure, direction: Vector2, distance: float) -> void:
+func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=null) -> void:
 	if direction.is_zero_approx():
 		return
 	var b := c.state.board
 	var origin := t.pos
 	var last := origin
 	var highest := t.elevation
+	var portal_hits := {}
+	var collision := false
 	for i in range(1, floori(distance * 4.0) + 1):
 		var at := origin + direction * (i * 0.25)
-		if ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
+		if not BattleBoundary.blocks_segment(b.boundaries,last,at,"movement",t) and RedKingBridge.forced_void(c,t,at,last):
+			return
+		if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
+			return
+		if RedKingSinkhole.touches(c.state,at) and not RedKingSinkhole.touches(c.state,last):
+			if landing(t,at,true):
+				move(t,at,false,true)
+			else:
+				RedKingSinkhole.contact(c,t,true)
+			return
+		if BattleBoundary.blocks_segment(b.boundaries,origin,at,"movement",t) or ScenarioNull.field_at(b, at) or not b.can_stand(at, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(b, t, at) or b.height_at(at) > highest + 0.5:
+			collision=not b.can_stand(at,Figure.BASE_RADIUS) or b.height_at(at)>highest+0.5
+			if not b.can_stand(at,Figure.BASE_RADIUS):
+				RedKingFire.portal_contact(c,t,last,at,portal_hits)
 			break
+		RedKingFire.portal_contact(c,t,last,at,portal_hits)
+		if not t.in_play():
+			return
 		# Other figures don't interrupt the trajectory; choose a legal final base.
 		if landing(t, at, true):
 			last = at
 	if last != origin:
-		move(t, last, false, true)
+		move(t,last,false,true)
+	if collision and ivory_caster!=null and t.in_play():
+		c.emit("gear_used",{"id":ivory_caster.id,"target":t.id,"gear":"gear_rk_ivory_hand","damage":3})
+		c._hurt(t,3,ivory_caster,false)
 
 
 func swap(a: Figure, b: Figure) -> void:
@@ -107,27 +139,50 @@ func swap(a: Figure, b: Figure) -> void:
 	ScenarioSites.end_move(c, b)
 
 
+static func ivory_hand(f: Figure) -> bool:
+	if MagicEquipment.suppressed(f):
+		return false
+	for item in f.items:
+		if item.get("gear","")=="gear_rk_ivory_hand" or (item.get("ivory_graft",false) and not f.destroyed_weapons.has("staff")):
+			return true
+	return false
+
+
 func push(f: Figure, t: Figure) -> void:
-	var a := c.dice.d20() + 10
+	var ivory := ivory_hand(f)
+	var a := c.dice.d20() + (11 if ivory else 10)
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
 	if a > d:
-		force(t, (t.pos - f.pos).normalized(), float(maxi(0, a - t.effective_armour())))
+		force(t,(t.pos-f.pos).normalized(),float(maxi(0,a-t.effective_armour())),f if ivory else null)
 
 
-func blink(f: Figure, t: Figure, roll: int) -> void:
-	if t.side != f.side:
-		c._magic.resistance.attempt(t, roll, _blink_result.bind(t))
+func blink(f: Figure,t: Figure,roll: int,extend: bool=false,reroll: bool=false) -> void:
+	var gem := ActiveGear.has(f,PowerPool.GEM) and not MagicEquipment.suppressed(f)
+	if t.side!=f.side:
+		c._magic.resistance.attempt(t,roll,_blink_result.bind(f,t,extend and gem,reroll and gem),0,false,"blink")
 	else:
-		_blink_result(false, t)
+		_blink_result(false,f,t,extend and gem,reroll and gem)
 
 
-func _blink_result(success: bool, t: Figure) -> void:
+func _blink_result(success: bool,f: Figure,t: Figure,extend: bool,reroll: bool) -> void:
 	if not success and t.in_play():
-		force(t, Vector2.RIGHT.rotated(TAU * c.dice.pick(20) / 20.0), 4.0)
+		if RedKingDirection.offer(c,"blink",t,f,extend):
+			return
+		var direction := RedKingDirection.direction(c)
+		if reroll:
+			direction=RedKingDirection.direction(c)
+		finish_blink(f,t,direction,extend,reroll)
+
+
+func finish_blink(f: Figure,t: Figure,direction: Vector2,extend: bool,reroll: bool) -> void:
+	if extend or reroll:
+		f.used_gear["rk_gem_glow"]=int(f.used_gear.get("rk_gem_glow",0))+1
+		c.emit("gear_used",{"id":f.id,"gear":PowerPool.GEM})
+	force(t,direction,6.0 if extend else 4.0)
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:
-	return a != b and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
+	return a != b and a.ring_side==b.ring_side and f.ring_side==b.ring_side and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
 
 
 func transpose(f: Figure, a: Figure, b: Figure, roll: int) -> void:

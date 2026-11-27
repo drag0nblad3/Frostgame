@@ -3,18 +3,38 @@ extends RefCounted
 ## Uncontrolled creatures prioritize combat, the closest visible warband
 ## member and finally random movement. A pack uses its leader's pursuit.
 
-static func weakest(s: GameState, f: Figure) -> Figure:
+static func weakest(s: GameState, f: Figure,avoid_mask: bool=true) -> Figure:
 	var target: Figure = null
+	var alternative: Figure=null
 	for enemy in Contact.enemies_of(s.figures, f):
+		if WormRider.ignored(f,enemy):
+			continue
 		if target == null or enemy.health < target.health or (enemy.health == target.health and enemy.id < target.id):
 			target = enemy
-	return target
+		if not masked(enemy) and (alternative==null or enemy.health<alternative.health or (enemy.health==alternative.health and enemy.id<alternative.id)):
+			alternative=enemy
+	return alternative if avoid_mask and f.side<0 and alternative!=null else target
+
+
+static func masked(f: Figure) -> bool:
+	return ActiveGear.has(f,"gear_rk_creature_mask") and not MagicEquipment.suppressed(f)
+
+
+static func apply_mask_cost(s: GameState,f: Figure,target: Figure) -> void:
+	if f.side>=0:
+		return
+	var original := weakest(s,f,false)
+	if original!=null and original!=target and masked(original) and not masked(target):
+		original.used_gear["rk_mask_will"]=int(original.used_gear.get("rk_mask_will",0))+1
 
 
 static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 	var target: Figure = null
 	for t in c.state.figures:
-		if t.side < 0 or not t.in_play() or not IllusionRules.visible_to(c.state.figures, f, t) or not LineOfSight.check(c.state.board, f.pos, t.pos).clear:
+		if t.ring_side!=f.ring_side or t.side<0 or not t.in_play() or WormRider.ignored(f,t):
+			continue
+		var normal := IllusionRules.visible_to(c.state.figures,f,t) and LineOfSight.check_figures(c.state.board,f,t).clear
+		if not normal and (shot or (not CreatureSenses.detects(f,t) and not RedKingSquatter.scent(c.state,f,t))):
 			continue
 		if shot and not c.can_shoot(t.id):
 			continue
@@ -24,6 +44,15 @@ static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 
 
 static func play(c: GameController, f: Figure) -> void:
+	if RedKingRingworld.creature_turn(c,f):
+		return
+	if RedKingHill.is_herald(c.state,f):
+		RedKingHill.play_herald(c,f)
+		return
+	if RedKingInvestigations.dormant(c.state,f):
+		return
+	if RedKingSquatter.dormant(c,f):
+		return
 	if ScenarioGenie.flee(c, f):
 		return
 	for i in 2:
@@ -39,6 +68,12 @@ static func play(c: GameController, f: Figure) -> void:
 		if target == null:
 			target = closest(c, f)
 		PackRules.remember(c.state, f, target)
+		if f.def.traits.has("elemental_blast") and c.can_act() and not f.spell_effects.has("blinding_light"):
+			var shot := _blast_target(c,f)
+			if shot!=null:
+				c._spend(f)
+				c._magic._shot(f,shot,3,f.pos,true,true,"elemental_blast")
+				continue
 		if f.ranged != null:
 			var shot := closest(c, f, true)
 			if shot != null:
@@ -53,6 +88,10 @@ static func play(c: GameController, f: Figure) -> void:
 		var node: Variant = null
 		if target != null:
 			node = BotTargets.advance_node(c.state, f, r, target)
+		elif RedKingSquatter.active(c.state) and f.def.id=="blood_marked_berserker":
+			var treasure: Variant=RedKingSquatter.treasure_target(c.state,f)
+			if treasure!=null:
+				node=RedKingSquatter.approach_treasure(c.state,f,r,treasure)
 		elif i == 0 and f.moves_taken == 0:
 			var direction := PackRules.heading(c, f)
 			var grid := MoveGrid.new(c.state.board, f, c.state.figures)
@@ -66,3 +105,13 @@ static func play(c: GameController, f: Figure) -> void:
 		if node == null or MoveGrid.to_pos(node).distance_to(f.pos) < 0.01:
 			return
 		c.move_to(node)
+
+
+static func _blast_target(c: GameController,f: Figure) -> Figure:
+	var best: Figure=null
+	for t in c.state.figures:
+		if t.side<0 or not t.in_play() or not IllusionRules.visible_to(c.state.figures,f,t) or Shooting.distance(f,t)>24.0 or not LineOfSight.check_figures(c.state.board,f,t).clear:
+			continue
+		if best==null or Shooting.distance(f,t)<Shooting.distance(f,best):
+			best=t
+	return best

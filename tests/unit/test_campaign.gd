@@ -59,3 +59,19 @@ func test_campaign_recruit_and_advancement() -> void:
 	check(p.choose_base("brewery"))
 	check_eq(p.deployment()["figures"][2]["stat_bonus"]["will"], 1)
 	check_eq(CampaignProgress.random_spell(LoadedDice.new([20, 20])), "destroy_undead")
+
+
+func test_deployment_blockers_and_prepared_caster() -> void:
+	var draft := WarbandDraft.new(db())
+	draft.choose_defaults()
+	var p := CampaignProgress.new()
+	p.start(draft.as_warband())
+	p.data["units"][0]["miss"]=1
+	p.data["prepared_zombie"]=true
+	p.data["prepared_zombie_caster"]=0
+	check(p.can_deploy(),"core permits a resting wizard to miss a normal game")
+	for entry: Dictionary in p.deployment()["figures"]:
+		check(not entry.get("prepared_zombie",false))
+	p.data["pending_treasure"]=[{"token":0}]
+	check(not p.can_deploy())
+	check(not p.deployment_blockers().is_empty())

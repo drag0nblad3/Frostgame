@@ -10,6 +10,8 @@ var message: Label
 var new_name: LineEdit
 var promote_button: Button
 var reset_button: Button
+var replacement_button: Button
+var replacement_confirmation: ConfirmationDialog
 var confirmation: ConfirmationDialog
 
 
@@ -28,6 +30,23 @@ func setup(p: CampaignProgress, callback: Callable, reset: Callable) -> void:
 	add_child(promote_button)
 	promote_button.pressed.connect(func() -> void:
 		if CampaignSuccession.promote(campaign.data, new_name.text):
+			changed.call())
+	replacement_button=Button.new()
+	replacement_button.text="New wizard — continue invasion…"
+	replacement_button.custom_minimum_size.y=44
+	add_child(replacement_button)
+	replacement_confirmation=ConfirmationDialog.new()
+	replacement_confirmation.title="Replace fallen wizard and warband?"
+	replacement_confirmation.dialog_text="Use your saved draft’s wizard and spells. The old roster, loot and progression are discarded; the Red King story position is preserved. No apprentice during the invasion."
+	add_child(replacement_confirmation)
+	replacement_button.pressed.connect(func() -> void: PhoneSafeArea.popup_dialog(replacement_confirmation))
+	replacement_confirmation.confirmed.connect(func() -> void:
+		var draft := WarbandSlots.roster()
+		if draft.is_empty():
+			var defaults := WarbandDraft.new(FigureDb.load_files())
+			defaults.choose_defaults()
+			draft=defaults.as_warband()
+		if CampaignSuccession.replace_ragged(campaign.data,draft):
 			changed.call())
 	reset_button = Button.new()
 	reset_button.text = "Start a new campaign…"
@@ -49,6 +68,7 @@ func refresh(in_battle: bool, deciding: bool) -> void:
 	var fallen := not CampaignSuccession.living_wizard(d)
 	var candidate := CampaignSuccession.candidate(d)
 	message.visible = fallen
+	replacement_button.visible=fallen and RaggedWarbands.active(d) and RedKingCampaign.active(d)
 	new_name.visible = candidate >= 0
 	promote_button.visible = new_name.visible
 	if fallen:

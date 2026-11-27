@@ -35,6 +35,15 @@ static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 				r.cost[m] = nc
 				r.prev[m] = n
 				heap.push(nc, m)
+		for m: Vector2i in BoardTopology.destinations(grid.board,n):
+			var nc := c+Figure.BASE_RADIUS
+			if grid.open(m) and nc<=allowance+0.001 and nc<r.cost.get(m,INF):
+				r.cost[m]=nc
+				r.prev[m]=n
+				heap.push(nc,m)
+	for node: Vector2i in r.nodes():
+		if BattleBoundary.blocks_end(grid.board.boundaries,MoveGrid.to_pos(node)):
+			r.cost.erase(node)
 	return r
 
 
@@ -78,6 +87,11 @@ static func distance_field(board: Board, target: Vector2) -> Dictionary:
 			if nc < field.get(m, INF):
 				field[m] = nc
 				heap.push(nc, m)
+		for m: Vector2i in BoardTopology.sources(board,n):
+			var nc := c+Figure.BASE_RADIUS
+			if grid.open(m) and nc<field.get(m,INF):
+				field[m]=nc
+				heap.push(nc,m)
 	return field
 
 
@@ -88,8 +102,8 @@ static func node_at(p: Vector2) -> Vector2i:
 
 
 ## Multi-source exit field avoids getting trapped against a wall near the table edge.
-static func exit_field(s: GameState) -> Dictionary:
-	var key := "exit:" + s.scenario_special
+static func exit_field(s: GameState,side: int=-1) -> Dictionary:
+	var key := "exit:" + s.scenario_special+":"+str(side)
 	if s.board.field_cache.has(key):
 		return s.board.field_cache[key]
 	var grid := MoveGrid.new(s.board)
@@ -100,7 +114,7 @@ static func exit_field(s: GameState) -> Dictionary:
 		for y in grid.rows:
 			var node := Vector2i(x, y)
 			var at := MoveGrid.to_pos(node)
-			if TreasureRules.edge_distance(s.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(s, at) or not grid.open(node):
+			if TreasureRules.edge_distance(s.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(s, at,side) or not grid.open(node):
 				continue
 			field[node] = 0.0
 			heap.push(0.0, node)
@@ -119,3 +133,40 @@ static func exit_field(s: GameState) -> Dictionary:
 				field[next] = distance
 				heap.push(distance, next)
 	return field
+
+
+## Low gravity allows a single straight route rather than cornering.
+static func straight_reach(grid: MoveGrid,from: Vector2,allowance: float) -> MoveReach:
+	var r := MoveReach.new()
+	r.start=from
+	var base := node_at(from)
+	var radius := ceili(allowance/MoveGrid.STEP)
+	for dx in range(-radius,radius+1):
+		for dy in range(-radius,radius+1):
+			var n := base+Vector2i(dx,dy)
+			var at := MoveGrid.to_pos(n)
+			var cost := from.distance_to(at)
+			if cost>allowance+0.001 or not grid.open(n):
+				continue
+			var clear := true
+			var steps := maxi(1,ceili(cost/0.25))
+			var last := from
+			for i in range(1,steps+1):
+				var p := from.lerp(at,float(i)/steps)
+				if not is_finite(grid.segment_cost(last,p)):
+					clear=false
+					break
+				for other in grid.others:
+					if absf(other.elevation-grid.board.height_at(p))>=0.5:
+						continue
+					var d := other.pos.distance_to(p)
+					if d<Contact.OVERLAP or (i<steps and grid.mover!=null and other.side!=grid.mover.side and d<Contact.CONTACT and other.pos.distance_to(at)>Contact.CONTACT):
+						clear=false
+						break
+				if not clear:
+					break
+				last=p
+			if clear:
+				r.cost[n]=cost
+				r.prev[n]=null
+	return r

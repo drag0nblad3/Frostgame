@@ -17,7 +17,7 @@ func options(f: Figure) -> Array[Dictionary]:
 		var center := p.rect.get_center()
 		for direction: Vector2 in [Vector2.LEFT, Vector2.RIGHT, Vector2.UP, Vector2.DOWN]:
 			var at := center + direction * (absf(direction.x) * p.rect.size.x * 0.5 + absf(direction.y) * p.rect.size.y * 0.5 + 0.15)
-			if b.contains(at) and f.pos.distance_to(at) <= 12.0 and LineOfSight.check(b, f.pos, at).clear:
+			if b.contains(at) and f.pos.distance_to(at) <= 12.0 and LineOfSight.check(b, f.pos, at,f).clear:
 				result.append({"kind": "eye_face", "target": f.id, "piece": p, "at": at, "direction": direction, "label": "%s at %.1f, %.1f — %s face" % [p.kind.name, at.x, at.y, ["east", "south", "west", "north"][posmod(roundi(direction.angle() / (PI * 0.5)), 4)]]})
 	return result
 
@@ -30,19 +30,19 @@ static func marker(b: Board, f: Figure) -> TerrainPiece:
 
 
 static func origin(b: Board, f: Figure, at: Vector2, max_range: float = 24.0) -> Vector2:
-	if Vector2(f.pos.distance_to(at), f.elevation - b.height_at(at)).length() <= max_range and LineOfSight.check(b, f.pos, at).clear:
+	if Vector2(RealityCrackGeometry.sight_distance(b,f.pos,at), f.elevation - b.height_at(at)).length() <= max_range and LineOfSight.check(b, f.pos, at,f).clear:
 		return f.pos
 	var eye := marker(b, f)
 	if eye != null:
 		var pos := eye.rect.get_center()
-		if eye.eye_direction.dot(at - pos) >= -0.001 and Vector2(pos.distance_to(at), b.height_at(pos) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, pos, at).clear:
+		if eye.eye_direction.dot(at - pos) >= -0.001 and Vector2(pos.distance_to(at), b.height_at(pos) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, pos, at,f).clear:
 			return pos
 	return f.pos
 
 
 static func visible(b: Board, f: Figure, at: Vector2, max_range: float = 24.0) -> bool:
 	var start := origin(b, f, at, max_range)
-	return Vector2(start.distance_to(at), b.height_at(start) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, start, at).clear
+	return Vector2(RealityCrackGeometry.sight_distance(b,start,at), b.height_at(start) - b.height_at(at)).length() <= max_range and LineOfSight.check(b, start, at,f).clear
 
 
 func create(f: Figure, option: Dictionary) -> void:

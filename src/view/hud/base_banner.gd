@@ -38,6 +38,8 @@ func refresh(data: Dictionary) -> void:
 	_art.texture = ART.get(id,ART["camp"])
 	var name := id.capitalize() if not id.is_empty() else "Expedition camp"
 	var benefit := str(BaseRules.BENEFITS.get(id,"No permanent headquarters selected."))
+	if RedKingCampaign.economy_locked(data):
+		benefit="Inaccessible during the current expedition; benefits suspended."
 	_caption.text = "%s  •  %s  •  %d resources" % [name,benefit,data.get("resources",[]).size()]
 	for child in _resources.get_children():
 		_resources.remove_child(child)

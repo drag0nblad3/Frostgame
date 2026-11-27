@@ -33,6 +33,7 @@ static func weapon_slots(weapons: Array) -> int:
 static func carried(d: Dictionary, unit: Dictionary, omit: int = -1, extra: Dictionary = {}) -> Dictionary:
 	var weapons := standard(unit)
 	var other := 0
+	var discounted := {}
 	var catalog := CampaignInventory.catalog()
 	var items: Array = []
 	for i in d.get("loot", []).size():
@@ -42,13 +43,24 @@ static func carried(d: Dictionary, unit: Dictionary, omit: int = -1, extra: Dict
 	if not extra.is_empty():
 		items.append(extra)
 	for item: Dictionary in items:
-		var type := str(catalog.get(CampaignInventory.item_id(item), {}).get("type", ""))
+		var info: Dictionary = catalog.get(CampaignInventory.item_id(item), {})
+		var type := str(info.get("type", ""))
 		if type in MagicEquipment.WEAPONS:
 			if not weapons.has(type):
 				weapons.append(type)
+			if int(info.get("slot_discount", 0)) > 0:
+				discounted[type] = int(info["slot_discount"])
 		else:
 			other += 1
-	return {"weapons": weapons, "slots": weapon_slots(weapons) + other}
+	var used := weapon_slots(weapons) + other
+	if weapons.has("bow") or weapons.has("crossbow"):
+		for item: Dictionary in items:
+			if item.get("gear","")==MagicAmmo.ITEM:
+				used-=1
+				break
+	for discount in discounted.values():
+		used -= int(discount)
+	return {"weapons": weapons, "slots": used}
 
 
 static func fits(d: Dictionary, unit: Dictionary, omit: int = -1, extra: Dictionary = {}) -> bool:

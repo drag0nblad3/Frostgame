@@ -57,3 +57,23 @@ func test_bot_battle_keeps_surface_and_finishes() -> void:
 	check(c.state.over,"battle terminates")
 	check(c.history.any(func(e: GameEvent) -> bool:return e.type=="layered_move"))
 	check(c.history.any(func(e: GameEvent) -> bool:return e.type=="treasure_pickup"))
+
+
+func test_dazzling_cape_layered_departure() -> void:
+	var c := LayeredBattle.create(db(),terrain(),17)
+	var f := c.state.figure(1)
+	var t := c.state.figure(4)
+	c.state.active_id=f.id
+	f.actions_left=2
+	t.pos=f.pos+Vector2.RIGHT
+	t.surface_id=f.surface_id
+	t.elevation=f.elevation
+	f.items.append({"gear":GearActions.CAPE,"gear_info":RedKingRewards.catalog()[GearActions.CAPE]})
+	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var target := layout.node(f.surface_id,f.pos-Vector2.RIGHT)
+	check(not c.can_move())
+	check(LayeredMovement.reach(c,true).can_reach(target))
+	check(LayeredMovement.move(c,target,true))
+	check_eq(f.pos,Vector2(2,3))
+	check_eq(f.actions_left,1)
+	check(not ActiveGear.ready(f,GearActions.CAPE))

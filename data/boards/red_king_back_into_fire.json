@@ -1,0 +1,145 @@
+{
+  "id": "red_king_back_into_fire",
+  "name": "Back Into the Fire",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        7,
+        1,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        15,
+        1,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        24,
+        1,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        1,
+        8,
+        4,
+        6
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        31,
+        8,
+        4,
+        6
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        1,
+        21,
+        4,
+        6
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        31,
+        21,
+        4,
+        6
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        7,
+        31,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        26,
+        31,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "red_king_portal",
+      "rect": [
+        11,
+        20,
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "red_king_portal",
+      "rect": [
+        17,
+        23,
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "red_king_portal",
+      "rect": [
+        23,
+        20,
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        10,
+        17,
+        2,
+        1
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        25,
+        17,
+        2,
+        1
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        16,
+        28,
+        2,
+        1
+      ]
+    }
+  ]
+}

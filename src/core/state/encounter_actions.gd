@@ -16,6 +16,8 @@ func on_pickup() -> void:
 	if not c.state.random_encounters or c.state.creature_db == null or pool.is_empty() or c.dice.d20() < 10:
 		return
 	var entry := encounter(c.dice.d20(), c.dice.d20())
+	if entry.is_empty() or not c.state.creature_db.available(str(entry.get("type",""))):
+		return
 	var edge := c.dice.pick(4)
 	for i in int(entry.get("count", 1)):
 		_spawn(entry["type"], edge)
@@ -71,13 +73,15 @@ func on_end_turn() -> void:
 			return
 
 
-func _spawn_at(type: String, at: Vector2, side: int = -1) -> Figure:
+func _spawn_at(type: String, at: Vector2, side: int = -1, ring_side: int=0,surface: String="",height: float=0.0) -> Figure:
 	var s := c.state
 	var id := 1
 	for f in s.figures:
 		id = maxi(id, f.id + 1)
 	var creature := Figure.new(id, s.creature_db.get_def(type), side, at, s.creature_db.unarmed())
-	creature.elevation = s.board.height_at(at)
+	creature.elevation = s.board.height_at(at) if surface.is_empty() else height
+	creature.surface_id=surface
+	creature.ring_side=ring_side
 	creature.battle_ref = weakref(s)
 	s.figures.append(creature)
 	c.emit("creature_spawn", {"id": id})

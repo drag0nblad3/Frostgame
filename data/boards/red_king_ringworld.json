@@ -1,0 +1,100 @@
+{
+  "id": "red_king_ringworld",
+  "name": "Ringworld of the Red King",
+  "size": [
+    30,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        9,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        19,
+        2,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        1,
+        10,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        25,
+        10,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        13,
+        10,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        13,
+        23,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        1,
+        24,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        25,
+        24,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        9,
+        31,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        19,
+        31,
+        3,
+        3
+      ]
+    }
+  ]
+}

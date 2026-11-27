@@ -9,7 +9,7 @@ static func available(d: Dictionary, caster: int) -> bool:
 	return d["units"][caster]["type"] == "wizard" and d.get("prepared_demon", {}).is_empty()
 
 
-static func attempt(d: Dictionary, caster: int, dice: Dice) -> bool:
+static func attempt(d: Dictionary, caster: int, dice: Dice,shears_target: int=-1) -> bool:
 	if not available(d, caster) or not d["spells"].has("summon_demon"):
 		return false
 	var attempts: Dictionary = d.get("ritual_attempts", {})
@@ -20,7 +20,9 @@ static func attempt(d: Dictionary, caster: int, dice: Dice) -> bool:
 	d["ritual_attempts"] = attempts
 	d["preparation_started"] = true
 	var raw := dice.d20()
-	var total := CastingRoll.modified(raw, BaseResources.casting_bonus(d, "summon_demon"))
+	var total := CastingRoll.modified(raw,BaseResources.casting_bonus(d,"summon_demon")+(2 if shears_target>=0 else 0))
+	if shears_target>=0:
+		RedKingCampaignGear.shears_injury(d,shears_target,dice)
 	var tn := int(d["spells"]["summon_demon"])
 	if raw == 1 or total < tn:
 		d["last_report"].append("Summoning Circle: summon failed (%d vs %d)." % [total, tn])

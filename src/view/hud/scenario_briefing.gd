@@ -19,11 +19,11 @@ const ENTRIES := {
 
 
 static func title(id: String) -> String:
-	return str(ENTRIES.get(id, ["Skirmish"])[0])
+	return str(all_entries().get(id, ["Skirmish"])[0])
 
 
 static func description(id: String) -> String:
-	var entry: Array = ENTRIES.get(id, ["Skirmish", "Recover treasure or defeat the opposing warband.", ""])
+	var entry: Array = all_entries().get(id, ["Skirmish", "Recover treasure or defeat the opposing warband.", ""])
 	return "%s\n\n%s" % [entry[1], entry[2]]
 
 
@@ -42,6 +42,57 @@ static func progress(s: GameState) -> String:
 		else:
 			ground += 1
 	var text := "%d secured · %d carried · %d unclaimed" % [secured, carrying, ground]
+	if RedKingMadMan.active(s):
+		var npc := s.figure(int(s.scenario_data.get("ryce_id",-1)))
+		var rescue := s.treasure(int(s.scenario_data.get("ryce_token",-1)))
+		if npc!=null and npc.in_play():
+			text+=" | Ryce fleeing"
+		elif rescue!=null:
+			text+=" | Ryce "+("secured" if rescue.secured_by>=0 else ("escaped/lost" if rescue.lost else ("carried" if rescue.carrier_id>=0 else "unconscious")))
+	if RealityCracks.id(s)>0:
+		text+=" | Reality: "+str(RealityCracks.TITLES[RealityCracks.id(s)-1])
+	if RedKingRingworld.active(s):
+		text+=" | Key-Masters %d/4"%RedKingRingworld.remaining(s)
+		var active_figure := s.active()
+		if active_figure!=null:
+			text+=" · "+("INSIDE" if active_figure.ring_side==1 else "OUTSIDE")
+	if RedKingBridge.active(s):
+		text+=" | Bridge exit only · Void TN16"
+		var rolls: Array=s.scenario_data.get("bridge_veil_rolls",[])
+		if rolls.size()==2:
+			text+=" · Veil %d–%d"%[rolls[0],rolls[1]]
+	if RedKingTethers.active(s):
+		text+=" | Pylons: %d/5 intact"%RedKingTethers.remaining(s)
+		if RedKingTethers.remaining(s)>0:
+			text+=" · Exit locked"
+		if not s.board.edge_links.is_empty():
+			text+=" · Connected edges"
+	if RedKingHill.active(s):
+		text+=" | "+("Pyramid formed · Balance TN16" if RedKingHill.cracked(s) else "Reality unstable")
+		if RedKingHill.guarded(s,s.treasure(0)):
+			text+=" · Central treasure guarded"
+	if RedKingSinkhole.active(s):
+		text+=" | Gravity: 1″/turn · Casting −1/−2/−4"
+	if RedKingHerded.active(s):
+		text+=" | Veil %.0f/36″ · Exit south"%float(s.scenario_data.get("herd_veil",0.0))
+	if RedKingMind.active(s):
+		text="Mindscape · %d/8 memories · Turn %d/8"%[secured,mini(8,s.turn)]
+	if RedKingFire.active(s):
+		var artefact := s.treasure(0)
+		if artefact!=null and artefact.frozen:
+			text+=" | Artefact locked"
+		text+=" | Corner exits"
+	if RedKingVeil.active(s):
+		text+=" | Veil %.0f / %.0f″ · Exit south"%[float(s.scenario_data.get("veil_y",12.0)),s.board.size.y]
+	if RedKingInvestigations.active(s):
+		var stands := 0
+		for token in s.treasures:
+			if token.investigation and token.unresolved():
+				stands+=1
+		text="%d secured · %d carried · %d stands · %s"%[secured,carrying,stands,"ALARM" if s.scenario_data.get("alarm",false) else "Undetected"]
+		var edges: Dictionary=s.scenario_data.get("exit_edges",{})
+		if edges.has(s.reaction_side):
+			text+=" | Exit: "+", ".join(edges[s.reaction_side])
 	if lost > 0:
 		text += " · %d lost" % lost
 	match s.scenario_special:
@@ -64,3 +115,14 @@ static func progress(s: GameState) -> String:
 				var genie := s.figure(s.genie_id)
 				text += " | Genie %s" % ("escaping" if genie != null and genie.in_play() and s.genie_kills >= 3 else ("active" if genie != null and genie.in_play() else "gone"))
 	return text
+
+
+static func all_entries() -> Dictionary:
+	var result := ENTRIES.duplicate(true)
+	for pack: Dictionary in ContentProfile.registered().values():
+		result.merge(pack.get("briefings",{}))
+	return result
+
+
+static func available_entries(profile: ContentProfile) -> Dictionary:
+	return profile.filter("scenarios",all_entries())

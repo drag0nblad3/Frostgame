@@ -10,7 +10,14 @@ func _init(c: GameController) -> void:
 
 
 func can_pick_up(id: int) -> bool:
-	return _c.can_act() and TreasureRules.can_pick_up(_c.state, _c.state.active(), _c.state.treasure(id))
+	if RedKingMind.active(_c.state):
+		return false
+	var token := _c.state.treasure(id)
+	if RedKingFire.locked(_c.state,token):
+		return RedKingFire.can_unlock(_c,token)
+	if token!=null and token.investigation:
+		return RedKingInvestigations.can_investigate(_c,token)
+	return _c.can_act() and TreasureRules.can_pick_up(_c.state, _c.state.active(), token)
 
 
 func pick_up(id: int) -> bool:
@@ -18,6 +25,10 @@ func pick_up(id: int) -> bool:
 		return false
 	var f := _c.state.active()
 	var token := _c.state.treasure(id)
+	if RedKingFire.locked(_c.state,token):
+		return RedKingFire.unlock(_c,f,token)
+	if token.investigation:
+		return RedKingInvestigations.investigate(_c,f,token)
 	_c._spend(f)
 	if _c.state.museum and not _c._encounters.museum_pickup(f):
 		return true
@@ -25,13 +36,15 @@ func pick_up(id: int) -> bool:
 
 
 func claim_free(f: Figure, token: TreasureToken) -> bool:
+	if RedKingHill.guarded(_c.state,token):
+		return false
 	# Column contact is with its edge, rather than the newly revealed centre.
-	if f == null or token == null or not token.on_ground() or token.frozen or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
+	if f == null or RedKingMadMan.hunter(f) or token == null or not token.on_ground() or token.frozen or token.investigation or f.side < 0 or f.def.traits.has("animal") or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false
 	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
 		return false
 	for enemy in _c.state.figures:
-		if enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
+		if enemy.ring_side!=f.ring_side or enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
 			continue
 		if Shooting.distance(enemy, f) <= 1.0 or Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, _c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
 			return false
@@ -45,6 +58,7 @@ func _claim(f: Figure, token: TreasureToken) -> bool:
 	if f.treasure_id >= 0:
 		f.second_treasure_id = f.treasure_id
 	f.treasure_id = id
+	token.ring_side=f.ring_side
 	token.carrier_id = f.id
 	_c.emit("treasure_pickup", {"id": f.id, "treasure": id})
 	if not token.ever_collected:
@@ -76,7 +90,7 @@ func can_drop(at: Vector2) -> bool:
 	elif not _c.state.board.can_stand(at,TreasureRules.TOKEN_RADIUS) or not is_equal_approx(height,f.elevation):
 		return false
 	for other in _c.state.figures:
-		if other.in_play() and (f.surface_id.is_empty() or absf(other.elevation-height)<0.5) and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
+		if other.in_play() and other.ring_side==f.ring_side and (f.surface_id.is_empty() or absf(other.elevation-height)<0.5) and other.pos.distance_to(at) < Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS:
 			return false
 	return f.moves_taken == 0 or _c.can_act()
 
@@ -110,6 +124,7 @@ func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
 	_clear_carrier(token)
 	token.pos = at
 	token.surface_id = f.surface_id
+	token.ring_side=f.ring_side
 	var height := _c.state.board.height_at(at)
 	if not f.surface_id.is_empty():
 		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)
@@ -129,15 +144,15 @@ func cancel_shrinking(f: Figure) -> void:
 
 
 func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
-	if not _c.can_move():
+	if RedKingMind.active(_c.state) or not _c.can_move():
 		return false
 	var f := _c.state.active()
-	if f.control_spell == "mind_control" or f.side < 0 or f.spell_effects.has("plane_walk") or FuryRules.target(_c.state, f) != null:
+	if (RedKingVeil.active(_c.state) and f.side==1) or f.control_spell == "mind_control" or f.side < 0 or f.spell_effects.has("plane_walk") or FuryRules.target(_c.state, f) != null:
 		return false
 	if r == null:
 		r = _c.reach()
 	var at := MoveGrid.to_pos(node)
-	if not r.can_reach(node) or TreasureRules.edge_distance(_c.state.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(_c.state, at):
+	if not r.can_reach(node) or TreasureRules.edge_distance(_c.state.board, at) > Figure.BASE_RADIUS + 0.01 or not ScenarioObjectives.exit_allowed(_c.state, at,f.side):
 		return false
 	# The lattice keeps the base on the table; budget one more half inch to cross the edge.
 	if r.cost[node] + Figure.BASE_RADIUS > MoveRules.allowance(f) + 0.001:
@@ -154,13 +169,16 @@ func exit_table(node: Vector2i) -> bool:
 	var f := _c.state.active()
 	if not _c.move_to(node):
 		return false
-	if f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
+	if not f.in_play() or f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
 		return true
 	for id in f.carried_treasures():
 		secure(_c.state.treasure(id), f.side)
 	f.exited = true
+	_c._magic.summons.enforce_illusion_limit(f)
 	f.actions_left = 0
 	_c.emit("exit", {"id": f.id})
+	if RedKingInvestigations.active(_c.state) and _c.state.turn>3:
+		_c.emit("investigation_xp",{"side":f.side,"xp":10})
 	return true
 
 

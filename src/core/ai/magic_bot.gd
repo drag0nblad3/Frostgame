@@ -53,10 +53,13 @@ static func resolve(c: GameController) -> bool:
 		return false
 	var f := c.state.figure(p["caster"])
 	var needed := maxi(0, int(p["tn"]) - int(p["total"]))
-	var budget := PowerPool.available(f) + mini(2, maxi(0, f.health - 2))
+	var id := str(p["id"])
+	var budget := PowerPool.available(f,id)+(0 if PowerPool.words_only(f,id) else mini(2,maxi(0,f.health-2)))
 	if not p.get("scroll", false) and needed > budget and int(p["raw"]) <= 8:
 		if c._magic.reroll_fate():
 			needed = maxi(0, int(p["tn"]) - int(p["total"]))
 	if c._magic.can_insure() and (needed > mini(budget, c.cast_max_empowerment()) or (p["id"] == "summon_demon" and p["raw"] == 1)):
 		return c._magic.insure()
+	if id=="animate_skull" and not p.get("golden_fang",false) and RedKingMaterials.fang_count(f)>0:
+		c._magic.toggle_golden_fang()
 	return c.finish_cast(needed if needed <= mini(budget, c.cast_max_empowerment()) else 0)

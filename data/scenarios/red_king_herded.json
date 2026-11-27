@@ -1,0 +1,194 @@
+{
+  "id": "red_king_herded",
+  "name": "Herded Like Cattle!",
+  "board": "red_king_herded",
+  "warbands": [
+    {
+      "name": "Elementalist",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            3
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            15,
+            3
+          ]
+        },
+        {
+          "type": "knight",
+          "at": [
+            20,
+            4.5
+          ]
+        },
+        {
+          "type": "man_at_arms",
+          "at": [
+            13,
+            4.5
+          ]
+        },
+        {
+          "type": "infantryman",
+          "at": [
+            22,
+            3
+          ]
+        },
+        {
+          "type": "archer",
+          "at": [
+            10,
+            3
+          ]
+        },
+        {
+          "type": "crossbowman",
+          "at": [
+            26,
+            3
+          ]
+        }
+      ],
+      "spells": {
+        "elemental_bolt": 12,
+        "elemental_shield": 10,
+        "fleet_feet": 12,
+        "strength": 12,
+        "heal": 12,
+        "combat_awareness": 16
+      }
+    },
+    {
+      "name": "Necromancer",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            33
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            21,
+            33
+          ]
+        },
+        {
+          "type": "barbarian",
+          "at": [
+            16,
+            31.5
+          ]
+        },
+        {
+          "type": "treasure_hunter",
+          "at": [
+            23,
+            31.5
+          ]
+        },
+        {
+          "type": "thug",
+          "at": [
+            19,
+            31.5
+          ]
+        },
+        {
+          "type": "ranger",
+          "at": [
+            12,
+            33
+          ]
+        },
+        {
+          "type": "marksman",
+          "at": [
+            26,
+            33
+          ]
+        }
+      ],
+      "spells": {
+        "bone_dart": 10,
+        "steal_health": 10,
+        "fleet_feet": 12,
+        "glow": 14,
+        "mind_lock": 16,
+        "strength": 14
+      }
+    }
+  ],
+  "treasures": [
+    [
+      15,
+      10
+    ],
+    [
+      15,
+      14
+    ],
+    [
+      15,
+      18
+    ],
+    [
+      15,
+      22
+    ],
+    [
+      15,
+      26
+    ]
+  ],
+  "random_encounters": false,
+  "forced_combat": true,
+  "special": "red_king_herded",
+  "central_treasure": 2,
+  "creatures": [
+    {
+      "type": "hrut_warrior",
+      "at": [
+        16,
+        10
+      ]
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        14,
+        14
+      ]
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        16,
+        18
+      ]
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        14,
+        22
+      ]
+    },
+    {
+      "type": "hrut_longhammer",
+      "at": [
+        16,
+        26
+      ]
+    }
+  ]
+}

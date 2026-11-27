@@ -29,3 +29,23 @@ func test_teleport_ring_once() -> void:
 	check_eq(f.pos, Vector2(18, 10))
 	check_eq(f.actions_left, 1)
 	check(not ActiveGear.ready(f, "gear_ring_teleportation"))
+
+
+func test_opposing_worm_token_relocation() -> void:
+	var packs := ContentProfile.registered().duplicate(true)
+	packs["red_king"]["status"]="ready"
+	var defs := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.new(["red_king"],packs))
+	var f := fig("wizard",1,Vector2(10,10),1)
+	var t := fig("thug",0,Vector2(20,20),2)
+	var c := make_game(make_board(),[f,t],LoadedDice.new([1]))
+	c.state.creature_db=defs
+	f.items.append({"gear":WormRider.ITEM})
+	c.state.reaction_side=0
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(WormRider.summon(c,Vector2(15,15)))
+	check(c.awaiting_reaction())
+	check(not WormRider.answer_relocation(c,Vector2(-1,-1)))
+	check(WormRider.answer_relocation(c,Vector2(18,18)))
+	check_eq(c.state.scenario_data["rk_worm_tokens"][0]["at"],Vector2(18,18))
+	check(not c.awaiting_reaction())

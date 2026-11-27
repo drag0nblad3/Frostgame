@@ -31,6 +31,8 @@ var _setup: WarbandSetup
 var _campaign := CampaignProgress.new()
 var _campaign_battle := false
 var _campaign_dialog: CampaignPanel
+var _plant_dialog: ConfirmationDialog
+var _survival_dialog: ConfirmationDialog
 var _figures: FigureDb
 var _terrain: TerrainDb
 var _board_view: BoardView
@@ -44,7 +46,8 @@ var _picker: SkirmishPicker
 
 func _ready() -> void:
 	GraphicsQuality.apply(get_viewport())
-	_figures = FigureDb.load_files()
+	var profile := WarbandSlots.content_profile()
+	_figures = FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
 	_terrain = TerrainDb.load_file()
 	_atmosphere = BattleAtmosphere.new()
 	add_child(_atmosphere)
@@ -88,14 +91,18 @@ func _ready() -> void:
 	hud.save_battle_pressed.connect(_save_battle)
 	hud.resume_battle_pressed.connect(_resume_battle)
 	hud.scenario_selected.connect(func(id: String) -> void:
+		if not _figures.content_profile.allows("scenarios",id):
+			return
 		_scenario_id = id
 		hud.notify("Next battle: " + ScenarioBriefing.title(id)))
 	_campaign.load_save()
+	if not _campaign.data.is_empty():
+		_campaign.data["expansions"]=profile.enabled.duplicate()
 	_roster=WarbandSlots.roster()
 	if get_tree().root.has_meta("frostgame_scenario"):
 		_scenario_id=str(get_tree().root.get_meta("frostgame_scenario"))
 		get_tree().root.remove_meta("frostgame_scenario")
-		if not ScenarioBriefing.ENTRIES.has(_scenario_id):
+		if not ScenarioBriefing.available_entries(profile).has(_scenario_id):
 			_scenario_id=SCENARIO
 		hud.select_scenario(_scenario_id)
 	_rig.tapped.connect(_on_tap)
@@ -223,6 +230,8 @@ func _open_briefing(start: bool) -> void:
 
 
 func new_game(seed_value: int) -> void:
+	if not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
+		_scenario_id=SCENARIO
 	if _training >= 0:
 		_rig.distance = 34.0
 	_training = -1
@@ -233,6 +242,7 @@ func new_game(seed_value: int) -> void:
 	var data: Dictionary = JsonFile.read(ScenarioLoader.DIR + _scenario_id + ".json")
 	if _campaign_battle:
 		data["warbands"][0] = _campaign.deployment()
+		data["reality_cracks"]=_campaign.data.get("reality_cracks",false)
 	elif not _roster.is_empty():
 		data["warbands"][0] = _roster.duplicate(true)
 	var state := ScenarioLoader.from_dict(data, _figures, _terrain)
@@ -323,13 +333,14 @@ func _process(delta: float) -> void:
 		return
 	var s := controller.state
 	if s.over and _campaign_battle:
-		_campaign_battle = false
-		_campaign.settle(controller, controller.dice)
-		if _campaign.save():
-			var checkpoint := BattleSnapshot.read()
-			if checkpoint.get("meta", {}).get("campaign", false):
-				DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
-		_open_campaign()
+		if is_instance_valid(_survival_dialog):
+			return
+		var candidates := RedKingCampaignGear.plant_choices(_campaign.data,controller,0)
+		if candidates.is_empty():
+			_finish_campaign_battle(-1)
+		else:
+			_choose_plant(candidates)
+		return
 	if s.over or controller.awaiting_reaction() or (watch_mode and not auto_play) or (not watch_mode and s.current_side() == player_side and (s.active() == null or s.active().side >= 0)):
 		_wait = 0.0
 		return
@@ -355,7 +366,7 @@ func _human_turn() -> bool:
 
 
 func _on_event(event: GameEvent) -> void:
-	if event.type == "terrain_changed" and not _terrain_pending:
+	if event.type in ["terrain_changed","boundary_changed"] and not _terrain_pending:
 		_terrain_pending=true
 		call_deferred("_sync_terrain")
 	_dirty = true
@@ -432,10 +443,12 @@ func _open_campaign() -> void:
 		_campaign_dialog.setup(_campaign, _figures)
 		_campaign_dialog.begin_requested.connect(_begin_campaign_battle)
 		_campaign_dialog.start_requested.connect(_create_campaign)
+		_campaign_dialog.story_requested.connect(_create_story_campaign)
 		_campaign_dialog.restart_requested.connect(_restart_campaign)
 		_campaign_dialog.scenario_selected.connect(func(id: String) -> void:
 			_scenario_id=id
 			hud.select_scenario(id))
+	_campaign_dialog._show_section(0)
 	_campaign_dialog.select_scenario(_scenario_id)
 	_campaign_dialog.refresh(_campaign_battle)
 	_campaign_dialog.fit_phone()
@@ -450,8 +463,17 @@ func _create_campaign() -> void:
 		var draft := WarbandDraft.new(_figures)
 		draft.choose_defaults()
 		roster = draft.as_warband()
-	_campaign.start(roster)
+	_campaign.start(roster,_figures.content_profile)
 	_campaign.save()
+	_campaign_dialog.refresh(false)
+
+
+func _create_story_campaign(include_veil: bool,strict_pursuit: bool) -> void:
+	if not _campaign.data.is_empty():
+		return
+	_create_campaign()
+	if RedKingCampaign.start(_campaign.data,_figures.content_profile,include_veil,strict_pursuit):
+		_campaign.save()
 	_campaign_dialog.refresh(false)
 
 
@@ -465,12 +487,32 @@ func _restart_campaign() -> void:
 func _begin_campaign_battle() -> void:
 	if _campaign_battle or not _campaign.can_deploy():
 		return
+	if RedKingCampaign.active(_campaign.data):
+		_scenario_id=RedKingCampaign.next_id(_campaign.data)
+		if _scenario_id.is_empty() or not ScenarioBriefing.available_entries(_figures.content_profile).has(_scenario_id):
+			return
+		hud.select_scenario(_scenario_id)
+	elif not RedKingCampaign.freeform_permits(_scenario_id):
+		_scenario_id=SCENARIO
+		hud.select_scenario(_scenario_id)
 	for unit: Dictionary in _campaign.data["units"]:
 		if InjuryRules.blind(unit) and not unit["dead"]:
 			unit["dead"] = true
 			CampaignInventory.lose_owned(_campaign.data, int(unit["id"]))
 			_campaign.data["last_report"].append("%s retires after losing both eyes." % str(unit["type"]).capitalize())
+	if RedKingCampaign.active(_campaign.data) and RaggedWarbands.stage(_scenario_id) and not RaggedWarbands.active(_campaign.data):
+		RaggedWarbands.enter(_campaign.data)
+		_campaign.save()
+		_campaign_dialog.refresh(false)
+		return
 	if not _campaign.save():
+		return
+	var source: Dictionary=JsonFile.read(ScenarioLoader.DIR+_scenario_id+".json")
+	source["warbands"][0]=_campaign.deployment()
+	var candidate := ScenarioLoader.from_dict(source,_figures,_terrain)
+	if candidate.scenario_data.has("deployment_error"):
+		hud.notify(str(candidate.scenario_data["deployment_error"]))
+		_campaign_dialog.refresh(false)
 		return
 	_campaign_battle = true
 	watch_mode = false
@@ -508,6 +550,9 @@ func _resume_battle() -> void:
 		hud.notify("No compatible saved battle.")
 		return
 	var meta: Dictionary = data.get("meta", {})
+	if not _figures.content_profile.same(meta.get("expansions",[])):
+		hud.notify("Restore this checkpoint's rulebook content selection from Home before resuming.")
+		return
 	if meta.get("campaign", false) and (meta.get("campaign_hash", "") == "" or meta["campaign_hash"] != _campaign_fingerprint()):
 		hud.notify("Campaign changed since this checkpoint; cannot resume it.")
 		return
@@ -566,3 +611,86 @@ func _open_graphics() -> void:
 			GraphicsQuality.apply(get_viewport())
 			_atmosphere.configure(controller.state.board,_active_scenario_id))
 	_graphics.open()
+
+
+func _choose_plant(candidates: Array[int]) -> void:
+	if is_instance_valid(_plant_dialog):
+		return
+	_plant_dialog=ConfirmationDialog.new()
+	_plant_dialog.title="Lifelong Plant"
+	_plant_dialog.dialog_text="Choose one casualty to receive +1 survival before any rolls. A natural 20 consumes the plant."
+	_plant_dialog.ok_button_text="Use leaf"
+	_plant_dialog.cancel_button_text="Skip"
+	var choices := OptionButton.new()
+	choices.custom_minimum_size.y=48
+	for index in candidates:
+		var unit: Dictionary=_campaign.data["units"][index]
+		choices.add_item("%s #%d"%[str(unit["type"]).capitalize(),index+1])
+		choices.set_item_metadata(choices.item_count-1,index)
+	_plant_dialog.add_child(choices)
+	add_child(_plant_dialog)
+	_plant_dialog.confirmed.connect(func() -> void: _finish_campaign_battle(int(choices.get_selected_metadata())))
+	_plant_dialog.canceled.connect(func() -> void: _finish_campaign_battle(-1))
+	PhoneSafeArea.popup_dialog(_plant_dialog,Vector2(360,220))
+
+
+func _finish_campaign_battle(plant_target: int,survival_choice: int=-1) -> void:
+	if not _campaign_battle:
+		return
+	if is_instance_valid(_plant_dialog):
+		_plant_dialog.hide()
+		_plant_dialog.queue_free()
+		_plant_dialog=null
+	if survival_choice<0 and not watch_mode:
+		var offer := _campaign.survival_offer(controller,controller.dice,0,plant_target)
+		if not offer.is_empty():
+			_choose_survival(plant_target,offer,false)
+			return
+	var previous := _campaign.data.duplicate(true)
+	var rng := controller.dice._rng.state
+	if not _campaign.settle(controller,controller.dice,0,plant_target,{"choice":survival_choice}):
+		_campaign.data=previous
+		controller.dice._rng.state=rng
+		hud.notify("Campaign settlement could not be applied.")
+		return
+	if not _campaign.save():
+		_campaign.data=previous
+		controller.dice._rng.state=rng
+		hud.notify("Could not save campaign settlement. Battle retained.")
+		return
+	_campaign_battle=false
+	var checkpoint := BattleSnapshot.read()
+	if checkpoint.get("meta",{}).get("campaign",false):
+		DirAccess.remove_absolute(WarbandSlots.path_for(BattleSnapshot.PATH))
+	_open_campaign()
+
+
+func _choose_survival(plant_target: int,offer: Dictionary,rolled: bool) -> void:
+	if is_instance_valid(_survival_dialog):
+		_survival_dialog.hide()
+		_survival_dialog.queue_free()
+	_survival_dialog=ConfirmationDialog.new()
+	_survival_dialog.title="Mindscape survival reward"
+	_survival_dialog.dialog_text="Original roll: %d\nAdjusted outcome: %s"%[offer["first"],offer["first_outcome"]]
+	if rolled:
+		_survival_dialog.dialog_text+="\nNew roll: %d\nAdjusted outcome: %s\nChoose which result to keep."%[offer["second"],offer["second_outcome"]]
+		_survival_dialog.ok_button_text="Keep new roll"
+		_survival_dialog.cancel_button_text="Keep original"
+		_survival_dialog.confirmed.connect(func() -> void: _commit_survival(plant_target,2))
+		_survival_dialog.canceled.connect(func() -> void: _commit_survival(plant_target,1))
+	else:
+		_survival_dialog.dialog_text+="\nSpend the one-time reroll? You can keep either result."
+		_survival_dialog.ok_button_text="Roll again"
+		_survival_dialog.cancel_button_text="Keep original"
+		_survival_dialog.confirmed.connect(func() -> void: _choose_survival(plant_target,offer,true))
+		_survival_dialog.canceled.connect(func() -> void: _commit_survival(plant_target,0))
+	add_child(_survival_dialog)
+	PhoneSafeArea.popup_dialog(_survival_dialog,Vector2(460,280))
+
+
+func _commit_survival(plant_target: int,choice: int) -> void:
+	if is_instance_valid(_survival_dialog):
+		_survival_dialog.hide()
+		_survival_dialog.queue_free()
+		_survival_dialog=null
+	_finish_campaign_battle(plant_target,choice)

@@ -32,7 +32,11 @@ func _setup() -> void:
 	var supernatural_gallery := args.size()>1 and args[1]=="supernatural"
 	if supernatural_gallery:
 		ids=["skeleton","armoured_skeleton","skeleton_archer","ghoul","zombie","animated_skull","wraith","genie","imp","minor_demon","major_demon","white_gorilla","werewolf","snow_troll","frost_giant","ice_spider","ice_toad","giant_worm","vampire"]
-	var close_gallery := school_gallery or soldier_gallery or beast_gallery or supernatural_gallery
+	var invasion_gallery := args.size()>1 and args[1]=="red_king"
+	if invasion_gallery:
+		db=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.new(["red_king"]))
+		ids=["blood_marked_berserker","burning_man","foulhorn","red_king_herald","hrut_warrior","hrut_stinger","hrut_longhammer","hrut_darter","red_king_key_master","mindshrike","nullman","kalamon_ryce","red_king_pylon"]
+	var close_gallery := school_gallery or soldier_gallery or beast_gallery or supernatural_gallery or invasion_gallery
 	for i in ids.size():
 		var def := db.get_def(ids[i])
 		var columns := 5 if close_gallery else 6
@@ -73,9 +77,9 @@ func _setup() -> void:
 	camera.position = Vector3(7, 18, -14)
 	camera.look_at(Vector3(7, 0, 6), Vector3.UP)
 	if close_gallery:
-		camera.size=15.4 if supernatural_gallery else (12.1 if soldier_gallery else 9.2)
+		camera.size=15.4 if supernatural_gallery else (13.2 if soldier_gallery or invasion_gallery else 9.2)
 		camera.position=Vector3(7,11,-12)
-		camera.look_at(Vector3(7,0.8,7.25 if supernatural_gallery else (5.5 if soldier_gallery else 3.75)),Vector3.UP)
+		camera.look_at(Vector3(7,0.8,7.25 if supernatural_gallery else (5.5 if soldier_gallery or invasion_gallery else 3.75)),Vector3.UP)
 	camera.make_current()
 	_ready_to_capture = true
 

@@ -50,6 +50,8 @@ func refresh() -> void:
 		if BaseResources.owns(d, id):
 			names.append(info["name"])
 			continue
+		if not ContentProfile.from_campaign(d).allows("base_resources",id):
+			continue
 		resources.add_icon_item(ResourceArt.icon(id),"%s · %d gc · %s%s" % [info["name"], info["cost"], info["benefit"], "" if info["live"] else " (pending)"])
 		var i := resources.item_count - 1
 		resources.set_item_metadata(i, id)

@@ -31,3 +31,15 @@ func test_orb_persists() -> void:
 	check_eq(PowerPool.spend(f, 2), 2)
 	CampaignInventory.settle(d, c, 0)
 	check(d["loot"].is_empty())
+
+
+func test_brilliant_wand_restricts_word_empowerment() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	f.items.append({"gear":PowerPool.BRILLIANT})
+	f.items.append({"gear":"gear_staff_power2"})
+	check_eq(ActiveGear.casting_bonus(f,"power_word"),2)
+	check_eq(PowerPool.cast_resources(f,"power_word"),3)
+	check_eq(PowerPool.spend(f,2,"power_word"),2)
+	check_eq(PowerPool.cast_resources(f,"draining_word"),1)
+	check_eq(PowerPool.available(f),3)
+	check_eq(PowerPool.remaining(f.items[1]),2)

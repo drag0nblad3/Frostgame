@@ -40,3 +40,39 @@ func test_buff_and_shield() -> void:
 	c._hurt(c.state.figure(1), 5, c.state.figure(3))
 	check_eq(c.state.figure(1).health, 12)
 	check_eq(c.state.figure(1).elemental_shield, 0)
+
+
+func test_elemental_bolt_reaction() -> void:
+	var c := _game([18,20,2,4])
+	var t := c.state.figure(3)
+	t.items.append({"gear":RedKingElemental.AMULET})
+	c.state.reaction_side=1
+	check(c.start_cast("elemental_bolt",3))
+	check(c.finish_cast(0))
+	check(c.awaiting_reaction())
+	check_eq(t.health,10)
+	check(not c.can_end_activation())
+	check(c.answer_elemental_combat(true))
+	check_eq(t.health,10)
+	check(not ActiveGear.ready(t,RedKingElemental.AMULET))
+	check(not c.awaiting_reaction())
+
+
+func test_elemental_ball_resumes_remaining_targets() -> void:
+	var c := _game([18,20,2,4,20,2])
+	var t := c.state.figure(3)
+	t.items.append({"gear":RedKingElemental.AMULET})
+	var ally := fig("thug",1,Vector2(21,10),4)
+	c.state.figures.append(ally)
+	ally.battle_ref=weakref(c.state)
+	c.state.spellbooks[0]["elemental_ball"]=10
+	c.state.reaction_side=1
+	check(c.start_cast("elemental_ball",3))
+	check(c.finish_cast(0))
+	check(c.awaiting_reaction())
+	check_eq(ally.health,10)
+	check(c.answer_elemental_combat(true))
+	check_eq(t.health,10)
+	check(ally.health<10)
+	check(not c.state.scenario_data.has("rk_ball_queue"))
+	check(not c.awaiting_reaction())

@@ -32,13 +32,13 @@ func _init(controller: GameController) -> void:
 	eye = WizardEye.new(c)
 
 
-func can_cast(id: String, target_id: int) -> bool:
+func can_cast(id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := c.state
 	if not s.board.floor_layout.is_empty() and not LayeredFigureSpells.SUPPORTED.has(id):
 		return false
 	var f := s.active()
 	var t := s.figure(target_id)
-	if not c.can_act() or f == null or t == null or not t.in_play() or ScenarioNull.muted(t):
+	if not c.can_act() or f == null or t == null or f.ring_side!=t.ring_side or not t.in_play() or RedKingMadMan.is_ryce(t) or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
 		return false
 	if f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(s.figures, f):
 		return false
@@ -46,6 +46,8 @@ func can_cast(id: String, target_id: int) -> bool:
 		return false
 	var spell: Dictionary = s.spell_catalog[id]
 	var kind: String = spell["kind"]
+	if RedKingTethers.pylon(t) and kind not in ["shot","area_shot"]:
+		return false
 	if kind in ["unimplemented", "ritual", "placement", "counter", "treasure"]:
 		return false
 	if kind == "self":
@@ -76,10 +78,12 @@ func can_cast(id: String, target_id: int) -> bool:
 			if not LayeredFigureSpells.visible(s.board,f,t,limit):
 				return false
 		elif kind == "area_shot":
-			if Shooting.distance(f, t) > limit or not LineOfSight.check(s.board, f.pos, t.pos).clear:
+			if Shooting.distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
 				return false
-		elif not WizardEye.visible(s.board, f, t.pos, limit):
+		elif not WizardEye.visible(s.board,f,t.pos,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
 			return false
+	if ammo:
+		return id=="enchant_weapon" and t.side==f.side and MagicAmmo.can_enchant(t)
 	if kind == "shot":
 		return t != f
 	if kind == "area_shot":
@@ -95,8 +99,12 @@ func can_cast(id: String, target_id: int) -> bool:
 		return true
 	if id == "plague_of_insects":
 		return not t.insects_immune() and not t.spell_effects.has(id)
+	if id=="mind_control" and t.def.traits.has("immune_mind_control"):
+		return false
+	if id=="control_demon" and t.def.traits.has("immune_control_demon"):
+		return false
 	if id == "suggestion":
-		return t != f and not t.def.traits.has("mind_lock") and not t.spell_effects.has("mind_lock")
+		return t != f and not t.mind_locked()
 	if id == "bones_of_the_earth":
 		return not t.def.traits.has("large") and t.elevation < 0.01 and not t.spell_effects.has(id)
 	if id == "leap":
@@ -115,10 +123,10 @@ func can_cast(id: String, target_id: int) -> bool:
 	if SummonActions.CONTROL.has(id):
 		return summons.can_control(f, t, id)
 	if id == "strike_dead":
-		return t != f and not t.def.traits.has("undead") and not t.def.traits.has("construct")
+		return t != f and not t.is_undead() and not t.def.traits.has("construct")
 	if id == "destroy_undead":
-		return t.def.traits.has("undead")
-	if kind in ["heal", "resist"] and (t.def.traits.has("undead") or t.def.traits.has("construct")):
+		return t.is_undead()
+	if kind in ["heal", "resist"] and (t.is_undead() or t.def.traits.has("construct")):
 		return false
 	if kind == "resist":
 		return t.side != f.side
@@ -127,10 +135,10 @@ func can_cast(id: String, target_id: int) -> bool:
 	return not t.spell_effects.has(id)
 
 
-func start(id: String, target_id: int) -> bool:
-	if not can_cast(id, target_id) or id in ["leap", "transpose", "suggestion"]:
+func start(id: String, target_id: int,ammo: bool=false) -> bool:
+	if not can_cast(id, target_id,ammo) or id in ["leap", "transpose", "suggestion"]:
 		return false
-	return _roll(id, target_id)
+	return _roll(id,target_id,null,false,-1,{"magic_ammo":true} if ammo else {})
 
 
 func counter_options(id: String) -> Array[Dictionary]:
@@ -209,7 +217,7 @@ func start_swap(first: int, second: int) -> bool:
 	return _roll("transpose", first, null, false, second)
 
 
-func placement_points(id: String, first_only: bool = false, rotated: bool = false) -> Array[Vector2]:
+func placement_points(id: String, first_only: bool = false, rotated: bool = false,extended: bool=false) -> Array[Vector2]:
 	var f := c.state.active()
 	var empty: Array[Vector2] = []
 	if not c.state.board.floor_layout.is_empty():
@@ -223,7 +231,7 @@ func placement_points(id: String, first_only: bool = false, rotated: bool = fals
 	if id == "teleport":
 		return movement.points(f, f, id, first_only)
 	if TerrainMagic.SPELLS.has(id):
-		return terrain.points(f, id, rotated, first_only)
+		return terrain.points(f,id,rotated,first_only,extended)
 	return summons.points(f, id, first_only)
 
 
@@ -231,19 +239,19 @@ func is_placement(id: String) -> bool:
 	return id == "teleport" or SummonActions.PLACEMENT.has(id) or TerrainMagic.SPELLS.has(id)
 
 
-func start_at(id: String, at: Vector2, rotated: bool = false) -> bool:
-	if placement_points(id, true, rotated).is_empty():
+func start_at(id: String, at: Vector2, rotated: bool = false,extended: bool=false) -> bool:
+	if placement_points(id,true,rotated,extended).is_empty():
 		return false
 	var f := c.state.active()
 	if id == "teleport":
 		if not movement.can_land(f, f, id, at):
 			return false
 	elif TerrainMagic.SPELLS.has(id):
-		if not terrain.can_place(f, id, at, rotated):
+		if not terrain.can_place(f,id,at,rotated,extended):
 			return false
 	elif not summons.can_place(f, id, at):
 		return false
-	return _roll(id, c.state.active_id, at, rotated)
+	return _roll(id,c.state.active_id,at,rotated,-1,{"extended_bridge":true} if extended else {})
 
 
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
@@ -274,10 +282,16 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	if f == null or not f.in_play():
 		return
 	illusions.reveal(f)
+	var t := c.state.figure(target_id)
+	var spec: Dictionary=c.state.spell_catalog[id]
+	var limit := float(spec.get("range",24.0))
+	var tiger_used: bool= t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
-	var scroll := not known and ScrollActions.consume(f, id)
-	var raw := 14 if scroll else c.dice.d20()
+	var scroll_roll := 0 if known else ScrollActions.consume_roll(f,id)
+	var scroll := scroll_roll>0
+	var raw := scroll_roll if scroll else c.dice.d20()
 	var gear_bonus := ActiveGear.casting_bonus(f, id)
+	var puppet_miscast := not scroll and raw==1 and id in ["mind_control","suggestion"] and RedKingGear.puppet(f)
 	if not scroll and f.next_cast_gear == "gear_gloves_casting" and ActiveGear.spend(f, f.next_cast_gear):
 		gear_bonus += 5
 	elif not scroll and f.next_cast_gear == "gear_wand_light" and ActiveGear.spend(f, f.next_cast_gear):
@@ -289,7 +303,7 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	if id == "plane_walk":
 		PlaneWalk.record(f, c.state.turn)
 	var empowered := not scroll and f.spell_effects.erase("potion_empowerment")
-	var total := 14 if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
+	var total := scroll_roll if scroll else CastingRoll.modified(raw, gear_bonus + (4 if empowered else 0) + plane_penalty + RealityCracks.casting_modifier(c.state,id) + RedKingSinkhole.casting_modifier(c.state,f) + f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) - (2 if f.spell_effects.has("furious_quill") else 0) - (2 if f.affected_by_insects() else 0), f.def.role == "apprentice")
 	var tn := int(c.state.spellbooks.get(f.side, {}).get(id, c.state.spell_catalog[id]["number"]))
 	if not shatter.spent:
 		c._spend(f)
@@ -303,8 +317,14 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	if not effect.is_empty():
 		c.state.pending_cast["effect"] = effect
 	c.emit("cast_roll", c.state.pending_cast.duplicate())
+	if tiger_used:
+		TigerEye.test_use(c,f)
 	if id in ["spell_eater", "strike_dead"]:
 		c._hurt(f, 1, f, false)
+	if puppet_miscast:
+		c._hurt(f,1,f,false)
+	if RealityCracks.id(c.state)==7 and RealityCracks.casting_modifier(c.state,id)==5:
+		c._hurt(f,2,f,false)
 
 
 func max_empowerment() -> int:
@@ -312,10 +332,10 @@ func max_empowerment() -> int:
 	if p.is_empty() or p.get("scroll", false):
 		return 0
 	var f := c.state.figure(p["caster"])
-	var resources := maxi(0, f.health) + PowerPool.available(f)
+	var resources := PowerPool.cast_resources(f,str(p["id"]))
 	if p["id"] == "summon_demon":
 		return 0 if int(p["raw"]) == 1 else resources
-	return CastingRoll.max_empowerment(p["total"], resources)
+	return CastingRoll.max_empowerment(int(p["total"])+VampireStaff.amount(c,p,true),resources)
 
 
 func finish(health: int) -> bool:
@@ -335,14 +355,18 @@ func _finish_one(health: int) -> bool:
 	var f := s.figure(p["caster"])
 	var t := s.figure(p["target"])
 	var id: String = p["id"]
-	var result := CastingRoll.resolve(p["total"], p["tn"], health, maxi(0, f.health) + PowerPool.available(f), false, 100 if id == "summon_demon" else 18)
+	var stolen := VampireStaff.amount(c,p,true)
+	var result := CastingRoll.resolve(int(p["total"])+stolen,p["tn"],health, PowerPool.cast_resources(f,id), false, 100 if id == "summon_demon" else 18)
 	if p.get("scroll", false):
-		result = {"success": true, "roll": 14, "health_spent": 0, "failure_damage": 0}
+		result = {"success": true, "roll": int(p["total"]), "health_spent": 0, "failure_damage": 0}
 	elif id == "summon_demon" and int(p["raw"]) == 1:
 		result["success"] = false
 	s.pending_cast = {}
-	var power := PowerPool.spend(f, int(result["health_spent"]))
+	VampireStaff.spend(c,f,p,stolen)
+	var power := PowerPool.spend(f,int(result["health_spent"]),id)
 	var hp := int(result["health_spent"]) - power
+	if MagicEquipment.bonus(f,"cast_failure_cap")>0:
+		result["failure_damage"]=mini(int(result["failure_damage"]),1)
 	c._hurt(f, hp + int(result["failure_damage"]) + (2 if p.get("cordial", false) else 0), f, false)
 	c.emit("cast_result", {"id": f.id, "spell": id, "target": t.id, "success": result["success"], "roll": result["roll"], "spent": hp, "power": power, "tn": p["tn"], "failure_damage": result["failure_damage"], "scroll": p.get("scroll", false)})
 	if id == "summon_demon" and int(p["raw"]) == 1 and not p.get("scroll", false):
@@ -350,6 +374,7 @@ func _finish_one(health: int) -> bool:
 		return true
 	if not result["success"]:
 		return true
+	RedKingGear.charge(f,str(s.spell_catalog[id].get("school","")))
 	if id in ["dispel", "spell_eater"]:
 		counter.apply(p["effect"])
 		return true
@@ -370,19 +395,33 @@ func _finish_one(health: int) -> bool:
 		treasure_magic.apply(f, id, s.treasure(p["effect"]["token"]), p["at"], int(result["roll"]))
 		return true
 	if id=="bridge" and p.get("effect",{}).has("layered_bridge"):
-		LayeredBridge.apply(c,p["effect"]["layered_bridge"])
+		var bridge: Dictionary=p["effect"]["layered_bridge"]
+		if not bridge.get("extended",false) or ActiveGear.spend(f,TerrainMagic.EXTENDED):
+			LayeredBridge.apply(c,bridge)
 		return true
 	if TerrainMagic.SPELLS.has(id):
-		terrain.apply(f, id, p["at"], p["rotated"], int(result["roll"]))
+		var extended: bool=p.get("effect",{}).get("extended_bridge",false)
+		if not extended or ActiveGear.spend(f,TerrainMagic.EXTENDED):
+			terrain.apply(f,id,p["at"],p["rotated"],int(result["roll"]),extended)
 		return true
 	if SummonActions.PLACEMENT.has(id):
-		summons.spawn(f, id, p["at"], int(p["total"]) + health, int(p["tn"]))
+		summons.spawn(f,id,p["at"],int(result["roll"]),int(p["tn"]),bool(p.get("golden_fang",false)))
 		illusions.sweep()
 		return true
 	if not t.in_play():
 		return true
+	if id not in ["elemental_ball","elemental_bolt","scatter_shot","destructive_sphere"] and CircletDefence.blocks(c,t,id):
+		return true
+	if id in ["heal","mind_lock","elemental_shield","blinding_light","petrify","bones_of_the_earth","slow","curse","furious_quill","plague_of_insects","strike_dead","steal_health","suggestion","blink"]:
+		t=CreatureEffects.reflection_target(c,f,t,id)
+	if id not in ["elemental_ball","elemental_bolt","scatter_shot","destructive_sphere"] and CircletDefence.blocks(c,t,id):
+		return true
 	if SummonActions.CONTROL.has(id):
 		summons.apply_control(f, t, id, int(result["roll"]))
+		return true
+	if id=="enchant_weapon" and p.get("effect",{}).get("magic_ammo",false):
+		if MagicAmmo.add(t):
+			c.emit("spell_effect",{"id":t.id,"spell":"enchant_weapon"})
 		return true
 	match id:
 		"fast_act":
@@ -410,12 +449,12 @@ func _finish_one(health: int) -> bool:
 			else:
 				movement.move(t, p["at"], true)
 		"suggestion":
-			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]))
+			resistance.attempt(t, int(result["roll"]), _suggestion_result.bind(t, p["at"]),(5 if t.def.traits.has("blood_marked") else 0)+RedKingGear.puppet_penalty(f,t))
 			return true
 		"push":
 			movement.push(f, t)
 		"blink":
-			movement.blink(f, t, int(result["roll"]))
+			movement.blink(f,t,int(result["roll"]),bool(p.get("gem_extend",false)),bool(p.get("gem_reroll",false)))
 		"transpose":
 			movement.transpose(f, t, s.figure(p["second"]), int(result["roll"]))
 		"heal":
@@ -428,6 +467,7 @@ func _finish_one(health: int) -> bool:
 			t.elemental_shield = 3
 		"elemental_bolt", "bone_dart", "poison_dart":
 			t = ShotTarget.randomize(c.dice, s.figures, t)
+			t=CreatureEffects.reflection_target(c,f,t,id)
 			var old_health := t.health
 			_shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt", id)
 			if id == "poison_dart" and t.health < old_health:
@@ -440,16 +480,16 @@ func _finish_one(health: int) -> bool:
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
-					_banish(f, other, int(result["roll"]), 4)
+				if other.in_play() and other.ring_side==f.ring_side and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+					_banish(f, other, int(result["roll"])+MagicEquipment.bonus(f,"banish_resistance_tn"), 4)
 		"scatter_shot":
 			for other in s.figures:
-				if other.in_play() and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
-					_shot(f, ShotTarget.randomize(c.dice, s.figures, other), 0, f.pos, false, true, id)
+				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+					_shot(f, CreatureEffects.reflection_target(c,f,ShotTarget.randomize(c.dice,s.figures,other),id), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
-				if other != f and other.in_play() and Shooting.distance(f, other) <= 3:
-					_direct_attack(f, other, 5)
+				if other != f and other.in_play() and other.ring_side==f.ring_side and Shooting.distance(f, other) <= 3:
+					_direct_attack(f,CreatureEffects.reflection_target(c,f,other,id),5,id)
 		"plane_walk":
 			c._loot.drop_on_death(f)
 			f.spell_effects[id] = true
@@ -467,16 +507,19 @@ func _finish_one(health: int) -> bool:
 		"elemental_ball":
 			var affected: Array[Figure] = []
 			for other in s.figures:
-				if other.in_play() and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check(s.board, t.pos, other.pos).clear):
+				if other.in_play() and other.ring_side==t.ring_side and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check(s.board, t.pos, other.pos).clear):
 					for member in ShotTarget.participants(s.figures, other):
 						if not affected.has(member):
 							affected.append(member)
+			var ids: Array[int]=[]
 			for other in affected:
-				_shot(f, other, 5, t.pos if other != t else f.pos, true, true, id)
+				ids.append(other.id)
+			s.scenario_data["rk_ball_queue"]={"caster":f.id,"center":t.id,"origin":t.pos,"targets":ids}
+			_continue_ball()
 		"destroy_undead":
 			var raw := c.dice.d20()
-			var total := raw + t.effective_will() + t.roll_penalty()
-			if not StatRoll.succeeds(raw, t.effective_will() + t.roll_penalty(), result["roll"]):
+			var total := raw + t.effective_will() + t.roll_penalty() + MagicEquipment.bonus(t,"resistance")
+			if not StatRoll.succeeds(raw, t.effective_will() + t.roll_penalty() + MagicEquipment.bonus(t,"resistance"), result["roll"]):
 				c._hurt(t, t.health if t.effective_will() <= 2 else maxi(0, int(result["roll"]) - total) * 3, f, false)
 		"strike_dead":
 			resistance.attempt(t, int(result["roll"]), _resisted_death.bind(f, t), 0, true)
@@ -499,41 +542,96 @@ func _heal(t: Figure, amount: int) -> void:
 
 
 func _shot(f: Figure, t: Figure, power: int, origin: Variant = null, elemental: bool = false, magical: bool = true, spell: String = "") -> void:
-	if not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t):
+	if CircletDefence.blocks(c,t,spell):
+		return
+	if f.ring_side!=t.ring_side or (RedKingTethers.pylon(t) and not magical) or not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
 		return
 	var s := c.state
 	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
-	var los := LineOfSight.check(s.board, from, t.pos) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
-	if not los.clear and not s.board.floor_layout.is_empty():
+	var los := LineOfSight.check(s.board, from, t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and from==f.pos and TigerEye.witness(s.board,f,t.pos,float(s.spell_catalog[spell].get("range",24.0)))!=null:
+		los.clear=true
+		los.intervening+=1
+	if not los.clear and (not s.board.floor_layout.is_empty() or RedKingHill.cracked(s)):
 		return
 	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
 		mod -= 2
 	var ar := c.dice.d20()
 	var dr := c.dice.d20()
-	var a := ar + mini(power + (3 if t.spell_effects.has("glow") else 0), 10) + f.roll_penalty()
-	var d := dr + mini(t.effective_fight() + mod, 10) + t.roll_penalty() + t.shooting_defence_penalty()
+	var a := ar - (2 if RealityCracks.low_gravity(f) else 0) + mini(power + (3 if HolyLantern.glow(t) else 0), 10) + f.roll_penalty()
+	var d := dr + mini(t.effective_fight() + Melee.secret_hrut_bonus(t,f) + mod, 10) + t.roll_penalty() + t.shooting_defence_penalty()
 	var won := a > d
 	if s.critical_hits:
 		won = dr != 20 and (ar == 20 or won)
-	var dmg := Damage.amount(a, 0, t.effective_armour() + (2 if elemental and t.def.traits.has("elemental_resistance_2") else 0), ar, s.critical_hits and not t.def.traits.has("immune_critical")) if won else 0
+	var dmg := Damage.amount(a, 0, t.effective_armour() + (CreatureEffects.elemental_resistance(t) if elemental else 0), ar, s.critical_hits and not t.def.traits.has("immune_critical")) if won else 0
 	if not magical and t.def.traits.has("immune_normal"):
 		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
+	var event := {"id":f.id,"target":t.id,"attack":a,"defence":d,"spell":spell,"origin":from if s.board.floor_layout.is_empty() else null}
+	# Only these spell pipelines can safely suspend without skipping subsequent effects.
+	if elemental and spell in ["elemental_bolt","elemental_ball"] and dmg>0 and t.side==s.reaction_side and ActiveGear.ready(t,RedKingElemental.AMULET):
+		s.scenario_data["rk_spell_absorption"]={"event":event,"damage":dmg}
+		c.emit("elemental_offer",{"id":t.id,"damage":dmg,"spell":spell})
+		return
 	if elemental:
-		dmg = PotionActions.absorb(t, dmg)
-	c.emit("spell_shot", {"id": f.id, "target": t.id, "attack": a, "defence": d, "spell": spell, "origin": from if s.board.floor_layout.is_empty() else null})
-	c._hurt(t, dmg, f)
+		dmg=RedKingElemental.reduce(c,t,dmg)
+	_apply_shot(f,t,dmg,event)
+
+
+func _apply_shot(f: Figure,t: Figure,dmg: int,event: Dictionary) -> void:
+	c.emit("spell_shot",event)
+	var old_health := t.health
+	c._hurt(t,dmg,f)
+	if t.health<old_health:
+		RedKingHill.balance(c,t)
+
+
+func _continue_ball() -> void:
+	var s := c.state
+	var queue: Dictionary=s.scenario_data.get("rk_ball_queue",{})
+	if queue.is_empty():
+		return
+	var f := s.figure(int(queue["caster"]))
+	while not queue["targets"].is_empty():
+		var other := s.figure(int(queue["targets"].pop_front()))
+		if other==null:
+			continue
+		var recipient := CreatureEffects.reflection_target(c,f,other,"elemental_ball")
+		_shot(f,recipient,5,f.pos if recipient==f or other.id==int(queue["center"]) else queue["origin"],true,true,"elemental_ball")
+		if s.scenario_data.has("rk_spell_absorption"):
+			return
+	s.scenario_data.erase("rk_ball_queue")
+
+
+func answer_absorption(use: bool) -> bool:
+	var s := c.state
+	var offer: Dictionary=s.scenario_data.get("rk_spell_absorption",{})
+	if offer.is_empty():
+		return false
+	var event: Dictionary=offer["event"]
+	var t := s.figure(int(event["target"]))
+	var f := s.figure(int(event["id"]))
+	if t==null or f==null or t.side!=s.reaction_side:
+		return false
+	s.scenario_data.erase("rk_spell_absorption")
+	_apply_shot(f,t,RedKingElemental.reduce(c,t,int(offer["damage"]),int(use)),event)
+	_continue_ball()
+	advance_shatter()
+	return true
 
 
 func _resist_effect(f: Figure, id: String) -> void:
-	if f.in_play() and f.spell_effects.has(id) and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty(), int(f.spell_effects[id])):
+	if f.in_play() and f.spell_effects.has(id) and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty() + MagicEquipment.bonus(f,"resistance"), int(f.spell_effects[id])):
 		f.spell_effects.erase(id)
 		c.emit("spell_expired", {"id": f.id, "spell": id})
 
 
 func on_activate(f: Figure) -> void:
+	terrain.wall_activation(f)
+	if not f.in_play():
+		return
 	if f.spell_effects.has("potion_invulnerability") and c.dice.d20() >= 17:
 		f.spell_effects.erase("potion_invulnerability")
 		c.emit("spell_expired", {"id": f.id, "spell": "potion_invulnerability"})
@@ -549,7 +647,7 @@ func on_end_activation(f: Figure) -> void:
 	f.petrified_skip = false
 	_resist_effect(f, "slow")
 	_resist_effect(f, "plague_of_insects")
-	if f.in_play() and f.control_spell == "mind_control" and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty(), f.control_roll):
+	if f.in_play() and f.control_spell == "mind_control" and StatRoll.succeeds(c.dice.d20(), f.effective_will() + f.roll_penalty() + MagicEquipment.bonus(f,"resistance"), f.control_roll):
 		summons.release(f)
 
 
@@ -565,14 +663,17 @@ func on_end_turn() -> void:
 
 
 func _banish(f: Figure, t: Figure, roll: int, threshold: int) -> void:
+	t=CreatureEffects.reflection_target(c,f,t,"banish")
 	var raw := c.dice.d20()
-	var will := t.effective_will() + t.roll_penalty()
+	var will := t.effective_will() + t.roll_penalty() + MagicEquipment.bonus(t,"resistance")
 	if not StatRoll.succeeds(raw, will, roll):
 		c._hurt(t, t.health if t.effective_will() <= threshold else maxi(0, roll - raw - will) * 3, f, false)
 
 
-func _direct_attack(f: Figure, t: Figure, power: int) -> void:
-	if ScenarioNull.muted(t):
+func _direct_attack(f: Figure,t: Figure,power: int,spell: String="") -> void:
+	if CircletDefence.blocks(c,t,spell):
+		return
+	if ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
 		return
 	var a := c.dice.d20() + power
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
@@ -614,7 +715,7 @@ func _resisted_steal(success: bool, f: Figure, t: Figure) -> void:
 
 
 func available_spell(f: Figure, id: String) -> bool:
-	if ScenarioNull.muted(f):
+	if ScenarioNull.muted(f) or CircletDefence.immune(f,id):
 		return false
 	if id in ["summon_demon", "control_demon"]:
 		for t in c.state.figures:
@@ -628,10 +729,14 @@ func available_spells(f: Figure) -> Array[String]:
 	if ScenarioNull.muted(f):
 		return out
 	for id: String in c.state.spellbooks.get(f.side, {}):
-		out.append(id)
+		if not CircletDefence.immune(f,id):
+			out.append(id)
 	for item in f.items:
 		var id := str(item.get("scroll", ""))
-		if id != "" and not out.has(id):
+		if id != "" and not out.has(id) and not CircletDefence.immune(f,id):
+			out.append(id)
+	for id in ScrollShield.spells(f):
+		if not out.has(id) and not CircletDefence.immune(f,id):
 			out.append(id)
 	return out
 
@@ -648,9 +753,12 @@ func insure() -> bool:
 	if not can_insure():
 		return false
 	var p := c.state.pending_cast
-	ScrollActions.consume(c.state.figure(p["caster"]), p["id"])
+	var roll := ScrollActions.consume_roll(c.state.figure(p["caster"]),p["id"])
+	if roll<=0:
+		return false
 	p["scroll"] = true
-	p["total"] = 14
+	p.erase("vampire_amount")
+	p["total"] = roll
 	return finish(0)
 
 
@@ -717,4 +825,23 @@ func single_shatter() -> bool:
 		return false
 	f.spell_effects.erase("potion_shatterstar")
 	_dispatch_shatter(entry)
+	return true
+
+
+func toggle_golden_fang() -> bool:
+	var p := c.state.pending_cast
+	if p.get("id","")!="animate_skull" or RedKingMaterials.fang_count(c.state.figure(p["caster"]))<=0:
+		return false
+	p["golden_fang"]=not p.get("golden_fang",false)
+	return true
+
+
+func toggle_gem(option: String) -> bool:
+	var p := c.state.pending_cast
+	if p.get("id","")!="blink" or option not in ["gem_extend","gem_reroll"]:
+		return false
+	var f := c.state.figure(p["caster"])
+	if f==null or not ActiveGear.has(f,PowerPool.GEM) or MagicEquipment.suppressed(f):
+		return false
+	p[option]=not p.get(option,false)
 	return true

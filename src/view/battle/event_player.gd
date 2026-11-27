@@ -52,6 +52,19 @@ func _play(e: GameEvent) -> void:
 			add_child(v)
 			v.setup(f, "Creature" if f.side < 0 else state.side_names[f.side])
 			views[f.id] = v
+		"ring_switch":
+			var v := _view(d["id"])
+			v.refresh(state.figure(d["id"]))
+			BattleEffects.pulse(self,v.position+Vector3.UP*0.15,Color(0.32,0.85,0.76))
+		"creature_transformed":
+			var creature := _view(d["id"])
+			creature.refresh(state.figure(d["id"]))
+			BattleEffects.burst(self,creature.position+Vector3.UP,Color(1.0,0.4,0.12))
+		"forced_relocation":
+			var v := _view(d["id"])
+			BattleEffects.pulse(self,v.position+Vector3.UP*0.15,Color(0.73,0.42,0.95))
+			v.position=TableSpace.to_world(d["at"],d["height"])
+			BattleEffects.pulse(self,v.position+Vector3.UP*0.15,Color(0.73,0.42,0.95))
 		"layered_move":
 			_animate_layered_move(_view(d["id"]),d["path"])
 		"move", "push_back", "force_combat":
@@ -95,6 +108,28 @@ func _play(e: GameEvent) -> void:
 			_float_text(v, "-%d" % d["amount"])
 		"out_of_action":
 			_view(d["id"]).take_out()
+		"pylon_destroyed":
+			var marker: MeshInstance3D=treasure_views[d["treasure"]]
+			marker.position=TableSpace.to_world(d["at"],state.board.height_at(d["at"])+0.25)
+			marker.show()
+		"ryce_unconscious":
+			var marker: MeshInstance3D=treasure_views[d["treasure"]]
+			marker.position=TableSpace.to_world(d["at"],state.board.height_at(d["at"])+0.25)
+			marker.show()
+		"stand_investigated":
+			var marker: MeshInstance3D=treasure_views[d["treasure"]]
+			if int(d["gold"])==0:
+				marker.hide()
+			else:
+				# Retain the node identity: later pickup events reparent it.
+				for child in marker.get_children():
+					marker.remove_child(child)
+					child.queue_free()
+				var chest := BoxMesh.new()
+				chest.size=Vector3(0.6,0.5,0.45)
+				marker.mesh=chest
+				marker.material_override=BoardView._mat(Color(1.0,0.73,0.15),0.3)
+				TerrainDressing.chest(marker)
 		"treasure_pickup":
 			var token: MeshInstance3D = treasure_views[d["treasure"]]
 			token.reparent(_view(d["id"]), false)
@@ -237,7 +272,21 @@ func build_treasures() -> void:
 		marker.mesh = box
 		marker.material_override = BoardView._mat(Color(0.42, 0.83, 1.0) if token.frozen else Color(1.0, 0.73, 0.15), 0.3)
 		add_child(marker)
-		TerrainDressing.chest(marker)
+		if token.investigation:
+			_build_stand(marker)
+		elif RedKingMadMan.rescue(state,token):
+			_build_rescue(marker)
+		else:
+			TerrainDressing.chest(marker)
+		if RedKingRingworld.active(state):
+			var label := Label3D.new()
+			label.text="IN" if token.ring_side==1 else "OUT"
+			label.modulate=Color(0.35,0.95,0.82) if token.ring_side==1 else Color(1.0,0.75,0.4)
+			label.font_size=50
+			label.pixel_size=0.01
+			label.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+			label.position.y=0.6
+			marker.add_child(label)
 		var height := state.board.height_at(token.pos)
 		if not token.surface_id.is_empty():
 			var layout := FloorLayout.from_dict(state.board.floor_layout)
@@ -252,3 +301,55 @@ func build_treasures() -> void:
 			var carrier := state.figure(token.carrier_id)
 			marker.reparent(views[token.carrier_id], false)
 			marker.position = Vector3(-0.48 if carrier.second_treasure_id == token.id else 0.48, 0.65, 0)
+
+
+func _build_stand(marker: MeshInstance3D) -> void:
+	# Three timber legs and a crimson hanging offering; same pick radius as a token.
+	var base := CylinderMesh.new()
+	base.top_radius=0.26
+	base.bottom_radius=0.32
+	base.height=0.12
+	base.radial_segments=12
+	marker.mesh=base
+	marker.material_override=BoardView._mat(Color(0.44,0.25,0.15),0.9)
+	for i in 3:
+		var leg := MeshInstance3D.new()
+		var shaft := CylinderMesh.new()
+		shaft.top_radius=0.045
+		shaft.bottom_radius=0.065
+		shaft.height=0.95
+		shaft.radial_segments=6
+		leg.mesh=shaft
+		var direction := Vector3.RIGHT.rotated(Vector3.UP,TAU*i/3.0)
+		leg.position=direction*0.14+Vector3.UP*0.32
+		leg.quaternion=Quaternion(Vector3.UP,(Vector3.UP*0.9-direction*0.28).normalized())
+		leg.material_override=marker.material_override
+		marker.add_child(leg)
+	var bundle := MeshInstance3D.new()
+	var bag := BoxMesh.new()
+	bag.size=Vector3(0.27,0.32,0.23)
+	bundle.mesh=bag
+	bundle.position.y=0.32
+	bundle.rotation.z=0.14
+	bundle.material_override=BoardView._mat(Color(0.64,0.14,0.09),0.9)
+	marker.add_child(bundle)
+
+
+func _build_rescue(marker: MeshInstance3D) -> void:
+	# A bundled unconscious figure rather than a treasure chest.
+	var body := CapsuleMesh.new()
+	body.radius=0.21
+	body.height=1.10
+	body.radial_segments=12
+	body.rings=4
+	marker.mesh=body
+	marker.rotation.z=PI*0.5
+	marker.material_override=BoardView._mat(Color("64566b"),0.9)
+	var head := MeshInstance3D.new()
+	var sphere := SphereMesh.new()
+	sphere.radius=0.16
+	sphere.height=0.32
+	head.mesh=sphere
+	head.position.y=0.48
+	head.material_override=BoardView._mat(Color("c5ad8e"),0.95)
+	marker.add_child(head)

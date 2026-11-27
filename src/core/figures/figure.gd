@@ -25,6 +25,8 @@ var def: FigureDef
 var side := 0
 var pos := Vector2.ZERO
 var elevation := 0.0
+## Ringworld reality: outside (0) or inside (1).
+var ring_side := 0
 ## Stable ID for explicit layered surfaces; empty on legacy maps.
 var surface_id := ""
 var health := 0
@@ -100,7 +102,7 @@ func effective_fight() -> int:
 		value = maxi(0, value - 4)
 	if spell_effects.has("petrify"):
 		value = maxi(0, value - 3)
-	return value
+	return value - int(used_gear.get("rk_soulchill_fight",0)) + (1 if used_gear.get("rk_golden_fang",false) else 0)
 
 
 func effective_armour() -> int:
@@ -116,21 +118,28 @@ func effective_move() -> int:
 	var speed := def.move + MagicEquipment.bonus(self, "move") + (2 if spell_effects.has("fleet_feet") else 0) - (1 if spell_effects.has("furious_quill") else 0)
 	if spell_effects.has("potion_speed"):
 		speed = mini(9, speed + 2)
-	return maxi(1, speed)
+	return maxi(1, speed-int(spell_effects.get("veil_move_penalty",0)))
 
 
 func effective_will() -> int:
-	return def.will + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
+	return def.will + SummonActions.illusion_will(self) + RedKingGear.woe_will(self) - int(used_gear.get("rk_soulchill_will",0)) - int(used_gear.get("rk_mask_will",0)) + RealityCracks.will_modifier(self) + MagicEquipment.bonus(self, "will") + (2 if spell_effects.has("mind_lock") else 0) + (5 if spell_effects.has("potion_iron_mind") else 0) - (2 if spell_effects.has("possess") else 0)
+
+
+func wounded() -> bool:
+	if battle_ref == null or is_undead() or def.traits.has("construct") or health <= 0 or health >= def.health:
+		return false
+	var s: GameState = battle_ref.get_ref()
+	return s != null and s.wounded_rules and health <= (2 if MagicEquipment.bonus(self,"vigour")>0 else 4)
 
 
 func action_limit() -> int:
 	if petrified_skip or magic_exhausted:
 		return 0
-	return 1 if poisoned or spell_effects.has("slow") else 2
+	return 1 if poisoned or wounded() or spell_effects.has("slow") else 2
 
 
 func roll_penalty() -> int:
-	return -2 if spell_effects.has("curse") else 0
+	return (-2 if spell_effects.has("curse") else 0) + (-2 if wounded() else 0)
 
 
 func effective_shoot() -> int:
@@ -139,7 +148,7 @@ func effective_shoot() -> int:
 
 
 func immune_to_poison() -> bool:
-	return def.traits.has("undead") or def.traits.has("construct") or def.traits.has("demon")
+	return MagicEquipment.bonus(self,"poison_immunity")>0 or def.traits.has("immune_poison") or is_undead() or def.traits.has("construct") or def.traits.has("demon")
 
 
 func treasure_encumbered() -> bool:
@@ -151,7 +160,7 @@ func early_limit() -> int:
 
 
 func shooting_defence_penalty() -> int:
-	return -int(injury_types.get("lost_eye", 0))
+	return -int(injury_types.get("lost_eye",0))+MagicEquipment.bonus(self,"shoot_defence")-int(used_gear.get("rk_gem_glow",0))
 
 
 func is_demon() -> bool:
@@ -159,7 +168,7 @@ func is_demon() -> bool:
 
 
 func insects_immune() -> bool:
-	return def.traits.has("large") or def.traits.has("undead") or def.traits.has("construct")
+	return def.traits.has("large") or is_undead() or def.traits.has("construct")
 
 
 func affected_by_insects() -> bool:
@@ -189,3 +198,20 @@ func carried_treasures() -> Array[int]:
 	if second_treasure_id >= 0:
 		result.append(second_treasure_id)
 	return result
+
+
+## Effective traits supplied by equipped expansion items.
+func levitates() -> bool:
+	return def.traits.has("levitate") or (ActiveGear.has(self,"gear_rk_ring_of_levitation") and not MagicEquipment.suppressed(self))
+
+
+func mind_locked() -> bool:
+	return def.traits.has("mind_lock") or spell_effects.has("mind_lock") or (ActiveGear.has(self,"gear_rk_mind_lock_collar") and not MagicEquipment.suppressed(self))
+
+
+func has_horns() -> bool:
+	return def.traits.has("horns") or ActiveGear.has(self,"gear_rk_construct_spikes")
+
+
+func is_undead() -> bool:
+	return def.traits.has("undead") or DeathMask.wearing(self)

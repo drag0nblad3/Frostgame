@@ -2,8 +2,10 @@ class_name LayeredPush
 extends RefCounted
 
 
-static func destination(c: GameController,own: bool) -> Variant:
+static func destination(c: GameController,own: bool,distance: float=1.0) -> Variant:
 	var s := c.state
+	if not CombatDisplacement.distance_allowed(s,own,distance):
+		return null
 	var winner := s.figure(s.push_winner)
 	var loser := s.figure(s.push_loser)
 	if winner==null or loser==null or not winner.in_play() or not loser.in_play():
@@ -18,14 +20,15 @@ static func destination(c: GameController,own: bool) -> Variant:
 		return null
 	var surface := layout.surfaces[index]
 	var grid := LayeredGrid.new(layout,f,s.figures)
-	var at := f.pos+(f.pos-other.pos).normalized()
+	var at := f.pos+(f.pos-other.pos).normalized()*distance
 	var node := layout.node(f.surface_id,at)
 	# Keep the movement lattice; only allow snapped destinations close to 1 inch.
-	if absf(layout.point(node).distance_to(f.pos)-1.0)>0.26:
+	if absf(layout.point(node).distance_to(f.pos)-distance)>0.26:
 		return null
 	at=layout.point(node)
-	for i in range(1,5):
-		var p := f.pos.lerp(at,float(i)/4.0)
+	var steps := maxi(4,ceili(f.pos.distance_to(at)*4.0))
+	for i in range(1,steps+1):
+		var p := f.pos.lerp(at,float(i)/steps)
 		var h := surface.height_at(p)
 		if not layout.clearance(Vector3(p.x,h,p.y),Figure.BASE_RADIUS,1.6):
 			return null
@@ -38,8 +41,8 @@ static func destination(c: GameController,own: bool) -> Variant:
 	return LayeredFall.landing(layout,grid,at,f.elevation)
 
 
-static func apply(c: GameController,own: bool) -> bool:
-	var node: Variant = destination(c,own)
+static func apply(c: GameController,own: bool,distance: float=1.0) -> bool:
+	var node: Variant = destination(c,own,distance)
 	if node==null:
 		return false
 	var s := c.state

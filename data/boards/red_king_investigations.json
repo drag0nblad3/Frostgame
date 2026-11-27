@@ -1,0 +1,136 @@
+{
+  "id": "red_king_investigations",
+  "name": "Investigations",
+  "size": [
+    36,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        8,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        7,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        25,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        28,
+        25,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        10,
+        9,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        23,
+        25,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        9,
+        23,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        25,
+        10,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        15,
+        16,
+        0.5,
+        4
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        20.5,
+        16,
+        0.5,
+        4
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        15,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        19,
+        15,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        16,
+        20.5,
+        1,
+        0.5
+      ]
+    },
+    {
+      "kind": "hut_wall",
+      "rect": [
+        19,
+        20.5,
+        1,
+        0.5
+      ]
+    }
+  ]
+}

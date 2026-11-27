@@ -15,6 +15,7 @@ var mover: Figure
 var others: Array[Figure] = []
 var cols := 0
 var rows := 0
+var running := false
 
 
 func _init(b: Board, f: Figure = null, figures: Array[Figure] = []) -> void:
@@ -23,7 +24,7 @@ func _init(b: Board, f: Figure = null, figures: Array[Figure] = []) -> void:
 	cols = int(b.size.x / STEP) + 1
 	rows = int(b.size.y / STEP) + 1
 	for o in figures:
-		if o.in_play() and o != f:
+		if o.in_play() and o != f and (f==null or o.ring_side==f.ring_side):
 			others.append(o)
 
 
@@ -40,15 +41,15 @@ func open(n: Vector2i) -> bool:
 	if not in_bounds(n):
 		return false
 	var p := to_pos(n)
-	if not board.can_stand(p, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, p):
+	if not board.can_stand(p, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, p) or BattleBoundary.blocks_position(board.boundaries,p,mover):
 		return false
 	var height := board.height_at(p)
 	for o in others:
 		if absf(o.elevation - height) < 0.5:
 			var distance := o.pos.distance_to(p)
-			if distance < Contact.OVERLAP:
+			if distance < Contact.OVERLAP or (running and mover!=null and o.side!=mover.side and distance<1.001):
 				return false
-			if mover != null and o.side != mover.side and distance <= Contact.CONTACT and (not IllusionRules.visible_to(others, mover, o) or (mover.battle_ref != null and mover.battle_ref.get_ref() != null and BeautyActions.blocked(mover.battle_ref.get_ref(), mover, o))):
+			if mover!=null and o.side!=mover.side and distance<=Contact.CONTACT and (WormRider.ignored(mover,o) or (not IllusionRules.visible_to(others, mover, o) and not CreatureSenses.may_contact(mover,o)) or (mover.battle_ref != null and mover.battle_ref.get_ref() != null and BeautyActions.blocked(mover.battle_ref.get_ref(), mover, o))):
 				return false
 	return true
 
@@ -80,14 +81,27 @@ func step_cost(a: Vector2i, b: Vector2i) -> float:
 
 
 func segment_cost(pa: Vector2, pb: Vector2) -> float:
+	if BattleBoundary.blocks_segment(board.boundaries,pa,pb,"movement",mover):
+		return INF
 	var mid := (pa + pb) * 0.5
 	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
+	if running:
+		for o in others:
+			if mover!=null and o.side!=mover.side and absf(o.elevation-board.height_at(mid))<0.5 and Geometry2D.get_closest_point_to_segment(o.pos,pa,pb).distance_to(o.pos)<1.001:
+				return INF
+		if ScenarioColumns.contact(board,mid)!=null:
+			return INF
+		if board.has_ground_profiles or board.has_ramps:
+			return TerrainTravel.cost(board,pa,pb,mover,true)
+		return pa.distance_to(pb)+absf(board.height_at(pa)-board.height_at(pb))
+	if board.low_gravity:
+		return pa.distance_to(pb)
 	if board.has_ground_profiles or board.has_ramps:
 		return TerrainTravel.cost(board,pa,pb,mover)
 	for p in board.pieces_at(mid):
 		if p.ramp and p.contains(pa) and p.contains(pb):
 			var delta := board.height_at(pa) - board.height_at(pb)
 			return Vector2(pa.distance_to(pb), delta).length()
-	var multiplier := 1.0 if mover != null and mover.def.traits.has("levitate") else board.move_mult_at(mid)
+	var multiplier := 1.0 if mover != null and mover.levitates() else board.move_mult_at(mid)
 	return pa.distance_to(pb) * multiplier + board.climb_cost(pa, pb, mover)

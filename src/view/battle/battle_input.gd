@@ -17,9 +17,11 @@ var group_selection: Array[int] = []
 var cast_options: Array[String] = []
 var item_options: Array[String] = []
 var selected_spell := ""
+var spell_ammo := false
 var selected_potion := ""
 var selected_drop := -1
 var spell_rotated := false
+var spell_extended := false
 var spell_first := -1
 var counter_index := 0
 var counter_choices: Array[Dictionary] = []
@@ -45,14 +47,77 @@ func refresh() -> void:
 	item_options.clear()
 	reach = null
 	var f := c.state.active()
+	if c.state.scenario_data.has("rk_priority_choice"):
+		var kind := str(c.state.scenario_data["rk_priority_choice"].get("kind",""))
+		mode=kind if kind in ["convergence","hill_seam"] else "ruins_piece"
+		preview()
+		return
+	var end_choice: Dictionary=c.state.scenario_data.get("rk_end_choice",{})
+	if end_choice.get("kind","") in ["hunt_corner","hunt_place"]:
+		mode=end_choice["kind"]
+		preview()
+		return
+	if end_choice.get("kind","")=="sinkhole_pull":
+		available.assign(["sinkhole_accept","sinkhole_fight","sinkhole_will","sinkhole_all"])
+		mode="sinkhole_pull"
+		preview()
+		return
+	if end_choice.get("kind","")=="memory":
+		available.assign(["mind_skip"])
+		mode="mind_token"
+		preview()
+		return
+	if end_choice.get("kind","")=="veil":
+		available.assign(["veil_keep"])
+		mode="veil_target"
+		preview()
+		return
+	if end_choice.get("kind","")=="random_exchange_single":
+		available.assign(["exchange_join","exchange_decline"])
+		mode="random_exchange_single"
+		preview()
+		return
+	if end_choice.get("kind","")=="exchange":
+		mode="secret_exchange"
+		preview()
+		return
 	if c.state.pending_initiative:
 		available.assign(["telescope_use", "telescope_save"])
 		mode = "initiative_choice"
 		preview()
 		return
+	if c.state.scenario_data.has("rk_worm_relocation"):
+		available.assign(["worm_keep"])
+		mode="worm_relocation"
+		preview()
+		return
+	if c.state.scenario_data.has("rk_lightning_absorb"):
+		available.assign(["elemental_absorb","elemental_pass"])
+		mode="elemental_lightning_reaction"
+		preview()
+		return
+	if c.state.scenario_data.has("rk_direction_choice"):
+		var choice: Dictionary=c.state.scenario_data["rk_direction_choice"]
+		available.assign(["direction_keep"])
+		if int(choice["teetotum"])>=0:
+			available.append("direction_teetotum")
+		if choice["gem"]:
+			available.append("direction_gem")
+		mode="direction_reaction"
+		preview()
+		return
+	if c.state.scenario_data.has("rk_spell_absorption"):
+		available.assign(["elemental_absorb","elemental_pass"])
+		mode="elemental_spell_reaction"
+		preview()
+		return
 	if not c.state.pending_combat.is_empty():
-		available.assign(["fate_combat_yes", "fate_combat_no"])
-		mode = "fate_combat"
+		if c.state.pending_combat.has("absorb_target"):
+			available.assign(["elemental_absorb","elemental_pass"])
+			mode="elemental_reaction"
+		else:
+			available.assign(["fate_combat_yes", "fate_combat_no"])
+			mode = "fate_combat"
 		preview()
 		return
 	if not c.state.pending_resistance.is_empty():
@@ -84,11 +149,25 @@ func refresh() -> void:
 		available.append("stay")
 		if c.can_push(true):
 			available.append("push_self")
+		for distance in [0.5,1.5,2.0,2.5,3.0]:
+			if c.can_push(true,distance):
+				available.append("push_self_"+str(int(distance*10)))
 		if c.can_push(false):
 			available.append("push_enemy")
 		mode = "push"
 		preview()
 		return
+	if c.state.pending_gutter>=0:
+		available.assign(["gutter_skip"])
+		mode="gutter_fight"
+		preview()
+		return
+	if RealityCracks.can_exit_center(c):
+		available.append("reality_exit")
+	if RedKingRingworld.can_switch(c,f):
+		available.append("ring_switch")
+	if RedKingRingworld.can_escape(c,f):
+		available.append("ring_escape")
 	if c.can_drink_well():
 		available.append("drink_well")
 	if c.can_break_ice():
@@ -98,6 +177,22 @@ func refresh() -> void:
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
 		if GearActions.can_use(c, id):
 			available.append(id)
+	if not TigerEye.eye_options(c).is_empty():
+		available.append("gear_tiger_eye_move")
+	if HolyLantern.can_toggle(c):
+		available.append("gear_lantern_toggle")
+	if WormRider.ready(c):
+		available.append("gear_worm_summon")
+	if DeathMask.can_toggle(c):
+		available.append("gear_death_mask_toggle")
+	if ActiveGear.ready(f,RedKingDirection.ITEM):
+		available.append("gear_teetotum_arm")
+	if ActiveGear.ready(f,RedKingElemental.AMULET):
+		available.append("gear_absorb_arm")
+	if GearActions.cape_ready(c) and c.state.board.floor_layout.is_empty():
+		available.append(GearActions.CAPE)
+	if not GearActions.bottle_points(c).is_empty():
+		available.append("gear_rk_bottle_imp")
 	for t in c.state.figures:
 		if GearActions.transfer_max(c, t) > 0:
 			available.append("gear_ring_transference")
@@ -120,6 +215,10 @@ func refresh() -> void:
 			break
 	if c.can_use_stored_action():
 		available.append("use_stored_action")
+	if RunForIt.ready(c):
+		available.append("run_for_it")
+	if RunForIt.ready(c,true):
+		available.append("run_talisman")
 	if c.can_move():
 		reach = c.reach()
 		available.append("move")
@@ -134,19 +233,28 @@ func refresh() -> void:
 			available.append("fight")
 		if c.can_shoot(enemy.id) and not available.has("shoot"):
 			available.append("shoot")
+		if c.can_shoot(enemy.id,false,true) and not available.has("ammo_shot"):
+			available.append("ammo_shot")
+		if c.can_shoot(enemy.id,true) and not available.has("wraith_shot"):
+			available.append("wraith_shot")
 	for token in c.state.treasures:
 		if c.can_pick_up(token.id):
 			available.append("collect")
 			break
 	cast_options.clear()
 	for id: String in c._magic.available_spells(f):
+		if id=="enchant_weapon":
+			for t in c.state.figures:
+				if c.can_cast(id,t.id,true):
+					cast_options.append("enchant_ammo")
+					break
 		if not c._magic.treasure_options(id).is_empty():
 			cast_options.append(id)
 			continue
 		if not c._magic.counter_options(id).is_empty():
 			cast_options.append(id)
 			continue
-		if not c._magic.placement_points(id, true).is_empty() or (id in ["fog", "wall", "bridge"] and not c._magic.placement_points(id, true, true).is_empty()):
+		if not c._magic.placement_points(id,true).is_empty() or (id in ["fog","wall","bridge"] and not c._magic.placement_points(id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not c._magic.placement_points(id,true,false,true).is_empty() or not c._magic.placement_points(id,true,true,true).is_empty())):
 			cast_options.append(id)
 			continue
 		for t in c.state.figures:
@@ -212,6 +320,30 @@ func preview() -> void:
 			hint = "Transfer %d Health to %s (maximum %d)." % [transfer_amount, t.label(), GearActions.transfer_max(c, t)]
 			if transfer_amount == f.health:
 				hint += " Warning: caster will be knocked out."
+		"run_for_it","run_talisman":
+			reach=RunForIt.reach(c,mode=="run_talisman")
+			for n: Vector2i in reach.nodes():
+				if float(reach.cost[n])>0.001:
+					nodes.append(n)
+					points.append(MoveGrid.to_pos(n))
+			hint="Run %d″ ignoring movement penalties; ends activation."%(6 if mode=="run_talisman" else 3)
+		"gear_cape_move":
+			reach=GearActions.cape_reach(c)
+			for n: Vector2i in reach.nodes():
+				if float(reach.cost[n])>0.001:
+					nodes.append(n)
+					points.append(MoveGrid.to_pos(n))
+			hint="Choose a legal escape move. The cape is spent only when the move is authorized."
+		"gear_tiger_point":
+			for option in TigerEye.eye_options(c):
+				points.append(option["at"])
+			hint="Move the Wizard Eye along its supporting surface (up to 4″)."
+		"gear_worm_point":
+			points.assign(WormRider.points(c))
+			hint="Choose a worm summoning token location. On a 1 the rival relocates it."
+		"gear_bottle_imp":
+			points.assign(GearActions.bottle_points(c))
+			hint="Place the released uncontrolled imp within 1 inch."
 		"gear_teleport":
 			points.assign(GearActions.teleport_points(c))
 			hint = "Choose a destination within 8 inches."
@@ -269,10 +401,12 @@ func preview() -> void:
 			radius = 0.65
 			hint = "Choose the second figure to swap."
 		"spell_point":
-			points.assign(c._magic.placement_points(selected_spell, false, spell_rotated))
+			points.assign(c._magic.placement_points(selected_spell,false,spell_rotated,spell_extended))
 			hint = "Choose a marked spell location."
 			if selected_spell in ["fog", "wall", "bridge"]:
 				hint += " · " + ("North–south" if spell_rotated else "East–west")
+			if selected_spell=="bridge":
+				hint+=" · %d″ bridge" % (9 if spell_extended else 6)
 		"cancel_control":
 			for t in c.state.figures:
 				if c._magic.can_cancel(t.id):
@@ -281,29 +415,129 @@ func preview() -> void:
 			hint = "Choose a summoned or controlled creature to release."
 		"spell_target":
 			for t in c.state.figures:
-				if c.can_cast(selected_spell, t.id):
+				if c.can_cast(selected_spell,t.id,spell_ammo):
 					targets.append(t)
 			radius = 0.65
-			hint = "Choose a target for %s." % c.state.spell_catalog[selected_spell]["name"]
+			hint = "Choose a bow or crossbow user to enchant ammunition." if spell_ammo else "Choose a target for %s." % c.state.spell_catalog[selected_spell]["name"]
 		"resist":
 			var p := c.state.pending_resistance
 			var t := c.state.figure(p["id"])
 			points.append(t.pos)
 			radius = 0.65
-			var power := mini(empower, PowerPool.available(t))
-			hint = "%s resists: %d + %d Will, needs %d. Spend %d power + %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], power, empower - power, int(p["raw"]) + int(p["mod"]) + empower]
+			var power := mini(empower, PowerPool.available(t,str(p.get("spell",""))))
+			hint = "%s resists: %d + %d Will, needs %d. Spend %d power + %d HP → %d." % [t.label(), p["raw"], p["mod"], p["tn"], power, empower - power, int(p["raw"]) + int(p["mod"]) + empower+VampireStaff.amount(c,p,false)]
+			hint+=_vampire_hint(p,false)
 		"empower":
 			var p := c.state.pending_cast
-			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"])))
-			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower]
+			var power := mini(empower, PowerPool.available(c.state.figure(p["caster"]),str(p["id"])))
+			hint = "%s: rolled %d (modified %d), needs %d. Spend %d power + %d HP → %d." % [c.state.spell_catalog[p["id"]]["name"], p["raw"], p["total"], p["tn"], power, empower - power, int(p["total"]) + empower+VampireStaff.amount(c,p,true)]
+			hint+=_vampire_hint(p,true)
+			if p.get("gem_extend",false):
+				hint+=" • Blink 6″"
+			if p.get("gem_reroll",false):
+				hint+=" • Reroll direction"
+			if p.get("golden_fang",false):
+				hint+=" • Golden Fang selected: +1 Fight on success."
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
+		"direction_reaction":
+			var choice: Dictionary=c.state.scenario_data["rk_direction_choice"]
+			var target := c.state.figure(int(choice["target"]))
+			var direction := RedKingDirection.vector(int(choice["heading"]))
+			var length := 6.0 if choice["kind"]=="ryce" or choice["extend"] else 4.0
+			for step in range(1,int(length)+1):
+				var point := target.pos+direction*float(step)
+				if c.state.board.contains(point):
+					points.append(point)
+			hint="%s: marked random heading. Keep it or use an available item to reroll. The new heading is binding."%target.label()
+		"elemental_lightning_reaction":
+			var offer: Dictionary=c.state.scenario_data["rk_lightning_absorb"]
+			var target := c.state.figure(int(offer["target"]))
+			points.append(target.pos)
+			radius=0.65
+			hint="%s: %d elemental damage from Lightning Front. Reduce by 1 or risk full absorption (1–16 success; 17–20 destroys amulet and adds 3 damage)."%[target.label(),offer["damage"]]
+		"elemental_spell_reaction":
+			var offer: Dictionary=c.state.scenario_data["rk_spell_absorption"]
+			var target := c.state.figure(int(offer["event"]["target"]))
+			points.append(target.pos)
+			radius=0.65
+			hint="%s: %d elemental damage from %s. Reduce by 1 or risk full absorption (1–16 success; 17–20 destroys amulet and adds 3 damage)." % [target.label(),offer["damage"],str(offer["event"]["spell"]).replace("_"," ").capitalize()]
+		"elemental_reaction":
+			var p := c.state.pending_combat
+			var target := c.state.figure(int(p["absorb_target"]))
+			points.append(target.pos)
+			radius=0.65
+			hint="%s: %d normal + %d elemental damage. Amulet reduces elemental damage by 1, or risk full absorption (1–16 success; 17–20 destroys amulet and adds 3 damage)." % [target.label(),p["absorb_normal"],p["absorb_elemental"]]
 		"fate_combat":
 			var p := c.state.pending_combat
 			var roller := c.state.figure(p["roller"])
 			points.append(roller.pos)
 			radius = 0.65
 			hint = "%s rolled %d. Opposed totals: %d vs %d. Use Fate Stone? New roll is binding." % [roller.label(), p["roll"], p["own_total"], p["opposing_total"]]
+		"ruins_piece":
+			for index: int in c.state.scenario_data["rk_priority_choice"]["options"]:
+				points.append(c.state.board.pieces[index].rect.get_center())
+			radius=0.8
+			hint="Shifting ruins: choose a highlighted terrain piece. Each piece can move only once."
+		"ruins_destination":
+			points.assign(RealityCrackTerrain.shift_points(c,spell_first))
+			hint="Choose a legal new centre for the selected terrain (up to 10″). Figures and treasure on it move too."
+		"worm_relocation":
+			points.assign(WormRider.relocation_points(c))
+			hint="Rival worm summoning rolled 1. Select a new legal location for the token, or keep its original location."
+		"hill_seam":
+			var unit := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
+			points.assign(RedKingHill.seam_points(c,unit))
+			radius=0.5
+			hint="Pyramid forms: choose a nearby legal slope for %s."%unit.label()
+		"convergence":
+			points.assign(RealityConvergence.points(c))
+			var figure := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
+			hint="Convergence: place %s in base contact with a figure already drawn to the centre."%figure.label()
+		"hunt_corner":
+			points.assign(RedKingHunt.points(c))
+			radius=0.9
+			hint="Hrut hunting party: select an unused corner in priority order."
+		"hunt_place":
+			points.assign(RedKingHunt.points(c))
+			var choice: Dictionary=c.state.scenario_data["rk_end_choice"]
+			hint="Deploy %s within 6″ of the chosen corner. %d remaining."%["Hrut Stinger" if choice["remaining"]==choice["total"] else "Hrut Warrior",choice["remaining"]]
+		"sinkhole_pull":
+			var unit := c.state.figure(int(c.state.scenario_data["rk_end_choice"]["id"]))
+			points.append(unit.pos)
+			radius=0.65
+			hint="%s: accept 1″ pull toward the orb, or resist (TN20, Fight %+d / Will %+d). Failure costs 2 Health and still moves the figure."%[unit.label(),unit.effective_fight()+MagicEquipment.bonus(unit,"fight_test")+unit.roll_penalty(),unit.effective_will()+unit.roll_penalty()]
+		"mind_token":
+			for token in c.state.treasures:
+				if token.on_ground():
+					tokens.append(token)
+					points.append(token.pos)
+			radius=0.65
+			hint="Mindscape: choose any remaining memory to move up to 4″, or skip."
+		"mind_destination":
+			points.assign(RedKingMind.memory_points(c.state,spell_first))
+			hint="Choose the memory's destination (up to 4″)."
+		"veil_target":
+			var choice: Dictionary=c.state.scenario_data["rk_end_choice"]
+			var original := c.state.figure(int(choice["target"]))
+			for id: int in choice["options"]:
+				var target := c.state.figure(id)
+				if target!=null and target.in_play():
+					targets.append(target)
+			radius=0.65
+			hint="Fractured Reality targets %s. Keep this target or tap another ally (+1 to the enemy's roll)." % original.label()
+		"random_exchange_single":
+			var unit := c.state.figure(int(c.state.scenario_data["rk_end_choice"]["options"][0]))
+			points.append(unit.pos)
+			radius=0.65
+			hint="%s is your last figure. Participate in the random exchange or remain in place?"%unit.label()
+		"secret_exchange":
+			for id: int in c.state.scenario_data["rk_end_choice"]["options"]:
+				var target := c.state.figure(id)
+				if target!=null and target.in_play():
+					targets.append(target)
+			radius=0.65
+			hint="Secret exchange: choose a marked member of your warband. Rival choices are already committed."
 		"initiative_choice":
 			hint = "Before initiative is rolled: use the telescope for +5, or save it for a later turn?"
 		"intercept":
@@ -338,6 +572,22 @@ func preview() -> void:
 					targets.append(t)
 			radius = 0.65
 			hint = "Attack the skeletal hand holding this figure."
+		"gutter_fight":
+			targets.assign(GearActions.gutter_targets(c))
+			radius=0.65
+			hint="Free Gutter Flail attack: select an enemy or skip."
+		"ammo_shot":
+			for t in c.state.figures:
+				if c.can_shoot(t.id,false,true):
+					targets.append(t)
+			radius=0.65
+			hint="Fire enchanted ammunition (%d remaining)." % MagicAmmo.count(f)
+		"wraith_shot":
+			for t in c.state.figures:
+				if c.can_shoot(t.id,true):
+					targets.append(t)
+			radius=0.65
+			hint="Choose a target for the once-per-battle shot through one terrain piece."
 		"fight", "shoot":
 			for t in c.state.figures:
 				if (c.can_fight(t.id) if mode == "fight" else c.can_shoot(t.id)):
@@ -352,7 +602,7 @@ func preview() -> void:
 					points.append(token.pos)
 			radius = 0.5
 			color = Color(1.0, 0.78, 0.15)
-			hint = "Tap a marked treasure."
+			hint = "Tap a marked offering to investigate or collect." if RedKingInvestigations.active(c.state) else "Tap a marked treasure."
 		"drop", "drop_shrunk":
 			points.assign(drops)
 			hint = "Tap a marked place to drop " + ("shrunk treasure." if mode == "drop_shrunk" else "treasure.")
@@ -372,6 +622,12 @@ func preview() -> void:
 	if f != null:
 		if FuryRules.target(c.state, f) != null:
 			hint = "Fury: charge or fight the nearest eligible enemy. " + hint
+		if HolyLantern.lit(f):
+			hint="Lantern lit"+(" · shutter at turn end. " if f.used_gear.get(HolyLantern.CLOSE,false) else ". ")+hint
+		if f.used_gear.get(RedKingDirection.ARMED,false):
+			hint="Direction reroll armed. "+hint
+		if f.used_gear.get(RedKingElemental.ARMED,false):
+			hint="Full elemental absorption armed. "+hint
 		if f.next_cast_gear != "":
 			hint = "Armed: %s. " % f.next_cast_gear.trim_prefix("gear_").replace("_", " ").capitalize() + hint
 		hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", hint]
@@ -383,6 +639,28 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key=="ruins_back":
+		mode="ruins_piece"
+		available.clear()
+		preview()
+		return false
+	if key=="exchange_join":
+		return RealityCracks.answer_exchange(c,int(c.state.scenario_data["rk_end_choice"]["options"][0]))
+	if key=="exchange_decline":
+		return RealityCracks.answer_exchange(c,-1)
+	if key=="worm_keep":
+		return WormRider.answer_relocation(c,c.state.scenario_data["rk_worm_relocation"]["at"])
+	if key in ["sinkhole_accept","sinkhole_fight","sinkhole_will","sinkhole_all"]:
+		return RedKingSinkhole.answer_pull(c,key.trim_prefix("sinkhole_"))
+	if key=="veil_keep":
+		return RedKingVeil.answer_target(c,int(c.state.scenario_data["rk_end_choice"]["target"]))
+	if key=="mind_skip":
+		return RedKingMind.answer_memory(c,-1)
+	if key=="mind_back":
+		mode="mind_token"
+		available.assign(["mind_skip"])
+		preview()
+		return false
 	if key == "items":
 		available.assign(["items_back"])
 		available.append_array(item_options)
@@ -393,12 +671,22 @@ func action(key: String) -> bool:
 		mode = ""
 		refresh()
 		return false
+	if key=="reality_exit":
+		return RealityCracks.exit_center(c)
+	if key=="ring_switch":
+		return RedKingRingworld.switch(c,c.state.active())
+	if key=="ring_escape":
+		return RedKingRingworld.escape(c,c.state.active())
 	if key == "drink_well":
 		return c.drink_well()
 	if key == "break_ice":
 		return c.break_ice()
 	if key.begins_with("weapon_"):
 		return c.select_melee(key.trim_prefix("weapon_"))
+	if key in ["direction_keep","direction_teetotum","direction_gem"]:
+		return RedKingDirection.answer(c,key.trim_prefix("direction_"))
+	if key in ["elemental_absorb","elemental_pass"]:
+		return c.answer_elemental_combat(key=="elemental_absorb")
 	if key in ["fate_combat_yes", "fate_combat_no"]:
 		return c.answer_fate_combat(key == "fate_combat_yes")
 	if key in ["telescope_use", "telescope_save"]:
@@ -415,6 +703,38 @@ func action(key: String) -> bool:
 		return false
 	if key == "gear_ring_transference":
 		mode = "gear_transfer_target"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key=="gear_tiger_eye_move":
+		mode="gear_tiger_point"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key=="gear_lantern_toggle":
+		return HolyLantern.toggle(c)
+	if key=="gear_worm_summon":
+		mode="gear_worm_point"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key=="gear_death_mask_toggle":
+		return DeathMask.toggle(c)
+	if key=="gear_teetotum_arm":
+		RedKingDirection.arm(c)
+		refresh()
+		return false
+	if key=="gear_absorb_arm":
+		RedKingElemental.arm(c)
+		refresh()
+		return false
+	if key==GearActions.CAPE:
+		mode="gear_cape_move"
+		available.assign(["potion_cancel"])
+		preview()
+		return false
+	if key=="gear_rk_bottle_imp":
+		mode="gear_bottle_imp"
 		available.assign(["potion_cancel"])
 		preview()
 		return false
@@ -462,8 +782,10 @@ func action(key: String) -> bool:
 	if key == "shatter_single":
 		return c._magic.single_shatter()
 	if key.begins_with("spell_") and key != "spell_cancel":
-		selected_spell = key.trim_prefix("spell_")
+		spell_ammo=key=="spell_enchant_ammo"
+		selected_spell="enchant_weapon" if spell_ammo else key.trim_prefix("spell_")
 		spell_rotated = false
+		spell_extended=false
 		if selected_spell in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"]:
 			counter_choices = c._magic.counter_options(selected_spell)
 			if counter_choices.is_empty():
@@ -487,6 +809,8 @@ func action(key: String) -> bool:
 			available.append("shatter_single")
 		if selected_spell in ["fog", "wall", "bridge"]:
 			available.append("rotate_spell")
+		if selected_spell=="bridge" and ActiveGear.ready(c.state.active(),TerrainMagic.EXTENDED):
+			available.append("extend_bridge")
 		preview()
 		return false
 	match key:
@@ -533,6 +857,10 @@ func action(key: String) -> bool:
 			if selected_spell == "horn":
 				return GearActions.horn(c, counter_choices[counter_index]["piece"])
 			return _declared(c._magic.start_counter(selected_spell, counter_index))
+		"extend_bridge":
+			spell_extended=not spell_extended
+			preview()
+			return false
 		"rotate_spell":
 			spell_rotated = not spell_rotated
 			preview()
@@ -551,6 +879,20 @@ func action(key: String) -> bool:
 			mode = ""
 			refresh()
 			return false
+		"vampire_donor","vampire_plus","vampire_minus":
+			var cast := mode=="empower"
+			var p := c.state.pending_cast if cast else c.state.pending_resistance
+			if key=="vampire_donor":
+				VampireStaff.cycle(c,p,cast)
+			else:
+				VampireStaff.adjust(c,p,cast,1 if key=="vampire_plus" else -1)
+			if cast:
+				empower=mini(empower,c.cast_max_empowerment())
+				_empower_buttons()
+			else:
+				_resist_buttons()
+			preview()
+			return false
 		"empower_plus", "empower_minus":
 			empower = clampi(empower + (1 if key == "empower_plus" else -1), 0, c.cast_max_empowerment())
 			_empower_buttons()
@@ -558,14 +900,28 @@ func action(key: String) -> bool:
 			return false
 		"cast_scroll":
 			return c._magic.insure()
+		"gem_extend","gem_reroll":
+			c._magic.toggle_gem(key)
+			_empower_buttons()
+			preview()
+			return false
+		"cast_fang":
+			c._magic.toggle_golden_fang()
+			_empower_buttons()
+			preview()
+			return false
 		"cast_confirm":
 			return c.finish_cast(empower)
+		"gutter_skip":
+			return GearActions.gutter_skip(c)
 		"stay":
 			return c.stay_in_combat()
 		"push_self":
 			return c.resolve_push(true)
 		"push_enemy":
 			return c.resolve_push(false)
+		"push_self_5","push_self_15","push_self_20","push_self_25","push_self_30":
+			return c.resolve_push(true,float(key.trim_prefix("push_self_"))/10.0)
 		"group":
 			group_selection.assign([int(c.state.early.leaders[c.state.current_side()])])
 			mode = "group_select"
@@ -596,7 +952,13 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
-	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target"]:
+	if mode=="veil_target":
+		var choice := _figure_at(screen)
+		return choice>=0 and RedKingVeil.answer_target(c,choice)
+	if mode=="secret_exchange":
+		var choice := _figure_at(screen)
+		return choice>=0 and RealityCracks.answer_exchange(c,choice)
+	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight","wraith_shot","ammo_shot"]:
 		var id := _figure_at(screen)
 		if id < 0:
 			return false
@@ -620,7 +982,7 @@ func tap(screen: Vector2) -> bool:
 					mode = "swap_second" if selected_spell == "transpose" else "leap_destination"
 					preview()
 					return false
-				return _declared(c.start_cast(selected_spell, id))
+				return _declared(c.start_cast(selected_spell,id,spell_ammo))
 			"cancel_control":
 				return c._magic.cancel(id)
 			"group_select":
@@ -635,12 +997,69 @@ func tap(screen: Vector2) -> bool:
 				return false
 			"select": return c.activate(id)
 			"fight_hand": return c.fight_hand(id)
+			"gutter_fight": return GearActions.gutter_fight(c,id)
 			"fight": return c.fight(id)
+			"ammo_shot": return c.shoot(id,false,true)
+			"wraith_shot": return c.shoot(id,true)
 			"shoot": return c.shoot(id)
 	var hit: Variant = _surface_at(screen)
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode=="convergence":
+		var best := Vector2(INF,INF)
+		var distance := 0.55
+		for candidate in RealityConvergence.points(c):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RealityConvergence.answer(c,best)
+	if mode in ["hunt_corner","hunt_place"]:
+		var best := Vector2(INF,INF)
+		var distance := 1.5 if mode=="hunt_corner" else 0.55
+		for candidate in RedKingHunt.points(c):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RedKingHunt.answer(c,best)
+	if mode=="worm_relocation":
+		var at_grid := at.round()
+		return WormRider.answer_relocation(c,at_grid)
+	if mode=="hill_seam":
+		var unit := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
+		var best := Vector2(INF,INF)
+		var distance := 0.65
+		for candidate in RedKingHill.seam_points(c,unit):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RedKingHill.answer_seam(c,best)
+	if mode=="ruins_piece":
+		for index: int in c.state.scenario_data["rk_priority_choice"]["options"]:
+			if c.state.board.pieces[index].rect.has_point(at):
+				spell_first=index
+				mode="ruins_destination"
+				available.assign(["ruins_back"])
+				preview()
+				return false
+	if mode=="ruins_destination":
+		var best := Vector2(INF,INF)
+		var distance := 0.65
+		for candidate in RealityCrackTerrain.shift_points(c,spell_first):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RealityCrackTerrain.answer_shift(c,spell_first,best)
+	if mode=="mind_token":
+		for token in tokens:
+			if at.distance_to(token.pos)<=0.9:
+				spell_first=token.id
+				mode="mind_destination"
+				available.assign(["mind_back","mind_skip"])
+				preview()
+				return false
+	if mode=="mind_destination":
+		return RedKingMind.answer_memory(c,spell_first,MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "treasure_spell":
 		for token in tokens:
 			if at.distance_to(c._magic.treasure_magic.origin(token)) <= 0.9:
@@ -654,13 +1073,19 @@ func tap(screen: Vector2) -> bool:
 		var t := c.state.figure(spell_first)
 		var destination := t.pos if selected_spell == "suggestion" and at.distance_to(t.pos) < 0.4 else MoveGrid.to_pos(MovePlanner.node_at(at))
 		return _declared(c._magic.start_move(selected_spell, spell_first, destination))
+	if mode=="gear_tiger_point":
+		return TigerEye.move_eye(c,at)
+	if mode=="gear_worm_point":
+		return WormRider.summon(c,MoveGrid.to_pos(MovePlanner.node_at(at)))
+	if mode=="gear_bottle_imp":
+		return GearActions.bottle_imp(c,MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "gear_teleport":
 		return GearActions.teleport(c, MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "potion_point":
 		return c._potions.use_at(selected_potion, at.round() if selected_potion == "explosive_cocktail" else MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "spell_point":
 		var destination := at.round() if TerrainMagic.SPELLS.has(selected_spell) else MoveGrid.to_pos(MovePlanner.node_at(at))
-		return _declared(c._magic.start_at(selected_spell, destination, spell_rotated))
+		return _declared(c._magic.start_at(selected_spell,destination,spell_rotated,spell_extended))
 	if mode == "collect":
 		for token in tokens:
 			if at.distance_to(token.pos) <= 0.9:
@@ -669,6 +1094,12 @@ func tap(screen: Vector2) -> bool:
 		for p in drops:
 			if at.distance_to(p) <= 0.3:
 				return c._loot.drop(p, c.state.active().shrunk_treasure_id if mode == "drop_shrunk" else -1)
+	if mode in ["run_for_it","run_talisman"]:
+		var n := MovePlanner.node_at(at)
+		return nodes.has(n) and RunForIt.apply(c,n,mode=="run_talisman")
+	if mode=="gear_cape_move":
+		var n := MovePlanner.node_at(at)
+		return nodes.has(n) and c.move_to(n,true)
 	if mode in ["move", "exit"]:
 		var n := MovePlanner.node_at(at)
 		if nodes.has(n):
@@ -699,6 +1130,13 @@ func _group_buttons() -> void:
 func _empower_buttons() -> void:
 	available.assign(["cast_confirm"])
 	var p := c.state.pending_cast
+	var caster := c.state.figure(p["caster"])
+	if not p.get("scroll",false) and not PowerPool.words_only(caster,str(p["id"])):
+		_vampire_buttons(p,true,caster)
+	if p.get("id","")=="blink" and ActiveGear.has(caster,PowerPool.GEM) and not MagicEquipment.suppressed(caster):
+		available.append("gem_extend")
+	if p.get("id","")=="animate_skull" and RedKingMaterials.fang_count(c.state.figure(p["caster"]))>0:
+		available.append("cast_fang")
 	if not p.get("scroll", false) and ActiveGear.ready(c.state.figure(p["caster"]), "gear_fate_stone"):
 		available.append("cast_fate")
 	if c._magic.can_insure():
@@ -716,6 +1154,8 @@ func _surface_at(screen: Vector2) -> Variant:
 func _resist_buttons() -> void:
 	available.assign(["resist_confirm"])
 	var p := c.state.pending_resistance
+	if int(p["raw"]) not in [1,20]:
+		_vampire_buttons(p,false,c.state.figure(p["id"]))
 	if ActiveGear.ready(c.state.figure(p["id"]), "gear_fate_stone"):
 		available.append("resist_fate")
 	if int(p["raw"]) != 1 and ActiveGear.ready(c.state.figure(p["id"]), "gear_amulet_resistance"):
@@ -728,7 +1168,7 @@ func _resist_buttons() -> void:
 
 func _declared(ok: bool) -> bool:
 	if not ok and not c._magic.shatter.first.is_empty():
-		var key := "spell_" + str(c._magic.shatter.first["id"])
+		var key := "spell_enchant_ammo" if c._magic.shatter.first.get("effect",{}).get("magic_ammo",false) else "spell_" + str(c._magic.shatter.first["id"])
 		available.assign([key])
 		action(key)
 	return ok
@@ -740,3 +1180,21 @@ func _transfer_buttons() -> void:
 		available.append("transfer_minus")
 	if transfer_amount < GearActions.transfer_max(c, c.state.figure(transfer_target)):
 		available.append("transfer_plus")
+
+
+func _vampire_buttons(p: Dictionary,cast: bool,f: Figure) -> void:
+	if VampireStaff.donors(c.state,f).is_empty():
+		return
+	available.append("vampire_donor")
+	if VampireStaff.amount(c,p,cast)<VampireStaff.cap(c,p,cast):
+		available.append("vampire_plus")
+	if VampireStaff.amount(c,p,cast)>0:
+		available.append("vampire_minus")
+
+
+func _vampire_hint(p: Dictionary,cast: bool) -> String:
+	var donor := c.state.figure(int(p.get("vampire_donor",-1)))
+	if donor==null:
+		return ""
+	var amount := VampireStaff.amount(c,p,cast)
+	return " • Vampire Staff: %s, +%d for %d Health; surviving donor deserts."%[donor.label(),amount,amount*3]

@@ -72,3 +72,21 @@ func test_bridge_collapse_moves_figures_and_treasure_to_ground() -> void:
 	check_eq(f.health,hp-6)
 	check_eq(token.surface_id,"street")
 	check_eq(FloorLayout.from_dict(c.state.board.floor_layout).index_of("bridge:1"),-1)
+
+
+func test_extended_bridge_span_and_expiry() -> void:
+	var c := _fixture()
+	var f := c.state.active()
+	f.items.append({"gear":TerrainMagic.EXTENDED,"gear_info":RedKingRewards.catalog()[TerrainMagic.EXTENDED]})
+	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var a := layout.node("west",Vector2(3,5))
+	var b := layout.node("east",Vector2(12,5))
+	check(LayeredBridge.proposal(c,a,b,layout).get("extended",false))
+	check(c.bridge_on_floors(a,b))
+	check(c.finish_cast(0))
+	check(not ActiveGear.ready(f,TerrainMagic.EXTENDED))
+	c.dice=LoadedDice.new([2,1])
+	LayeredBridge.expire(c)
+	check(not LayeredBridge.owned(c.state,f.id).is_empty())
+	LayeredBridge.expire(c)
+	check(LayeredBridge.owned(c.state,f.id).is_empty())

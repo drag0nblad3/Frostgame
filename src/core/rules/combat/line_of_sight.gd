@@ -19,8 +19,12 @@ class Result:
 
 ## The layered fixture uses physical floor volumes instead of a highest-surface ray.
 static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
+	if from.ring_side!=to.ring_side:
+		var blocked := Result.new()
+		blocked.clear=false
+		return blocked
 	if board.floor_layout.is_empty():
-		return check(board,from.pos,to.pos)
+		return check(board,from.pos,to.pos,from)
 	var result := Result.new()
 	var layout := FloorLayout.from_dict(board.floor_layout)
 	result.clear = layout.errors.is_empty() and LayeredSight.figures_clear(layout,from,to)
@@ -29,8 +33,25 @@ static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 	return result
 
 
-static func check(board: Board, from: Vector2, to: Vector2) -> Result:
+static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null) -> Result:
+	var relation := RealityCrackGeometry.cross_relation(board,from,to)
+	if relation!=0:
+		var result := Result.new()
+		result.clear=relation==1
+		return result
+	if board.reality_sphere:
+		return RealityCrackGeometry.wrapped_sight(board,from,to,observer)
+	return plain_check(board,from,to,observer)
+
+
+static func plain_check(board: Board,from: Vector2,to: Vector2,observer: Figure=null,ignore: TerrainPiece=null) -> Result:
 	var r := Result.new()
+	if board.ringworld and (observer==null or observer.ring_side==0) and from.distance_to(to)>18.0:
+		r.clear=false
+		return r
+	if BattleBoundary.blocks_segment(board.boundaries,from,to,"sight",observer):
+		r.clear=false
+		return r
 	if board.darkness and Vector2(from.distance_to(to), board.height_at(from) - board.height_at(to)).length() > 12.0:
 		r.clear = false
 		return r
@@ -38,7 +59,16 @@ static func check(board: Board, from: Vector2, to: Vector2) -> Result:
 		r.clear = false
 		return r
 	for piece in board.pieces:
+		if piece==ignore:
+			r.intervening+=1
+			continue
 		if piece.kind.ground_surface:
+			continue
+		if piece.kind.id in ["red_king_portal","red_king_sinkhole_orb","reality_portal","reality_hoof"]:
+			var center := piece.rect.get_center()
+			if center.distance_to(Geometry2D.get_closest_point_to_segment(center,from,to))<=piece.rect.size.x*0.5:
+				r.clear=false
+				return r
 			continue
 		if not Geom.crosses(from, to, piece.rect) and not piece.rect.has_point(to):
 			continue

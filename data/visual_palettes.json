@@ -142,5 +142,137 @@
     "floor": "707e84",
     "snow": 0.68,
     "flakes": 32
+  },
+  "red_king_squatter": {
+    "name": "Ruined dwelling",
+    "sky": "34333c",
+    "key": "edd4a7",
+    "fill": "a8c3d4",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "797775",
+    "snow": 0.6,
+    "flakes": 40
+  },
+  "red_king_investigations": {
+    "name": "Ember camp",
+    "sky": "452b32",
+    "key": "ffc49a",
+    "fill": "b1a1c6",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "71636b",
+    "snow": 0.65,
+    "flakes": 56
+  },
+  "red_king_veil": {
+    "name": "Veil twilight",
+    "sky": "342040",
+    "key": "eac6e9",
+    "fill": "af8fd5",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "67617f",
+    "snow": 0.55,
+    "flakes": 32
+  },
+  "red_king_back_into_fire": {
+    "name": "Burning sanctuary",
+    "sky": "48252c",
+    "key": "ffb477",
+    "fill": "c4a4b6",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "786361",
+    "snow": 0.3,
+    "flakes": 12
+  },
+  "red_king_demons_and_mad_man": {
+    "name": "Blood-red dusk",
+    "sky": "422f3c",
+    "key": "edc7ad",
+    "fill": "b6b3d8",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "746875",
+    "snow": 0.8,
+    "flakes": 64
+  },
+  "red_king_mind": {
+    "name": "Fractured memory",
+    "sky": "1c1834",
+    "key": "dfc5ff",
+    "fill": "9abde1",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "666186",
+    "snow": 0,
+    "flakes": 0
+  },
+  "red_king_herded": {
+    "name": "Ashen pursuit",
+    "sky": "3f303f",
+    "key": "f5c3a7",
+    "fill": "b8b0d4",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "786978",
+    "snow": 0.55,
+    "flakes": 48
+  },
+  "red_king_sinkhole": {
+    "name": "Antimagic dusk",
+    "sky": "20192f",
+    "key": "d0c4ee",
+    "fill": "a6a1d8",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "5d657a",
+    "snow": 0.4,
+    "flakes": 24
+  },
+  "red_king_hill": {
+    "name": "Folded summit",
+    "sky": "332f46",
+    "key": "f6d8bb",
+    "fill": "9bb9db",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "75738d",
+    "snow": 0.9,
+    "flakes": 72
+  },
+  "red_king_tethers": {
+    "name": "Rift geometry",
+    "sky": "352139",
+    "key": "f6c69f",
+    "fill": "b6a9e2",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "76657b",
+    "snow": 0.5,
+    "flakes": 32
+  },
+  "red_king_bridge": {
+    "name": "Dimensional void",
+    "sky": "17142b",
+    "key": "d9c1f6",
+    "fill": "a5a4e3",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "73728c",
+    "snow": 0,
+    "flakes": 0
+  },
+  "red_king_ringworld": {
+    "name": "Scarlet horizon",
+    "sky": "3b1e30",
+    "key": "ffbf9a",
+    "fill": "baa4d9",
+    "energy": 1.26,
+    "ambient": 0.56,
+    "floor": "74617c",
+    "snow": 0.25,
+    "flakes": 0
   }
 }

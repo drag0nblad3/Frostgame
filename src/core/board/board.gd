@@ -9,6 +9,25 @@ var size := Vector2(36, 36)
 var pieces: Array[TerrainPiece] = []
 ## Authored experimental floor data. Legacy maps leave this empty.
 var floor_layout := {}
+## Serialized rule boundaries; ordinary battlefields have none.
+var boundaries: Array[Dictionary]=[]
+## Directed links between edge segments and their destination centers.
+var edge_links: Array[Dictionary]=[]
+var wrap_short_edges := false
+var wrap_long_edges := false
+var reality_sphere := false
+var reality_cross := -1
+var ringworld := false
+var low_gravity := false
+## Regions with no traversable surface at any elevation.
+var void_regions: Array[Rect2]=[]
+
+
+func over_void(at: Vector2,radius: float=0.0) -> bool:
+	for region in void_regions:
+		if region.has_point(at) or (radius>0.0 and Geom.point_rect_distance(at,region)<radius-0.001):
+			return true
+	return false
 
 
 func contains(p: Vector2, margin: float = 0.0) -> bool:
@@ -68,9 +87,13 @@ func _key(p: Vector2) -> Variant:
 
 
 func _can_stand(p: Vector2, radius: float) -> bool:
-	if not contains(p, radius):
+	if not contains(p, radius) or over_void(p,radius):
 		return false
 	for piece in pieces:
+		if piece.kind.id in ["red_king_sinkhole_orb","reality_portal","reality_hoof"]:
+			if p.distance_to(piece.rect.get_center())<piece.rect.size.x*0.5+radius-0.001:
+				return false
+			continue
 		if piece.kind.id == "temple_column":
 			# Contact must be legal on every face; Rect2.has_point includes
 			# the minimum boundary but excludes the maximum boundary.
@@ -133,7 +156,7 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 	if delta < 0.001:
 		return 0.0
 	var multiplier := 2.0
-	if climber != null and (climber.def.traits.has("expert_climber") or climber.def.traits.has("levitate")):
+	if climber != null and (climber.def.traits.has("expert_climber") or climber.levitates()):
 		multiplier = 1.0
 	for p in pieces_at(a) + pieces_at(b):
 		if p.kind.stairs:
@@ -152,3 +175,8 @@ func invalidate_terrain() -> void:
 	_height_cache.clear()
 	static_step_cache.clear()
 	field_cache.clear()
+
+
+func set_boundaries(lines: Array[Dictionary]) -> void:
+	boundaries.assign(lines.duplicate(true))
+	invalidate_terrain()

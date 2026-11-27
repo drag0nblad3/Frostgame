@@ -48,10 +48,7 @@ func can_drink(id: String, target: Figure = null) -> bool:
 		return false
 	if id == "healing" and target.health >= target.def.health:
 		return false
-	for item in f.items:
-		if item.get("potion", "") == id:
-			return true
-	return false
+	return source(f,id,target)>=0
 
 
 func drink(id: String, target: Figure = null) -> bool:
@@ -60,8 +57,10 @@ func drink(id: String, target: Figure = null) -> bool:
 		target = f
 	if not can_drink(id, target) or id in POINTS + COATINGS:
 		return false
-	_consume(f, id)
+	var success := _consume(f,id,target)
 	_spend_drink(f)
+	if not success:
+		return true
 	match id:
 		"shrinking":
 			target.shrunk_treasure_id = target.treasure_id
@@ -97,12 +96,46 @@ func drink(id: String, target: Figure = null) -> bool:
 	return true
 
 
-func _consume(f: Figure, id: String) -> void:
+func source(f: Figure,id: String,target: Figure=null) -> int:
+	var ordinary := -1
 	for i in f.items.size():
-		if f.items[i].get("potion", "") == id:
-			f.items.remove_at(i)
-			break
+		var item: Dictionary=f.items[i]
+		if item.get("potion","")!=id:
+			continue
+		var gear := str(item.get("gear",""))
+		if gear in [RedKingCampaignGear.POTION_STAFF,RedKingCampaignGear.GOLDEN_BOTTLE]:
+			if MagicEquipment.suppressed(f) or (target!=null and target!=f) or (gear==RedKingCampaignGear.POTION_STAFF and f.destroyed_weapons.has("staff")) or (gear==RedKingCampaignGear.GOLDEN_BOTTLE and int(item.get("bottle_doses",0))<=0):
+				continue
+		if item.get("enchanted",false):
+			return i
+		if ordinary<0:
+			ordinary=i
+	return ordinary
 
+
+func _consume(f: Figure,id: String,target: Figure=null) -> bool:
+	var index := source(f,id,target)
+	if index<0:
+		return false
+	var item: Dictionary=f.items[index]
+	var gear := str(item.get("gear",""))
+	if gear==RedKingCampaignGear.POTION_STAFF:
+		item.erase("potion")
+		return true
+	if gear==RedKingCampaignGear.GOLDEN_BOTTLE:
+		item["bottle_doses"]=int(item["bottle_doses"])-1
+		if int(item["bottle_doses"])==0:
+			item.erase("potion")
+		var roll := c.dice.d20()
+		var success := StatRoll.succeeds(roll,f.effective_will()+f.roll_penalty(),4)
+		c.emit("creature_test",{"id":f.id,"trait":"golden_bottle","roll":roll,"success":success})
+		if not success:
+			c.poison(f)
+		return success
+	var roll := RedKingMaterials.use_potion(f.items,index,c.dice)
+	if roll>0:
+		c.emit("enchanted_vial",{"id":f.id,"roll":roll,"retained":roll>=19})
+	return true
 
 func _spend_drink(f: Figure) -> void:
 	if f.moves_taken == 0 and not c.state.group.in_progress():
@@ -144,13 +177,17 @@ func use_at(id: String, at: Vector2) -> bool:
 	if not can_place(id, at):
 		return false
 	var f := c.state.active()
-	_consume(f, id)
-	if id == "teleportation":
+	var success := _consume(f,id)
+	if id=="teleportation":
 		_spend_drink(f)
-		c._magic.movement.move(f, at, true)
+		if success:
+			c._magic.movement.move(f,at,true)
 	else:
 		c._spend(f)
-		c._magic.terrain.apply(f, "grenade", at, false)
+		if success:
+			c._magic.terrain.apply(f,"grenade",at,false)
+	if not success:
+		return true
 	_report(f, f, id)
 	return true
 
@@ -170,8 +207,10 @@ func coat(id: String, ranged: bool) -> bool:
 	var w := f.ranged if ranged else f.melee
 	if not can_coat(f, id, w):
 		return false
-	_consume(f, id)
+	var success := _consume(f,id)
 	_spend_drink(f)
+	if not success:
+		return true
 	if id == "poison":
 		f.poison_weapon = w.id
 	else:

@@ -1,0 +1,63 @@
+class_name BoundaryView
+extends RefCounted
+## Lightweight scenario barriers: solid ground strip for movement restrictions,
+## translucent veil for sight restrictions. No physics bodies or animated shaders.
+static func build(board: Board) -> Node3D:
+	var root := Node3D.new()
+	root.name="BattleBoundaries"
+	for line in board.boundaries:
+		var a: Vector2=line["a"]
+		var b: Vector2=line["b"]
+		var distance := a.distance_to(b)
+		if distance<0.001:
+			continue
+		var lethal: bool=line.get("lethal",false)
+		var blocks_move: bool=line.get("movement",false)
+		var blocks_sight: bool=line.get("sight",false)
+		var seam: bool=line.has("sight_exempt_center")
+		var tint := Color(0.76,0.42,0.96) if seam else (Color(0.94,0.25,0.16) if blocks_move or lethal else Color(0.39,0.74,0.96))
+		var count := maxi(1,ceili(distance/4.0))
+		for i in count:
+			var start := a.lerp(b,float(i)/count)
+			var end := a.lerp(b,float(i+1)/count)
+			var center := (start+end)*0.5
+			var bottom := minf(board.ground_height_at(start),board.ground_height_at(end))
+			var top := maxf(board.ground_height_at(start),board.ground_height_at(end))
+			var length := start.distance_to(end)
+			_bar(root,center,top+0.075,Vector3(length,0.15,0.20),end-start,tint)
+			if (blocks_sight or lethal) and not seam:
+				var height := 2.6+top-bottom
+				_bar(root,center,bottom+height*0.5,Vector3(length,height,0.035),end-start,Color(tint,0.20))
+	for link in board.edge_links:
+		var source := Vector2((float(link["min_x"])+float(link["max_x"]))*0.5,float(link["y"]))
+		var target: Vector2=link["to"]
+		var strip := floori(source.x/(board.size.x/3.0))
+		var index := strip*2+(1 if source.y>board.size.y*0.5 else 0)
+		var color := Color.from_hsv(float(index)/6.0,0.6,0.95)
+		var marker := Label3D.new()
+		marker.text="%d → %d"%[index+1,floori(target.x/(board.size.x/3.0))*2+(2 if target.y>board.size.y*0.5 else 1)]
+		marker.font_size=80
+		marker.pixel_size=0.018
+		marker.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+		marker.modulate=color
+		marker.position=TableSpace.to_world(source,0.8)
+		root.add_child(marker)
+		_bar(root,source,0.08,Vector3(float(link["max_x"])-float(link["min_x"])-1.0,0.10,0.22),Vector2.RIGHT,color)
+	return root
+
+
+static func _bar(root: Node3D,at: Vector2,y: float,size: Vector3,axis: Vector2,tint: Color) -> void:
+	var shape := BoxMesh.new()
+	shape.size=size
+	var mesh := MeshInstance3D.new()
+	mesh.mesh=shape
+	mesh.position=TableSpace.to_world(at,y)
+	mesh.rotation.y=-axis.angle()
+	mesh.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color=tint
+	if tint.a<1.0:
+		mat.transparency=BaseMaterial3D.TRANSPARENCY_ALPHA
+	mesh.material_override=mat
+	root.add_child(mesh)

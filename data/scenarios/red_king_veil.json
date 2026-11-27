@@ -1,0 +1,93 @@
+{
+  "id": "red_king_veil",
+  "name": "The Veil of Unreality",
+  "board": "red_king_veil",
+  "warbands": [
+    {
+      "name": "Elementalist",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            2,
+            1
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            4.7,
+            1
+          ]
+        },
+        {
+          "type": "knight",
+          "at": [
+            7.4,
+            1
+          ]
+        },
+        {
+          "type": "man_at_arms",
+          "at": [
+            10.100000000000001,
+            1
+          ]
+        },
+        {
+          "type": "infantryman",
+          "at": [
+            12.8,
+            1
+          ]
+        },
+        {
+          "type": "archer",
+          "at": [
+            15.5,
+            1
+          ]
+        },
+        {
+          "type": "crossbowman",
+          "at": [
+            18.200000000000003,
+            1
+          ]
+        }
+      ],
+      "spells": {
+        "elemental_bolt": 12,
+        "elemental_shield": 10,
+        "fleet_feet": 12,
+        "strength": 12,
+        "heal": 12,
+        "combat_awareness": 16
+      }
+    },
+    {
+      "name": "Forces of the Red King",
+      "figures": [],
+      "spells": {}
+    }
+  ],
+  "treasures": [
+    [
+      3,
+      11
+    ],
+    [
+      21,
+      19
+    ],
+    [
+      10,
+      32
+    ]
+  ],
+  "random_encounters": false,
+  "forced_combat": true,
+  "special": "red_king_veil",
+  "central_treasure": -1,
+  "creatures": []
+}

@@ -180,5 +180,21 @@
     "move_mult": 1,
     "height": 0,
     "stairs": true
+  },
+  "red_king_portal": {
+    "name": "Dimensional portal",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 2.8,
+    "walkable_top": false
+  },
+  "red_king_sinkhole_orb": {
+    "name": "Planar Sinkhole",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "height": 3,
+    "walkable_top": false
   }
 }

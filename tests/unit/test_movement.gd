@@ -54,3 +54,20 @@ func test_cannot_move_in_combat() -> void:
 	c.state.active_id = 1
 	c.state.active().actions_left = 2
 	check(not c.can_move(), "engaged figures stay put")
+
+
+func test_run_for_it_and_talisman() -> void:
+	var f := fig("wizard",0,Vector2(10,10))
+	var t := fig("thug",1,Vector2(10,14))
+	var c := make_game(make_board(),[f,t],Dice.new(2))
+	c.state.active_id=f.id
+	f.actions_left=f.action_limit()
+	f.items.append({"gear":RunForIt.TALISMAN,"gear_info":RedKingRewards.catalog()[RunForIt.TALISMAN]})
+	check(RunForIt.ready(c))
+	check(not RunForIt.reach(c).can_reach(Vector2i(30,20)))
+	check(RunForIt.reach(c,true).can_reach(Vector2i(30,20)))
+	check(not RunForIt.reach(c,true).can_reach(Vector2i(20,27)))
+	check(RunForIt.apply(c,Vector2i(30,20),true))
+	check_eq(f.pos,Vector2(15,10))
+	check_eq(f.actions_left,0)
+	check(not ActiveGear.ready(f,RunForIt.TALISMAN))

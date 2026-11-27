@@ -43,7 +43,35 @@ static func promote(d: Dictionary, name: String) -> bool:
 	d["advances"] = advances
 	d["level"] = int(d["level"]) - 6
 	d["name"] = clean_name
+	if RaggedWarbands.active(d):
+		d["ragged_no_apprentice"]=true
 	d["last_report"].append("%s succeeds the fallen wizard at level %d." % [clean_name, d["level"]])
 	d.erase("prepared_demon")
 	d.erase("dreams_xp")
+	return true
+
+
+## A new starting wizard can continue the current invasion, with no apprentice.
+static func replace_ragged(d: Dictionary,draft: Dictionary) -> bool:
+	if not RaggedWarbands.active(d) or not RedKingCampaign.active(d) or living_wizard(d) or not d.get("pending_treasure",[]).is_empty():
+		return false
+	var wizard: Dictionary={}
+	for entry: Dictionary in draft.get("figures",[]):
+		if entry["type"]=="wizard":
+			wizard=entry
+			break
+	if wizard.is_empty() or draft.get("spells",{}).is_empty():
+		return false
+	var replacement := CampaignProgress.new()
+	var roster := draft.duplicate(true)
+	roster["figures"]=[wizard]
+	roster["gold"]=0
+	replacement.start(roster,ContentProfile.from_campaign(d))
+	for key: String in ["campaign_story","red_king_stage","red_king_history","red_king_include_veil","red_king_strict_pursuit","red_king_ragged","red_king_recruit_status","red_king_found_artefacts","red_king_artefact_recovered","red_king_secured_kalamon","red_king_mind_completed","wounded_rules","reality_cracks",CompanionMantle.OPTION,"games"]:
+		if d.has(key):
+			replacement.data[key]=d[key]
+	replacement.data["ragged_no_apprentice"]=true
+	replacement.data["last_report"]=["A new wizard joins the invasion at the current story stage. No apprentice; roll random replacements after preparation."]
+	d.clear()
+	d.merge(replacement.data)
 	return true

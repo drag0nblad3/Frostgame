@@ -5,8 +5,10 @@ const PATH := "user://frostgame_campaign_v1.json"
 var data: Dictionary = {}
 
 
-func start(roster: Dictionary) -> void:
+func start(roster: Dictionary,profile: ContentProfile=null) -> void:
 	data = {"version": 1, "name": roster["name"], "school": roster.get("school", "elementalist"), "spells": roster.get("spells", {}).duplicate(true), "gold": int(roster.get("gold", 0)), "xp": 0, "level": 0, "games": 0, "units": [], "loot": [], "last_report": [], "spell_improved": false, "stat_improved": false, "advances": {}, "base": ""}
+	if profile!=null:
+		data["expansions"]=profile.enabled.duplicate()
 	for entry: Dictionary in roster["figures"]:
 		var unit := {"type": entry["type"], "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false}
 		if entry.has("weapons"):
@@ -16,19 +18,24 @@ func start(roster: Dictionary) -> void:
 
 func deployment() -> Dictionary:
 	var units: Array = []
-	var reserve := BaseResources.reserve_id(data, FigureDb.load_files())
+	var ragged := RaggedWarbands.active(data)
+	var ragged_ids: Array[int]=[]
+	if ragged:
+		ragged_ids=RaggedWarbands.deployed_ids(data)
+	var locked := RedKingCampaign.economy_locked(data)
+	var reserve := -1 if ragged else BaseResources.reserve_id(RedKingCampaign.capacity_context(data), FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data)))
 	for unit: Dictionary in data["units"]:
-		if unit["dead"] or unit.get("dismissed", false) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
+		if unit["dead"] or unit.get("dismissed", false) or (ragged and not ragged_ids.has(int(unit["id"]))) or int(unit["miss"]) > 0 or InjuryRules.blind(unit) or int(unit["id"]) == reserve:
 			continue
 		var entry := {"type": unit["type"], "campaign_id": unit["id"], "at": [4.5 + 3.0 * units.size(), 3.0]}
 		if unit["type"] in ["wizard", "apprentice"]:
 			entry["stat_bonus"] = data.get("advances", {}).duplicate()
-		elif data.get("base", "") == "brewery":
+		elif not locked and data.get("base", "") == "brewery":
 			entry["stat_bonus"] = {"will": 1}
 		var bonuses := InjuryRules.bonuses(unit, entry.get("stat_bonus", {}))
 		entry["injury_types"] = unit.get("injury_types", {}).duplicate(true)
 		entry["starting_loss"] = InjuryRules.starting_loss(unit)
-		entry["campaign_base"] = data.get("base", "")
+		entry["campaign_base"] = "" if locked else data.get("base", "")
 		entry["familiar"] = unit.get("familiar", false)
 		entry["awareness"] = unit.get("awareness", false)
 		if unit.get("familiar", false):
@@ -37,16 +44,28 @@ func deployment() -> Dictionary:
 			bonuses["will"] = int(bonuses.get("will", 0)) + 3
 		if unit.get("construct_oiled", false):
 			bonuses["move"] = int(bonuses.get("move", 0)) + 1
+		for stat: String in unit.get("ragged_bonuses",{}):
+			bonuses[stat]=int(bonuses.get(stat,0))+int(unit["ragged_bonuses"][stat])
 		entry["stat_bonus"] = bonuses
 		entry["permanent_summon"] = unit.get("permanent_summon", false)
+		if entry["permanent_summon"]:
+			entry["specialist"]=CompanionMantle.specialist(data,unit) or unit["type"] in ["large_construct","foulhorn"]
 		entry["items"] = CampaignInventory.loadout(data, int(unit["id"]))
 		if CasterLoadout.is_caster(unit["type"]):
 			entry["weapons"] = CasterLoadout.carried(data, unit)["weapons"]
 		units.append(entry)
-	if data.get("prepared_zombie", false):
-		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true})
-	if str(data.get("prepared_illusion", "")) != "":
-		units.append({"type": data["prepared_illusion"], "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_illusion": true})
+	if data.get("prepared_zombie",false) and _prepared_caster_present(units,int(data.get("prepared_zombie_caster",-1))):
+		units.append({"type": "zombie", "at": [4.5 + 3.0 * units.size(), 3.0], "prepared_zombie": true,"prepared_zombie_caster":int(data.get("prepared_zombie_caster",-1)),"prepared_zombie_strong":bool(data.get("prepared_zombie_strong",false))})
+	var prepared := Rituals.prepared_illusions(data)
+	var limit := 2 if BaseResources.wizard_item(data,SummonActions.ILLUSION_STAFF) else 1
+	var added := 0
+	for illusion: Dictionary in prepared:
+		if added>=limit:
+			break
+		if not _prepared_caster_present(units,int(illusion["caster"])):
+			continue
+		units.append({"type":illusion["type"],"at":[0,0],"prepared_illusion":true,"prepared_illusion_caster":int(illusion["caster"])})
+		added+=1
 	var demon: Dictionary = data.get("prepared_demon", {})
 	if not demon.is_empty():
 		for entry: Dictionary in units:
@@ -56,27 +75,92 @@ func deployment() -> Dictionary:
 	# Two deployment ranks prevent extra prepared figures from exceeding the table.
 	for i in units.size():
 		units[i]["at"] = [4.5 + 3.0 * (i % 10), 3.0 + 1.5 * floori(i / 10.0)]
-	return {"name": data["name"], "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": BaseResources.owns(data, "celestial_telescope")}
+	return {"campaign_roster":true,"name": data["name"], "wounded_rules":bool(data.get("wounded_rules",false)), "school": data["school"], "spells": data["spells"].duplicate(true), "figures": units, "telescope": not locked and BaseResources.owns(data, "celestial_telescope"), "red_king_artefact_recovered": bool(data.get("red_king_artefact_recovered",false)), "red_king_secret_hrut": RedKingMindRewards.secret_selected(data)}
 
 
-func can_deploy() -> bool:
-	if not data.get("pending_treasure", []).is_empty():
-		return false
-	for unit: Dictionary in data.get("units", []):
-		if unit["type"] == "wizard" and not unit["dead"] and not InjuryRules.blind(unit):
-			return not deployment()["figures"].is_empty()
+static func _prepared_caster_present(units: Array,id: int) -> bool:
+	for entry: Dictionary in units:
+		if entry["type"] in ["wizard","apprentice"] and (id<0 or int(entry.get("campaign_id",-1))==id):
+			return true
 	return false
 
 
-func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
+func deployment_blockers() -> Array[String]:
+	var reasons: Array[String]=[]
+	if data.is_empty():
+		return ["Create a campaign first."]
+	if RedKingCampaign.active(data) and RedKingCampaign.next_id(data).is_empty():
+		reasons.append("The story is concluded. Reconcile the warband before continuing.")
+	if not data.get("pending_treasure",[]).is_empty():
+		reasons.append("Resolve the pending treasure choices.")
+	if not RaggedWarbands.active(data) and not BaseResources.fits(RedKingCampaign.capacity_context(data),FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
+		reasons.append("Roster exceeds its current limits. Adjust members or equipment.")
+	if RaggedWarbands.active(data):
+		if RaggedWarbands.has_unassigned(data):
+			reasons.append("Assign or discard unsealed equipment before leaving.")
+		if RaggedWarbands.ready_count(data)<10 and CampaignSuccession.living_wizard(data):
+			reasons.append("Roll random recruits after finishing summoning rituals.")
+	if ScrollShield.campaign_index(data,"roll")>=0:
+		reasons.append("Roll the Scroll Shield in preparation.")
+	var roster: Array=deployment()["figures"]
+	if not CampaignSuccession.living_wizard(data):
+		reasons.append("No living wizard. Resolve succession or start a new campaign.")
+	elif roster.is_empty():
+		reasons.append("No warband members are ready to deploy.")
+	elif RedKingCampaign.next_id(data)=="red_king_mind":
+		var wizard_ready := false
+		for entry: Dictionary in roster:
+			if entry["type"]=="wizard":
+				wizard_ready=true
+		if not wizard_ready:
+			reasons.append("The solo Mindscape requires a recovered wizard.")
+	return reasons
+
+
+func can_deploy() -> bool:
+	return deployment_blockers().is_empty()
+
+
+## Preview on a deep copy and an independent RNG. The actual settlement
+## replays the same rolls, including preceding casualties, only when committed.
+func survival_offer(c: GameController,dice: Dice,side: int,plant_target: int) -> Dictionary:
+	if not data.get("red_king_survival_reroll",false) or RedKingMind.active(c.state):
+		return {}
+	var copy := CampaignProgress.new()
+	copy.data=data.duplicate(true)
+	var preview_dice := Dice.new(1)
+	preview_dice._rng.state=dice._rng.state
+	var decision := {"preview":true}
+	copy.settle(c,preview_dice,side,plant_target,decision)
+	return decision.get("offer",{})
+
+
+func settle(c: GameController, dice: Dice, side: int = 0,plant_target: int=-1,survival_decision: Dictionary={}) -> bool:
 	if data.is_empty() or not c.state.over or not data.get("pending_treasure", []).is_empty():
 		return false
+	if not RedKingCampaign.permits(data,c.state.scenario_special):
+		return false
+	if RedKingMind.active(c.state):
+		var ok := RedKingMindRewards.settle(data,c,side)
+		if ok:
+			RedKingCampaign.advance(data,c.state.scenario_special)
+		return ok
+	if c.state.scenario_data.get("secret_hrut_%d"%side,false):
+		data.erase("red_king_secret_hrut")
+		data.erase("red_king_use_secret_hrut")
+	if plant_target>=0 and not RedKingCampaignGear.plant_choices(data,c,side).has(plant_target):
+		return false
 	CampaignInventory.settle(data, c, side)
+	for item: Dictionary in data["loot"]:
+		if item.get("gear","")==RedKingCampaignGear.POTION_STAFF:
+			item.erase("stored_potion")
 	var report: Array[String] = []
 	var xp := 0
 	var kills := 0
+	var hrut_xp := 0
 	var scenario_xp := 0
 	var worm_hurt := false
+	var xp_cap := 300
 	for f in c.state.figures:
 		if f.side == side and f.def.role == "wizard":
 			xp += 40
@@ -89,7 +173,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 					xp += 10
 				elif not e["success"] and int(e.get("failure_damage", 0)) > 0:
 					xp += 5
-		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight"] and int(e["side"]) == side:
+		elif event.type in ["well_drink", "hut_discovered", "disc_transport", "genie_released", "tower_entered", "column_fight", "squatter_xp", "investigation_xp", "mad_man_xp", "sinkhole_xp", "hill_xp", "tether_xp"] and int(e["side"]) == side:
 			scenario_xp += int(e["xp"])
 		elif event.type == "damage" and c.state.scenario_special == "worm_hunts":
 			var victim := c.state.figure(e["id"])
@@ -100,21 +184,61 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		elif event.type == "out_of_action":
 			var victim := c.state.figure(e["id"])
 			var attacker := c.state.figure(e["by"])
-			if victim != null and attacker != null and victim.side < 0 and attacker.side == side:
+			if RedKingMadMan.active(c.state) and victim!=null and attacker!=null and victim.original_side!=side and attacker.side==side and victim.def.id.begins_with("hrut_"):
+				hrut_xp=mini(50,hrut_xp+10)
+				continue
+			if victim != null and attacker != null and victim.side < 0 and attacker.side == side and not RedKingMadMan.is_ryce(victim):
 				var bounty := 20 if victim.def.traits.has("bounty_20") else (10 if victim.def.traits.has("bounty_10") else 0)
 				if bounty > 0:
 					data["gold"] = int(data["gold"]) + bounty
 					report.append("%s bounty: %d gc." % [victim.label(), bounty])
-				if c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
+				if RedKingTethers.pylon(victim):
+					pass
+				elif RedKingHill.is_herald(c.state,victim):
+					scenario_xp+=50
+					xp_cap=325
+				elif c.state.scenario_special == "worm_hunts" and victim.def.id == "giant_worm":
 					scenario_xp += 50
 				elif c.state.scenario_special == "genie_in_the_bottle" and victim.def.id == "genie":
 					scenario_xp += 50
 				elif c.state.museum and victim.def.id == "medium_construct":
 					scenario_xp += 10
-				else:
+				elif RedKingFire.active(c.state) and victim.def.id=="hrut_warrior":
+					scenario_xp+=10
+				elif RedKingFire.active(c.state) and victim.def.id=="blood_marked_berserker":
+					scenario_xp+=5
+				elif not (RedKingInvestigations.active(c.state) and victim.def.id=="blood_marked_berserker"):
 					kills += 1
+	scenario_xp+=hrut_xp
 	var secured := c.state.secured_count(side)
-	xp = maxi(0, mini(300, xp + secured * 40 + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
+	if RedKingMadMan.active(c.state):
+		var rescue := c.state.treasure(int(c.state.scenario_data.get("ryce_token",-1)))
+		data["red_king_secured_kalamon"]=rescue!=null and rescue.secured_by==side
+		if data["red_king_secured_kalamon"]:
+			secured-=1
+	var treasure_xp := 0 if RedKingTethers.active(c.state) or RedKingBridge.active(c.state) else secured*40
+	if RedKingBridge.active(c.state):
+		scenario_xp+=RedKingBridge.exit_xp(c.state,side)
+	if RedKingFire.active(c.state):
+		treasure_xp=0
+		for token in c.state.treasures:
+			if token.secured_by==side:
+				treasure_xp+=60 if token.central else 20
+		for f in c.state.figures:
+			if f.original_side==side and not f.out_of_action:
+				scenario_xp+=5
+	xp = maxi(0, mini(xp_cap, xp + treasure_xp + mini(kills * 5, 50) + scenario_xp) + int(data.get("dreams_xp", 0)))
+	if RedKingVeil.active(c.state):
+		xp=RedKingVeil.xp(c,side)
+	if RedKingHerded.active(c.state):
+		xp+=RedKingHerded.exit_xp(c.state,side)
+	if RedKingRingworld.active(c.state):
+		xp=RedKingRingworld.xp(c,side)
+		data["red_king_completed"]=bool(c.state.scenario_data.get("ring_success",false))
+	for f in c.state.figures:
+		if f.original_side==side and f.def.role=="wizard" and ActiveGear.has(f,"gear_rk_ring_of_destiny"):
+			xp+=20
+			break
 	data.erase("dreams_xp")
 	data["xp"] = int(data["xp"]) + xp
 	data["games"] = int(data["games"]) + 1
@@ -122,30 +246,69 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	data["stat_improved"] = false
 	data["ritual_attempts"] = {}
 	data["preparation_started"] = false
+	data.erase("ragged_recruitment_game")
 	data["prepared_zombie"] = false
+	data.erase("prepared_zombie_caster")
+	data.erase("prepared_zombie_strong")
 	data["prepared_illusion"] = ""
+	data.erase("prepared_illusions")
 	data.erase("prepared_demon")
+	data.erase("rk_shears_used")
 	for unit: Dictionary in data["units"]:
 		unit["familiar"] = false
 		unit["awareness"] = false
 		unit["niggle_paid"] = false
 		unit["last_knocked_out"] = false
+		unit.erase("rk_shears_loss")
 	for f in c.state.figures:
 		if f.original_side == side and f.campaign_id >= 0:
 			data["units"][f.campaign_id]["last_knocked_out"] = f.out_of_action
+			if f.used_gear.get(VampireStaff.DESERTED,false):
+				data["units"][f.campaign_id]["dismissed"]=true
+				CampaignInventory.lose_owned(data,f.campaign_id)
+				report.append("%s deserted after Vampire Staff empowerment."%f.label())
 	report.append("Battle %d: %d treasure, +%d XP." % [data["games"], secured, xp])
 	# Recover previously resting units after missing this game.
 	for unit: Dictionary in data["units"]:
 		unit["miss"] = maxi(0, int(unit["miss"]) - 1)
 	for f in c.state.figures:
-		if f.original_side != side or f.campaign_id < 0 or not f.out_of_action:
+		if f.original_side != side or f.campaign_id < 0 or not f.out_of_action or f.used_gear.get(VampireStaff.DESERTED,false):
 			continue
 		for unit: Dictionary in data["units"]:
 			if int(unit["id"]) != f.campaign_id:
 				continue
+			if f.spell_effects.has("ring_left_behind"):
+				unit["dead"]=true
+				unit["death_game"]=data["games"]
+				CampaignInventory.lose_owned(data,f.campaign_id)
+				report.append("%s was lost in the Ringworld."%f.label())
+				break
 			var raw := dice.d20()
+			if raw==1 and ActiveGear.has(f,WormRider.ITEM):
+				unit["dead"]=true
+				unit["death_game"]=data["games"]
+				unit["worm_devoured"]=true
+				CampaignInventory.lose_owned(data,f.campaign_id)
+				report.append("%s was devoured by worms and cannot be revived."%f.label())
+				break
+			if f.campaign_id==plant_target:
+				raw=RedKingCampaignGear.plant_roll(data,raw,report)
+			if f.def.role=="wizard" and data.get("red_king_survival_reroll",false):
+				var previous := raw
+				if survival_decision.get("preview",false):
+					var second := dice.d20()
+					survival_decision["offer"]={"first":raw,"second":second,"first_outcome":RedKingMindRewards.survival_outcome(data,c.state,f,raw),"second_outcome":RedKingMindRewards.survival_outcome(data,c.state,f,second)}
+					return false
+				raw=RedKingMindRewards.survival_roll(data,raw,dice,int(survival_decision.get("choice",-1)))
+				report.append("Mindscape survival protection: %d → %d."%[previous,raw])
 			var caster := f.def.role in ["wizard", "apprentice"]
-			var roll := raw + (1 if f.def.role == "wizard" else 0)
+			if RaggedWarbands.active(data) and not caster:
+				RaggedWarbands.soldier_survival(unit,raw)
+				report.append("%s #%d: %s."%[f.label(),f.campaign_id+1,"separated from the warband" if unit.get("ragged_absent",false) else "recovered"])
+				break
+			var roll := raw + (1 if f.def.role=="wizard" and not f.used_gear.get(DeathMask.EVER,false) else 0)
+			if f.def.role=="wizard" and ActiveGear.has(f,"gear_rk_ring_of_destiny"):
+				roll=RedKingGear.destiny_survival(roll)
 			var outcome := "recovered"
 			if roll <= (2 if caster else 4):
 				unit["dead"] = true
@@ -155,7 +318,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			elif caster and roll <= 4:
 				outcome = "permanent injury: " + InjuryRules.roll(unit, dice)
 			elif roll <= (6 if caster else 8):
-				if f.def.role == "wizard" and BaseResources.owns(data, "sarcophagus_of_healing"):
+				if f.def.role == "wizard" and not RedKingCampaign.suppress_base_after(data,c.state.scenario_special) and data.get("resources",[]).has("sarcophagus_of_healing"):
 					outcome = "recovered using the sarcophagus"
 				else:
 					unit["miss"] = 1
@@ -169,6 +332,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 	var secrets := int(data.get("revealed_secrets", 0))
 	data["revealed_secrets"] = 0
 	data["pending_treasure"] = []
+	data["red_king_exchange_used"]=false
 	# Central treasure gets its own optional reroll, not a Reveal Secret choice.
 	var recovered: Array[TreasureToken] = []
 	for token in c.state.treasures:
@@ -178,6 +342,14 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 		if token.secured_by == side and not token.central:
 			recovered.append(token)
 	for token in recovered:
+		if RedKingMadMan.rescue(c.state,token):
+			report.append("Kalamon Ryce rescued: eligible for the optional solo encounter.")
+			continue
+		if RedKingFire.active(c.state) and token.central:
+			data["red_king_artefact_recovered"]=true
+		if token.bonus_gold>0:
+			data["gold"]=int(data["gold"])+token.bonus_gold
+			report.append("Recovered offering: +%d gc."%token.bonus_gold)
 		if c.state.scenario_special == "genie_in_the_bottle" and token.id == c.state.lamp_token:
 			data["gold"] = int(data["gold"]) + 250
 			report.append("Recovered the genie lamp: 250 gc.")
@@ -189,7 +361,13 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				report.append("Library central treasure: extra scroll.")
 			else:
 				raw = ScenarioObjectives.library_roll(raw, dice)
-		if token.central:
+		if RedKingRewards.eligible(c.state):
+			var second := dice.d20() if secrets>0 and not token.central else 0
+			var special := (RedKingFire.active(c.state) and token.central) or RedKingRingworld.active(c.state)
+			data["pending_treasure"].append({"token":token.id,"first":raw,"second":second,"central":token.central,"rk_exchange":not special,"rk_artefact":special})
+			if second>0:
+				secrets-=1
+		elif token.central:
 			data["pending_treasure"].append({"token": token.id, "first": raw, "second": 0, "central": true})
 		elif secrets > 0:
 			var second := dice.d20()
@@ -199,7 +377,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 			secrets -= 1
 		else:
 			_award_treasure(raw, dice, report, token.id)
-	match str(data.get("base", "")):
+	match ("" if RedKingCampaign.suppress_base_after(data,c.state.scenario_special) else str(data.get("base", ""))):
 		"temple":
 			if dice.d20() >= 16:
 				data["loot"].append({"kind": "potion", "potion": "healing", "owner": -1})
@@ -234,6 +412,7 @@ func settle(c: GameController, dice: Dice, side: int = 0) -> bool:
 				data["gold"] = int(data["gold"]) + gold
 				report.append("Treasury: +%d gc." % gold)
 	data["last_report"] = report
+	RedKingCampaign.advance(data,c.state.scenario_special)
 	return true
 
 
@@ -299,14 +478,14 @@ static func random_spell(dice: Dice) -> String:
 
 
 func choose_base(id: String) -> bool:
-	if data.is_empty() or int(data["games"]) == 0 or not BASES.has(id):
+	if RedKingCampaign.economy_locked(data) or data.is_empty() or int(data["games"]) == 0 or not BASES.has(id) or not ContentProfile.from_campaign(data).allows("bases",id):
 		return false
 	if id == data.get("base", ""):
 		return true
 	var proposed := data.duplicate(true)
 	proposed["base"] = id
 	proposed["resources"] = []
-	if not BaseResources.fits(proposed, FigureDb.load_files()):
+	if not BaseResources.fits(proposed, FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(data))):
 		return false
 	data["base"] = id
 	data["resources"] = []
@@ -338,7 +517,7 @@ func learn_grimoire(index: int, db: FigureDb) -> bool:
 		return false
 	var item: Dictionary = data["loot"][index]
 	var id: String = item.get("spell", "")
-	if item["kind"] != "grimoire" or id == "" or data["spells"].has(id):
+	if item["kind"] != "grimoire" or id == "" or data["spells"].has(id) or not ContentProfile.from_campaign(data).allows("spells",id):
 		return false
 	var draft := WarbandDraft.new(db)
 	draft.school = data["school"]
@@ -352,6 +531,8 @@ func learn_grimoire(index: int, db: FigureDb) -> bool:
 
 
 func recruitment_cost(id: String, db: FigureDb) -> int:
+	if id == "foulhorn":
+		return 200
 	if id == "apprentice":
 		return 100 + 10 * int(data["level"])
 	var discount := 10 if BaseResources.owns(data, "carrier_pigeons") else 0
@@ -359,9 +540,22 @@ func recruitment_cost(id: String, db: FigureDb) -> int:
 
 
 func can_hire(id: String, db: FigureDb) -> bool:
-	if not CampaignSuccession.living_wizard(data) or not db.figures.has(id) or int(data["gold"]) < recruitment_cost(id, db):
+	if RedKingCampaign.economy_locked(data):
+		return false
+	if not CampaignSuccession.living_wizard(data) or not db.available(id) or not ContentProfile.from_campaign(data).allows("figures",id) or int(data["gold"]) < recruitment_cost(id, db):
 		return false
 	var d := db.get_def(id)
+	if id=="foulhorn":
+		var book := false
+		for item: Dictionary in data["loot"]:
+			if item.get("gear","")=="gear_rk_book_of_the_foulhorn" and int(item.get("owner",-1))<0:
+				book=true
+		if not book:
+			return false
+		for member: Dictionary in data["units"]:
+			if member["type"]=="foulhorn" and not member["dead"] and not member.get("dismissed",false):
+				return false
+		return BaseResources.fits(data,db,id)
 	for unit: Dictionary in data["units"]:
 		if id == "apprentice" and unit["type"] == "apprentice" and CampaignPotions.preserved(data, unit):
 			return false
@@ -377,25 +571,29 @@ func hire(id: String, db: FigureDb) -> bool:
 	if not can_hire(id, db):
 		return false
 	data["gold"] = int(data["gold"]) - recruitment_cost(id, db)
-	data["units"].append({"type": id, "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false})
+	data["units"].append({"type": id, "id": data["units"].size(), "miss": 0, "injuries": 0, "dead": false,"permanent_summon":id=="foulhorn"})
 	return true
 
 
 func dismiss(index: int) -> bool:
-	if data.is_empty() or index < 0 or index >= data["units"].size():
+	if RedKingCampaign.economy_locked(data) or data.is_empty() or index < 0 or index >= data["units"].size():
 		return false
 	var unit: Dictionary = data["units"][index]
 	if unit["dead"] or unit["type"] == "wizard" or unit.get("dismissed", false):
 		return false
 	unit["dismissed"] = true
-	for item: Dictionary in data["loot"]:
+	for i in range(data["loot"].size()-1,-1,-1):
+		var item: Dictionary=data["loot"][i]
 		if int(item.get("owner", -1)) == index:
-			item["owner"] = -1
+			if item.get("gear","") in ["gear_rk_construct_spikes","gear_construct_hammer"]:
+				data["loot"].remove_at(i)
+			else:
+				item["owner"] = -1
 	return true
 
 
 func treat(index: int) -> bool:
-	if data.is_empty() or index < 0 or index >= data["units"].size():
+	if RedKingCampaign.economy_locked(data) or data.is_empty() or index < 0 or index >= data["units"].size():
 		return false
 	var unit: Dictionary = data["units"][index]
 	if unit["dead"] or int(unit["miss"]) == 0 or unit["type"] not in ["wizard", "apprentice"] or unit.get("dismissed", false):
@@ -425,7 +623,12 @@ func resolve_treasure(second: bool, dice: Dice) -> bool:
 	var pending: Array = data.get("pending_treasure", [])
 	if pending.is_empty():
 		return false
-	var entry: Dictionary = pending.pop_front()
+	if pending[0].has("rk_roll"):
+		return RedKingRewards.resolve_bonus(data,second,dice)
+	var entry: Dictionary = pending[0]
+	if second and not entry["central"] and int(entry.get("second",0))<=0:
+		return false
+	pending.pop_front()
 	var roll := int(entry["first"])
 	if second:
 		roll = dice.d20() if entry["central"] else int(entry["second"])

@@ -9,12 +9,16 @@ var figures: Array[Figure] = []
 var side_names: Array[String] = []
 ## Optional declared school for presentation; empty for old checkpoints or generic warbands.
 var side_schools := {}
+var wounded_rules := false
 var turn := 0
 var phase := Phase.WIZARD
 var early := EarlyPhase.new()
 var group := GroupActivation.new()
+var pending_gutter := -1
 var push_winner := -1
 var push_loser := -1
+var push_tie := false
+var push_tie_second := false
 var forced_combat := false
 # -2 means no human reaction owner (headless / watch).
 var reaction_side := -2
@@ -35,6 +39,9 @@ var reinforcement_points: Array[Vector2] = []
 var creature_db: FigureDb
 var spellbooks := {}
 var spell_catalog := {}
+var content_profile := ContentProfile.new()
+## Scenario-specific plain data (including shuffled decks and ongoing events).
+var scenario_data: Dictionary = {}
 var pending_cast := {}
 var pending_resistance := {}
 var pending_combat := {}
@@ -114,12 +121,22 @@ func waiting(side: int) -> Array[Figure]:
 				creatures.append(member)
 				return creatures
 		for f in side_figures(-1):
-			if not f.activated:
+			if not f.activated and not RedKingMadMan.is_ryce(f) and not RedKingTethers.pylon(f):
 				creatures.append(f)
-		creatures.sort_custom(func(a: Figure, b: Figure) -> bool: return a.health > b.health or (a.health == b.health and a.id < b.id))
+		if RedKingMind.active(self):
+			var wizard := RedKingMind.wizard(self)
+			if wizard!=null:
+				creatures.sort_custom(func(a: Figure,b: Figure) -> bool:
+					var da := a.pos.distance_squared_to(wizard.pos)
+					var db := b.pos.distance_squared_to(wizard.pos)
+					return da<db or (is_equal_approx(da,db) and a.id<b.id))
+		else:
+			creatures.sort_custom(func(a: Figure, b: Figure) -> bool: return a.health > b.health or (a.health == b.health and a.id < b.id))
 		if creatures.size() > 1:
 			creatures.resize(1)
 		return creatures
+	if RedKingVeil.active(self) and side==1:
+		return RedKingVeil.waiting(self)
 	if group.in_progress() and group.side == side:
 		return group.waiting(self)
 	var out: Array[Figure] = []

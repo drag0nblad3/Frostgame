@@ -29,11 +29,13 @@ func summoned(f: Figure, id: String, whole_side: bool = false) -> Figure:
 
 
 func can_control(f: Figure, t: Figure, id: String) -> bool:
+	if t.def.traits.has("antithetical_magic") or (id=="mind_control" and t.def.traits.has("immune_mind_control")) or (id=="control_demon" and t.def.traits.has("immune_control_demon")):
+		return false
 	var existing := controlled(f, id)
 	if (t.side == f.side and t.controller_id < 0 and t.summon_spell == "") or (existing != null and existing != t):
 		return false
 	if id == "mind_control":
-		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless") and not t.def.traits.has("mind_lock") and not t.spell_effects.has("mind_lock")
+		return t.def.role not in ["wizard", "apprentice"] and not t.def.traits.has("mindless") and not t.mind_locked()
 	return t.is_demon() if id == "control_demon" else t.def.traits.has(CONTROL[id])
 
 
@@ -41,9 +43,11 @@ func can_place(f: Figure, id: String, at: Vector2) -> bool:
 	var s := c.state
 	if s.creature_db == null or ScenarioNull.field_at(s.board, at) or not s.board.can_stand(at, Figure.BASE_RADIUS):
 		return false
-	if id == "animate_skull" and summoned(f, id) != null:
+	if id=="animate_skull" and count_summoned(c.state,f,id)>= (2 if skull_staff(f) else 1):
 		return false
-	if id in ["raise_zombie", "illusionary_soldier"] and summoned(f, id, true) != null:
+	if id=="raise_zombie" and count_summoned(c.state,f,id,true)>=(2 if skull_staff(f) else 1):
+		return false
+	if id=="illusionary_soldier" and count_summoned(s,f,id,true)>=(2 if illusion_staff_owner(s,f.side)!=null else 1):
 		return false
 	if id == "summon_demon" and controlled(f, "control_demon") != null:
 		return false
@@ -83,7 +87,10 @@ func points(f: Figure, id: String, first_only: bool = false) -> Array[Vector2]:
 
 
 func apply_control(f: Figure, t: Figure, id: String, roll: int) -> void:
-	c._magic.resistance.attempt(t, roll, _control_result.bind(f, t, id, roll))
+	var bonus := 5 if id=="mind_control" and t.def.traits.has("blood_marked") else 0
+	if id=="mind_control":
+		bonus+=RedKingGear.puppet_penalty(f,t)
+	c._magic.resistance.attempt(t, roll, _control_result.bind(f, t, id, roll),bonus)
 
 
 func _control_result(success: bool, f: Figure, t: Figure, id: String, roll: int) -> void:
@@ -129,7 +136,7 @@ func vanish(t: Figure) -> void:
 	c.emit("exit", {"id": t.id})
 
 
-func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int) -> void:
+func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int,golden_fang: bool=false) -> void:
 	var type := id
 	var side := -1
 	match id:
@@ -149,7 +156,12 @@ func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int) -> void:
 			side = f.side
 		"animate_skull":
 			type = "animated_skull"
-	var t := c._encounters._spawn_at(type, at, side)
+	var t := c._encounters._spawn_at(type, at, side,f.ring_side)
+	if id=="animate_skull" and golden_fang and RedKingMaterials.spend_fang(f):
+		t.used_gear["rk_golden_fang"]=true
+		c.emit("gear_used",{"id":f.id,"target":t.id,"gear":RedKingMaterials.FANGS})
+	if id in ["animate_skull","raise_zombie"] and skull_staff(f):
+		t.used_gear["rk_skull_strong"]=true
 	t.summoned_by = f.id
 	t.summon_spell = id
 	if id == "illusionary_soldier":
@@ -176,3 +188,59 @@ func miscast_demon(f: Figure) -> void:
 		if open:
 			c._encounters._spawn_at(type, at)
 			return
+
+
+static func skull_staff(f: Figure) -> bool:
+	return f.def.role=="wizard" and ActiveGear.has(f,"gear_rk_skull_staff") and not MagicEquipment.suppressed(f) and not f.destroyed_weapons.has("staff")
+
+
+static func count_summoned(s: GameState,f: Figure,id: String,whole_side: bool=false) -> int:
+	var count := 0
+	for t in s.figures:
+		if not t.in_play() or t.summon_spell!=id:
+			continue
+		var owner := s.figure(t.summoned_by)
+		if owner!=null and (owner==f or (whole_side and owner.side==f.side)):
+			count+=1
+	return count
+
+
+static func skull_cast_modifier(f: Figure,id: String) -> int:
+	if not skull_staff(f):
+		return 0
+	var result := 1 if id in ["animate_skull","raise_zombie"] else 0
+	var s := RedKingVeil.of(f)
+	if s!=null and (count_summoned(s,f,"animate_skull")>1 or count_summoned(s,f,"raise_zombie",true)>1):
+		result-=2
+	return result
+
+
+const ILLUSION_STAFF := "gear_rk_staff_of_the_illusionist"
+
+
+static func illusion_staff(f: Figure) -> bool:
+	return f!=null and f.def.role=="wizard" and ActiveGear.has(f,ILLUSION_STAFF) and not MagicEquipment.suppressed(f) and not f.destroyed_weapons.has("staff")
+
+
+static func illusion_staff_owner(s: GameState,side: int) -> Figure:
+	for f in s.figures:
+		if f.side==side and f.in_play() and illusion_staff(f):
+			return f
+	return null
+
+
+static func illusion_will(f: Figure) -> int:
+	var s := RedKingVeil.of(f)
+	return -2 if s!=null and illusion_staff(f) and count_summoned(s,f,"illusionary_soldier",true)>1 else 0
+
+
+func enforce_illusion_limit(owner: Figure) -> void:
+	if owner.def.role!="wizard" or not ActiveGear.has(owner,ILLUSION_STAFF):
+		return
+	var copies: Array[Figure]=[]
+	for t in c.state.figures:
+		if t.in_play() and t.side==owner.side and t.summon_spell=="illusionary_soldier":
+			copies.append(t)
+	while copies.size()>1:
+		var newest: Figure=copies.pop_back()
+		vanish(newest)

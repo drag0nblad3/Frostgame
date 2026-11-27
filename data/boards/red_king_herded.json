@@ -1,0 +1,82 @@
+{
+  "id": "red_king_herded",
+  "name": "Herded Like Cattle!",
+  "size": [
+    30,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        4,
+        8,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        21,
+        8,
+        5,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        8,
+        14,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        20,
+        15,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        22,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        22,
+        24,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        8,
+        29,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        19,
+        30,
+        4,
+        3
+      ]
+    }
+  ]
+}

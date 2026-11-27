@@ -6,7 +6,7 @@ var cost := {}
 var prev := {}
 
 
-static func search(grid: LayeredGrid,from: Vector3i,allowance: float) -> LayeredReach:
+static func search(grid: LayeredGrid,from: Vector3i,allowance: float,leave_contact: bool=false) -> LayeredReach:
 	var r := LayeredReach.new()
 	r.start=from
 	if not grid.open(from):
@@ -18,7 +18,7 @@ static func search(grid: LayeredGrid,from: Vector3i,allowance: float) -> Layered
 		var item := heap.pop()
 		var n: Vector3i = item[1]
 		var distance: float = item[0]
-		if distance>r.cost.get(n,INF) or grid.stops(n):
+		if distance>r.cost.get(n,INF) or (grid.stops(n) and not (leave_contact and n==from)):
 			continue
 		for edge in grid.neighbors(n):
 			var next: Vector3i = edge["to"]

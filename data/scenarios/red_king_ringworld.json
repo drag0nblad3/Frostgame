@@ -1,0 +1,319 @@
+{
+  "id": "red_king_ringworld",
+  "name": "Ringworld of the Red King",
+  "board": "red_king_ringworld",
+  "warbands": [
+    {
+      "name": "Elementalist",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            3
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            15,
+            3
+          ]
+        },
+        {
+          "type": "knight",
+          "at": [
+            20,
+            4.5
+          ]
+        },
+        {
+          "type": "man_at_arms",
+          "at": [
+            13,
+            4.5
+          ]
+        },
+        {
+          "type": "infantryman",
+          "at": [
+            22,
+            3
+          ]
+        },
+        {
+          "type": "archer",
+          "at": [
+            10,
+            3
+          ]
+        },
+        {
+          "type": "crossbowman",
+          "at": [
+            26,
+            3
+          ]
+        }
+      ],
+      "spells": {
+        "elemental_bolt": 12,
+        "elemental_shield": 10,
+        "fleet_feet": 12,
+        "strength": 12,
+        "heal": 12,
+        "combat_awareness": 16
+      }
+    },
+    {
+      "name": "Necromancer",
+      "figures": [
+        {
+          "type": "wizard",
+          "at": [
+            18,
+            33
+          ]
+        },
+        {
+          "type": "apprentice",
+          "at": [
+            21,
+            33
+          ]
+        },
+        {
+          "type": "barbarian",
+          "at": [
+            16,
+            31.5
+          ]
+        },
+        {
+          "type": "treasure_hunter",
+          "at": [
+            23,
+            31.5
+          ]
+        },
+        {
+          "type": "thug",
+          "at": [
+            19,
+            31.5
+          ]
+        },
+        {
+          "type": "ranger",
+          "at": [
+            12,
+            33
+          ]
+        },
+        {
+          "type": "marksman",
+          "at": [
+            26,
+            33
+          ]
+        }
+      ],
+      "spells": {
+        "bone_dart": 10,
+        "steal_health": 10,
+        "fleet_feet": 12,
+        "glow": 14,
+        "mind_lock": 16,
+        "strength": 14
+      }
+    }
+  ],
+  "treasures": [
+    [
+      15.8,
+      18
+    ],
+    [
+      5.8999999999999995,
+      6.1
+    ],
+    [
+      25.7,
+      6.1
+    ],
+    [
+      5.8999999999999995,
+      29.9
+    ],
+    [
+      25.7,
+      29.9
+    ]
+  ],
+  "random_encounters": false,
+  "forced_combat": true,
+  "special": "red_king_ringworld",
+  "central_treasure": 0,
+  "creatures": [
+    {
+      "type": "red_king_key_master",
+      "at": [
+        5.1,
+        6.1
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "red_king_key_master",
+      "at": [
+        24.9,
+        6.1
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "red_king_key_master",
+      "at": [
+        5.1,
+        29.9
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "red_king_key_master",
+      "at": [
+        24.9,
+        29.9
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_longhammer",
+      "at": [
+        14.4,
+        5.4
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_darter",
+      "at": [
+        15.6,
+        5.4
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        14.4,
+        6.6
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        15.6,
+        6.6
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_longhammer",
+      "at": [
+        26.4,
+        17.4
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "hrut_darter",
+      "at": [
+        27.6,
+        17.4
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        26.4,
+        18.6
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        27.6,
+        18.6
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "hrut_longhammer",
+      "at": [
+        14.4,
+        29.4
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_darter",
+      "at": [
+        15.6,
+        29.4
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        14.4,
+        30.6
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        15.6,
+        30.6
+      ],
+      "ring_side": 0
+    },
+    {
+      "type": "hrut_longhammer",
+      "at": [
+        2.4,
+        17.4
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "hrut_darter",
+      "at": [
+        3.6,
+        17.4
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        2.4,
+        18.6
+      ],
+      "ring_side": 1
+    },
+    {
+      "type": "hrut_warrior",
+      "at": [
+        3.6,
+        18.6
+      ],
+      "ring_side": 1
+    }
+  ]
+}

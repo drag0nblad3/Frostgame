@@ -1,0 +1,86 @@
+{
+  "id": "red_king_veil",
+  "name": "The Veil of Unreality",
+  "size": [
+    24,
+    36
+  ],
+  "pieces": [
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        7,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        17,
+        6,
+        4,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        8,
+        13,
+        3,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        16,
+        17,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        3,
+        21,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        8,
+        27,
+        3,
+        3
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        18,
+        29,
+        3,
+        4
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "a": [
+        0,
+        12
+      ],
+      "b": [
+        24,
+        12
+      ],
+      "lethal": true
+    }
+  ]
+}
