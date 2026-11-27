@@ -81,7 +81,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 					bi.mode = "swap_second" if bi.selected_spell=="transpose" else ("floor_suggestion" if bi.is_layered() and bi.selected_spell=="suggestion" else "leap_destination")
 					bi.preview()
 					return false
-				return bi._declared(bi.c.start_cast(bi.selected_spell,id,bi.spell_ammo))
+				return bi._declared(BattleAction.execute(bi.c,"cast",id,bi.selected_spell,bi.spell_ammo))
 			"cancel_control":
 				return bi.c._magic.cancel(id)
 			"group_select":
@@ -95,7 +95,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 				bi.preview()
 				return false
 			"select": return bi.c.activate(id)
-			"fight_hand": return bi.c.fight_hand(id)
+			"fight_hand": return BattleAction.execute(bi.c,"fight_hand",id)
 			"gutter_fight": return GearActions.gutter_fight(bi.c,id)
 			"fight","shoot","ammo_shot","wraith_shot":
 				bi.plan_attack(id)
@@ -187,7 +187,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 	if bi.mode == "collect":
 		for token in bi.tokens:
 			if at.distance_to(token.pos) <= 0.9 and (not bi.is_layered() or BattleFloorInput.visible(bi,token.surface_id)):
-				return bi.c.pick_up(token.id)
+				return BattleAction.execute(bi.c,"collect",token.id)
 	if bi.mode in ["drop", "drop_shrunk"]:
 		for p in bi.drops:
 			if at.distance_to(p) <= 0.3:
