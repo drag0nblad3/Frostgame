@@ -46,6 +46,8 @@ func test_silent_tower_real_move_cancels_magic() -> void:
 	var c := GameController.new(s, Dice.new(4))
 	var f := s.figure(1)
 	f.pos = Vector2(18, 13.5)
+	f.surface_id="street"
+	f.elevation=0.0
 	f.actions_left = 2
 	f.spell_effects["fleet_feet"] = true
 	s.active_id = f.id

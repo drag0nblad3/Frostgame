@@ -80,8 +80,13 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 		var at:=rect.get_center()+along*(float(i)*0.5-length*0.5)
 		for side: int in [-1,1]:
 			var outside:=at+across*(width*0.5+Figure.BASE_RADIUS)*side
+			# Climb to the nearest legal top edge, not the centre of a broad roof.
+			var edge:=at+across*maxf(0.0,width*0.5-Figure.BASE_RADIUS)*side
 			var a:=layout.node(str(entry["support"]),outside)
-			var b:=layout.node(id,at)
+			var b:=layout.node(id,edge)
+			outside=layout.point(a)
+			if outside.distance_to(layout.point(b))>1.5:
+				continue
 			if not layout.standable(a) or not layout.standable(b) or not is_equal_approx(layout.height(a),h):
 				continue
 			var clear:=true
@@ -97,4 +102,4 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 					clear=false
 					break
 			if clear:
-				FloorClimb.add(layout,{"id":id+":"+str(i)+":"+str(side),"from":[entry["support"],outside.x,outside.y],"to":[id,at.x,at.y]})
+				FloorClimb.add(layout,{"id":id+":"+str(i)+":"+str(side),"from":[entry["support"],outside.x,outside.y],"to":[id,layout.point(b).x,layout.point(b).y]})
