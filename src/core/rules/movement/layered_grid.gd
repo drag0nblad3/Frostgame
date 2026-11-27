@@ -68,6 +68,8 @@ func stops(n: Vector3i) -> bool:
 		return false
 	if null_boundary and ScenarioNull.field_at(null_board,layout.point(n)):
 		return true
+	if mover.side>=0 and not IllusionRules.phantom(mover) and ScenarioColumns.contact(board,layout.point(n),layout.height(n))!=null:
+		return true
 	for other in others:
 		if other.side!=mover.side and Contact.touches_position(other,layout.point(n),layout.height(n),layout.surface_id(n)):
 			return true

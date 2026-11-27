@@ -2,29 +2,41 @@ class_name ScenarioSites
 extends RefCounted
 ## Haunted dwellings and arcane transport discs (pp. 148, 150).
 
-static func site_at(s: GameState, kind: String, at: Vector2) -> TerrainPiece:
+static func site_at(s: GameState,kind: String,at: Vector2,height: float=NAN) -> TerrainPiece:
 	for p in s.board.pieces:
-		if p.kind.id == kind and p.contains(at):
+		if p.kind.id==kind and p.contains(at) and (s.board.floor_layout.is_empty() or is_nan(height) or absf(height-p.base_height)<0.5):
 			return p
 	return null
 
 
-static func treasure_protected(s: GameState, at: Vector2) -> bool:
-	return (s.scenario_special == "the_keep" and site_at(s, "arcane_disc", at) != null) or ScenarioNull.protected_treasure(s, at)
+static func treasure_protected(s: GameState,at: Vector2,height: float=NAN) -> bool:
+	return (s.scenario_special=="the_keep" and site_at(s,"arcane_disc",at,height)!=null) or ScenarioNull.protected_treasure(s,at)
 
 
-static func discover(c: GameController, at: Vector2, side: int) -> bool:
+static func discover(c: GameController,at: Vector2,side: int,height: float=0.0) -> bool:
 	var s := c.state
 	if s.scenario_special != "haunted_houses" or side < 0 or s.creature_db == null:
 		return false
-	var hut := site_at(s, "haunted_floor", at)
+	var hut := site_at(s,"haunted_floor",at,height)
 	if hut == null or s.discovered_huts.has(hut.rect.position):
 		return false
 	s.discovered_huts[hut.rect.position] = true
 	var roll := c.dice.d20()
 	var kind := "" if roll <= 6 else ("ghoul" if roll <= 16 else "wraith")
 	var found := false
-	if kind != "":
+	if kind!="" and not s.board.floor_layout.is_empty():
+		var layout:=s.board.floor_geometry()
+		var center:=hut.rect.get_center()
+		var target:=center+Vector2(0,1.5)
+		var options:=BattlePlacement.nearby_floor(s,center,hut.base_height,2.13,hut.surface_id)
+		options.sort_custom(func(a: Vector3i,b: Vector3i) -> bool: return layout.point(a).distance_squared_to(target)<layout.point(b).distance_squared_to(target))
+		for n in options:
+			var delta:=layout.point(n)-center
+			if absf(delta.x)<=1.5 and absf(delta.y)<=1.5:
+				c._encounters._spawn_on_floor(kind,n)
+				found=true
+				break
+	elif kind != "":
 		var grid := MoveGrid.new(s.board, null, s.figures)
 		var target := hut.rect.get_center() + Vector2(0, 1.5)
 		var points: Array[Vector2] = []
@@ -42,9 +54,9 @@ static func discover(c: GameController, at: Vector2, side: int) -> bool:
 
 
 static func enter(c: GameController, f: Figure) -> bool:
-	if not f.in_play() or f.elevation >= 0.5:
+	if not f.in_play() or (c.state.board.floor_layout.is_empty() and f.elevation>=0.5):
 		return false
-	return discover(c, f.pos, f.side)
+	return discover(c,f.pos,f.side,f.elevation)
 
 
 static func end_move(c: GameController, f: Figure) -> void:
@@ -58,9 +70,9 @@ static func end_move(c: GameController, f: Figure) -> void:
 	if not f.in_play():
 		return
 	var s := c.state
-	if s.scenario_special != "the_keep" or f.elevation >= 0.5:
+	if s.scenario_special!="the_keep" or (s.board.floor_layout.is_empty() and f.elevation>=0.5):
 		return
-	var disc := site_at(s, "arcane_disc", f.pos)
+	var disc := site_at(s,"arcane_disc",f.pos,f.elevation)
 	if disc == null:
 		return
 	var roll := c.dice.d20()
@@ -73,6 +85,24 @@ static func end_move(c: GameController, f: Figure) -> void:
 	var to := center + (from - center).rotated(direction)
 	var dest := site_at(s, "arcane_disc", to)
 	if dest == null:
+		return
+	if not s.board.floor_layout.is_empty():
+		var layout:=s.board.floor_geometry()
+		var options:=BattlePlacement.nearby_floor(s,to,dest.base_height,dest.rect.size.x*0.5-Figure.BASE_RADIUS,dest.surface_id,f)
+		options.sort_custom(func(a: Vector3i,b: Vector3i) -> bool: return layout.point(a).distance_squared_to(to)<layout.point(b).distance_squared_to(to))
+		var floor_grid:=LayeredGrid.new(layout,f,s.figures)
+		for n in options:
+			if not floor_grid.open(n):
+				continue
+			var before:=Vector3(f.pos.x,f.elevation,f.pos.y)
+			var previous:=f.surface_id
+			f.pos=layout.point(n)
+			f.elevation=layout.height(n)
+			f.surface_id=layout.surface_id(n)
+			c.emit("layered_move",{"id":f.id,"path":PackedVector3Array([before,layout.world(n)]),"surfaces":[previous,f.surface_id],"cost":0.0})
+			_finish_disc(c,f,roll)
+			return
+		c.emit("disc_stay",{"id":f.id,"roll":roll})
 		return
 	var grid := MoveGrid.new(s.board, f, s.figures)
 	var points: Array[Vector2] = []
@@ -89,6 +119,11 @@ static func end_move(c: GameController, f: Figure) -> void:
 	f.pos = points[0]
 	f.elevation = s.board.height_at(f.pos)
 	c.emit("move", {"id": f.id, "path": PackedVector2Array([old, f.pos]), "cost": 0.0})
+	_finish_disc(c,f,roll)
+
+
+static func _finish_disc(c: GameController,f: Figure,roll: int) -> void:
+	var s:=c.state
 	var xp := 0
 	if f.side >= 0 and not s.disc_travellers.has(f.id):
 		s.disc_travellers[f.id] = true

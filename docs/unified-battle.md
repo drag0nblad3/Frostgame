@@ -44,3 +44,5 @@ Actual and hypothetical firing positions now use one physical sight and shot-val
 
 
 Core scenario parity: the Well, Library, Worm Hunts, Genie and Museum now resolve their special actions/spawns against real support geometry. Library extraction uses the same door policy as exposed maps, and treasure contact/guarding uses actual token height and physical rays between different floors. Named maps are not redesigned merely to exercise the new rules; unsupported scenario-specific floor conversions remain explicitly guarded.
+
+Haunted Houses, The Keep and Complex Temple also use actual terrain support for their path-triggered discovery, transport and guardian challenges. Newly spawned occupants can stop a committed route before overlap, and temple guardian removal clears the supporting solid as well as the terrain marker. Core special-scenario floor eligibility is now explicit rather than a Silent Tower-only exception. Red King special scenario layouts still require their own topology, hazard and objective audit before adding stacked floors.

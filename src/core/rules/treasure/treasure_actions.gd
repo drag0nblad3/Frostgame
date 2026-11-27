@@ -50,9 +50,7 @@ func claim_free(f: Figure, token: TreasureToken) -> bool:
 
 func _claim(f: Figure, token: TreasureToken) -> bool:
 	var id := token.id
-	# Only a figure on the site's actual ground level can discover a hut.
-	if token.surface_id.is_empty() or absf(TreasureRules.token_height(_c.state,token))<0.5:
-		ScenarioSites.discover(_c, token.pos, f.side)
+	ScenarioSites.discover(_c,token.pos,f.side,TreasureRules.token_height(_c.state,token))
 	_c._magic.illusions.reveal(f)
 	if f.treasure_id >= 0:
 		f.second_treasure_id = f.treasure_id

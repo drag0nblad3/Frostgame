@@ -10,7 +10,7 @@ func _init(controller: GameController) -> void:
 
 func can_target(f: Figure, id: String, token: TreasureToken) -> bool:
 	var s := c.state
-	if token.ring_side!=f.ring_side or RedKingHill.guarded(s,token) or token.investigation or not token.unresolved() or token.frozen or ScenarioSites.treasure_protected(s, origin(token)):
+	if token.ring_side!=f.ring_side or RedKingHill.guarded(s,token) or token.investigation or not token.unresolved() or token.frozen or ScenarioSites.treasure_protected(s,origin(token),origin_world(token).y):
 		return false
 	if id=="telekinesis" and not s.board.floor_layout.is_empty():
 		var at:=origin_world(token)
@@ -37,13 +37,7 @@ func origin_world(token: TreasureToken) -> Vector3:
 	var carrier:=c.state.figure(token.carrier_id)
 	if carrier!=null:
 		return Vector3(carrier.pos.x,carrier.elevation,carrier.pos.y)
-	var height:=c.state.board.height_at(token.pos)
-	if not c.state.board.floor_layout.is_empty():
-		var layout:=c.state.board.floor_geometry()
-		var index:=layout.index_of(token.surface_id)
-		if index>=0:
-			height=layout.surfaces[index].height_at(token.pos)
-	return Vector3(token.pos.x,height,token.pos.y)
+	return Vector3(token.pos.x,TreasureRules.token_height(c.state,token),token.pos.y)
 
 
 func limit_for(f: Figure,id: String) -> float:
@@ -91,6 +85,7 @@ func apply_floor(f: Figure,id: String,token: TreasureToken,at: Vector2,surface: 
 		var carrier:=c.state.figure(token.carrier_id)
 		c._magic.resistance.attempt(carrier,roll,_drop_floor_result.bind(carrier,at,token.id,surface))
 	else:
+		ScenarioSites.discover(c,token.pos,f.side,TreasureRules.token_height(c.state,token))
 		c._loot.relocate_ground(token,at,surface)
 
 

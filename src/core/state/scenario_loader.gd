@@ -182,6 +182,12 @@ static func assign_token_support(s: GameState,t: TreasureToken,id: String="") ->
 		return
 	var n: Variant=BattlePlacement.support(s,t.pos,id,TreasureRules.TOKEN_RADIUS,0.5,false)
 	if n==null:
+		# Frozen temple treasures are intentionally inside their guardian column.
+		if t.frozen and s.scenario_special=="complex_temple":
+			for p in s.board.pieces:
+				if p.kind.id=="temple_column" and p.rect.get_center().distance_to(t.pos)<0.01 and (id.is_empty() or p.surface_id==id):
+					t.surface_id=p.surface_id
+					return
 		_report_support_error(s,"Treasure "+str(t.id),t.pos,id)
 		return
 	t.surface_id=s.board.floor_geometry().surface_id(n)

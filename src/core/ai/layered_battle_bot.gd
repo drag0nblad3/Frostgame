@@ -91,7 +91,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 				best=distance
 		elif f.side>=0 and not f.def.traits.has("animal"):
 			for token in c.state.treasures:
-				if token.on_ground() and token.ring_side==f.ring_side and token.surface_id==layout.surface_id(n) and token.pos.distance_to(layout.point(n))<=0.8:
+				if token.on_ground() and token.ring_side==f.ring_side and token.surface_id==layout.surface_id(n) and token.pos.distance_to(layout.point(n))<=(1.5 if token.frozen and c.state.scenario_special=="complex_temple" else 0.8):
 					goal=n
 					best=distance
 	# When not extracting or pursuing a reachable objective, seek a legal

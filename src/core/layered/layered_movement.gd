@@ -10,7 +10,7 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 		return false
 	# Only scenarios whose spatial objectives have been audited can opt
 	# into authored stacked floors. Ordinary maps continue to use the same rules.
-	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle"]:
+	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle","haunted_houses","the_keep","complex_temple"]:
 		return false
 	if cape and PlaneWalk.uses_direct(f):
 		return false
@@ -109,7 +109,20 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 	var chunk_surfaces: Array[String]=[surfaces[0]]
 	for i in range(1,path.size()):
 		var point:=path[i]
-		f.pos=Vector2(point.x,point.z)
+		var at:=Vector2(point.x,point.z)
+		var occupied:=false
+		if c.state.scenario_special=="haunted_houses" and not c.state.discovered_huts.is_empty():
+			for other in c.state.figures:
+				if other==f or not other.in_play() or other.ring_side!=f.ring_side or absf(other.elevation-point.y)>=0.5:
+					continue
+				if other.pos.distance_to(at)<Contact.OVERLAP:
+					if chunk.size()>1:
+						c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
+					_stop(c,f,engaged,run,boost)
+					return
+				if other.side!=f.side and Contact.touches_position(other,at,point.y,surfaces[i]):
+					occupied=true
+		f.pos=at
 		f.elevation=point.y
 		f.surface_id=surfaces[i]
 		chunk.append(point)
@@ -119,7 +132,10 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 		var previous:=path[i-1]
 		for wall in c._magic.terrain.touching_walls(Vector2(previous.x,previous.z),previous.y):
 			walls.erase(wall)
-		if ScenarioNull.field_at(c.state.board,f.pos) or not hits.is_empty() or not walls.is_empty():
+		var hut:=ScenarioSites.site_at(c.state,"haunted_floor",f.pos,f.elevation) if c.state.scenario_special=="haunted_houses" and f.side>=0 else null
+		var undiscovered:=hut!=null and not c.state.discovered_huts.has(hut.rect.position)
+		var column:=f.side>=0 and not IllusionRules.phantom(f) and ScenarioColumns.contact(c.state.board,f.pos,f.elevation)!=null
+		if ScenarioNull.field_at(c.state.board,f.pos) or not hits.is_empty() or not walls.is_empty() or undiscovered or occupied or column:
 			c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
 			chunk=PackedVector3Array([point])
 			chunk_surfaces=[surfaces[i]]
@@ -130,9 +146,16 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 				for p in hits:
 					c._magic.terrain.explode(p)
 			if not f.in_play():
-				c.finish_movement(f,engaged,false)
-				if run:
-					RunForIt.finish(c,f,boost)
+				_stop(c,f,engaged,run,boost)
+				return
+			if column and i<path.size()-1 and ScenarioColumns.challenge(c,f):
+				_stop(c,f,engaged,run,boost)
+				return
+			if undiscovered and ScenarioSites.enter(c,f) and Contact.in_combat(c.state.figures,f):
+				_stop(c,f,engaged,run,boost)
+				return
+			if occupied and i<path.size()-1:
+				_stop(c,f,engaged,run,boost)
 				return
 	if chunk.size()>1:
 		c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
@@ -143,3 +166,9 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 		RunForIt.finish(c,f,boost)
 	elif exiting and choice.is_empty() and f.in_play() and not Contact.in_combat(c.state.figures,f):
 		LayeredLoot.complete(c,f)
+
+
+static func _stop(c: GameController,f: Figure,engaged: bool,run: bool,boost: bool) -> void:
+	c.finish_movement(f,engaged,false)
+	if run:
+		RunForIt.finish(c,f,boost)
