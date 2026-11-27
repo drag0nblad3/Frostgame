@@ -59,3 +59,25 @@ func test_downhill_motion_and_airborne_immunity() -> void:
 			RedKingHill.fall(c,other)
 			check_eq(other.pos,old)
 			break
+
+
+func test_player_selects_pyramid_slope() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	s.order.assign([0,1])
+	var f := s.figures[0]
+	f.pos=Vector2(10,10)
+	s.board.pieces.clear()
+	s.board.invalidate_terrain()
+	RedKingHill.transform(c)
+	var choice: Dictionary=s.scenario_data.get("rk_priority_choice",{})
+	check_eq(choice.get("kind",""),"hill_seam")
+	if choice.is_empty():
+		return
+	var target := s.figure(int(choice["id"]))
+	var points := RedKingHill.seam_points(c,target)
+	check(points.size()>1)
+	check(not RedKingHill.answer_seam(c,Vector2(-1,-1)))
+	check(RedKingHill.answer_seam(c,points[0]))
+	check(not RedKingHill._straddles(s,target.pos))

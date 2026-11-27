@@ -48,13 +48,16 @@ static func transform(c: GameController) -> void:
 	s.board.set_boundaries(lines)
 	c.emit("boundary_changed",{})
 	c.emit("hill_crack",{})
+	var queue: Array[int]=[]
 	for f in s.figures:
 		if not f.in_play() or f.side<0:
 			continue
 		if f.def.role in ["wizard","apprentice"]:
 			c.emit("hill_xp",{"id":f.id,"side":f.side,"xp":20 if f.def.role=="wizard" else 10})
 		if _straddles(s,f.pos):
-			_shift_from_seam(c,f)
+			queue.append(f.id)
+	s.scenario_data["rk_hill_queue"]=queue
+	_continue_seam(c)
 
 
 static func _straddles(s: GameState,at: Vector2) -> bool:
@@ -64,21 +67,64 @@ static func _straddles(s: GameState,at: Vector2) -> bool:
 	return false
 
 
-static func _shift_from_seam(c: GameController,f: Figure) -> void:
+static func seam_points(c: GameController,f: Figure) -> Array[Vector2]:
 	var grid := MoveGrid.new(c.state.board,f,c.state.figures)
 	var origin := MovePlanner.node_at(f.pos)
-	var best: Variant=null
-	var score := INF
+	var by_slope := {}
+	var distance := {}
 	for x in range(-6,7):
 		for y in range(-6,7):
 			var n := origin+Vector2i(x,y)
 			var at := MoveGrid.to_pos(n)
+			if _straddles(c.state,at) or not grid.open(n):
+				continue
+			var slope := downhill(c.state,at)
 			var d := f.pos.distance_squared_to(at)
-			if not _straddles(c.state,at) and d<score and grid.open(n):
-				best=n
-				score=d
-	if best!=null:
-		_place(c,f,MoveGrid.to_pos(best))
+			if d<float(distance.get(slope,INF)):
+				distance[slope]=d
+				by_slope[slope]=at
+	var best := INF
+	for d: float in distance.values():
+		best=minf(best,d)
+	var out: Array[Vector2]=[]
+	for slope: Vector2 in by_slope:
+		if float(distance[slope])<=best+1.0:
+			out.append(by_slope[slope])
+	return out
+
+
+static func _continue_seam(c: GameController) -> void:
+	var s := c.state
+	var queue: Array=s.scenario_data.get("rk_hill_queue",[])
+	while not queue.is_empty():
+		var f := s.figure(int(queue.pop_front()))
+		if f==null or not f.in_play():
+			continue
+		var points := seam_points(c,f)
+		if points.is_empty():
+			continue
+		if f.side==s.reaction_side and points.size()>1:
+			s.scenario_data["rk_priority_choice"]={"kind":"hill_seam","id":f.id}
+			c.emit("hill_seam_choice",{"id":f.id})
+			return
+		_place(c,f,points[0])
+	s.scenario_data.erase("rk_hill_queue")
+
+
+static func answer_seam(c: GameController,at: Vector2) -> bool:
+	var s := c.state
+	var choice: Dictionary=s.scenario_data.get("rk_priority_choice",{})
+	if choice.get("kind","")!="hill_seam":
+		return false
+	var f := s.figure(int(choice["id"]))
+	if f==null or f.side!=s.reaction_side or not seam_points(c,f).has(at):
+		return false
+	s.scenario_data.erase("rk_priority_choice")
+	_place(c,f,at)
+	_continue_seam(c)
+	if not s.scenario_data.has("rk_priority_choice"):
+		c._flow.resume_priority()
+	return true
 
 
 static func airborne(f: Figure) -> bool:

@@ -48,7 +48,8 @@ func refresh() -> void:
 	reach = null
 	var f := c.state.active()
 	if c.state.scenario_data.has("rk_priority_choice"):
-		mode="convergence" if c.state.scenario_data["rk_priority_choice"].get("kind","")=="convergence" else "ruins_piece"
+		var kind := str(c.state.scenario_data["rk_priority_choice"].get("kind",""))
+		mode=kind if kind in ["convergence","hill_seam"] else "ruins_piece"
 		preview()
 		return
 	var end_choice: Dictionary=c.state.scenario_data.get("rk_end_choice",{})
@@ -471,6 +472,11 @@ func preview() -> void:
 		"ruins_destination":
 			points.assign(RealityCrackTerrain.shift_points(c,spell_first))
 			hint="Choose a legal new centre for the selected terrain (up to 10″). Figures and treasure on it move too."
+		"hill_seam":
+			var unit := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
+			points.assign(RedKingHill.seam_points(c,unit))
+			radius=0.5
+			hint="Pyramid forms: choose a nearby legal slope for %s."%unit.label()
 		"convergence":
 			points.assign(RealityConvergence.points(c))
 			var figure := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
@@ -992,6 +998,15 @@ func tap(screen: Vector2) -> bool:
 				best=candidate
 				distance=candidate.distance_to(at)
 		return is_finite(best.x) and RedKingHunt.answer(c,best)
+	if mode=="hill_seam":
+		var unit := c.state.figure(int(c.state.scenario_data["rk_priority_choice"]["id"]))
+		var best := Vector2(INF,INF)
+		var distance := 0.65
+		for candidate in RedKingHill.seam_points(c,unit):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RedKingHill.answer_seam(c,best)
 	if mode=="ruins_piece":
 		for index: int in c.state.scenario_data["rk_priority_choice"]["options"]:
 			if c.state.board.pieces[index].rect.has_point(at):

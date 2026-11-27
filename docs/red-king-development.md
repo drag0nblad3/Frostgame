@@ -306,3 +306,6 @@ The gravitational pull now resolves nearest-first through a checkpoint-safe queu
 
 ### Finale rival tactics
 Rivals can collect same-plane treasure, seek a living Key-Master using wrapped route fields, switch planes when required and escape while in contact. The final gate is preserved while more than one friendly warband member remains; the strongest available non-caster without treasure is preferred as the final fighter. Ranged, melee and direct spell targeting avoid premature closure. This is a conservative heuristic, not a guaranteed successful finale against enemy attacks or area magic. Enchanted shots now avoid engaged targets, and same-plane treasure scoring ignores figures on the other side of the ring.
+
+### Pyramid slope choices
+When King of the Hill transforms, human warband members straddling a seam choose a nearby legal point on a slope. A plain priority queue holds further figures and allows checkpointing. The nearest half-inch point on each reasonably close slope is offered, rather than unconstrained continuous tabletop placement. Rival placements remain deterministic. The board is still a planar rules projection, not a deformed physical pyramid.

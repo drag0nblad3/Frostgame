@@ -87,7 +87,8 @@ func _roll_initiative(use: bool) -> void:
 	s.early.capture(s)
 	_c.emit("turn_start", {"turn": s.turn, "order": s.order, "rolls": ini["rolls"]})
 	RedKingHill.priority(_c,ini["rolls"])
-	RealityCracks.on_priority(_c,ini["rolls"])
+	if not s.scenario_data.has("rk_priority_choice"):
+		RealityCracks.on_priority(_c,ini["rolls"])
 	resume_priority()
 
 
