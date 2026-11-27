@@ -17,16 +17,33 @@ static func label(parent: Node,value: String,font: int=25,color: Color=PAPER) ->
 
 
 static func button(parent: Node,value: String,action: Callable,primary: bool=false) -> Button:
+	var b := command_button(value,action,primary)
+	parent.add_child(b)
+	return b
+
+
+static func command_button(value: String,action: Callable,primary: bool=false,font: int=25,height: float=64.0) -> Button:
 	var b := Button.new()
 	b.text=value
-	b.custom_minimum_size.y=64
-	b.add_theme_font_size_override("font_size",25)
+	b.tooltip_text=value
+	b.custom_minimum_size.y=height
+	b.add_theme_font_size_override("font_size",font)
 	b.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
 	if primary:
 		b.add_theme_stylebox_override("normal",BattleTheme.panel(Color("305664"),GOLD))
-	parent.add_child(b)
 	b.pressed.connect(action)
 	return b
+
+
+static func stat_card(parent: Node,name: String,value: String) -> void:
+	var card := PanelContainer.new()
+	card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	card.add_theme_stylebox_override("panel",BattleTheme.panel(Color("203441"),Color("47616f")))
+	parent.add_child(card)
+	var col := column(card)
+	col.add_theme_constant_override("separation",0)
+	label(col,name,18,MUTED).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+	label(col,value,37,GOLD).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 
 
 static func column(parent: Node) -> VBoxContainer:
@@ -63,14 +80,7 @@ static func stats(parent: Node,d: FigureDef) -> void:
 	var names := ["MOVE","FIGHT","SHOOT","ARMOUR","WILL","HEALTH"]
 	var values := ["%d″"%d.move,"%+d"%d.fight,"%+d"%d.shoot,str(d.armour),"%+d"%d.will,str(d.health)]
 	for i in names.size():
-		var card := PanelContainer.new()
-		card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel",BattleTheme.panel(Color("203441"),Color("47616f")))
-		grid.add_child(card)
-		var col := column(card)
-		col.add_theme_constant_override("separation",0)
-		label(col,names[i],18,MUTED).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
-		label(col,values[i],37,GOLD).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
+		stat_card(grid,names[i],values[i])
 
 
 static func figure(draft: WarbandDraft,slot: int) -> Figure:
