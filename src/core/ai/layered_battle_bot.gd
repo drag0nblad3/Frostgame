@@ -32,20 +32,20 @@ static func perform(c: GameController,f: Figure) -> void:
 
 static func _act(c: GameController,f: Figure) -> bool:
 	var enemy := CreatureBot.weakest(c.state,f) if f.side<0 else BotTargets.weakest_contact(c.state,f)
-	if enemy!=null and c.can_fight(enemy.id):
+	if enemy!=null and BattleAction.legal(c,"fight",enemy.id):
 		if f.side<0:
 			PackRules.remember(c.state,f,enemy)
-		return c.fight(enemy.id)
+		return BattleAction.execute(c,"fight",enemy.id)
 	if f.side>=0 and RealityCracks.exit_center(c):
 		return true
-	if f.side>=0 and c.can_drink_well():
-		return c.drink_well()
-	if f.side>=0 and c.break_ice():
+	if f.side>=0 and BattleAction.legal(c,"drink_well"):
+		return BattleAction.execute(c,"drink_well")
+	if f.side>=0 and BattleAction.execute(c,"break_ice"):
 		return true
 	if f.side>=0 and not f.def.traits.has("animal"):
 		for token in c.state.treasures:
-			if c.can_pick_up(token.id):
-				return c.pick_up(token.id)
+			if BattleAction.legal(c,"collect",token.id):
+				return BattleAction.execute(c,"collect",token.id)
 	if f.side<0 and f.def.traits.has("elemental_blast") and c.can_act() and not f.spell_effects.has("blinding_light"):
 		var shot := CreatureBot._blast_target(c,f)
 		if shot!=null:
@@ -55,13 +55,13 @@ static func _act(c: GameController,f: Figure) -> bool:
 	if MagicBot.play(c,f):
 		return true
 	if f.treasure_id<0 and f.ranged!=null:
-		if c.can_reload():
-			return c.reload()
+		if BattleAction.legal(c,"reload"):
+			return BattleAction.execute(c,"reload")
 		var target := CreatureBot.closest(c,f,true) if f.side<0 else BotTargets.best_legal_shot(c,f)
 		if f.side>=0 and RedKingBot.special_shot(c,f,target):
 			return true
 		if target!=null and c.can_shoot(target.id):
-			return c.shoot(target.id,false,c.can_shoot(target.id,false,true))
+			return BattleAction.execute(c,"ammo_shot" if BattleAction.legal(c,"ammo_shot",target.id) else "shoot",target.id)
 	return false
 
 
