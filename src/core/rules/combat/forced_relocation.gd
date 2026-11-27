@@ -98,6 +98,7 @@ static func apply_floor(c: GameController,f: Figure,n: Vector3i) -> bool:
 	c._displacement.clear()
 	c.emit("layered_move",{"id":f.id,"path":PackedVector3Array([from,to]),"surfaces":[old,f.surface_id],"cost":0.0,"teleport":true})
 	RedKingFire.portal_contact(c,f,f.pos,f.pos,{},f.elevation,f.elevation)
+	RedKingMind.collect(c,f,f.pos,f.pos,f.elevation,f.elevation)
 	if f.in_play():
 		c._magic.terrain.trigger_landing(f)
 	return true

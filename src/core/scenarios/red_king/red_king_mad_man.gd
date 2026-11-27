@@ -37,6 +37,8 @@ static func knock_out(c: GameController,npc: Figure,attacker: Figure) -> void:
 	npc.health=0
 	npc.out_of_action=true
 	token.pos=npc.pos
+	token.surface_id=npc.surface_id
+	token.ring_side=npc.ring_side
 	token.lost=false
 	c.emit("out_of_action",{"id":npc.id,"by":attacker.id})
 	c.emit("ryce_unconscious",{"id":npc.id,"treasure":token.id,"at":token.pos})

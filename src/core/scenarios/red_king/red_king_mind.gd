@@ -30,13 +30,24 @@ static func activation(c: GameController,f: Figure) -> void:
 		f.actions_left=3
 
 
-static func collect(c: GameController,f: Figure,from: Vector2,to: Vector2) -> void:
+static func collect(c: GameController,f: Figure,from: Vector2,to: Vector2,from_height: float=NAN,to_height: float=NAN) -> void:
 	if not is_wizard(c.state,f) or not f.in_play():
 		return
 	for token in c.state.treasures:
-		if token.on_ground() and token.pos.distance_to(Geometry2D.get_closest_point_to_segment(token.pos,from,to))<=Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01:
-			c._loot.secure(token,0)
-			c.emit("mind_memory",{"id":f.id,"treasure":token.id})
+		if not token.on_ground() or token.ring_side!=f.ring_side:
+			continue
+		var closest:=Geometry2D.get_closest_point_to_segment(token.pos,from,to)
+		if token.pos.distance_to(closest)>Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01:
+			continue
+		if not c.state.board.floor_layout.is_empty():
+			var a:=f.elevation if is_nan(from_height) else from_height
+			var b:=f.elevation if is_nan(to_height) else to_height
+			var h:=lerpf(a,b,clampf(from.distance_to(closest)/maxf(from.distance_to(to),0.001),0.0,1.0))
+			var token_height:=TreasureRules.token_height(c.state,token)
+			if is_nan(token_height) or absf(token_height-h)>=0.5 or not LineOfSight.floor_ray(c.state.board,c.state.board.floor_geometry(),Vector3(closest.x,h+0.25,closest.y),Vector3(token.pos.x,token_height+0.25,token.pos.y),f,false):
+				continue
+		c._loot.secure(token,0)
+		c.emit("mind_memory",{"id":f.id,"treasure":token.id})
 
 
 static func _corners(s: GameState) -> Array[Vector2]:
@@ -45,7 +56,12 @@ static func _corners(s: GameState) -> Array[Vector2]:
 
 static func _spawn(c: GameController,corner: Vector2) -> void:
 	var s := c.state
-	if not s.creature_db.available("mindshrike"):
+	if s.creature_db==null or not s.creature_db.available("mindshrike"):
+		return
+	if not s.board.floor_layout.is_empty():
+		var landing: Variant=BattlePlacement.nearest_ground(s,corner,3.0)
+		if landing!=null:
+			c._encounters._spawn_on_floor("mindshrike",landing)
 		return
 	var grid := MoveGrid.new(s.board,null,s.figures)
 	var best: Variant=null
@@ -64,8 +80,15 @@ static func _spawn(c: GameController,corner: Vector2) -> void:
 
 static func _move_token(c: GameController,t: TreasureToken,at: Vector2) -> void:
 	var margin := Vector2.ONE*TreasureRules.TOKEN_RADIUS
-	t.pos=at.clamp(margin,c.state.board.size-margin)
-	c.emit("treasure_moved",{"treasure":t.id,"at":t.pos})
+	var target:=at.clamp(margin,c.state.board.size-margin)
+	if not c.state.board.floor_layout.is_empty():
+		var layout:=c.state.board.floor_geometry()
+		var n:=layout.node(t.surface_id,target)
+		if not layout.standable(n,TreasureRules.TOKEN_RADIUS,0.5):
+			return
+		c._loot.relocate_ground(t,layout.point(n),t.surface_id)
+		return
+	c._loot.relocate_ground(t,target)
 
 
 static func end_turn(c: GameController) -> void:
@@ -146,8 +169,13 @@ static func memory_points(s: GameState,token_id: int) -> Array[Vector2]:
 	for dx in range(-8,9):
 		for dy in range(-8,9):
 			var at := MoveGrid.to_pos(center+Vector2i(dx,dy))
-			if at.distance_to(token.pos)<=4.001 and at==at.clamp(margin,s.board.size-margin):
-				out.append(at)
+			if at.distance_to(token.pos)>4.001 or at!=at.clamp(margin,s.board.size-margin):
+				continue
+			if not s.board.floor_layout.is_empty():
+				var layout:=s.board.floor_geometry()
+				if not layout.standable(layout.node(token.surface_id,at),TreasureRules.TOKEN_RADIUS,0.5):
+					continue
+			out.append(at)
 	return out
 
 

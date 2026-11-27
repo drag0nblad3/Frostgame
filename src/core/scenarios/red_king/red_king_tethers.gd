@@ -27,6 +27,8 @@ static func setup(s: GameState) -> void:
 			continue
 		var token := TreasureToken.new(s.treasures.size(),f.pos)
 		token.central=false
+		token.surface_id=f.surface_id
+		token.ring_side=f.ring_side
 		token.lost=true
 		token.bonus_gold=20
 		s.treasures.append(token)
@@ -43,6 +45,8 @@ static func destroyed(c: GameController,f: Figure,by: Figure) -> void:
 		return
 	token.lost=false
 	token.pos=f.pos
+	token.surface_id=f.surface_id
+	token.ring_side=f.ring_side
 	c.emit("pylon_destroyed",{"id":f.id,"treasure":token.id,"at":token.pos})
 	if by!=null and by.side>=0:
 		c.emit("tether_xp",{"side":by.side,"xp":50})

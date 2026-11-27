@@ -10,7 +10,7 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 		return false
 	# Only scenarios whose spatial objectives have been audited can opt
 	# into authored stacked floors. Ordinary maps continue to use the same rules.
-	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle","haunted_houses","the_keep","complex_temple",RedKingFire.ID,RedKingInvestigations.ID,RedKingSquatter.ID,RedKingHerded.ID,RedKingVeil.ID]:
+	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle","haunted_houses","the_keep","complex_temple",RedKingFire.ID,RedKingInvestigations.ID,RedKingSquatter.ID,RedKingHerded.ID,RedKingVeil.ID,RedKingMind.ID]:
 		return false
 	if cape and PlaneWalk.uses_direct(f):
 		return false
@@ -50,6 +50,12 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 	var cost:=float(reachable.cost[node])
 	if f.spell_effects.has("plane_walk"):
 		c.spend_move(f)
+		for i in range(1,path.size()):
+			var at:=Vector2(path[i].x,path[i].z)
+			if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
+				f.actions_left=0
+				return true
+			RedKingMind.collect(c,f,Vector2(path[i-1].x,path[i-1].z),at,path[i-1].y,path[i].y)
 		f.pos=layout.point(node)
 		f.elevation=layout.height(node)
 		f.surface_id=layout.surface_id(node)
@@ -143,6 +149,7 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 		var walls:=c._magic.terrain.touching_walls(f.pos,f.elevation)
 		var previous:=path[i-1]
 		var previous_at:=Vector2(previous.x,previous.z)
+		RedKingMind.collect(c,f,previous_at,at,previous.y,point.y)
 		var portal_hit:=not RedKingFire.portal_hits(c.state,previous_at,at,portal_seen,previous.y,point.y).is_empty()
 		for wall in c._magic.terrain.touching_walls(Vector2(previous.x,previous.z),previous.y):
 			walls.erase(wall)

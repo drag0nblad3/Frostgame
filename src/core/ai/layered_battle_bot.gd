@@ -16,7 +16,7 @@ static func perform(c: GameController,f: Figure) -> void:
 	if not c.awaiting_reaction() and _cape(c,f):
 		if c.state.active()!=f or c.awaiting_reaction():
 			return
-	for i in 2:
+	for i in (3 if RedKingMind.is_wizard(c.state,f) else 2):
 		if c.state.active()!=f or not f.in_play() or f.actions_left<=0 or c.awaiting_reaction():
 			break
 		if not c.state.pending_cast.is_empty():

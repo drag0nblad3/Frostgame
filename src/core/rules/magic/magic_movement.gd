@@ -115,6 +115,7 @@ func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,vi
 	c.emit("layered_move",{"id":t.id,"path":path,"surfaces":[old,t.surface_id],"cost":0.0,"teleport":visual_spell=="teleport" or visual_spell=="transpose","leap":visual_spell=="leap"})
 	if check_portal_landing:
 		RedKingFire.portal_contact(c,t,t.pos,t.pos,{},t.elevation,t.elevation)
+	RedKingMind.collect(c,t,t.pos,t.pos,t.elevation,t.elevation)
 	c._magic.terrain.trigger_landing(t)
 	c._magic.illusions.after_move(t)
 	if falling:
@@ -208,6 +209,11 @@ func swap(a: Figure, b: Figure) -> void:
 			t.spell_effects.erase("bones_of_the_earth")
 		c.emit("layered_move",{"id":a.id,"path":PackedVector3Array([old_a,old_b]),"surfaces":[surface_a,surface_b],"cost":0.0,"teleport":true})
 		c.emit("layered_move",{"id":b.id,"path":PackedVector3Array([old_b,old_a]),"surfaces":[surface_b,surface_a],"cost":0.0,"teleport":true})
+		for t in [a,b]:
+			RedKingMind.collect(c,t,t.pos,t.pos,t.elevation,t.elevation)
+			RedKingFire.portal_contact(c,t,t.pos,t.pos,{},t.elevation,t.elevation)
+			if t.in_play():
+				c._magic.terrain.trigger_landing(t)
 		c._magic.illusions.after_move(a)
 		c._magic.illusions.after_move(b)
 		ScenarioSites.end_move(c,a)
