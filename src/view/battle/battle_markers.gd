@@ -4,9 +4,11 @@ extends Node3D
 
 var _layers: Array[MultiMeshInstance3D] = []
 var board: Board
+var _planned: Node3D
 
 
 func clear() -> void:
+	clear_move_path()
 	for layer in _layers:
 		layer.visible = false
 		layer.queue_free()
@@ -53,3 +55,45 @@ func show_points(points: Array[Vector2], color: Color, radius: float, append: bo
 	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(marker)
 	_layers.append(marker)
+
+
+## A separate lightweight overlay: dragging never rebuilds the reachable area.
+func clear_move_path() -> void:
+	if is_instance_valid(_planned):
+		remove_child(_planned)
+		_planned.queue_free()
+	_planned=null
+
+
+func show_move_path(path: PackedVector2Array) -> void:
+	clear_move_path()
+	if path.size()<2 or board==null:
+		return
+	_planned=Node3D.new()
+	add_child(_planned)
+	var tint := Color("f3ce80")
+	var material := StandardMaterial3D.new()
+	material.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.albedo_color=tint
+	var route := ImmediateMesh.new()
+	route.surface_begin(Mesh.PRIMITIVE_LINE_STRIP,material)
+	for at in path:
+		route.surface_add_vertex(TableSpace.to_world(at,board.height_at(at)+0.16))
+	route.surface_end()
+	var line := MeshInstance3D.new()
+	line.mesh=route
+	line.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_planned.add_child(line)
+	for i in [0,path.size()-1]:
+		var ring := TorusMesh.new()
+		ring.inner_radius=0.52
+		ring.outer_radius=0.65
+		ring.rings=20
+		ring.ring_segments=6
+		var node := MeshInstance3D.new()
+		node.mesh=ring
+		node.material_override=material
+		node.scale.y=0.22
+		node.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		node.position=TableSpace.to_world(path[i],board.height_at(path[i])+0.10)
+		_planned.add_child(node)

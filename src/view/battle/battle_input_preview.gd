@@ -4,6 +4,12 @@ extends RefCounted
 
 
 static func preview(bi: BattleInput) -> void:
+	for control in BattleInput.MOVE_CONTROLS:
+		bi.available.erase(control)
+	if bi.mode=="move":
+		bi.available.append_array(BattleInput.MOVE_CONTROLS)
+	else:
+		bi.clear_move_preview()
 	bi.targets.clear()
 	bi.tokens.clear()
 	bi.nodes.clear()
@@ -22,6 +28,7 @@ static func preview(bi: BattleInput) -> void:
 		bi.markers.show_points(selected, Color(1.0, 0.78, 0.15), 0.85, true)
 	if not bi.c._magic.shatter.first.is_empty():
 		s.hint = "Shatterstar: first attempt declared. Choose the second target before rolling. " + s.hint
+	bi.hud.set_unit_info(CombatHudInfo.unit(f),CombatHudInfo.action(bi,f))
 	if f != null:
 		if FuryRules.target(bi.c.state, f) != null:
 			s.hint = "Fury: charge or fight the nearest eligible enemy. " + s.hint
@@ -33,10 +40,14 @@ static func preview(bi: BattleInput) -> void:
 			s.hint="Full elemental absorption armed. "+s.hint
 		if f.next_cast_gear != "":
 			s.hint = "Armed: %s. " % f.next_cast_gear.trim_prefix("gear_").replace("_", " ").capitalize() + s.hint
-		s.hint = "%s · %d action(s) · HP %d/%d%s — %s" % [f.label(), f.actions_left, f.health, f.def.health, " · Carrying %d treasure" % f.carried_treasures().size() if f.treasure_id >= 0 else "", s.hint]
+
 	if bi.c.state.group.in_progress():
 		s.hint = ("GROUP: Movement · " if bi.c.state.group.movement_pass() else "GROUP: Second action · ") + s.hint
 	bi.hud.set_actions(bi.available, bi.mode, s.hint)
+	if bi.mode=="move":
+		if bi.move_destination!=null and bi.reach!=null:
+			bi.markers.show_move_path(bi.reach.path_to(bi.move_destination))
+		bi.update_move_controls()
 
 
 

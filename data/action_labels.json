@@ -1,4 +1,7 @@
 {
+  "move_confirm": "Confirm move",
+  "move_reset": "Reset",
+  "move_camera": "Drag: move",
   "exchange_join": "Join exchange",
   "exchange_decline": "Remain in place",
   "worm_keep": "Keep original worm token",

@@ -155,7 +155,10 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 	if bi.mode in ["move", "exit"]:
 		var n := MovePlanner.node_at(at)
 		if bi.nodes.has(n):
-			return bi.c.move_to(n) if bi.mode == "move" else bi.c.exit_table(n)
+			if bi.mode=="move":
+				bi.plan_move(n)
+				return false
+			return bi.c.exit_table(n)
 	return false
 
 

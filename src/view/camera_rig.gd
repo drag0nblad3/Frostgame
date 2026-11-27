@@ -5,6 +5,8 @@ extends Node3D
 ## Touch: one-finger drag orbit, two-finger drag pan, pinch zoom.
 
 signal tapped(at: Vector2)
+signal preview_dragged(at: Vector2)
+var drag_preview := false
 
 const TAP_SLOP := 12.0
 var _mouse_down := false
@@ -104,9 +106,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			if _mouse_down and event.position.distance_to(_mouse_start) > TAP_SLOP:
 				_mouse_dragged = true
 			if _mouse_dragged:
-				yaw -= event.relative.x * 0.008
-				pitch += event.relative.y * 0.006
-				_apply()
+				if drag_preview:
+					preview_dragged.emit(event.position)
+				else:
+					yaw -= event.relative.x * 0.008
+					pitch += event.relative.y * 0.006
+					_apply()
 		elif event.button_mask & MOUSE_BUTTON_MASK_RIGHT:
 			_pan(event.relative)
 	elif event is InputEventScreenTouch:
@@ -132,9 +137,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			if event.position.distance_to(_touch_start) > TAP_SLOP:
 				_touch_dragged = true
 			if _touch_dragged:
-				yaw -= event.relative.x * 0.008
-				pitch += event.relative.y * 0.006
-				_apply()
+				if drag_preview:
+					preview_dragged.emit(event.position)
+				else:
+					yaw -= event.relative.x * 0.008
+					pitch += event.relative.y * 0.006
+					_apply()
 		elif _touches.size() == 2:
 			_pan(event.relative * 0.5)
 			var span := _touch_span()

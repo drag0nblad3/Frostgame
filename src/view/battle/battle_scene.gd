@@ -44,6 +44,8 @@ var _bots := BotRunner.new()
 var _launch_intent := ""
 var _title_prompt: AcceptDialog
 var _picker: SkirmishPicker
+var _planned_figure := -1
+var _planned_tween: Tween
 
 
 func _ready() -> void:
@@ -108,6 +110,7 @@ func _ready() -> void:
 			_scenario_id=SCENARIO
 		hud.select_scenario(_scenario_id)
 	_rig.tapped.connect(_on_tap)
+	_rig.preview_dragged.connect(_on_move_drag)
 	_markers = BattleMarkers.new()
 	add_child(_markers)
 	_sites = ScenarioMarkers.new()
@@ -226,6 +229,10 @@ func new_game(seed_value: int) -> void:
 
 
 func _attach_battle(c: GameController, start: bool) -> void:
+	if _planned_tween!=null and _planned_tween.is_valid():
+		_planned_tween.kill()
+	_planned_figure=-1
+	_rig.drag_preview=false
 	if player != null:
 		remove_child(player)
 		player.queue_free()
@@ -264,6 +271,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player.roll_resolved.connect(hud.show_roll)
 	controller.event_emitted.connect(_relay)
 	player_input = BattleInput.new(controller, hud, _rig.camera, _markers)
+	player_input.move_visual=_show_planned_move
 	if start:
 		controller.start_game()
 	else:
@@ -375,11 +383,14 @@ func _refresh() -> void:
 	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress() and not controller.awaiting_reaction(), true)
 	if _human_turn():
 		player_input.refresh()
+		_update_drag_mode()
 	else:
+		_rig.drag_preview=false
 		player_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
 
 
 func _lock_after_action() -> void:
+	_rig.drag_preview=false
 	player_input.lock("Resolving action…")
 	hud.set_watch(watch_mode, false, false)
 	_update_status()
@@ -390,12 +401,45 @@ func _on_action(key: String) -> void:
 	if _human_turn() and player.idle() and not _dirty:
 		if player_input.action(key):
 			_lock_after_action()
+		else:
+			_update_drag_mode()
 
 
 func _on_tap(at: Vector2) -> void:
 	if _human_turn() and player.idle() and not _dirty and not hud.blocks_tap(at):
 		if player_input.tap(at):
 			_lock_after_action()
+		else:
+			_update_drag_mode()
+
+
+func _on_move_drag(at: Vector2) -> void:
+	if _human_turn() and player.idle() and not _dirty and not hud.blocks_tap(at):
+		player_input.drag_move(at)
+
+
+func _update_drag_mode() -> void:
+	_rig.drag_preview=player_input.mode=="move" and player_input.move_drag
+
+
+## Only the presentation node moves. Restore the actual origin before the
+## controller commits, so EventPlayer plays the real path and interruptions.
+func _show_planned_move(at: Variant) -> void:
+	if _planned_tween!=null and _planned_tween.is_valid():
+		_planned_tween.kill()
+	if _planned_figure>=0 and at==null:
+		var previous := controller.state.figure(_planned_figure)
+		if previous!=null and player.views.has(previous.id):
+			player.views[previous.id].position=TableSpace.to_world(previous.pos,previous.elevation)
+		_planned_figure=-1
+		return
+	var f := controller.state.active()
+	if at==null or f==null or not player.views.has(f.id):
+		return
+	_planned_figure=f.id
+	var v: FigureView=player.views[f.id]
+	_planned_tween=create_tween()
+	_planned_tween.tween_property(v,"position",TableSpace.to_world(at,controller.state.board.height_at(at)),0.075)
 
 
 func _update_status() -> void:

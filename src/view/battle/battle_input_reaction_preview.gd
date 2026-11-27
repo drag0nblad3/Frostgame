@@ -131,7 +131,7 @@ static func reactions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -
 					if (bi.mode == "move" and float(bi.reach.cost[n]) > 0.001) or (bi.mode == "exit" and bi.c.can_exit_table(n, bi.reach)):
 						bi.nodes.append(n)
 						s.points.append(MoveGrid.to_pos(n))
-			s.hint = "Tap a marked destination." if bi.mode == "move" else "Tap a marked table edge to retreat."
+			s.hint = "Adjust your route freely. Confirm to spend the action and resolve any reactions or discoveries." if bi.mode == "move" else "Tap a marked table edge to retreat."
 		"fight_hand":
 			for t in bi.c.state.figures:
 				if bi.c.can_fight_hand(t.id):
