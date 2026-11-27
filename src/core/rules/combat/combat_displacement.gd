@@ -194,6 +194,7 @@ func force_floor_contact(info: Dictionary) -> void:
 	guard.surface_id=str(info["floor"])
 	var to:=Vector3(guard.pos.x,guard.elevation,guard.pos.y)
 	c.emit("layered_move",{"id":guard.id,"path":PackedVector3Array([from,to]),"surfaces":[guard.surface_id,guard.surface_id],"cost":0.0})
+	RedKingFire.portal_contact(c,guard,Vector2(from.x,from.z),guard.pos,{},from.y,guard.elevation)
 	c._magic.terrain.trigger_landing(guard)
 	ScenarioSites.end_move(c,guard)
 	c._magic.illusions.after_move(guard)

@@ -67,10 +67,10 @@ static func can_investigate(c: GameController,token: TreasureToken) -> bool:
 	var f := c.state.active()
 	if not active(c.state) or not c.can_act() or f==null or f.side<0 or not token.investigation or not token.on_ground() or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false
-	if absf(f.elevation-c.state.board.height_at(token.pos))>=0.5 or f.pos.distance_to(token.pos)>Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01:
+	if not TreasureRules.in_reach(c.state,f,token,Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01):
 		return false
 	for enemy in c.state.figures:
-		if enemy.side!=f.side and enemy.in_play() and Shooting.distance(f,enemy)<=1.0:
+		if enemy.side!=f.side and enemy.ring_side==f.ring_side and enemy.in_play() and Shooting.distance(f,enemy)<=1.0 and (c.state.board.floor_layout.is_empty() or LineOfSight.check_figures(c.state.board,f,enemy).clear):
 			return false
 	return true
 
@@ -125,6 +125,12 @@ static func end_turn(c: GameController) -> void:
 	if not was_alarm or int(s.scenario_data.get("reinforcements",0))>=6 or s.creature_db==null or not s.creature_db.available("blood_marked_berserker"):
 		return
 	var target := Vector2(18,13 if c.dice.pick(2)==0 else 23)
+	if not s.board.floor_layout.is_empty():
+		var landing: Variant=BattlePlacement.nearest_ground(s,target,2.5)
+		if landing!=null:
+			c._encounters._spawn_on_floor("blood_marked_berserker",landing)
+		s.scenario_data["reinforcements"]=int(s.scenario_data.get("reinforcements",0))+1
+		return
 	var grid := MoveGrid.new(s.board,null,s.figures)
 	var best: Variant=null
 	var distance := INF

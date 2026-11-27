@@ -11,7 +11,7 @@ static func play(c: GameController) -> bool:
 
 
 static func perform(c: GameController,f: Figure) -> void:
-	if f.side<0 and ScenarioGenie.flee(c,f):
+	if f.side<0 and (RedKingInvestigations.dormant(c.state,f) or RedKingSquatter.dormant(c,f) or ScenarioGenie.flee(c,f)):
 		return
 	if not c.awaiting_reaction() and _cape(c,f):
 		if c.state.active()!=f or c.awaiting_reaction():
@@ -65,7 +65,8 @@ static func _move(c: GameController,f: Figure) -> bool:
 	var reach := c.layered_reach()
 	if reach.cost.is_empty():
 		return false
-	if f.treasure_id>=0:
+	var extracting:=f.treasure_id>=0 or (f.side>=0 and RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state))
+	if extracting:
 		var exits := c.floor_exit_nodes()
 		if not exits.is_empty():
 			return c.exit_on_floor(exits[0])
@@ -90,7 +91,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 		var distance: float = long_route.cost[n]
 		if distance>=best:
 			continue
-		if f.treasure_id>=0:
+		if extracting:
 			if LayeredLoot.is_exit(c.state,layout,n,f.side):
 				goal=n
 				best=distance

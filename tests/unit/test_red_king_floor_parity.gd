@@ -1,0 +1,73 @@
+extends TestCase
+
+
+func _board() -> Board:
+	return BoardLoader.from_dict({"size":[36,36],"floor_layout":{"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"roof","rect":[2,2,32,32],"level":4}],"solids":[[2,3.8,2,32,0.2,32]]},"pieces":[{"kind":"red_king_portal","rect":[17,17,2,2]}]},terrain())
+
+
+func test_locked_artefact_and_stand_require_actual_support() -> void:
+	var b:=_board()
+	var f:=fig("wizard",0,Vector2(6,6))
+	f.surface_id="roof"
+	f.elevation=4.0
+	var c:=make_game(b,[f],LoadedDice.new([20]))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var token:=TreasureToken.new(0,Vector2(6.5,6))
+	token.central=true
+	token.frozen=true
+	token.surface_id="street"
+	c.state.treasures.append(token)
+	c.state.scenario_special=RedKingFire.ID
+	check(not RedKingFire.can_unlock(c,token))
+	token.surface_id="roof"
+	check(RedKingFire.can_unlock(c,token))
+	c.state.scenario_special=RedKingInvestigations.ID
+	token.investigation=true
+	token.surface_id="street"
+	check(not RedKingInvestigations.can_investigate(c,token))
+	token.surface_id="roof"
+	check(RedKingInvestigations.can_investigate(c,token))
+
+
+func test_portal_contact_does_not_harm_upper_floor() -> void:
+	var b:=_board()
+	var f:=fig("wizard",0,Vector2(15,18))
+	f.surface_id="roof"
+	f.elevation=4.0
+	var c:=make_game(b,[f],LoadedDice.new([20]))
+	c.state.scenario_special=RedKingFire.ID
+	var hp:=f.health
+	var seen: Dictionary={}
+	RedKingFire.portal_contact(c,f,Vector2(16,18),Vector2(16.5,18),seen,4.0,4.0)
+	check_eq(f.health,hp)
+	RedKingFire.portal_contact(c,f,Vector2(16,18),Vector2(16.5,18),seen,0.0,0.0)
+	check_eq(f.health,hp-5)
+	RedKingFire.portal_contact(c,f,Vector2(16,18),Vector2(16.5,18),seen,0.0,0.0)
+	check_eq(f.health,hp-5)
+
+
+func test_room_threshold_only_on_ground_level() -> void:
+	var b:=_board()
+	var f:=fig("wizard",0,Vector2(15,18))
+	f.surface_id="roof"
+	f.elevation=4.0
+	var c:=make_game(b,[f],LoadedDice.new([1]))
+	c.state.scenario_special=RedKingSquatter.ID
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(RedKingSquatter.permit_step(c,f,Vector2(16,18),4.0))
+	check(not c.state.scenario_data.has("squatter_passed"))
+	check(not RedKingSquatter.permit_step(c,f,Vector2(16,18),0.0))
+	check_eq(f.actions_left,0)
+
+
+func test_ground_spawn_cannot_select_roof() -> void:
+	var b:=_board()
+	var c:=make_game(b,[],LoadedDice.new([20]))
+	var n: Variant=BattlePlacement.nearest_ground(c.state,Vector2(8,8),2.0)
+	check(n!=null)
+	if n!=null:
+		check_eq(b.floor_geometry().surface_id(n),"street")
+	b.floor_layout["spawn_surfaces"]=["missing"]
+	check(BattlePlacement.nearest_ground(c.state,Vector2(8,8),2.0)==null)

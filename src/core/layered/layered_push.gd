@@ -67,6 +67,9 @@ static func apply(c: GameController,own: bool,distance: float=1.0) -> bool:
 	if ScenarioObjectives.inside_well(s,f.pos,f.elevation):
 		c._hurt(f,f.health,other,false)
 		return true
+	RedKingFire.portal_contact(c,f,Vector2(from.x,from.z),f.pos,{},from.y,f.elevation)
+	if not f.in_play():
+		return true
 	LayeredFall.apply(c,f,from.y-f.elevation,other)
 	if f.in_play():
 		c._magic.terrain.trigger_landing(f)

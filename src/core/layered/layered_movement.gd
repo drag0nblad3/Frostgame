@@ -10,7 +10,7 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 		return false
 	# Only scenarios whose spatial objectives have been audited can opt
 	# into authored stacked floors. Ordinary maps continue to use the same rules.
-	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle","haunted_houses","the_keep","complex_temple"]:
+	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle","haunted_houses","the_keep","complex_temple",RedKingFire.ID,RedKingInvestigations.ID,RedKingSquatter.ID]:
 		return false
 	if cape and PlaneWalk.uses_direct(f):
 		return false
@@ -108,9 +108,15 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 	# crossing; publish the movement chunk before its consequence.
 	var chunk:=PackedVector3Array([path[0]])
 	var chunk_surfaces: Array[String]=[surfaces[0]]
+	var portal_seen: Dictionary={}
 	for i in range(1,path.size()):
 		var point:=path[i]
 		var at:=Vector2(point.x,point.z)
+		if not RedKingSquatter.permit_step(c,f,at,point.y):
+			if chunk.size()>1:
+				c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
+			_stop(c,f,engaged,run,boost)
+			return
 		var occupied:=false
 		if c.state.scenario_special=="haunted_houses" and not c.state.discovered_huts.is_empty():
 			for other in c.state.figures:
@@ -131,15 +137,19 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 		var hits:=c._magic.terrain.triggered(f,f.pos,f.elevation)
 		var walls:=c._magic.terrain.touching_walls(f.pos,f.elevation)
 		var previous:=path[i-1]
+		var previous_at:=Vector2(previous.x,previous.z)
+		var portal_hit:=not RedKingFire.portal_hits(c.state,previous_at,at,portal_seen,previous.y,point.y).is_empty()
 		for wall in c._magic.terrain.touching_walls(Vector2(previous.x,previous.z),previous.y):
 			walls.erase(wall)
 		var hut:=ScenarioSites.site_at(c.state,"haunted_floor",f.pos,f.elevation) if c.state.scenario_special=="haunted_houses" and f.side>=0 else null
 		var undiscovered:=hut!=null and not c.state.discovered_huts.has(hut.rect.position)
 		var column:=f.side>=0 and not IllusionRules.phantom(f) and ScenarioColumns.contact(c.state.board,f.pos,f.elevation)!=null
-		if ScenarioNull.field_at(c.state.board,f.pos) or not hits.is_empty() or not walls.is_empty() or undiscovered or occupied or column:
+		if ScenarioNull.field_at(c.state.board,f.pos) or not hits.is_empty() or not walls.is_empty() or undiscovered or occupied or column or portal_hit:
 			c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
 			chunk=PackedVector3Array([point])
 			chunk_surfaces=[surfaces[i]]
+			if portal_hit:
+				RedKingFire.portal_contact(c,f,previous_at,at,portal_seen,previous.y,point.y)
 			ScenarioNull.enter(c,f)
 			if f.in_play():
 				for wall in walls:
