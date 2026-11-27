@@ -4,6 +4,8 @@ extends RefCounted
 
 
 static func tap(bi: BattleInput, screen: Vector2) -> bool:
+	if bi.is_layered() and (bi.mode in BattleMovePlan.MODES or bi.mode in BattleFloorInput.POINT_MODES or bi.mode=="floor_leap_target"):
+		return BattleFloorInput.tap(bi,screen)
 	if bi.mode=="veil_target":
 		var choice := bi._figure_at(screen)
 		return choice>=0 and RedKingVeil.answer_target(bi.c,choice)
@@ -50,11 +52,9 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 			"select": return bi.c.activate(id)
 			"fight_hand": return bi.c.fight_hand(id)
 			"gutter_fight": return GearActions.gutter_fight(bi.c,id)
-			"fight", "shoot":
+			"fight","shoot","ammo_shot","wraith_shot":
 				bi.plan_attack(id)
 				return false
-			"ammo_shot": return bi.c.shoot(id,false,true)
-			"wraith_shot": return bi.c.shoot(id,true)
 	var hit: Variant = bi._surface_at(screen)
 	if hit == null:
 		return false
@@ -141,7 +141,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 		return bi._declared(bi.c._magic.start_at(bi.selected_spell,destination,bi.spell_rotated,bi.spell_extended))
 	if bi.mode == "collect":
 		for token in bi.tokens:
-			if at.distance_to(token.pos) <= 0.9:
+			if at.distance_to(token.pos) <= 0.9 and (not bi.is_layered() or BattleFloorInput.visible(bi,token.surface_id)):
 				return bi.c.pick_up(token.id)
 	if bi.mode in ["drop", "drop_shrunk"]:
 		for p in bi.drops:
@@ -157,6 +157,8 @@ static func _figure_at(bi: BattleInput, screen: Vector2) -> int:
 	var id := -1
 	var distance := 42.0
 	for f in bi.targets:
+		if bi.is_layered() and not BattleFloorInput.visible(bi,f.surface_id):
+			continue
 		var point := TableSpace.to_world(f.pos, 0.75 + f.elevation)
 		if bi.camera.is_position_behind(point):
 			continue
@@ -169,7 +171,7 @@ static func _figure_at(bi: BattleInput, screen: Vector2) -> int:
 
 ## Pick the nearest visible exposed surface rather than always intersecting ground.
 static func _surface_at(bi: BattleInput, screen: Vector2) -> Variant:
-	return SurfacePicker.pick(bi.c.state.board,bi.camera.project_ray_origin(screen),bi.camera.project_ray_normal(screen))
+	return BattleFloorInput.surface_point(bi,screen) if bi.is_layered() else SurfacePicker.pick(bi.c.state.board,bi.camera.project_ray_origin(screen),bi.camera.project_ray_normal(screen))
 
 
 static func _declared(bi: BattleInput, ok: bool) -> bool:

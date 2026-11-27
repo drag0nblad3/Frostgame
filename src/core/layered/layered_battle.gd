@@ -10,7 +10,8 @@ static func create(db: FigureDb,terrain: TerrainDb,seed_value: int = 17,board_id
 		s.scenario_special="silent_tower"
 	s.side_names.assign(["Expedition","Rival"])
 	s.creature_db=db
-	s.spell_catalog=JsonFile.read("res://data/spells.json")
+	s.content_profile=db.content_profile
+	s.spell_catalog=s.content_profile.filter("spells",JsonFile.read("res://data/spells.json"))
 	s.side_schools={0:"illusionist",1:"illusionist"}
 	s.spellbooks={0:{"teleport":10,"leap":12,"bridge":14,"heal":12,"elemental_bolt":12,"elemental_shield":10},1:{"teleport":10,"leap":12,"bridge":14,"heal":12,"elemental_bolt":12,"elemental_shield":10}}
 	var layout := FloorLayout.from_dict(s.board.floor_layout)

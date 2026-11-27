@@ -1,0 +1,199 @@
+class_name BattleFloorInput
+extends RefCounted
+## Geometry adapter only. All menus, reactions, attack confirmation and
+## movement planning belong to BattleInput and BattleHud, on every board.
+const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle"]
+
+
+static func append_spells(bi: BattleInput,f: Figure) -> void:
+	var c:=bi.c
+	if not c.can_act() or not CasterLoadout.is_caster(f.def.role) or ScenarioNull.muted(f) or Contact.in_combat(c.state.figures,f) or f.spell_effects.has("blinding_light"):
+		return
+	if c._magic.available_spell(f,"teleport") and not c.state.group.in_progress() and not f.surface_id.begins_with("climb:"):
+		bi.cast_options.append("teleport")
+	for target in c.state.figures:
+		if LayeredLeap.eligible(c,target):
+			bi.cast_options.append("leap")
+			break
+	if LayeredBridge.eligible(c):
+		bi.cast_options.append("bridge")
+
+
+static func handles_action(bi: BattleInput,key: String) -> bool:
+	return bi.available.has(key) and key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp"]
+
+
+static func action(bi: BattleInput,key: String) -> bool:
+	match key:
+		"cancel_bridge": return bi.c.cancel_floor_bridge()
+		"spell_teleport":
+			bi.mode="floor_teleport"
+			bi.selected_spell="teleport"
+		"spell_leap":
+			bi.mode="floor_leap_target"
+			bi.selected_spell="leap"
+		"spell_bridge":
+			bi.mode="floor_bridge"
+			bi.selected_spell="bridge"
+			bi.bridge_start=null
+		"gear_rk_bottle_imp":
+			bi.mode="floor_bottle"
+			bi.selected_spell=""
+	bi.available.assign(["potion_cancel"] if key=="gear_rk_bottle_imp" else ["spell_cancel"])
+	bi.preview()
+	return false
+
+
+static func _index(bi: BattleInput,f: Figure) -> int:
+	var index:=bi.floor_layout.index_of(bi.floor_id)
+	return index if index>=0 else bi.floor_layout.index_of(f.surface_id)
+
+
+static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
+	if bi.mode=="floor_leap_target":
+		for t in bi.c.state.figures:
+			if LayeredLeap.eligible(bi.c,t):
+				bi.targets.append(t)
+		s.radius=0.65
+		s.hint="Select an ally, then select a landing floor."
+		return true
+	if bi.mode not in POINT_MODES:
+		return false
+	var f:=bi.c.state.active()
+	if f==null:
+		return true
+	var layout:=bi.floor_layout
+	var t:=bi.c.state.figure(bi.spell_first) if bi.mode=="floor_leap" else f
+	if t==null:
+		return true
+	var index:=_index(bi,t)
+	if index<0:
+		return true
+	var candidates: Dictionary={}
+	if bi.mode=="floor_bottle":
+		candidates=GearActions.bottle_floor_points(bi.c)
+		s.hint="Place the imp within one inch."
+	elif bi.mode in ["floor_bridge","floor_bridge_end"]:
+		candidates=LayeredBridgePicker.points(bi.c,layout,index,bi.bridge_start if bi.mode=="floor_bridge_end" else null)
+		s.hint="Select first bridge endpoint." if bi.mode=="floor_bridge" else "Select a different floor and the second endpoint."
+	else:
+		var grid:=LayeredGrid.new(layout,t,bi.c.state.figures)
+		var surface:=layout.surfaces[index]
+		for x in range(ceili(surface.rect.position.x/MoveGrid.STEP),floori(surface.rect.end.x/MoveGrid.STEP)+1):
+			for y in range(ceili(surface.rect.position.y/MoveGrid.STEP),floori(surface.rect.end.y/MoveGrid.STEP)+1):
+				var n:=Vector3i(x,y,index)
+				var valid:=LayeredMagic.can_teleport_with(bi.c,n,layout,grid) if bi.mode=="floor_teleport" else not LayeredLeap.path(bi.c,t,n,layout,grid).is_empty()
+				if valid:
+					candidates[n]=true
+		s.hint="Choose a visible legal destination." if bi.mode=="floor_teleport" else "Choose a legal Leap landing for "+t.label()+"."
+	for n: Vector3i in candidates:
+		bi.floor_points[n]=layout.world(n)
+	s.hint+=" Change floor to see other destinations."
+	return true
+
+
+static func visible(bi: BattleInput,id: String) -> bool:
+	return bi.floor_id.is_empty() or id==bi.floor_id
+
+
+static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> void:
+	var world:=PackedVector3Array()
+	var selected:=PackedVector3Array()
+	var f:=bi.c.state.active()
+	if not bi.floor_points.is_empty():
+		var index:=_index(bi,f) if f!=null else -1
+		for n: Vector3i in bi.floor_points:
+			if n.z==index:
+				world.append(bi.floor_points[n])
+	elif s!=null:
+		for t in bi.targets:
+			if not visible(bi,t.surface_id):
+				continue
+			var at:=TableSpace.to_world(t.pos,t.elevation)
+			if bi.mode=="group_select" and bi.group_selection.has(t.id):
+				selected.append(at)
+			else:
+				world.append(at)
+		for token in bi.tokens:
+			if visible(bi,token.surface_id):
+				var index:=bi.floor_layout.index_of(token.surface_id)
+				if index>=0:
+					world.append(TableSpace.to_world(token.pos,bi.floor_layout.surfaces[index].height_at(token.pos)))
+		if bi.tokens.is_empty() and f!=null and visible(bi,f.surface_id):
+			var index:=bi.floor_layout.index_of(f.surface_id)
+			if index>=0:
+				for at in s.points:
+					world.append(TableSpace.to_world(at,bi.floor_layout.surfaces[index].height_at(at)))
+	bi.markers.show_world_points(world,s.color if s!=null else Color(0.28,0.9,0.8),s.radius if s!=null else 0.17)
+	if not selected.is_empty():
+		bi.markers.show_world_points(selected,Color(1.0,0.78,0.15),0.85,true)
+
+
+static func pick(bi: BattleInput,screen: Vector2) -> Variant:
+	var f:=bi.c.state.active()
+	if f==null:
+		return null
+	var index:=_index(bi,f)
+	if bi.mode=="floor_leap" and bi.floor_id.is_empty():
+		var t:=bi.c.state.figure(bi.spell_first)
+		if t!=null:
+			index=_index(bi,t)
+	var best: Variant=null
+	var distance:=28.0
+	for n: Vector3i in bi.floor_points:
+		if n.z!=index:
+			continue
+		var point: Vector3=bi.floor_points[n]
+		if bi.camera.is_position_behind(point):
+			continue
+		var d:=bi.camera.unproject_position(point).distance_to(screen)
+		if d<distance:
+			best=n
+			distance=d
+	return best
+
+
+static func surface_point(bi: BattleInput,screen: Vector2) -> Variant:
+	var f:=bi.c.state.active()
+	if f==null:
+		return null
+	var index:=_index(bi,f)
+	if index<0:
+		return null
+	var surface:=bi.floor_layout.surfaces[index]
+	var run:=surface.rect.size.y if surface.axis_y else surface.rect.size.x
+	var slope:=(surface.end_level-surface.level)/run
+	var normal:=Vector3(0,1,-slope) if surface.axis_y else Vector3(-slope,1,0)
+	var plane:=Plane(normal.normalized(),TableSpace.to_world(surface.rect.position,surface.level))
+	var hit: Variant=plane.intersects_ray(bi.camera.project_ray_origin(screen),bi.camera.project_ray_normal(screen))
+	if hit==null:
+		return null
+	var at:=TableSpace.to_table(hit)
+	return at if surface.contains(at) else null
+
+
+static func tap(bi: BattleInput,screen: Vector2) -> bool:
+	if bi.mode=="floor_leap_target":
+		var id:=bi._figure_at(screen)
+		if id<0:
+			return false
+		bi.spell_first=id
+		bi.mode="floor_leap"
+		bi.preview()
+		return false
+	var node: Variant=pick(bi,screen)
+	if node==null:
+		return false
+	if bi.mode in BattleMovePlan.MODES:
+		bi.move_plan.choose_node(bi,node)
+		return false
+	match bi.mode:
+		"floor_teleport": return bi.c.teleport_on_floor(node)
+		"floor_leap": return bi.c.leap_on_floor(bi.spell_first,node)
+		"floor_bottle": return GearActions.bottle_on_floor(bi.c,node)
+		"floor_bridge":
+			bi.bridge_start=node
+			bi.mode="floor_bridge_end"
+			bi.preview()
+		"floor_bridge_end": return bi.c.bridge_on_floors(bi.bridge_start,node)
+	return false

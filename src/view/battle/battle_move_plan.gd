@@ -48,10 +48,12 @@ func choose_node(bi: BattleInput,n: Variant) -> bool:
 
 
 func clear(bi: BattleInput) -> void:
-	if destination!=null:
-		bi.move_preview_changed.emit(actor,Vector3.ZERO,false)
+	var previous:=actor
+	var pending:=destination!=null
 	destination=null
 	actor=-1
+	if pending:
+		bi.move_preview_changed.emit(previous,Vector3.ZERO,false)
 	bi.markers.clear_move_plan()
 
 

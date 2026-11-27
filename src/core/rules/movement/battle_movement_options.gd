@@ -12,7 +12,7 @@ var floors: LayeredReach
 var jumps := {}
 
 
-static func query(c: GameController,mode: String) -> BattleMovementOptions:
+static func query(c: GameController,mode: String,existing: MoveReach=null) -> BattleMovementOptions:
 	var o:=BattleMovementOptions.new()
 	o.board=c.state.board
 	if c.state.active()==null:
@@ -22,7 +22,7 @@ static func query(c: GameController,mode: String) -> BattleMovementOptions:
 			"run_for_it","run_talisman": o.flat=RunForIt.reach(c,mode=="run_talisman")
 			"gear_cape_move": o.flat=GearActions.cape_reach(c)
 			"jump": return o
-			_: o.flat=c.reach()
+			_: o.flat=existing if existing!=null else c.reach()
 		for n: Vector2i in o.flat.nodes():
 			if (mode=="exit" and c.can_exit_table(n,o.flat)) or (mode!="exit" and float(o.flat.cost[n])>0.001):
 				o.cost[n]=o.flat.cost[n]
@@ -38,7 +38,7 @@ static func query(c: GameController,mode: String) -> BattleMovementOptions:
 			"gear_cape_move": o.floors=LayeredMovement.reach(c,true)
 			_: o.floors=c.layered_reach()
 		if mode=="exit":
-			for n in c.floor_exit_nodes():
+			for n: Vector3i in c.floor_exit_nodes():
 				o.cost[n]=o.floors.cost[n]
 		else:
 			for n: Vector3i in o.floors.cost:

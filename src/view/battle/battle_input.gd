@@ -59,6 +59,9 @@ func select_floor(id: String) -> void:
 		BattleFloorInput.draw_points(self)
 		move_plan.choose_node(self,move_plan.destination)
 		markers.show_world_plan(movement.path(move_plan.destination))
+	elif attack_target>=0:
+		preview()
+		plan_attack(attack_target)
 	else:
 		preview()
 
@@ -83,6 +86,8 @@ func refresh() -> void:
 	floor_points.clear()
 	if is_layered():
 		floor_layout=FloorLayout.from_dict(c.state.board.floor_layout)
+		if floor_layout.index_of(floor_id)<0:
+			floor_id=""
 	BattleInputMenu.refresh(self)
 
 

@@ -124,9 +124,12 @@ func _ready() -> void:
 	if get_tree().root.has_meta("layered_board"):
 		var id:=str(get_tree().root.get_meta("layered_board"))
 		get_tree().root.remove_meta("layered_board")
-		var layered:=LayeredBattle.create(_figures,_terrain,17,id)
+		var layered:=LayeredCheckpoint.load_battle(_figures) if bool(get_tree().root.get_meta("layered_resume",false)) else null
+		get_tree().root.remove_meta("layered_resume")
+		if layered==null:
+			layered=LayeredBattle.create(_figures,_terrain,17,id)
 		layered.state.reaction_side=player_side
-		_active_scenario_id="silent_tower" if id=="layered_silent_tower" else "treasure_skirmish"
+		_active_scenario_id="silent_tower" if layered.state.board.id=="layered_silent_tower" else "treasure_skirmish"
 		_attach_battle(layered,false)
 	elif _launch_intent=="training":
 		_launch_intent=""
@@ -301,7 +304,8 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_visible_floor=""
 	_floor_revision=state.board.floor_layout.hash()
 	hud.set_floors(FloorLayout.from_dict(state.board.floor_layout) if not state.board.floor_layout.is_empty() else null)
-	_rig.frame_board(state.board.size)
+	if not state.board.floor_layout.is_empty():
+		_rig.frame_board(state.board.size)
 	if start:
 		controller.start_game()
 	else:
@@ -414,9 +418,9 @@ func _refresh() -> void:
 	hud.set_watch(watch_mode, controller.state.active() == null and not controller.state.group.in_progress() and not controller.awaiting_reaction(), true)
 	if _human_turn():
 		player_input.refresh()
-		_update_floor_view()
 	else:
 		player_input.lock("Battle complete." if controller.state.over else ("Watch mode · Step or Auto." if watch_mode else "Rival warband is acting."))
+	_update_floor_view()
 
 
 func _lock_after_action() -> void:
