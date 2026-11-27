@@ -8,6 +8,7 @@ var _cursor:=0
 var _replay:=false
 var _changing:=false
 var _controls: VBoxContainer
+var _nav: GridContainer
 var _toggle: Button
 var _play: Button
 var _seek: HSlider
@@ -27,10 +28,11 @@ func _ready() -> void:
 	body.add_child(_text)
 	_toggle=WorkshopUI.button(body,"Review recorded turns",_toggle_mode)
 	_controls=WorkshopUI.column(body)
-	var nav:=HBoxContainer.new()
-	_controls.add_child(nav)
+	_nav=GridContainer.new()
+	_nav.columns=2
+	_controls.add_child(_nav)
 	for choice in [["|< Turn",-2],["< Event",-1],["Event >",1],["Turn >|",2]]:
-		var button:=WorkshopUI.button(nav,str(choice[0]),_navigate.bind(int(choice[1])))
+		var button:=WorkshopUI.button(_nav,str(choice[0]),_navigate.bind(int(choice[1])))
 		button.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 		button.custom_minimum_size.y=56
 	_seek=HSlider.new()
@@ -134,6 +136,11 @@ func _stop() -> void:
 		_timer.stop()
 	if _play!=null:
 		_play.text="Play"
+
+
+func _reflow() -> void:
+	if _nav!=null:
+		_nav.columns=4 if size.x>=700 else 2
 
 
 func _latest() -> void:
