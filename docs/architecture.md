@@ -123,3 +123,21 @@ retain the existing `BattleAction` path. Accepted decisions can be replayed
 from a safe checkpoint. Intermediate Shatterstar declarations and some
 special expansion choices still need explicit recording; this is not yet a
 complete replay of arbitrary battles.
+
+
+### Event presentation and turn review
+
+`BattlePresentation.batch_size` permits up to four consecutive independent
+damage, healing or magic-impact events on distinct figures to animate
+together. All other event types and repeated figure IDs are barriers.
+`EventPlayer` tracks every outstanding animation tween before it permits
+the next beat or unlocks input; it combines outcome text for each batch.
+Damage and new healing events carry recorded remaining Health for the
+corresponding health bar update.
+
+The Battle Journal includes a read-only timeline with event stepping,
+turn jumps, scrubbing and timed playback. The scene builds its text from
+recorded events only when no bot or animation is active; otherwise the
+recent journal remains accessible. It does not replay 3D positions, reroll
+dice, or change game state. Historical labels may reflect a figure's
+current name or allegiance; older healing events lack event-time Health.
