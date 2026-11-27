@@ -278,8 +278,8 @@ func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
 	var b_gear := RedKingGear.before_fight(state.figures,t,f)
 	var before_a := f.health
 	var before_b := t.health
-	_weapon_damage(t,RedKingElemental.weapon_damage(self,f,t,int(res["b_dmg"]),int(res["a_roll"]),false),f,a_weapon)
-	_weapon_damage(f,RedKingElemental.weapon_damage(self,t,f,int(res["a_dmg"]),int(res["b_roll"]),false),t,b_weapon)
+	_weapon_damage(t,RedKingElemental.weapon_damage(self,f,t,int(res["b_dmg"]),int(res["a_roll"]),false,int(res.get("elemental_choices",{}).get(t.id,-1))),f,a_weapon)
+	_weapon_damage(f,RedKingElemental.weapon_damage(self,t,f,int(res["a_dmg"]),int(res["b_roll"]),false,int(res.get("elemental_choices",{}).get(f.id,-1))),t,b_weapon)
 	var actual := res.duplicate()
 	actual["a_dmg"]=maxi(0,before_a-f.health)
 	actual["b_dmg"]=maxi(0,before_b-t.health)
@@ -357,7 +357,7 @@ func finish_fate_shot(f: Figure, t: Figure, res: Dictionary, declared: int) -> v
 	res["id"] = f.id
 	res["target"] = t.id
 	emit("shoot", res)
-	_weapon_damage(t,RedKingElemental.weapon_damage(self,f,t,int(res["dmg"]),int(res["s_roll"]),true),f,f.ranged)
+	_weapon_damage(t,RedKingElemental.weapon_damage(self,f,t,int(res["dmg"]),int(res["s_roll"]),true,int(res.get("elemental_choices",{}).get(t.id,-1))),f,f.ranged)
 	if f.spell_effects.get("potion_fairy_dust", "") == f.ranged.id:
 		f.spell_effects.erase("potion_fairy_dust")
 	if f.ranged != null:
@@ -574,6 +574,10 @@ func answer_initiative(use: bool) -> bool:
 
 func answer_fate_combat(use: bool) -> bool:
 	return _fate_combat.answer(use)
+
+
+func answer_elemental_combat(use: bool) -> bool:
+	return _fate_combat.answer_absorption(use)
 
 
 func awaiting_reaction() -> bool:

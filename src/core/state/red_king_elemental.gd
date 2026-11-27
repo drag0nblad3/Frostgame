@@ -14,12 +14,12 @@ static func arm(c: GameController) -> bool:
 	return true
 
 
-static func reduce(c: GameController,t: Figure,damage: int) -> int:
+static func reduce(c: GameController,t: Figure,damage: int,choice: int=-1) -> int:
 	if damage<=0:
 		return 0
 	if ActiveGear.has(t,AMULET) and not MagicEquipment.suppressed(t):
-		var armed: bool=t.used_gear.get(ARMED,false)
-		if t.side!=c.state.reaction_side and damage>=4 and damage>=t.health:
+		var armed: bool=t.used_gear.get(ARMED,false) if choice<0 else choice==1
+		if choice<0 and t.side!=c.state.reaction_side and damage>=4 and damage>=t.health:
 			armed=true
 		if armed and ActiveGear.spend(t,AMULET):
 			t.used_gear.erase(ARMED)
@@ -37,11 +37,16 @@ static func reduce(c: GameController,t: Figure,damage: int) -> int:
 	return PotionActions.absorb(t,damage)
 
 
-static func weapon_damage(c: GameController,attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool) -> int:
+static func weapon_parts(attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool) -> Vector2i:
 	if damage<=0:
-		return 0
+		return Vector2i.ZERO
 	var hammer := 5 if attacker.spell_effects.has("elemental_hammer") and (ranged or attacker.ranged==null) and not target.def.traits.has("antithetical_magic") else 0
 	var sword := RedKingGear.fire_damage(attacker,target) if not ranged and raw!=1 else 0
 	var elemental := mini(damage,hammer+sword)
 	var normal := damage-elemental
-	return normal+reduce(c,target,maxi(0,elemental-mini(hammer,CreatureEffects.elemental_resistance(target))))
+	return Vector2i(normal,maxi(0,elemental-mini(hammer,CreatureEffects.elemental_resistance(target))))
+
+
+static func weapon_damage(c: GameController,attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool,choice: int=-1) -> int:
+	var parts := weapon_parts(attacker,target,damage,raw,ranged)
+	return parts.x+reduce(c,target,parts.y,choice)

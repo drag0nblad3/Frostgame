@@ -288,3 +288,6 @@ Crack 14 now pauses for human-controlled placement of figures after the first ce
 
 ### Distinct reality hazard art
 Cloven Hoof now uses a split, scorched hoof silhouette and amber danger ring instead of reusing the antimagic sphere. Random reality portals have cyan accents rather than the scenario's red portals. Worm summoning tokens use a small gold rune ring. Geometry has no dynamic lights or additional particle systems. Visual CI captures the portal and hoof with explicitly applied cracks.
+
+### Opposed-combat elemental reaction
+After both Fate Stone opportunities, ordinary fight/shoot resolution now offers the human bearer a choice to attempt full amulet absorption or retain its passive reduction. The UI separates normal and elemental damage and shows overload risk. Declining does not spend the item; the full attempt uses the existing overload/removal logic. Other elemental sources (spell, environmental or creature effects) retain the pre-arm model until their synchronous damage pipelines are converted. Pending opposed rolls remain unsaveable as before.

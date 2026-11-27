@@ -76,8 +76,12 @@ func refresh() -> void:
 		preview()
 		return
 	if not c.state.pending_combat.is_empty():
-		available.assign(["fate_combat_yes", "fate_combat_no"])
-		mode = "fate_combat"
+		if c.state.pending_combat.has("absorb_target"):
+			available.assign(["elemental_absorb","elemental_pass"])
+			mode="elemental_reaction"
+		else:
+			available.assign(["fate_combat_yes", "fate_combat_no"])
+			mode = "fate_combat"
 		preview()
 		return
 	if not c.state.pending_resistance.is_empty():
@@ -400,6 +404,12 @@ func preview() -> void:
 				hint+=" • Golden Fang selected: +1 Fight on success."
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
+		"elemental_reaction":
+			var p := c.state.pending_combat
+			var target := c.state.figure(int(p["absorb_target"]))
+			points.append(target.pos)
+			radius=0.65
+			hint="%s: %d normal + %d elemental damage. Amulet reduces elemental damage by 1, or risk full absorption (1–16 success; 17–20 destroys amulet and adds 3 damage)." % [target.label(),p["absorb_normal"],p["absorb_elemental"]]
 		"fate_combat":
 			var p := c.state.pending_combat
 			var roller := c.state.figure(p["roller"])
@@ -589,6 +599,8 @@ func action(key: String) -> bool:
 		return c.break_ice()
 	if key.begins_with("weapon_"):
 		return c.select_melee(key.trim_prefix("weapon_"))
+	if key in ["elemental_absorb","elemental_pass"]:
+		return c.answer_elemental_combat(key=="elemental_absorb")
 	if key in ["fate_combat_yes", "fate_combat_no"]:
 		return c.answer_fate_combat(key == "fate_combat_yes")
 	if key in ["telescope_use", "telescope_save"]:
