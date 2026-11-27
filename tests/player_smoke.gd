@@ -39,6 +39,20 @@ func _process(_delta: float) -> bool:
 			return _fail("Player selection failed")
 		_stage = 1
 	elif _stage == 1:
+		if _scene.player_input.available.has("cast"):
+			var f := c.state.active()
+			var hp := f.health
+			var actions := f.actions_left
+			_scene._on_action("cast")
+			var book: BattleSpellbook=_scene.hud._spellbook
+			if book==null or not book.visible or not ModalInput.blocked() or book._rows.is_empty():
+				return _fail("Cast menu did not open a spell dossier")
+			book._inspect(0)
+			if book._detail.get_child_count()<5 or f.health!=hp or f.actions_left!=actions:
+				return _fail("Spell inspection missing detail or spent resources")
+			ModalInput.close_top(root)
+			if book.visible or f.actions_left!=actions or _scene.player_input.mode=="spell_menu":
+				return _fail("Spell dossier Back did not cancel safely")
 		if not _scene.player_input.available.has("move"):
 			return _fail("Move not available")
 		_scene.player_input.action("move")

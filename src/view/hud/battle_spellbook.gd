@@ -78,7 +78,7 @@ func _inspect(i: int) -> void:
 	WorkshopUI.label(_detail,"%s · TN %d"%[str(r["spec"]["school"]).capitalize(),r["tn"]],24)
 	if r["known"] and r["spec"]["kind"]!="ritual":
 		WorkshopUI.label(_detail,"%d%% CAST SUCCESS · Roll modifier %+d"%[r["chance"],r["mod"]],27,Color("a7d6da"))
-		WorkshopUI.label(_detail,"Before empowerment, Fate Stone, scroll rescue and any subsequent resistance or attack roll.",19,WorkshopUI.MUTED)
+		WorkshopUI.label(_detail,"Estimated from current casting modifiers, before empowerment, Fate Stone, scroll rescue and any subsequent resistance or attack roll.",19,WorkshopUI.MUTED)
 	elif not r["known"]:
 		WorkshopUI.label(_detail,"Scroll or Scroll Shield · Uses stored casting result.",22,WorkshopUI.GOLD)
 	if not r["available"]:

@@ -61,7 +61,7 @@
   },
   "elemental_hammer": {
     "target": "Visible figure, up to 24″",
-    "effect": "Increase damage from a damaging weapon attack. Applies to the target's relevant melee or ranged weapon; it does not guarantee a hit.",
+    "effect": "Add 5 damage whenever the target's relevant weapon attack deals positive damage (melee for a figure without a ranged weapon, otherwise shooting). Does not guarantee a hit.",
     "duration": "Ongoing until removed or battle ends."
   },
   "elemental_shield": {
@@ -241,7 +241,7 @@
   },
   "awareness": {
     "target": "Before battle; eligible caster",
-    "effect": "Prepare Awareness for the next battle, affecting the caster's activation priority.",
+    "effect": "Give the caster's warband +2 on initiative rolls while the caster is in play. Multiple Awareness effects stack to a maximum of +4 per side.",
     "duration": "Next battle."
   },
   "combat_awareness": {
@@ -261,8 +261,8 @@
   },
   "reveal_secret": {
     "target": "Before battle; eligible caster",
-    "effect": "Add one revealed-secret preparation token for the upcoming battle, which is used by scenario setup for extra treasure.",
-    "duration": "Next battle; scenario rules apply."
+    "effect": "For the next recovered noncentral treasure, roll two reward results and choose one. Each successful preparation provides one such choice; special scenario rewards can affect eligibility.",
+    "duration": "Next battle's treasure resolution; unused preparations are cleared."
   },
   "suggestion": {
     "target": "Visible non-mind-locked figure within 24″, not self; Will resistance",
@@ -381,7 +381,7 @@
   },
   "familiar": {
     "target": "Before battle; eligible caster",
-    "effect": "Prepare a familiar for the caster's next deployment, providing its campaign familiar benefit.",
+    "effect": "Increase the caster's maximum Health by 2 for the next battle.",
     "duration": "Next battle."
   },
   "fog": {
