@@ -77,9 +77,20 @@ of their figures for that phase, then the next player.
   underneath it; migrate spatial call sites without changing scenario overrides.
 - `TerrainAssembly` expands reusable local rectangular kits in order, with optional
   integer `quarter_turns` about the local origin before translation. Entrances and ramp
-  profiles rotate with the rectangles. Floor-layout solids, links and surface IDs are
-  still explicit; arbitrary rotations and complete multi-floor building kits are not
-  supported. Haunted Houses is the initial migrated board.
+  profiles rotate with the rectangles. Haunted Houses is the initial migrated board.
+- `FloorAssembly` expands local multi-floor kits into the same canonical layout
+  consumed by movement, line of sight, scenario logic, rendering and checkpoints.
+  Author `floor_kits` as named dictionaries of surfaces, solids, links, climbs and
+  optional null regions. Instantiate with `floor_assemblies` entries containing
+  `kit`, `origin`, required `prefix`, optional `quarter_turns` and optional
+  `elevation`. Local surface and climb IDs are prefixed; external supports
+  (e.g. street) retain their IDs. Link endpoints transform with the geometry.
+  An empty prefix preserves the original IDs when migrating an authored map.
+  Keep scenario-level metadata (exit/spawn surfaces, tower region) in the base
+  floor layout; explicit cross-instance connections also belong there.
+  Static solids are rendered by floor artwork; temporary/dynamic walls continue
+  to use TerrainPiece and their existing rules. Rotations are quarter turns only.
+  Silent Tower and the two layered prototypes use this format.
 - `ExpeditionStage` derives the campaign stage from save data. A separate per-slot
   `CampaignBattleCheckpoint` is written at safe turn/phase boundaries and resumed
   explicitly through Battle Commands. Manual saves are unaffected; existing campaign
