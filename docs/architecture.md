@@ -60,3 +60,36 @@ Each figure gets two actions per activation. At most one is a non-move action (f
 reload). A second move is at half Move. Figures in contact with an enemy can't move away.
 Phases run wizard → apprentice → soldier; within a phase the initiative winner activates all
 of their figures for that phase, then the next player.
+
+
+## Shared structural foundations
+
+- `BattleAction` dispatches common legal commands for bots and players; attack previews
+  use the same situational defence query as shooting resolution. Migrate additional
+  movement, spell, equipment and expansion decisions incrementally, leaving legality
+  in the controller. Previewing must never consume actions or dice.
+- `BattlePresentation` classifies action/consequence/movement/context beats;
+  `BattleCameraDirector` optionally frames visible participants and yields to manual
+  camera input. The command screen exposes Normal, Fast and Cinematic playback.
+  Animation remains separate from rule state; true overlapping sequences and instant
+  skip require further work.
+- `BattleSpace` is the shared geometry facade. Existing route providers remain
+  underneath it; migrate spatial call sites without changing scenario overrides.
+- `TerrainAssembly` expands reusable local rectangular kits in order, with optional
+  integer `quarter_turns` about the local origin before translation. Entrances and ramp
+  profiles rotate with the rectangles. Floor-layout solids, links and surface IDs are
+  still explicit; arbitrary rotations and complete multi-floor building kits are not
+  supported. Haunted Houses is the initial migrated board.
+- `ExpeditionStage` derives the campaign stage from save data. A separate per-slot
+  `CampaignBattleCheckpoint` is written at safe turn/phase boundaries and resumed
+  explicitly through Battle Commands. Manual saves are unaffected; existing campaign
+  fingerprint and content-profile validation also apply to automatic recovery. It
+  is not a checkpoint during deployment or a pending roll.
+- `WorkshopUI` supplies shared command buttons, section cards and stat cards. Other
+  dossier, item and spell components should migrate as touched.
+- `BattleRecord` stores accepted commands, RNG boundaries and event ranges. The
+  checkpoint history is backward-compatible with saves lacking command records.
+  `BattleReplay.verify` re-executes supported commands from a compatible checkpoint
+  and detects missing history, unsupported commands, RNG and event divergence.
+  It is an audit/testing facility, not a complete player-facing replay viewer.
+  Expansion-specific decisions and other unrecorded transitions still need migration.
