@@ -74,6 +74,12 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 				s.points.append(option["at"])
 			elif option["kind"] == "terrain":
 				s.points.append(option["piece"].rect.get_center())
+			elif option["kind"]=="floor_bridge":
+				var index:=bi.floor_layout.index_of(str(option["surface"]))
+				if index>=0:
+					var surface:=bi.floor_layout.surfaces[index]
+					var node:=bi.floor_layout.node(surface.id,surface.rect.get_center())
+					bi.floor_points[node]=bi.floor_layout.world(node)
 			elif option["kind"] != "storm":
 				s.points.append(bi.c.state.figure(option["target"]).pos)
 			s.radius = 0.7

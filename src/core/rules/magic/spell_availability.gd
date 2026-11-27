@@ -5,7 +5,9 @@ extends RefCounted
 
 static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := sa.c.state
-	if not s.board.floor_layout.is_empty() and not LayeredFigureSpells.SUPPORTED.has(id):
+	if not s.board.floor_layout.is_empty() and id in ["blink","transpose","suggestion","leap","push","plane_walk","elemental_ball"]:
+		# These effects still require an explicit floor placement/origin.
+		# All other figure-targeted effects use the standard rules below.
 		return false
 	var f := s.active()
 	var t := s.figure(target_id)
@@ -46,7 +48,7 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 	var limit := 1.0 if kind == "touch" else float(spell.get("range", 24.0))
 	if t != f:
 		if not s.board.floor_layout.is_empty():
-			if not LayeredFigureSpells.visible(s.board,f,t,limit):
+			if not LineOfSight.within_centres(s.board,f,t,limit):
 				return false
 		elif kind == "area_shot":
 			if Shooting.distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
@@ -113,6 +115,8 @@ static func counter_options(sa: SpellActions, id: String) -> Array[Dictionary]:
 		return empty
 	if not sa.available_spell(f, id):
 		return empty
+	if not sa.c.state.board.floor_layout.is_empty() and id in ["wizard_eye","crumble"]:
+		return empty
 	if id == "wizard_eye":
 		return sa.eye.options(f)
 	if id == "crumble":
@@ -124,6 +128,8 @@ static func counter_options(sa: SpellActions, id: String) -> Array[Dictionary]:
 
 static func treasure_options(sa: SpellActions, id: String) -> Array[TreasureToken]:
 	var out: Array[TreasureToken] = []
+	if not sa.c.state.board.floor_layout.is_empty():
+		return out
 	var f := sa.c.state.active()
 	if id not in ["telekinesis", "fools_gold"] or f == null or not sa.c.can_act() or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light") or not sa.available_spell(f, id):
 		return out
@@ -198,4 +204,26 @@ static func available_spells(sa: SpellActions, f: Figure) -> Array[String]:
 	for id in ScrollShield.spells(f):
 		if not out.has(id) and not CircletDefence.immune(f,id):
 			out.append(id)
+	return out
+
+
+## The same catalogue and action validators feed every battle spellbook.
+static func menu_options(sa: SpellActions,f: Figure) -> Array[String]:
+	var out: Array[String]=[]
+	for id in available_spells(sa,f):
+		if id=="enchant_weapon":
+			for t in sa.c.state.figures:
+				if can_cast(sa,id,t.id,true):
+					out.append("enchant_ammo")
+					break
+		if not treasure_options(sa,id).is_empty() or not counter_options(sa,id).is_empty():
+			out.append(id)
+			continue
+		if not placement_points(sa,id,true).is_empty() or (id in ["fog","wall","bridge"] and not placement_points(sa,id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not placement_points(sa,id,true,false,true).is_empty() or not placement_points(sa,id,true,true,true).is_empty())):
+			out.append(id)
+			continue
+		for t in sa.c.state.figures:
+			if can_cast(sa,id,t.id):
+				out.append(id)
+				break
 	return out

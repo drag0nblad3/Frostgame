@@ -64,11 +64,11 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.ring_side==f.ring_side and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.ring_side==f.ring_side and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check_figures(s.board,f,other).clear:
 					sa._banish(f, other, int(result["roll"])+MagicEquipment.bonus(f,"banish_resistance_tn"), 4)
 		"scatter_shot":
 			for other in s.figures:
-				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check_figures(s.board,f,other).clear:
 					sa._shot(f, CreatureEffects.reflection_target(sa.c,f,ShotTarget.randomize(sa.c.dice,s.figures,other),id), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
@@ -91,7 +91,7 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 		"elemental_ball":
 			var affected: Array[Figure] = []
 			for other in s.figures:
-				if other.in_play() and other.ring_side==t.ring_side and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check(s.board, t.pos, other.pos).clear):
+				if other.in_play() and other.ring_side==t.ring_side and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check_figures(s.board,t,other).clear):
 					for member in ShotTarget.participants(s.figures, other):
 						if not affected.has(member):
 							affected.append(member)

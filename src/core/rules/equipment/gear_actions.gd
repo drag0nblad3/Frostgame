@@ -68,7 +68,7 @@ static func transfer_max(c: GameController, t: Figure) -> int:
 	if not can_use(c, "gear_ring_transference"):
 		return 0
 	var f := c.state.active()
-	if t == null or t == f or not t.in_play() or ScenarioNull.muted(t) or t.side != f.side or not IllusionRules.visible_to(c.state.figures, f, t) or Shooting.distance(f, t) > 24.0 or not LineOfSight.check(c.state.board, f.pos, t.pos).clear:
+	if t == null or t == f or not t.in_play() or ScenarioNull.muted(t) or t.side != f.side or not IllusionRules.visible_to(c.state.figures, f, t) or Shooting.distance(f, t) > 24.0 or not LineOfSight.check_figures(c.state.board,f,t).clear:
 		return 0
 	return maxi(0, mini(5, mini(f.health, t.def.health - t.health)))
 

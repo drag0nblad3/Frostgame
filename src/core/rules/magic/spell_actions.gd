@@ -145,7 +145,7 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var t := c.state.figure(target_id)
 	var spec: Dictionary=c.state.spell_catalog[id]
 	var limit := float(spec.get("range",24.0))
-	var tiger_used: bool= t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
+	var tiger_used: bool= c.state.board.floor_layout.is_empty() and t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll_roll := 0 if known else ScrollActions.consume_roll(f,id)
 	var scroll := scroll_roll>0

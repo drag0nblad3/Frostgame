@@ -123,30 +123,9 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		if bi.c.can_pick_up(token.id):
 			bi.available.append("collect")
 			break
-	bi.cast_options.clear()
+	bi.cast_options.assign(SpellAvailability.menu_options(bi.c._magic,f))
 	if bi.is_layered():
-		bi.cast_options.assign(LayeredFigureSpells.options(bi.c).keys())
 		BattleFloorInput.append_spells(bi,f)
-	else:
-		for id: String in bi.c._magic.available_spells(f):
-			if id=="enchant_weapon":
-				for t in bi.c.state.figures:
-					if bi.c.can_cast(id,t.id,true):
-						bi.cast_options.append("enchant_ammo")
-						break
-			if not bi.c._magic.treasure_options(id).is_empty():
-				bi.cast_options.append(id)
-				continue
-			if not bi.c._magic.counter_options(id).is_empty():
-				bi.cast_options.append(id)
-				continue
-			if not bi.c._magic.placement_points(id,true).is_empty() or (id in ["fog","wall","bridge"] and not bi.c._magic.placement_points(id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not bi.c._magic.placement_points(id,true,false,true).is_empty() or not bi.c._magic.placement_points(id,true,true,true).is_empty())):
-				bi.cast_options.append(id)
-				continue
-			for t in bi.c.state.figures:
-				if bi.c.can_cast(id, t.id):
-					bi.cast_options.append(id)
-					break
 	if not bi.cast_options.is_empty():
 		bi.available.append("cast")
 	for t in bi.c.state.figures:
@@ -171,9 +150,9 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		# Geometry-dependent gear/potions must be migrated before exposure.
 		# Shared melee, shooting, group, reaction and spell menus stay common.
 		for key in bi.available.duplicate():
-			if key.begins_with("potion_") or (key.begins_with("gear_") and key not in [GearActions.CAPE,"gear_rk_bottle_imp","gear_death_mask_toggle","gear_gloves_casting","gear_wand_light"]):
+			if key.begins_with("gear_") and key not in [GearActions.CAPE,"gear_rk_bottle_imp","gear_death_mask_toggle","gear_gloves_casting","gear_wand_light","gear_ring_transference"]:
 				bi.available.erase(key)
-		for key in ["breathe_fire","cancel_control","fight_hand","wraith_shot"]:
+		for key in ["fight_hand","wraith_shot"]:
 			bi.available.erase(key)
 		if not LayeredBridge.owned(bi.c.state,f.id).is_empty() and not bi.available.has("cancel_bridge"):
 			bi.available.append("cancel_bridge")

@@ -5,6 +5,8 @@ var c: GameController
 var catalog: Dictionary
 const POINTS := ["explosive_cocktail", "teleportation"]
 const COATINGS := ["poison", "fairy_dust"]
+## Only effects that still need floor-aware placement/route contracts.
+const FLOOR_PENDING := ["explosive_cocktail","teleportation","burrowing","fury","null","shatterstar","ethereal_vacuum"]
 
 
 func _init(controller: GameController) -> void:
@@ -13,6 +15,8 @@ func _init(controller: GameController) -> void:
 
 
 func can_drink(id: String, target: Figure = null) -> bool:
+	if not c.state.board.floor_layout.is_empty() and id in FLOOR_PENDING:
+		return false
 	var f := c.state.active()
 	if f == null or not f.in_play() or f.spell_effects.has("plane_walk") or f.actions_left <= 0 or c.awaiting_reaction() or not c.state.pending_cast.is_empty() or c.state.group.movement_pass() or Contact.in_combat(c.state.figures, f):
 		return false
@@ -25,6 +29,8 @@ func can_drink(id: String, target: Figure = null) -> bool:
 	if target == null:
 		target = f
 	if target != f and (f.def.id != "apothecary" or not target.in_play() or target.side != f.side or Shooting.distance(f, target) > 1.0):
+		return false
+	if target!=f and not c.state.board.floor_layout.is_empty() and not LineOfSight.check_figures(c.state.board,f,target).clear:
 		return false
 	if Contact.in_combat(c.state.figures, target):
 		return false
@@ -221,7 +227,7 @@ func coat(id: String, ranged: bool) -> bool:
 
 func can_breathe(t: Figure) -> bool:
 	var f := c.state.active()
-	return c.can_act() and f.spell_effects.has("potion_fire_breath") and not f.spell_effects.has("blinding_light") and t != null and t != f and t.in_play() and t.side != f.side and IllusionRules.visible_to(c.state.figures, f, t) and not BeautyActions.blocked(c.state, f, t) and Shooting.distance(f, t) <= 6.0 and LineOfSight.check(c.state.board, f.pos, t.pos).clear
+	return c.can_act() and f.spell_effects.has("potion_fire_breath") and not f.spell_effects.has("blinding_light") and t != null and t != f and t.in_play() and t.side != f.side and IllusionRules.visible_to(c.state.figures, f, t) and not BeautyActions.blocked(c.state, f, t) and Shooting.distance(f, t) <= 6.0 and LineOfSight.check_figures(c.state.board,f,t).clear
 
 
 func breathe(t: Figure) -> bool:

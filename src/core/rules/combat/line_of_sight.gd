@@ -17,7 +17,7 @@ class Result:
 	var intervening := 0
 
 
-## The layered fixture uses physical floor volumes instead of a highest-surface ray.
+## Canonical figure-to-figure sight. A geometry provider supplies the physical obstruction test.
 static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 	if from.ring_side!=to.ring_side:
 		var blocked := Result.new()
@@ -27,10 +27,24 @@ static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 		return check(board,from.pos,to.pos,from)
 	var result := Result.new()
 	var layout := FloorLayout.from_dict(board.floor_layout)
-	result.clear = layout.errors.is_empty() and LayeredSight.figures_clear(layout,from,to)
+	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and layout.errors.is_empty() and LayeredSight.figures_clear(layout,from,to) and not BattleBoundary.blocks_segment(board.boundaries,from.pos,to.pos,"sight",from)
 	if board.darkness and Shooting.distance(from,to)>12.0:
 		result.clear=false
 	return result
+
+
+## Spells that use centre range (not weapon base-edge range) use actual
+## figure elevations even when two figures share the same horizontal point.
+static func within_centres(board: Board,from: Figure,to: Figure,limit: float=24.0) -> bool:
+	return Vector2(from.pos.distance_to(to.pos),from.elevation-to.elevation).length()<=limit+0.001 and check_figures(board,from,to).clear
+
+
+static func spell_visible(board: Board,from: Figure,to: Figure,limit: float=24.0) -> bool:
+	if from.ring_side!=to.ring_side:
+		return false
+	if board.floor_layout.is_empty():
+		return WizardEye.visible(board,from,to.pos,limit)
+	return within_centres(board,from,to,limit)
 
 
 static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null) -> Result:
