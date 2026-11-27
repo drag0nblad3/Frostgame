@@ -6,7 +6,7 @@ var catalog: Dictionary
 const POINTS := ["explosive_cocktail", "teleportation"]
 const COATINGS := ["poison", "fairy_dust"]
 ## Only effects that still need floor-aware placement/route contracts.
-const FLOOR_PENDING := ["shatterstar"]
+
 
 
 func _init(controller: GameController) -> void:
@@ -15,8 +15,6 @@ func _init(controller: GameController) -> void:
 
 
 func can_drink(id: String, target: Figure = null) -> bool:
-	if not c.state.board.floor_layout.is_empty() and id in FLOOR_PENDING:
-		return false
 	var f := c.state.active()
 	if f == null or not f.in_play() or f.spell_effects.has("plane_walk") or f.actions_left <= 0 or c.awaiting_reaction() or not c.state.pending_cast.is_empty() or c.state.group.movement_pass() or Contact.in_combat(c.state.figures, f):
 		return false

@@ -31,7 +31,8 @@ static func start_teleport(c: GameController,n: Vector3i) -> bool:
 
 static func apply_teleport(c: GameController,f: Figure,effect: Dictionary) -> void:
 	var layout := c.state.board.floor_geometry()
-	var n: Vector3i = effect["floor_destination"]
-	if not layout.standable(n) or layout.surface_id(n)!=effect["surface_id"]:
+	var saved: Vector3i=effect["floor_destination"]
+	var n:=layout.node(str(effect["surface_id"]),MoveGrid.to_pos(Vector2i(saved.x,saved.y)))
+	if not BattlePlacement.teleport_legal(c.state,f,n):
 		return
 	c._magic.movement.move_floor(f,n,true,false,"teleport")

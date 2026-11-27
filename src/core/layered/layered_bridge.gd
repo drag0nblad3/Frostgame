@@ -75,7 +75,24 @@ static func start(c: GameController,a: Vector3i,b: Vector3i) -> bool:
 	return not bridge.is_empty() and c._magic._roll("bridge",c.state.active_id,null,false,-1,{"layered_bridge":bridge})
 
 
+static func can_apply(c: GameController,bridge: Dictionary) -> bool:
+	if not owned(c.state,int(bridge["owner"])).is_empty():
+		return false
+	var copy:=c.state.board.floor_layout.duplicate(true)
+	var entries: Array=copy.get("bridges",[])
+	var r: Array=bridge["surface"]["rect"]
+	for other: Dictionary in entries:
+		var q: Array=other["surface"]["rect"]
+		if Rect2(r[0],r[1],r[2],r[3]).intersects(Rect2(q[0],q[1],q[2],q[3])):
+			return false
+	entries.append(bridge)
+	copy["bridges"]=entries
+	return FloorLayout.from_dict(copy).errors.is_empty()
+
+
 static func apply(c: GameController,bridge: Dictionary) -> void:
+	if not can_apply(c,bridge):
+		return
 	var entries: Array = c.state.board.floor_layout.get("bridges",[])
 	entries.append(bridge)
 	c.state.board.floor_layout["bridges"]=entries

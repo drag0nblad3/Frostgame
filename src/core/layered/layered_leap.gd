@@ -65,7 +65,9 @@ static func start(c: GameController,t: Figure,n: Vector3i) -> bool:
 
 static func apply(c: GameController,t: Figure,effect: Dictionary) -> void:
 	var layout := c.state.board.floor_geometry()
-	var n: Vector3i = effect["floor_destination"]
-	if not layout.standable(n) or layout.surface_id(n)!=effect["surface_id"]:
+	var saved: Vector3i=effect["floor_destination"]
+	var n:=layout.node(str(effect["surface_id"]),MoveGrid.to_pos(Vector2i(saved.x,saved.y)))
+	var points:=path(c,t,n,layout,LayeredGrid.new(layout,t,c.state.figures))
+	if points.is_empty():
 		return
-	c._magic.movement.move_floor(t,n,true,false,"leap",effect["leap_path"])
+	c._magic.movement.move_floor(t,n,true,false,"leap",points)

@@ -51,6 +51,8 @@ static func action(bi: BattleInput,key: String) -> bool:
 			bi.selected_spell=key.trim_prefix("spell_")
 			bi.spell_rotated=false
 	bi.available.assign(["potion_cancel"] if key.begins_with("gear_") or key.begins_with("potion_") else ["spell_cancel"])
+	if not bi.c._magic.shatter.first.is_empty():
+		bi.available.append("shatter_single")
 	if bi.selected_spell in ["fog","wall"]:
 		bi.available.append("rotate_spell")
 	bi.preview()
@@ -229,11 +231,11 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		"floor_cocktail": return bi.c._potions.cocktail_on_floor(node)
 		"floor_suggestion": return bi._declared(bi.c._magic.start_floor_suggestion(bi.spell_first,node))
 		"floor_treasure_destination": return bi._declared(bi.c._magic.start_floor_treasure(bi.selected_spell,bi.spell_first,node))
-		"floor_leap": return bi.c.leap_on_floor(bi.spell_first,node)
+		"floor_leap": return bi._declared(bi.c.leap_on_floor(bi.spell_first,node))
 		"floor_bottle": return GearActions.bottle_on_floor(bi.c,node)
 		"floor_bridge":
 			bi.bridge_start=node
 			bi.mode="floor_bridge_end"
 			bi.preview()
-		"floor_bridge_end": return bi.c.bridge_on_floors(bi.bridge_start,node)
+		"floor_bridge_end": return bi._declared(bi.c.bridge_on_floors(bi.bridge_start,node))
 	return false

@@ -56,7 +56,7 @@ static func _finish_one(sa: SpellActions, health: int) -> bool:
 		return true
 	if id=="bridge" and p.get("effect",{}).has("layered_bridge"):
 		var bridge: Dictionary=p["effect"]["layered_bridge"]
-		if not bridge.get("extended",false) or ActiveGear.spend(f,TerrainMagic.EXTENDED):
+		if LayeredBridge.can_apply(sa.c,bridge) and (not bridge.get("extended",false) or ActiveGear.spend(f,TerrainMagic.EXTENDED)):
 			LayeredBridge.apply(sa.c,bridge)
 		return true
 	if TerrainMagic.SPELLS.has(id):
