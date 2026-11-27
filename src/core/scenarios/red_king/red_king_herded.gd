@@ -63,8 +63,15 @@ static func contact(c: GameController,f: Figure,at: Vector2) -> bool:
 		return true
 	# Search only the surviving side of the veil. Blocked landings are
 	# resolved by the nearest legal point rather than overlap a miniature.
-	var grid := MoveGrid.new(s.board,f,s.figures)
 	var desired := Vector2(at.x,y+Figure.BASE_RADIUS+0.01)
+	if not s.board.floor_layout.is_empty():
+		var node: Variant=ForcedRelocation.destination_floor(s,f,desired,func(p: Vector2) -> bool: return p.y>y+Figure.BASE_RADIUS)
+		if node==null:
+			c._hurt(f,f.health,f,false)
+		else:
+			ForcedRelocation.apply_floor(c,f,node)
+		return true
+	var grid := MoveGrid.new(s.board,f,s.figures)
 	var center := MovePlanner.node_at(desired)
 	var best: Variant=null
 	var score := INF
@@ -95,6 +102,12 @@ static func reinforce(c: GameController) -> void:
 		if not s.creature_db.available(slot["type"]) or c.dice.d20()<17:
 			continue
 		var corner := Vector2(0.5 if c.dice.pick(2)==0 else s.board.size.x-0.5,s.board.size.y-0.5)
+		if not s.board.floor_layout.is_empty():
+			var landing: Variant=BattlePlacement.nearest_ground(s,corner,4.0,func(p: Vector2) -> bool: return p.y>float(s.scenario_data["herd_veil"])+Figure.BASE_RADIUS)
+			if landing!=null:
+				var spawned:=c._encounters._spawn_on_floor(slot["type"],landing)
+				slot["id"]=spawned.id
+			continue
 		var grid := MoveGrid.new(s.board,null,s.figures)
 		var center := MovePlanner.node_at(corner)
 		var best: Variant=null

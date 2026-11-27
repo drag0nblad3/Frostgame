@@ -15,15 +15,8 @@ static func build(data: Dictionary,roster: Dictionary,db: FigureDb,terrain: Terr
 		var index := 0
 		for entry: Dictionary in source["warbands"][side]["figures"]:
 			var x := 2.0+floori(index/10)*1.5
-			entry["at"]=[x if side==0 else 36.0-x,8.0+float(index%10)*2.0]
+			entry["at"]=[x if side==0 else 36.0-x,8.0+float(index%10)*2.0,"street"]
 			index+=1
-	source["treasures"]=[[18,18],[8.5,18],[27.5,18],[18,6],[18,30]]
+	source["treasures"]=[[18,18,"tower_roof"],[8.5,18,"west_annex"],[27.5,18,"east_annex"],[18,6,"street"],[18,30,"street"]]
 	source["central_treasure"]=0
-	var s := ScenarioLoader.from_dict(source,db,terrain)
-	for f in s.figures:
-		f.surface_id="street"
-		f.elevation=0.0
-	var floors := ["tower_roof","west_annex","east_annex","street","street"]
-	for t in s.treasures:
-		t.surface_id=floors[t.id]
-	return s
+	return ScenarioLoader.from_dict(source,db,terrain)

@@ -4,7 +4,7 @@ extends Node3D
 var upper_nodes: Array[Node3D] = []
 
 
-func build(layout: FloorLayout) -> void:
+func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") -> void:
 	for child in get_children():
 		remove_child(child)
 		child.queue_free()
@@ -14,7 +14,7 @@ func build(layout: FloorLayout) -> void:
 			_bridge(s)
 		elif s.id=="stairs" or s.id.begins_with("stair_") and not is_equal_approx(s.level,s.end_level):
 			_stairs(s)
-		elif s.id=="street":
+		elif s.id=="street" and include_ground:
 			var ground := _box(Vector3(s.rect.get_center().x,-0.16,s.rect.get_center().y),Vector3(s.rect.size.x,0.3,s.rect.size.y),Color(0.63,0.74,0.81),false)
 			var mat := StoneFinish.material(Color(0.48,0.59,0.66),true)
 			mat.set_shader_parameter("footprint_size",s.rect.size)
@@ -24,14 +24,30 @@ func build(layout: FloorLayout) -> void:
 		elif s.id=="landing" or s.id.ends_with("_landing"):
 			_box(Vector3(s.rect.get_center().x,s.level-0.09,s.rect.get_center().y),Vector3(s.rect.size.x,0.18,s.rect.size.y),Color(0.51,0.60,0.67),true)
 	for solid in layout.solids:
+		if layout.magic_solids.has(solid):
+			continue
 		var roof := solid.position.y>=2.5
 		var color := Color(0.43,0.54,0.62) if roof else Color(0.35,0.43,0.49)
 		var slab := _box(solid.get_center(),solid.size,color,roof)
-		slab.material_override=StoneFinish.material(color,false,solid.size.y>2.0)
+		var stone:=StoneFinish.material(color,false,solid.size.y>2.0,Vector2(solid.position.x,solid.position.z))
+		stone.set_shader_parameter("footprint_size",Vector2(solid.size.x,solid.size.z))
+		stone.set_shader_parameter("building_height",solid.end.y)
+		stone.set_shader_parameter("walkable_roof",solid.size.y<=0.5)
+		slab.material_override=stone
 		if solid.size.y<=0.5:
 			_deck_edge(solid)
+		elif solid.size.y>=1.7:
+			var relief:=Node3D.new()
+			add_child(relief)
+			relief.position.y=solid.position.y
+			relief.set_meta("cut_height",solid.get_center().y)
+			BattlefieldDetail.wall_relief(relief,Rect2(solid.position.x,solid.position.z,solid.size.x,solid.size.z),solid.size.y,scenario)
+			if roof:
+				upper_nodes.append(relief)
 	# Wall volumes get narrow masonry courses (visual only).
 	for solid in layout.solids:
+		if layout.magic_solids.has(solid):
+			continue
 		if solid.position.y>0.1:
 			continue
 		for i in range(1,5):
@@ -65,11 +81,15 @@ func _bridge(s: FloorSurface) -> void:
 
 func _stairs(s: FloorSurface) -> void:
 	var count := 12
-	var w := s.rect.size.x/float(count)
+	var w := (s.rect.size.y if s.axis_y else s.rect.size.x)/float(count)
 	for i in count:
-		var x := s.rect.position.x+w*(i+0.5)
-		var h := s.height_at(Vector2(x,s.rect.get_center().y))
-		_box(Vector3(x,h-0.08,s.rect.get_center().y),Vector3(w+0.012,0.16,s.rect.size.y),Color(0.55,0.65,0.72),h>=2.5 and s.id!="stairs")
+		var at:=s.rect.get_center()
+		if s.axis_y:
+			at.y=s.rect.position.y+w*(i+0.5)
+		else:
+			at.x=s.rect.position.x+w*(i+0.5)
+		var h:=s.height_at(at)
+		_box(Vector3(at.x,h-0.08,at.y),Vector3(s.rect.size.x,0.16,w+0.012) if s.axis_y else Vector3(w+0.012,0.16,s.rect.size.y),Color(0.55,0.65,0.72),h>=2.5 and s.id!="stairs")
 
 
 func _deck_edge(solid: AABB) -> void:
@@ -98,8 +118,8 @@ func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> MeshInstance3D:
 
 func cut_at(height: float) -> void:
 	for child in get_children():
-		if child is MeshInstance3D:
-			child.visible=child.position.y<=height+0.1
+		if child is Node3D:
+			child.visible=float(child.get_meta("cut_height",child.position.y))<=height+0.1
 
 
 func show_upper(on: bool) -> void:

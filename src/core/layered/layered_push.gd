@@ -26,6 +26,10 @@ static func destination(c: GameController,own: bool,distance: float=1.0) -> Vari
 	if absf(layout.point(node).distance_to(f.pos)-distance)>0.26:
 		return null
 	at=layout.point(node)
+	if RedKingBridge.active(s) and s.board.over_void(at,Figure.BASE_RADIUS):
+		return node
+	if ScenarioObjectives.inside_well(s,at,f.elevation):
+		return node
 	var steps := maxi(4,ceili(f.pos.distance_to(at)*4.0))
 	for i in range(1,steps+1):
 		var p := f.pos.lerp(at,float(i)/steps)
@@ -50,6 +54,12 @@ static func apply(c: GameController,own: bool,distance: float=1.0) -> bool:
 	var other := s.figure(s.push_loser if own else s.push_winner)
 	var layout := FloorLayout.from_dict(s.board.floor_layout)
 	var from := Vector3(f.pos.x,f.elevation,f.pos.y)
+	if RedKingBridge.forced_void(c,f,layout.point(node),f.pos):
+		c._displacement.clear()
+		return true
+	if RedKingHerded.contact(c,f,layout.point(node)) or RedKingVeil.touch(c,f,layout.point(node)):
+		c._displacement.clear()
+		return true
 	var old_surface := f.surface_id
 	f.pos=layout.point(node)
 	f.elevation=layout.height(node)
@@ -62,6 +72,15 @@ static func apply(c: GameController,own: bool,distance: float=1.0) -> bool:
 		path.append(Vector3(f.pos.x,from.y,f.pos.y))
 	path.append(layout.world(node))
 	c.emit("layered_move",{"id":f.id,"path":path,"surfaces":[old_surface,f.surface_id],"cost":0.0})
+	if ScenarioObjectives.inside_well(s,f.pos,f.elevation):
+		c._hurt(f,f.health,other,false)
+		return true
+	RedKingFire.portal_contact(c,f,Vector2(from.x,from.z),f.pos,{},from.y,f.elevation)
+	if not f.in_play():
+		return true
 	LayeredFall.apply(c,f,from.y-f.elevation,other)
-	ScenarioNull.enter(c,f)
+	if f.in_play():
+		c._magic.terrain.trigger_landing(f)
+	ScenarioSites.end_move(c,f)
+	c._magic.illusions.after_move(f)
 	return true

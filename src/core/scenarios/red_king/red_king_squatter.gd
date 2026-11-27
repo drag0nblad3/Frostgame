@@ -9,12 +9,12 @@ static func active(s: GameState) -> bool:
 	return s.scenario_special==ID
 
 
-static func awaken_near(c: GameController,at: Vector2,side: int) -> void:
+static func awaken_near(c: GameController,at: Vector2,side: int,height: float=0.0) -> void:
 	var s := c.state
 	if not active(s) or side<0 or s.scenario_data.get("troll_awake",false):
 		return
 	for troll in s.figures:
-		if troll.in_play() and troll.def.id=="snow_troll" and maxf(0.0,troll.pos.distance_to(at)-2.0*Figure.BASE_RADIUS)<=10.0:
+		if troll.in_play() and troll.def.id=="snow_troll" and maxf(0.0,Vector2(troll.pos.distance_to(at),troll.elevation-height if not s.board.floor_layout.is_empty() else 0.0).length()-2.0*Figure.BASE_RADIUS)<=10.0:
 			s.scenario_data["troll_awake"]=true
 			c.emit("troll_awake",{"id":troll.id})
 			return
@@ -25,7 +25,7 @@ static func dormant(c: GameController,f: Figure) -> bool:
 		return false
 	for unit in c.state.figures:
 		if unit.in_play() and unit.side>=0:
-			awaken_near(c,unit.pos,unit.side)
+			awaken_near(c,unit.pos,unit.side,unit.elevation)
 	return not c.state.scenario_data.get("troll_awake",false)
 
 
@@ -43,12 +43,13 @@ static func _xp_once(c: GameController,side: int,key: String,xp: int) -> void:
 	c.emit("squatter_xp",{"side":side,"xp":xp,"reason":key})
 
 
-static func permit_step(c: GameController,f: Figure,at: Vector2) -> bool:
+static func permit_step(c: GameController,f: Figure,at: Vector2,height: float=NAN) -> bool:
 	if not active(c.state):
 		return true
 	var s := c.state
-	if not ROOM.has_point(at) or ROOM.has_point(f.pos) or f.elevation>=0.5:
-		awaken_near(c,at,f.side)
+	var target_height:=f.elevation if is_nan(height) else height
+	if not ROOM.has_point(at) or (ROOM.has_point(f.pos) and f.elevation<0.5) or target_height>=0.5:
+		awaken_near(c,at,f.side,target_height)
 		return true
 	var passed: Dictionary=s.scenario_data.get("squatter_passed",{})
 	if not passed.has(f.id):
@@ -66,7 +67,7 @@ static func permit_step(c: GameController,f: Figure,at: Vector2) -> bool:
 		s.scenario_data["squatter_passed"]=passed
 	if f.side>=0 and f.def.role in ["wizard","apprentice"]:
 		_xp_once(c,f.side,"central_room",20)
-	awaken_near(c,at,f.side)
+	awaken_near(c,at,f.side,target_height)
 	return true
 
 
@@ -100,6 +101,11 @@ static func end_turn(c: GameController) -> void:
 		return
 	var corner := c.dice.pick(4)
 	var target := Vector2(0.5 if corner%2==0 else s.board.size.x-0.5,0.5 if corner<2 else s.board.size.y-0.5)
+	if not s.board.floor_layout.is_empty():
+		var landing: Variant=BattlePlacement.nearest_ground(s,target,3.0)
+		if landing!=null:
+			c._encounters._spawn_on_floor("blood_marked_berserker",landing)
+		return
 	var grid := MoveGrid.new(s.board,null,s.figures)
 	var nodes: Array[Vector2i]=[]
 	var center := MovePlanner.node_at(target)

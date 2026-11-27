@@ -317,3 +317,8 @@ Catalog audit: campaign-only spells have explicit ritual classification, separat
 
 
 - Layered figure spells: explicit migration of 17 figure-only effects, including healing, shielding, direct shots and selected buffs/debuffs. Use actual 3D range and floor-volume occlusion, ordinary casting and empowerment; area, placement and forced movement effects remain restricted.
+
+
+## Unified battle geometry update
+
+The earlier elevation milestones above are historical. The current unified-battle branch uses the ordinary battle UI and action controller for authored overlapping floors, including campaign deployment in Silent Tower, shared combat/spell/gear actions, actual-support treasure and encounter placement, and core scenario sites. Flat, sloped and stacked movement/contact parity is covered by regression tests. Red King special scenario conversions are explicitly deferred until their spatial hazards, topology and objectives are audited; those maps still use their existing geometry. See `docs/unified-battle.md` for the detailed integration history and remaining limitations.

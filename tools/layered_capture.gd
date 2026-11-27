@@ -27,8 +27,7 @@ func _process(_delta: float) -> bool:
 		if image==null or image.save_png("previews/tower-upper.png" if tower else "previews/gatehouse-upper.png")!=OK:
 			quit(1)
 			return true
-		scene.floor_choice.select(scene.layout.index_of("street"))
-		scene.refresh()
+		scene._select_floor("street")
 		captured=true
 	if frames==80 and captured:
 		var image := root.get_texture().get_image()

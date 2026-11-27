@@ -2,7 +2,13 @@ class_name BattleInput
 extends RefCounted
 ## Player intents and legal-target previews. All mutations go through GameController.
 
-signal move_preview_changed(id: int,at: Vector2,active: bool)
+signal move_preview_changed(id: int,at: Vector3,active: bool)
+
+var movement: BattleMovementOptions
+var floor_layout: FloorLayout
+var floor_id := ""
+var floor_points := {}
+var bridge_start: Variant=null
 
 var move_plan := BattleMovePlan.new()
 var attack_target := -1
@@ -42,16 +48,46 @@ func _init(controller: GameController, command_bar: BattleHud, cam: Camera3D, ov
 	markers = overlay
 
 
+func is_layered() -> bool:
+	return not c.state.board.floor_layout.is_empty()
+
+
+func select_floor(id: String) -> void:
+	floor_id=id
+	if move_plan.destination!=null:
+		# Floor selection is a view change only; preserve the draft.
+		BattleFloorInput.draw_points(self)
+		move_plan.choose_node(self,move_plan.destination)
+		markers.show_world_plan(movement.path(move_plan.destination))
+	elif attack_target>=0:
+		preview()
+		plan_attack(attack_target)
+	else:
+		preview()
+
+
+func floor_target_at(screen: Vector2) -> Variant:
+	return BattleFloorInput.pick(self,screen)
+
+
 func lock(hint: String) -> void:
 	move_plan.clear(self)
 	attack_target=-1
 	hud.set_actions([], "", hint)
 	markers.clear()
+	floor_points.clear()
+	movement=null
 
 
 func refresh() -> void:
 	move_plan.clear(self)
 	attack_target=-1
+	movement=null
+	floor_points.clear()
+	if is_layered():
+		floor_layout=FloorLayout.from_dict(c.state.board.floor_layout)
+		if floor_layout.index_of(floor_id)<0:
+			floor_id=""
 	BattleInputMenu.refresh(self)
 
 
@@ -71,10 +107,12 @@ func action(key: String) -> bool:
 	if key=="attack_confirm" and available.has(key):
 		var target := attack_target
 		attack_target=-1
-		var ok := c.fight(target) if mode=="fight" else c.shoot(target)
+		var ok := c.fight(target) if mode=="fight" else c.shoot(target,mode=="wraith_shot",mode=="ammo_shot")
 		if not ok:
 			refresh()
 		return ok
+	if is_layered() and BattleFloorInput.handles_action(self,key):
+		return BattleFloorInput.action(self,key)
 	return BattleInputActions.action(self, key)
 
 
@@ -83,23 +121,28 @@ func plan_attack(id: int) -> void:
 	var t := c.state.figure(id)
 	if f==null or t==null:
 		return
-	if not (c.can_fight(id) if mode=="fight" else c.can_shoot(id)):
+	if not (c.can_fight(id) if mode=="fight" else c.can_shoot(id,mode=="wraith_shot",mode=="ammo_shot")):
 		return
 	attack_target=id
 	available.assign(["attack_confirm","attack_cancel"])
 	var info := "%s · HP %d/%d · Fight %+d · Armour %d"%[t.label(),t.health,t.def.health,t.effective_fight(),t.effective_armour()]
-	if mode=="shoot":
+	if mode in ["shoot","ammo_shot","wraith_shot"]:
 		info+="\nRange %.1f″ / %.0f″ · %s"%[Shooting.distance(f,t),f.ranged.range_in,f.ranged.name]
 		var los := LineOfSight.check_figures(c.state.board,f,t)
 		info+=" · cover/intervening %+d"%Shooting.target_mod(los)
 	else:
-		info+="\nOpposed Fight rolls · weapon %s"%f.melee.name
-	markers.show_move_plan(PackedVector2Array([t.pos]))
+		info+="\nOpposed Fight rolls · weapon %s"%(f.melee.name if f.melee!=null else "Unarmed")
+	markers.show_world_plan(PackedVector3Array([TableSpace.to_world(t.pos,t.elevation)]))
 	hud.set_actions(available,mode,info+"\nConfirm attack to roll, or tap another legal target.")
 
 
 func plan_drag(screen: Vector2) -> void:
 	if mode not in BattleMovePlan.MODES:
+		return
+	if is_layered():
+		var node: Variant=floor_target_at(screen)
+		if node!=null:
+			move_plan.choose_node(self,node)
 		return
 	var hit: Variant=_surface_at(screen)
 	if hit!=null:

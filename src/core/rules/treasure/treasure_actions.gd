@@ -43,17 +43,14 @@ func claim_free(f: Figure, token: TreasureToken) -> bool:
 		return false
 	if f.treasure_id >= 0 and (f.shrunk_treasure_id < 0 or f.second_treasure_id >= 0):
 		return false
-	for enemy in _c.state.figures:
-		if enemy.ring_side!=f.ring_side or enemy.side == f.side or not enemy.in_play() or enemy.spell_effects.has("plane_walk"):
-			continue
-		if Shooting.distance(enemy, f) <= 1.0 or Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, _c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
-			return false
+	if TreasureRules.enemy_interferes(_c.state,f,token):
+		return false
 	return _claim(f, token)
 
 
 func _claim(f: Figure, token: TreasureToken) -> bool:
 	var id := token.id
-	ScenarioSites.discover(_c, token.pos, f.side)
+	ScenarioSites.discover(_c,token.pos,f.side,TreasureRules.token_height(_c.state,token))
 	_c._magic.illusions.reveal(f)
 	if f.treasure_id >= 0:
 		f.second_treasure_id = f.treasure_id
@@ -114,7 +111,7 @@ func drop_on_death(f: Figure) -> void:
 		_drop(f, f.pos, id)
 
 
-func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
+func _drop(f: Figure, at: Vector2, id: int = -1,surface: String="") -> void:
 	if id < 0:
 		id = f.treasure_id
 	var token := _c.state.treasure(id)
@@ -123,15 +120,29 @@ func _drop(f: Figure, at: Vector2, id: int = -1) -> void:
 	_c._magic.illusions.reveal(f)
 	_clear_carrier(token)
 	token.pos = at
-	token.surface_id = f.surface_id
+	token.surface_id = f.surface_id if surface.is_empty() else surface
 	token.ring_side=f.ring_side
 	var height := _c.state.board.height_at(at)
-	if not f.surface_id.is_empty():
-		var layout := FloorLayout.from_dict(_c.state.board.floor_layout)
-		var index := layout.index_of(f.surface_id)
+	if not token.surface_id.is_empty():
+		var layout:=_c.state.board.floor_geometry()
+		var index:=layout.index_of(token.surface_id)
 		if index>=0:
 			height=layout.surfaces[index].height_at(at)
 	_c.emit("treasure_drop", {"id": f.id, "treasure": token.id, "at": at,"height":height})
+
+
+func relocate_ground(token: TreasureToken,at: Vector2,surface: String="") -> void:
+	if token==null or not token.on_ground():
+		return
+	token.pos=at
+	token.surface_id=surface
+	var height:=_c.state.board.height_at(at)
+	if not surface.is_empty():
+		var layout:=_c.state.board.floor_geometry()
+		var index:=layout.index_of(surface)
+		if index>=0:
+			height=layout.surfaces[index].height_at(at)
+	_c.emit("treasure_moved",{"treasure":token.id,"at":at,"height":height})
 
 
 func cancel_shrinking(f: Figure) -> void:
@@ -158,7 +169,7 @@ func can_exit(node: Vector2i, r: MoveReach = null) -> bool:
 	if r.cost[node] + Figure.BASE_RADIUS > MoveRules.allowance(f) + 0.001:
 		return false
 	for enemy in _c.state.figures:
-		if enemy.in_play() and enemy.side != f.side and Contact.touching(enemy.pos, at):
+		if enemy.in_play() and enemy.ring_side==f.ring_side and enemy.side!=f.side and Contact.touches_position(enemy,at,_c.state.board.height_at(at)):
 			return false
 	return true
 
@@ -171,6 +182,11 @@ func exit_table(node: Vector2i) -> bool:
 		return false
 	if not f.in_play() or f.pos.distance_to(MoveGrid.to_pos(node)) > 0.01 or Contact.in_combat(_c.state.figures, f):
 		return true
+	complete_exit(f)
+	return true
+
+
+func complete_exit(f: Figure) -> void:
 	for id in f.carried_treasures():
 		secure(_c.state.treasure(id), f.side)
 	f.exited = true
@@ -179,7 +195,6 @@ func exit_table(node: Vector2i) -> bool:
 	_c.emit("exit", {"id": f.id})
 	if RedKingInvestigations.active(_c.state) and _c.state.turn>3:
 		_c.emit("investigation_xp",{"side":f.side,"xp":10})
-	return true
 
 
 func secure(token: TreasureToken, side: int) -> void:

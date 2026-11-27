@@ -22,6 +22,22 @@ static func witness(b: Board,f: Figure,at: Vector2,limit: float=24.0) -> Variant
 	return null
 
 
+static func floor_witness(b: Board,f: Figure,at: Vector3,limit: float=24.0) -> Variant:
+	if not active(f) or Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(at)>limit or BattleBoundary.blocks_segment(b.boundaries,f.pos,Vector2(at.x,at.z),"sight",f):
+		return null
+	var layout:=b.floor_geometry()
+	var start:=Vector3(f.pos.x,f.elevation+1.5,f.pos.y)
+	for n in BattlePlacement.nodes(b,Vector2(at.x,at.z),2.0):
+		if not layout.standable(n):
+			continue
+		var point:=layout.world(n)
+		if point.distance_to(at)>2.001 or BattleBoundary.blocks_segment(b.boundaries,Vector2(point.x,point.z),Vector2(at.x,at.z),"sight",f):
+			continue
+		if LineOfSight.floor_ray(b,layout,start,point+Vector3.UP,f):
+			return point+Vector3.UP
+	return null
+
+
 static func test_use(c: GameController,f: Figure) -> void:
 	var roll := c.dice.d20()
 	var ok := StatRoll.succeeds(roll,f.effective_will()+f.roll_penalty(),20)
@@ -43,12 +59,19 @@ static func perimeter(rect: Rect2,at: Vector2,normal: Vector2) -> float:
 static func eye_options(c: GameController) -> Array[Dictionary]:
 	var out: Array[Dictionary]=[]
 	var f := c.state.active()
-	if not active(f) or not c.can_act() or Contact.in_combat(c.state.figures,f) or int(f.used_gear.get("rk_tiger_eye_turn",-1))==c.state.turn or not c.state.board.floor_layout.is_empty():
+	if not active(f) or not c.can_act() or Contact.in_combat(c.state.figures,f) or int(f.used_gear.get("rk_tiger_eye_turn",-1))==c.state.turn:
 		return out
 	var eye := WizardEye.marker(c.state.board,f)
 	if eye==null:
 		return out
-	var rect := eye.eye_host.rect.grow(0.15)
+	var rect:=Rect2()
+	if eye.eye_host!=null:
+		rect=eye.eye_host.rect.grow(0.15)
+	elif eye.eye_solid.size()==6:
+		var v:=eye.eye_solid
+		rect=Rect2(v[0],v[2],v[3],v[5]).grow(0.15)
+	else:
+		return out
 	var start := perimeter(rect,eye.rect.get_center(),eye.eye_direction)
 	var length := (rect.size.x+rect.size.y)*2
 	for step in range(-8,9):
@@ -70,7 +93,7 @@ static func eye_options(c: GameController) -> Array[Dictionary]:
 			at=Vector2(rect.position.x,rect.end.y-(pos-rect.size.x*2-rect.size.y))
 			normal=Vector2.LEFT
 		if c.state.board.contains(at) and not ScenarioNull.field_at(c.state.board,at,0.0) and at.distance_to(eye.rect.get_center())>0.1:
-			out.append({"at":at,"direction":normal})
+			out.append({"at":at,"direction":normal,"world":Vector3(at.x,eye.base_height,at.y)})
 	return out
 
 

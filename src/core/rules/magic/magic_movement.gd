@@ -91,8 +91,44 @@ func move(t: Figure,at: Vector2,exhaust: bool=false,falling: bool=false,sites: b
 		ScenarioSites.end_move(c, t)
 
 
+## Explicit floor arrival. Same exhaustion, status removal, illusion and
+## scenario consequences as exposed-surface magic movement.
+func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,visual_spell: String="",path: PackedVector3Array=PackedVector3Array(),sites: bool=true) -> void:
+	var layout:=c.state.board.floor_geometry()
+	if not layout.standable(n):
+		return
+	var landing:=layout.point(n)
+	if RedKingHerded.contact(c,t,landing) or RedKingVeil.touch(c,t,landing):
+		return
+	var start:=Vector3(t.pos.x,t.elevation,t.pos.y)
+	var old:=t.surface_id
+	t.spell_effects.erase("bones_of_the_earth")
+	t.pos=layout.point(n)
+	t.elevation=layout.height(n)
+	t.surface_id=layout.surface_id(n)
+	if exhaust:
+		t.magic_exhausted=true
+		t.actions_left=0
+	var check_portal_landing:=path.is_empty() or not visual_spell.is_empty()
+	if path.is_empty():
+		path=PackedVector3Array([start,layout.world(n)])
+	c.emit("layered_move",{"id":t.id,"path":path,"surfaces":[old,t.surface_id],"cost":0.0,"teleport":visual_spell=="teleport" or visual_spell=="transpose","leap":visual_spell=="leap"})
+	if check_portal_landing:
+		RedKingFire.portal_contact(c,t,t.pos,t.pos,{},t.elevation,t.elevation)
+	RedKingMind.collect(c,t,t.pos,t.pos,t.elevation,t.elevation)
+	c._magic.terrain.trigger_landing(t)
+	c._magic.illusions.after_move(t)
+	if falling:
+		LayeredFall.apply(c,t,start.y-t.elevation,t)
+	if sites:
+		ScenarioSites.end_move(c,t)
+
+
 func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=null) -> void:
 	if direction.is_zero_approx():
+		return
+	if not c.state.board.floor_layout.is_empty():
+		force_floor(t,direction,distance,ivory_caster)
 		return
 	var b := c.state.board
 	var origin := t.pos
@@ -130,7 +166,67 @@ func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=n
 		c._hurt(t,3,ivory_caster,false)
 
 
+func force_floor(t: Figure,direction: Vector2,distance: float,ivory_caster: Figure=null) -> void:
+	var route:=FloorDisplacement.trace(c,t,direction,distance)
+	if route.is_empty():
+		return
+	var path: PackedVector3Array=route["path"]
+	if route.get("void_at")!=null and RedKingBridge.forced_void(c,t,route["void_at"],Vector2(path[-1].x,path[-1].z),route["node"]):
+		return
+	var seen: Dictionary={}
+	for i in range(1,path.size()):
+		var from:=Vector2(path[i-1].x,path[i-1].z)
+		var at:=Vector2(path[i].x,path[i].z)
+		if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
+			return
+		RedKingFire.portal_contact(c,t,from,at,seen,path[i-1].y,path[i].y)
+		if not t.in_play():
+			return
+	if path.size()>1:
+		move_floor(t,route["node"],false,true,"",path)
+	if t.in_play() and route.get("blocked_at")!=null:
+		var blocked: Vector3=route["blocked_at"]
+		var last: Vector3=path[-1]
+		RedKingFire.portal_contact(c,t,Vector2(last.x,last.z),Vector2(blocked.x,blocked.z),seen,last.y,blocked.y)
+		if RedKingSinkhole.touches(c.state,Vector2(blocked.x,blocked.z),blocked.y) and not RedKingSinkhole.touches(c.state,t.pos,t.elevation):
+			RedKingSinkhole.contact(c,t,true)
+	if route["collision"] and ivory_caster!=null and t.in_play():
+		c.emit("gear_used",{"id":ivory_caster.id,"target":t.id,"gear":"gear_rk_ivory_hand","damage":3})
+		c._hurt(t,3,ivory_caster,false)
+
+
 func swap(a: Figure, b: Figure) -> void:
+	if not c.state.board.floor_layout.is_empty():
+		var layout:=c.state.board.floor_geometry()
+		var n:=layout.node(a.surface_id,a.pos)
+		var m:=layout.node(b.surface_id,b.pos)
+		if not BattlePlacement.floor_open(c.state,m,a,Figure.BASE_RADIUS,1.6,true,b) or not BattlePlacement.floor_open(c.state,n,b,Figure.BASE_RADIUS,1.6,true,a):
+			return
+		# Swap positions before evaluating either figure's arrival effects.
+		var old_a:=Vector3(a.pos.x,a.elevation,a.pos.y)
+		var old_b:=Vector3(b.pos.x,b.elevation,b.pos.y)
+		var surface_a:=a.surface_id
+		var surface_b:=b.surface_id
+		a.pos=layout.point(m)
+		a.elevation=layout.height(m)
+		a.surface_id=surface_b
+		b.pos=layout.point(n)
+		b.elevation=layout.height(n)
+		b.surface_id=surface_a
+		for t in [a,b]:
+			t.spell_effects.erase("bones_of_the_earth")
+		c.emit("layered_move",{"id":a.id,"path":PackedVector3Array([old_a,old_b]),"surfaces":[surface_a,surface_b],"cost":0.0,"teleport":true})
+		c.emit("layered_move",{"id":b.id,"path":PackedVector3Array([old_b,old_a]),"surfaces":[surface_b,surface_a],"cost":0.0,"teleport":true})
+		for t in [a,b]:
+			RedKingMind.collect(c,t,t.pos,t.pos,t.elevation,t.elevation)
+			RedKingFire.portal_contact(c,t,t.pos,t.pos,{},t.elevation,t.elevation)
+			if t.in_play():
+				c._magic.terrain.trigger_landing(t)
+		c._magic.illusions.after_move(a)
+		c._magic.illusions.after_move(b)
+		ScenarioSites.end_move(c,a)
+		ScenarioSites.end_move(c,b)
+		return
 	var pos := a.pos
 	var other := b.pos
 	move(a,other,false,false,false,"transpose")
@@ -182,7 +278,7 @@ func finish_blink(f: Figure,t: Figure,direction: Vector2,extend: bool,reroll: bo
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:
-	return a != b and a.ring_side==b.ring_side and f.ring_side==b.ring_side and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
+	return a != b and a.ring_side==b.ring_side and f.ring_side==b.ring_side and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check_figures(c.state.board,f,b).clear
 
 
 func transpose(f: Figure, a: Figure, b: Figure, roll: int) -> void:

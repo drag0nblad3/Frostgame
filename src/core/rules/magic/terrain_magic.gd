@@ -1,8 +1,9 @@
 class_name TerrainMagic
 extends RefCounted
-## Dynamic terrain on the exposed-surface heightfield.
+## Shared dynamic terrain lifecycle, with explicit floor support where needed.
 const EXTENDED := "gear_rk_extended_scroll"
 const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection", "bridge"]
+const FLOOR_SPELLS := ["wall","fog","mud","explosive_rune","planar_tear","grenade","circle_of_protection"]
 var c: GameController
 
 
@@ -93,24 +94,112 @@ func points(f: Figure, id: String, rotated: bool, first_only: bool,extended: boo
 	return out
 
 
-func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,extended: bool=false) -> void:
+func can_place_floor(f: Figure,id: String,n: Vector3i,rotated: bool=false) -> bool:
+	var s:=c.state
+	var b:=s.board
+	var layout:=b.floor_geometry()
+	if not id in FLOOR_SPELLS or not layout.contains(n,0.0) or layout.surface_id(n).begins_with("climb:"):
+		return false
+	var at:=layout.point(n)
+	var height:=layout.height(n)
+	var surface:=layout.surfaces[n.z]
+	if ScenarioNull.field_at(b,at,0.0):
+		return false
+	var rect:=footprint(id,at,rotated)
+	if not b.contains(rect.position) or not b.contains(rect.end):
+		return false
+	var point:=layout.world(n)
+	if id in ["grenade","planar_tear"]:
+		return WizardEye.floor_origin(b,f,point,14.0 if id=="grenade" else 24.0,0.02)!=null
+	if not is_equal_approx(surface.level,surface.end_level) or not surface.contains(rect.position) or not surface.contains(rect.end):
+		return false
+	# Check that the entire effect is supported and not inside solid masonry.
+	var volume:=AABB(Vector3(rect.position.x,height+0.002,rect.position.y),Vector3(rect.size.x,2.998 if id in ["fog","wall"] else 0.04,rect.size.y))
+	for solid in layout.solids:
+		if solid.intersects(volume):
+			return false
+	if id=="circle_of_protection":
+		for p in b.pieces:
+			if p.kind.id=="spell_circle_of_protection" and p.caster_id==f.id:
+				return false
+		if f.surface_id!=surface.id or f.pos.distance_to(at)>2.0:
+			return false
+		for t in s.figures:
+			if t.in_play() and (t.is_demon() or t.is_undead()) and absf(t.elevation-height)<0.5 and t.pos.distance_to(at)<2.0:
+				return false
+		return true
+	if id=="explosive_rune":
+		var count:=0
+		for p in b.pieces:
+			if p.kind.id=="spell_explosive_rune" and p.caster_id==f.id:
+				count+=1
+		return count<3 and LineOfSight.floor_point_visible(b,layout,f,point,4.0)
+	if id=="mud":
+		return WizardEye.floor_origin(b,f,point,24.0,0.02)!=null
+	if id=="wall" and not FloorWall.legal(s,layout,f,n,rect):
+		return false
+	var seen:=false
+	for i in range(-6,7):
+		var p:=at+(Vector2.DOWN if rotated else Vector2.RIGHT)*i*0.5
+		var world:=Vector3(p.x,height,p.y)
+		var distance:=Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(world)
+		if id=="fog" and distance>24.0:
+			return false
+		seen=seen or ((id=="fog" or distance<=10.0) and LineOfSight.floor_point_visible(b,layout,f,world))
+	return seen
+
+
+func floor_points(f: Figure,id: String,first_only: bool=false,index: int=-1,rotated: bool=false) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	if not id in FLOOR_SPELLS:
+		return out
+	var radius:=4.0 if id=="explosive_rune" else (2.0 if id=="circle_of_protection" else (14.0 if id=="grenade" else 27.0))
+	for n in BattlePlacement.nodes(c.state.board,f.pos,radius,index):
+		if can_place_floor(f,id,n,rotated):
+			out.append(n)
+			if first_only:
+				break
+	return out
+
+
+static func effect_height(b: Board,p: TerrainPiece) -> float:
+	return p.base_height if not p.surface_id.is_empty() else b.height_at(p.rect.get_center())
+
+
+static func floor_multiplier(b: Board,at: Vector2,height: float) -> float:
+	var mult:=1.0
+	for p in b.pieces:
+		if not p.surface_id.is_empty() and p.contains(at) and absf(height-p.base_height)<0.5:
+			mult=maxf(mult,p.kind.move_mult)
+	return mult
+
+
+func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,extended: bool=false,surface: String="") -> void:
+	var height:=c.state.board.height_at(at)
+	if not surface.is_empty():
+		var layout:=c.state.board.floor_geometry()
+		var n:=layout.node(surface,at)
+		if not can_place_floor(f,id,n,rotated):
+			return
+		height=layout.height(n)
+	var origin:=Vector3(at.x,height+0.1,at.y)
 	if id == "grenade":
-		c.emit("magic_burst",{"spell":id,"at":at,"height":c.state.board.height_at(at),"radius":1.5})
+		c.emit("magic_burst",{"spell":id,"at":at,"height":height,"radius":1.5})
 		var affected: Array[Figure] = []
 		var s := c.state
 		for t in s.figures:
-			if not t.in_play() or Vector2(t.pos.distance_to(at), t.elevation - s.board.height_at(at)).length() > 1.5 + Figure.BASE_RADIUS:
+			if not t.in_play() or Vector2(t.pos.distance_to(at),t.elevation-height).length()>1.5+Figure.BASE_RADIUS or (not surface.is_empty() and not LineOfSight.floor_ray(s.board,s.board.floor_geometry(),origin,Vector3(t.pos.x,t.elevation+1.0,t.pos.y),f,false)):
 				continue
 			for member in ShotTarget.participants(s.figures, t):
 				if not affected.has(member):
 					affected.append(member)
 		for t in affected:
-			c._magic._shot(f, t, 3, at)
+			c._magic._shot(f,t,3,at if surface.is_empty() else origin)
 		return
 	if id == "planar_tear":
-		c.emit("magic_burst",{"spell":id,"at":at,"height":c.state.board.height_at(at),"radius":2.0})
+		c.emit("magic_burst",{"spell":id,"at":at,"height":height,"radius":2.0})
 		for t in c.state.figures:
-			if not t.in_play() or Vector2(t.pos.distance_to(at), t.elevation - c.state.board.height_at(at)).length() > 2.0 + Figure.BASE_RADIUS:
+			if not t.in_play() or Vector2(t.pos.distance_to(at),t.elevation-height).length()>2.0+Figure.BASE_RADIUS or (not surface.is_empty() and not LineOfSight.floor_ray(c.state.board,c.state.board.floor_geometry(),origin,Vector3(t.pos.x,t.elevation+1.0,t.pos.y),f,false)):
 				continue
 			if not StatRoll.succeeds(c.dice.d20(), t.effective_will() + t.roll_penalty(), roll):
 				c._hurt(t, roll if t.is_demon() else 2, f, false)
@@ -124,6 +213,8 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,ext
 	kind.walkable_top = id in ["wall", "bridge"]
 	kind.move_mult = 2.0 if id == "mud" else 1.0
 	var p := TerrainPiece.new(kind, footprint(id, at, rotated,extended))
+	p.surface_id=surface
+	p.base_height=height if not surface.is_empty() else 0.0
 	p.extended_bridge=extended
 	p.elemental_wall=id=="wall" and ActiveGear.has(f,"gear_rk_ring_of_elemental_fire") and not MagicEquipment.suppressed(f)
 	p.circular = id in ["mud", "explosive_rune", "circle_of_protection"]
@@ -137,9 +228,14 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,ext
 		kind.stairs = true
 	p.cast_turn = c.state.turn
 	p.caster_id = f.id
+	if id=="wall" and not surface.is_empty():
+		p.dynamic_surface=FloorWall.id_for(f,c.state.turn,at,surface)
+		var walls: Array=c.state.board.floor_layout.get("walls",[])
+		walls.append({"id":p.dynamic_surface,"support":surface,"height":height,"rect":[p.rect.position.x,p.rect.position.y,p.rect.size.x,p.rect.size.y]})
+		c.state.board.floor_layout["walls"]=walls
 	c.state.board.pieces.append(p)
 	c.state.board.invalidate_terrain()
-	c.emit("terrain_changed", {"spell": id, "created": true,"at":at,"height":c.state.board.height_at(at),"radius":minf(3.0,p.rect.size.length()*0.5)})
+	c.emit("terrain_changed", {"spell": id, "created": true,"at":at,"height":height if not surface.is_empty() else c.state.board.height_at(at),"radius":minf(3.0,p.rect.size.length()*0.5)})
 
 
 func expire() -> void:
@@ -167,10 +263,22 @@ func expire() -> void:
 
 func remove(p: TerrainPiece) -> void:
 	var s := c.state
+	var height:=effect_height(s.board,p)
+	var before:=s.board.floor_geometry() if not p.dynamic_surface.is_empty() else null
+	if not p.dynamic_surface.is_empty():
+		var walls: Array=s.board.floor_layout.get("walls",[])
+		for i in range(walls.size()-1,-1,-1):
+			if walls[i]["id"]==p.dynamic_surface:
+				walls.remove_at(i)
+		s.board.floor_layout["walls"]=walls
 	WizardEye.remove_attached(s.board, p)
 	s.board.pieces.erase(p)
 	s.board.invalidate_terrain()
-	c.emit("terrain_changed", {"spell": p.kind.id.trim_prefix("spell_"), "created": false,"at":p.rect.get_center(),"height":s.board.height_at(p.rect.get_center()),"radius":minf(3.0,p.rect.size.length()*0.5)})
+	c.emit("terrain_changed", {"spell": p.kind.id.trim_prefix("spell_"), "created": false,"at":p.rect.get_center(),"height":height if not p.surface_id.is_empty() else s.board.height_at(p.rect.get_center()),"radius":minf(3.0,p.rect.size.length()*0.5)})
+	if not s.board.floor_layout.is_empty():
+		if before!=null:
+			FloorSupportRemoval.resolve(c,before,p.dynamic_surface)
+		return
 	for t in s.figures:
 		if not t.in_play():
 			continue
@@ -183,7 +291,7 @@ func remove(p: TerrainPiece) -> void:
 			c._hurt(t, fall, t, false)
 
 
-func triggered(t: Figure, at: Vector2) -> Array[TerrainPiece]:
+func triggered(t: Figure, at: Vector2,height_override: float=NAN) -> Array[TerrainPiece]:
 	var result: Array[TerrainPiece] = []
 	var s := c.state
 	for p in s.board.pieces:
@@ -193,7 +301,11 @@ func triggered(t: Figure, at: Vector2) -> Array[TerrainPiece]:
 		if owner == null or owner.original_side == t.original_side:
 			continue
 		var center := p.rect.get_center()
-		if Vector2(at.distance_to(center), s.board.height_at(at) - s.board.height_at(center)).length() <= 1.0 + Figure.BASE_RADIUS:
+		var height:=s.board.height_at(at) if is_nan(height_override) else height_override
+		var source:=effect_height(s.board,p)
+		if not p.surface_id.is_empty() and not LineOfSight.floor_ray(s.board,s.board.floor_geometry(),Vector3(center.x,source+0.05,center.y),Vector3(at.x,height+0.5,at.y),t,false):
+			continue
+		if Vector2(at.distance_to(center),height-source).length()<=1.0+Figure.BASE_RADIUS:
 			result.append(p)
 	return result
 
@@ -204,10 +316,11 @@ func explode(p: TerrainPiece) -> void:
 	var s := c.state
 	var owner := s.figure(p.caster_id)
 	var center := p.rect.get_center()
+	var height:=effect_height(s.board,p)
 	remove(p)
-	c.emit("rune_exploded", {"at": center, "id": owner.id})
+	c.emit("rune_exploded",{"at":center,"id":owner.id,"height":height})
 	for t in s.figures:
-		if not t.in_play() or Vector2(t.pos.distance_to(center), t.elevation - s.board.height_at(center)).length() > 2.0 + Figure.BASE_RADIUS:
+		if not t.in_play() or Vector2(t.pos.distance_to(center),t.elevation-height).length()>2.0+Figure.BASE_RADIUS or (not p.surface_id.is_empty() and not LineOfSight.floor_ray(s.board,s.board.floor_geometry(),Vector3(center.x,height+0.05,center.y),Vector3(t.pos.x,t.elevation+1.0,t.pos.y),owner,false)):
 			continue
 		c._magic._direct_attack(owner,t,5,"explosive_rune")
 
@@ -326,17 +439,18 @@ func trigger_landing(f: Figure) -> void:
 		return
 	for wall in touching_walls(f.pos,f.elevation):
 		wall_damage(f,wall)
-	for p in triggered(f, f.pos):
+	for p in triggered(f,f.pos,f.elevation if not c.state.board.floor_layout.is_empty() else NAN):
 		explode(p)
 
 
-static func ward_blocks(b: Board, f: Figure, at: Vector2) -> bool:
+static func ward_blocks(b: Board, f: Figure, at: Vector2,height_override: float=NAN) -> bool:
 	if f == null or (not f.is_demon() and not f.is_undead()):
 		return false
-	if HolyLantern.ward(f,at,b.height_at(at)):
+	var height:=b.height_at(at) if is_nan(height_override) else height_override
+	if HolyLantern.ward(f,at,height):
 		return true
 	for p in b.pieces:
-		if p.kind.id == "spell_circle_of_protection" and p.rect.get_center().distance_to(at) < 1.5 + Figure.BASE_RADIUS and absf(b.height_at(at) - b.height_at(p.rect.get_center())) < 0.5:
+		if p.kind.id == "spell_circle_of_protection" and p.rect.get_center().distance_to(at) < 1.5 + Figure.BASE_RADIUS and absf(height-effect_height(b,p))<0.5:
 			return true
 	return false
 
@@ -390,7 +504,7 @@ func cancel_bridge(f: Figure) -> bool:
 func touching_walls(at: Vector2,height: float) -> Array[TerrainPiece]:
 	var result: Array[TerrainPiece]=[]
 	for wall in c.state.board.pieces:
-		if not wall.elemental_wall or height>wall.kind.height+0.5:
+		if not wall.elemental_wall or height>wall.base_height+wall.kind.height+0.5 or (not wall.surface_id.is_empty() and height<wall.base_height-0.5):
 			continue
 		var nearest := at.clamp(wall.rect.position,wall.rect.end)
 		if at.distance_to(nearest)<=Figure.BASE_RADIUS+0.001:

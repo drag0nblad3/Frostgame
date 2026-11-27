@@ -29,10 +29,18 @@ static func weakest_contact(s: GameState, f: Figure) -> Figure:
 
 ## Odds the shot beats the target's roll, from where the shooter stands.
 static func shot_value(s: GameState, f: Figure, at: Vector2, t: Figure) -> float:
-	if not can_harm(f, t, f.ranged):
+	var height := f.elevation if at==f.pos else s.board.height_at(at)
+	return shot_value_world(s,f,Vector3(at.x,height,at.y),t)
+
+
+static func shot_value_world(s: GameState,f: Figure,at: Vector3,t: Figure) -> float:
+	if not can_harm(f,t,f.ranged):
 		return 0.0
-	var mod := Shooting.target_mod(LineOfSight.check(s.board, at, t.pos))
-	mod += 1 if f.moves_taken > 0 or at != f.pos else 0
+	var los := LineOfSight.check_from_world(s.board,f,at,t)
+	if not los.clear:
+		return 0.0
+	var mod := Shooting.target_mod(los)
+	mod += 1 if f.moves_taken>0 or not at.is_equal_approx(Vector3(f.pos.x,f.elevation,f.pos.y)) else 0
 	mod -= 2 if t.def.traits.has("large") else 0
 	var attack := mini(10, f.effective_shoot() + MagicEquipment.bonus(f, "shoot", f.ranged.id) - s.storm_penalty + (3 if t.spell_effects.has("glow") else 0)) + f.roll_penalty()
 	var defence := mini(10, t.effective_fight() + mod) + t.roll_penalty() + t.shooting_defence_penalty()
@@ -51,6 +59,20 @@ static func best_shot(s: GameState, f: Figure) -> Figure:
 		if v > best_v:
 			best = t
 			best_v = v
+	return best
+
+
+## Use the same scoring and controller authorization on all board geometries.
+static func best_legal_shot(c: GameController,f: Figure) -> Figure:
+	var best: Figure=null
+	var value:=0.0
+	for t in c.state.figures:
+		if t.side==f.side or RingworldBot.protected_key(c.state,f,t) or Contact.in_combat(c.state.figures,t) or not c.can_shoot(t.id):
+			continue
+		var score:=shot_value(c.state,f,f.pos,t)
+		if score>value:
+			best=t
+			value=score
 	return best
 
 

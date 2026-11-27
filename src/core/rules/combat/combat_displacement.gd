@@ -99,12 +99,16 @@ func _clear_path(moving: Figure, dest: Vector2,allow_void: bool=false) -> bool:
 	return true
 
 
-## Current policy: eligible guards automatically intercept when enabled.
+## Same guard eligibility, regardless of route geometry.
+func guard_can_intercept(mover: Figure,guard: Figure,ignored: Array[int]) -> bool:
+	return guard.ring_side==mover.ring_side and not ignored.has(guard.id) and not guard.spell_effects.has("plane_walk") and guard.in_play() and guard.side!=mover.side and not Contact.in_combat(c.state.figures,guard) and IllusionRules.visible_to(c.state.figures,guard,mover) and not BeautyActions.protected_from(c.state,guard,mover)
+
+
 func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []) -> Dictionary:
 	for i in range(1, path.size()):
 		var p := path[i]
 		for guard in c.state.figures:
-			if guard.ring_side!=mover.ring_side or ignored.has(guard.id) or guard.spell_effects.has("plane_walk") or not guard.in_play() or guard.side == mover.side or Contact.in_combat(c.state.figures, guard) or not IllusionRules.visible_to(c.state.figures, guard, mover) or BeautyActions.protected_from(c.state, guard, mover):
+			if not guard_can_intercept(mover,guard,ignored):
 				continue
 			if absf(c.state.board.height_at(p) - guard.elevation) >= 0.5:
 				continue
@@ -120,6 +124,9 @@ func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []
 
 
 func force_contact(info: Dictionary) -> void:
+	if info.has("floor"):
+		force_floor_contact(info)
+		return
 	var guard: Figure = info["guard"]
 	var from := guard.pos
 	if RuleHooks.any("forced_move_blocked", [c, guard, info["dest"]]):
@@ -132,4 +139,62 @@ func force_contact(info: Dictionary) -> void:
 	c.emit("force_combat", {"id": guard.id, "path": PackedVector2Array([from, guard.pos])})
 	c._magic.terrain.trigger_landing(guard)
 	ScenarioSites.end_move(c, guard)
+	c._magic.illusions.after_move(guard)
+
+
+## A floor route must not invite a guard through the deck above or below.
+func intercept_floor(mover: Figure,path: PackedVector3Array,surfaces: Array[String],ignored: Array[int]) -> Dictionary:
+	var layout:=c.state.board.floor_geometry()
+	for i in range(1,path.size()):
+		var point:=path[i]
+		var p:=Vector2(point.x,point.z)
+		for guard in c.state.figures:
+			if not guard_can_intercept(mover,guard,ignored) or absf(guard.elevation-point.y)>=0.5:
+				continue
+			var distance:=p.distance_to(guard.pos)
+			if distance>2.0 or distance<=Contact.CONTACT or (mover.disengaged.has(guard.id) and distance>=float(mover.disengaged[guard.id])-0.001):
+				continue
+			var n:=layout.node(guard.surface_id,p+(guard.pos-p).normalized())
+			var grid:=LayeredGrid.new(layout,guard,c.state.figures)
+			if not grid.open(n):
+				continue
+			var dest:=layout.point(n)
+			var h:=layout.height(n)
+			if absf(h-point.y)>=0.5 or dest.distance_to(p)<Contact.OVERLAP or not Contact.touching(dest,p):
+				continue
+			if guard.surface_id!=surfaces[i] and not LineOfSight.floor_ray(c.state.board,layout,Vector3(dest.x,h+0.5,dest.y),point+Vector3.UP*0.5,guard,false):
+				continue
+			var from:=Vector3(guard.pos.x,guard.elevation,guard.pos.y)
+			var to:=layout.world(n)
+			var clear:=true
+			var steps:=maxi(4,ceili(from.distance_to(to)*4.0))
+			for step in range(1,steps+1):
+				var at:=from.lerp(to,float(step)/steps)
+				if not layout.clearance(at,Figure.BASE_RADIUS,1.6) or not grid.segment_allowed(from,at):
+					clear=false
+					break
+				for other in grid.others:
+					if absf(other.elevation-at.y)<0.5 and other.pos.distance_to(Vector2(at.x,at.z))<Contact.OVERLAP:
+						clear=false
+						break
+				if not clear:
+					break
+			if clear:
+				return {"index":i,"guard":guard,"dest":dest,"floor":guard.surface_id,"height":h}
+	return {}
+
+
+func force_floor_contact(info: Dictionary) -> void:
+	var guard: Figure=info["guard"]
+	if not guard.in_play():
+		return
+	var from:=Vector3(guard.pos.x,guard.elevation,guard.pos.y)
+	guard.pos=info["dest"]
+	guard.elevation=float(info["height"])
+	guard.surface_id=str(info["floor"])
+	var to:=Vector3(guard.pos.x,guard.elevation,guard.pos.y)
+	c.emit("layered_move",{"id":guard.id,"path":PackedVector3Array([from,to]),"surfaces":[guard.surface_id,guard.surface_id],"cost":0.0})
+	RedKingFire.portal_contact(c,guard,Vector2(from.x,from.z),guard.pos,{},from.y,guard.elevation)
+	c._magic.terrain.trigger_landing(guard)
+	ScenarioSites.end_move(c,guard)
 	c._magic.illusions.after_move(guard)

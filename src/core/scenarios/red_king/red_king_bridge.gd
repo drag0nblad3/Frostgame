@@ -53,6 +53,11 @@ static func _shift(c: GameController,f: Figure,a: Vector2,b: Vector2) -> void:
 	var normal := (b-a).orthogonal().normalized()
 	if c.dice.pick(2)==0:
 		normal=-normal
+	if not s.board.floor_layout.is_empty():
+		var landing: Variant=ForcedRelocation.destination_floor(s,f,f.pos,func(at: Vector2) -> bool: return (at-Geometry2D.get_closest_point_to_segment(at,a,b)).dot(normal)>=Figure.BASE_RADIUS-0.001)
+		if landing!=null:
+			ForcedRelocation.apply_floor(c,f,landing)
+		return
 	var center := MovePlanner.node_at(f.pos)
 	var grid := MoveGrid.new(s.board,f,s.figures)
 	var best: Variant=null
@@ -81,6 +86,11 @@ static func _spawn(c: GameController,origin: Vector2) -> void:
 	var s := c.state
 	if s.creature_db==null or not s.creature_db.available("hrut_warrior"):
 		return
+	if not s.board.floor_layout.is_empty():
+		var landing: Variant=BattlePlacement.nearest_ground(s,origin,4.0)
+		if landing!=null:
+			c._encounters._spawn_on_floor("hrut_warrior",landing)
+		return
 	var best: Variant=null
 	var score := INF
 	var grid := MoveGrid.new(s.board,null,s.figures)
@@ -97,7 +107,7 @@ static func _spawn(c: GameController,origin: Vector2) -> void:
 
 
 ## Called by forced movement, not by voluntary route planning.
-static func forced_void(c: GameController,f: Figure,dest: Vector2,last_safe: Vector2) -> bool:
+static func forced_void(c: GameController,f: Figure,dest: Vector2,last_safe: Vector2,safe_floor: Variant=null) -> bool:
 	var s := c.state
 	if not active(s) or not f.in_play() or not s.board.over_void(dest,Figure.BASE_RADIUS):
 		return false
@@ -106,6 +116,13 @@ static func forced_void(c: GameController,f: Figure,dest: Vector2,last_safe: Vec
 	c.emit("bridge_void",{"id":f.id,"roll":raw,"success":success})
 	if not success:
 		c._hurt(f,f.health,f,false)
+	elif not s.board.floor_layout.is_empty():
+		if safe_floor!=null:
+			ForcedRelocation.apply_floor(c,f,safe_floor)
+		elif not last_safe.is_equal_approx(f.pos):
+			var landing: Variant=ForcedRelocation.destination_floor(s,f,last_safe)
+			if landing!=null:
+				ForcedRelocation.apply_floor(c,f,landing)
 	elif not last_safe.is_equal_approx(f.pos):
 		var old := f.pos
 		f.pos=last_safe

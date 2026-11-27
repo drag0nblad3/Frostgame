@@ -35,10 +35,17 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 			s.hint="Plan a legal escape move. Confirm to authorize the move and spend the cape."
 		"gear_tiger_point":
 			for option in TigerEye.eye_options(bi.c):
-				s.points.append(option["at"])
+				if bi.is_layered():
+					s.world_points.append(option["world"])
+				else:
+					s.points.append(option["at"])
 			s.hint="Move the Wizard Eye along its supporting surface (up to 4″)."
 		"gear_worm_point":
-			s.points.assign(WormRider.points(bi.c))
+			if bi.is_layered():
+				for at in WormRider.points(bi.c):
+					s.world_points.append(WormRider.world_point(bi.c,at))
+			else:
+				s.points.assign(WormRider.points(bi.c))
 			s.hint="Choose a worm summoning token location. On a 1 the rival relocates it."
 		"gear_bottle_imp":
 			s.points.assign(GearActions.bottle_points(bi.c))
@@ -71,9 +78,25 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 			var option := bi.counter_choices[bi.counter_index]
 			s.hint = "%s %d/%d: %s" % ["Choose eye face" if bi.selected_spell == "wizard_eye" else "Destroy terrain" if bi.selected_spell == "crumble" else "Destroy weapon" if bi.selected_spell == "decay" else ("Choose spell" if bi.selected_spell in ["power_word", "draining_word"] else "Cancel effect"), bi.counter_index + 1, bi.counter_choices.size(), option["label"]]
 			if option["kind"] == "eye_face":
-				s.points.append(option["at"])
+				if bi.is_layered():
+					var at: Vector2=option["at"]
+					s.world_points.append(Vector3(at.x,float(option["height"]),at.y))
+				else:
+					s.points.append(option["at"])
 			elif option["kind"] == "terrain":
-				s.points.append(option["piece"].rect.get_center())
+				var p: TerrainPiece=option["piece"]
+				if bi.is_layered() and not p.surface_id.is_empty():
+					var n:=bi.floor_layout.node(p.surface_id,p.rect.get_center())
+					if n.z>=0:
+						bi.floor_points[n]=bi.floor_layout.world(n)
+				else:
+					s.points.append(p.rect.get_center())
+			elif option["kind"]=="floor_bridge":
+				var index:=bi.floor_layout.index_of(str(option["surface"]))
+				if index>=0:
+					var surface:=bi.floor_layout.surfaces[index]
+					var node:=bi.floor_layout.node(surface.id,surface.rect.get_center())
+					bi.floor_points[node]=bi.floor_layout.world(node)
 			elif option["kind"] != "storm":
 				s.points.append(bi.c.state.figure(option["target"]).pos)
 			s.radius = 0.7

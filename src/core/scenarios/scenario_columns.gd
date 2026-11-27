@@ -2,11 +2,12 @@ class_name ScenarioColumns
 extends RefCounted
 ## Guardian columns in the Complex Temple (p. 151).
 
-static func contact(board: Board, at: Vector2) -> TerrainPiece:
-	if board.id != "complex_temple" or board.height_at(at) >= 0.5:
+static func contact(board: Board,at: Vector2,height: float=NAN) -> TerrainPiece:
+	if board==null or board.id!="complex_temple":
 		return null
+	var h:=board.height_at(at) if is_nan(height) else height
 	for p in board.pieces:
-		if p.kind.id != "temple_column":
+		if p.kind.id!="temple_column" or absf(h-p.base_height)>=0.5:
 			continue
 		var nearest := Vector2(clampf(at.x, p.rect.position.x, p.rect.end.x), clampf(at.y, p.rect.position.y, p.rect.end.y))
 		if at.distance_to(nearest) <= Figure.BASE_RADIUS + 0.25:
@@ -18,12 +19,12 @@ static func challenge(c: GameController, f: Figure) -> bool:
 	if not f.in_play() or f.side < 0 or IllusionRules.phantom(f) or f.spell_effects.has("plane_walk"):
 		return false
 	var s := c.state
-	var p := contact(s.board, f.pos)
+	var p := contact(s.board,f.pos,f.elevation)
 	if p == null:
 		return false
 	var token: TreasureToken = null
 	for t in s.treasures:
-		if t.frozen and t.pos.distance_to(p.rect.get_center()) < 0.01:
+		if t.frozen and t.pos.distance_to(p.rect.get_center())<0.01 and (s.board.floor_layout.is_empty() or t.surface_id==p.surface_id):
 			token = t
 			break
 	if token == null:
@@ -45,10 +46,13 @@ static func challenge(c: GameController, f: Figure) -> bool:
 	if lose:
 		c._hurt(f, Damage.amount(defence, f.melee.enemy_damage_mod, f.effective_armour(), defence, s.critical_hits), f, true)
 	elif win:
-		s.board.pieces.erase(p)
-		s.board.invalidate_terrain()
-		token.frozen = false
-		c.emit("terrain_changed", {"spell": "temple_column", "created": false})
+		if s.board.floor_layout.is_empty():
+			s.board.pieces.erase(p)
+			s.board.invalidate_terrain()
+			c.emit("terrain_changed",{"spell":"temple_column","created":false})
+		else:
+			c._magic.terrain.remove(p)
+		token.frozen=false
 		c.emit("column_opened", {"id": f.id, "treasure": token.id})
 		# Free collection is automatic for eligible winners. A figure already
 		# carrying treasure or threatened by enemies leaves the token on the floor.

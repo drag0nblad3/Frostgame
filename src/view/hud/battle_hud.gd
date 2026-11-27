@@ -23,6 +23,7 @@ signal training_next
 signal training_retry
 signal training_leave
 signal action_pressed(action: String)
+signal floor_selected(id: String)
 
 const LOG_LINES := 4
 ## Button labels by action key, in button order (data/action_labels.json).
@@ -62,6 +63,7 @@ var _roll_label: Label
 var _roll_timer: Timer
 var _spell_catalog: Dictionary
 var _casting_book: BattleSpellbook
+var _floor_choice: OptionButton
 
 
 func _ready() -> void:
@@ -114,6 +116,13 @@ func _ready() -> void:
 	var inspect := _button("Inspect", func() -> void: inspect_pressed.emit())
 	ActionArt.apply(inspect,"inspect",_spell_catalog)
 	top.add_child(inspect)
+	_floor_choice=OptionButton.new()
+	_floor_choice.custom_minimum_size=Vector2(135,62)
+	_floor_choice.fit_to_longest_item=false
+	_floor_choice.text_overrun_behavior=TextServer.OVERRUN_TRIM_ELLIPSIS
+	_floor_choice.item_selected.connect(func(i: int) -> void: floor_selected.emit(str(_floor_choice.get_item_metadata(i))))
+	top.add_child(_floor_choice)
+	_floor_choice.hide()
 	_blocks.append(top)
 	_objective = _label(20)
 	_objective.modulate = Color(0.85, 0.90, 0.94)
@@ -291,6 +300,19 @@ func set_hint(hint: String) -> void:
 	_hint.text=hint
 
 
+func set_floors(layout: FloorLayout,selected: String="") -> void:
+	_floor_choice.clear()
+	_floor_choice.visible=layout!=null
+	if layout==null:
+		return
+	_floor_choice.add_item("All floors")
+	_floor_choice.set_item_metadata(0,"")
+	for surface in layout.surfaces:
+		_floor_choice.add_item(surface.id.replace("_"," ").capitalize())
+		_floor_choice.set_item_metadata(_floor_choice.item_count-1,surface.id)
+	_floor_choice.select(maxi(0,layout.index_of(selected)+1))
+
+
 func set_active_summary(f: Figure) -> void:
 	_summary.visible=f!=null
 	_summary.text=active_summary(f)
@@ -300,6 +322,8 @@ static func active_summary(f: Figure) -> String:
 	if f==null:
 		return ""
 	var text := "%s  ·  HP %d/%d\n%d ACTIONS  ·  MOVE %.1f″\nF %+d   S %+d   A %d   W %+d"%[f.label(),f.health,f.def.health,f.actions_left,MoveRules.allowance(f),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
+	if not f.surface_id.is_empty():
+		text+="\n%s · %.1f″ elevation"%[f.surface_id.replace("_"," ").capitalize(),f.elevation]
 	if f.melee!=null:
 		text+="\n"+f.melee.name
 	if f.ranged!=null:
@@ -326,7 +350,7 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 		if key.begins_with("spell_") and _spell_catalog.has(key.trim_prefix("spell_")):
 			b.tooltip_text=SpellReference.text(key.trim_prefix("spell_"))
 		if key=="move_confirm":
-			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else "Confirm move")
+			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else ("Confirm jump" if mode=="jump" else "Confirm move"))
 	if changed:
 		for i in available.size():
 			if _buttons.has(available[i]):

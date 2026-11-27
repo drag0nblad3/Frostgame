@@ -48,7 +48,12 @@ func _spawn(type: String, edge: int) -> void:
 	for i in range(0, 80):
 		var offset := float(floori((i + 1) / 2.0)) * 0.5 * (1 if i % 2 == 0 else -1)
 		at = mid + along * offset
-		if grid.open(MovePlanner.node_at(at)):
+		if not b.floor_layout.is_empty():
+			var n: Variant=BattlePlacement.support(s,at)
+			if n!=null:
+				_spawn_on_floor(type,n)
+				return
+		elif grid.open(MovePlanner.node_at(at)):
 			found = true
 			break
 	if not found:
@@ -68,9 +73,19 @@ func on_end_turn() -> void:
 			candidates.append(at + Vector2(dx, dy) * 0.5)
 	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_squared_to(at) < b.distance_squared_to(at))
 	for p in candidates:
-		if grid.open(MovePlanner.node_at(p)) and s.board.can_stand(p, Figure.BASE_RADIUS):
+		if not s.board.floor_layout.is_empty():
+			var n: Variant=BattlePlacement.support(s,MoveGrid.to_pos(MovePlanner.node_at(p)))
+			if n!=null:
+				_spawn_on_floor("skeleton",n)
+				return
+		elif grid.open(MovePlanner.node_at(p)) and s.board.can_stand(p, Figure.BASE_RADIUS):
 			_spawn_at("skeleton", MoveGrid.to_pos(MovePlanner.node_at(p)))
 			return
+
+
+func _spawn_on_floor(type: String,n: Vector3i) -> Figure:
+	var layout:=c.state.board.floor_geometry()
+	return _spawn_at(type,layout.point(n),-1,0,layout.surface_id(n),layout.height(n))
 
 
 func _spawn_at(type: String, at: Vector2, side: int = -1, ring_side: int=0,surface: String="",height: float=0.0) -> Figure:
@@ -103,6 +118,16 @@ func museum_pickup(f: Figure) -> bool:
 		return true
 	var statue := statues[c.dice.pick(statues.size())]
 	var at := statue.rect.get_center()
+	if not c.state.board.floor_layout.is_empty():
+		var height:=statue.base_height
+		var surface:=statue.surface_id
+		c._magic.terrain.remove(statue)
+		var layout:=c.state.board.floor_geometry()
+		var options:=BattlePlacement.nearby_floor(c.state,at,height,2.0,surface)
+		options.sort_custom(func(a: Vector3i,b: Vector3i) -> bool: return layout.point(a).distance_to(at)<layout.point(b).distance_to(at))
+		if not options.is_empty():
+			_spawn_on_floor("medium_construct",options[0])
+		return true
 	c.state.board.pieces.erase(statue)
 	c.state.board.invalidate_terrain()
 	c.emit("terrain_changed", {"spell": "museum_statue", "created": false})

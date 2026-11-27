@@ -27,7 +27,11 @@ static func apply(c: GameController,node: Vector2i,boost: bool=false) -> bool:
 		return false
 	if RedKingHill.before_move(c,f):
 		c._apply_move(f,r.path_to(node),float(r.cost[node]),{})
+	finish(c,f,boost)
+	return true
+
+
+static func finish(c: GameController,f: Figure,boost: bool) -> void:
 	f.actions_left=0
 	c.emit("run_for_it",{"id":f.id,"boost":boost})
 	c.end_activation()
-	return true

@@ -53,7 +53,7 @@ static func can_end_activation(c: GameController) -> bool:
 	for t in Contact.enemies_of(c.state.figures, f):
 		if c.can_fight(t.id):
 			return false
-	if c.can_move() and not c.reach().nodes().is_empty():
+	if c.can_move() and (not c.reach().nodes().is_empty() if c.state.board.floor_layout.is_empty() else not c.layered_reach().cost.is_empty()):
 		return false
 	return true
 

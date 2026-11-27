@@ -7,7 +7,8 @@ func test_silent_tower_layout_and_magic() -> void:
 	var f := s.figure(1)
 	var t := s.figure(2)
 	f.pos = Vector2(18, 18)
-	f.elevation = s.board.height_at(f.pos)
+	f.surface_id="tower_roof"
+	f.elevation=s.board.floor_geometry().height(s.board.floor_geometry().node(f.surface_id,f.pos))
 	f.actions_left = 2
 	s.active_id = f.id
 	check_eq(f.elevation, 10.0)
@@ -33,6 +34,7 @@ func test_silent_tower_layout_and_magic() -> void:
 	check(ScenarioNull.protected_treasure(s, Vector2(10, 18)))
 	check(not ScenarioNull.protected_treasure(s, Vector2(5, 5)))
 	f.pos = Vector2(18, 8)
+	f.surface_id="street"
 	f.elevation = 0
 	check_eq(MagicEquipment.bonus(f, "will"), 2)
 	check_eq(PowerPool.available(f), 1)
@@ -44,11 +46,13 @@ func test_silent_tower_real_move_cancels_magic() -> void:
 	var c := GameController.new(s, Dice.new(4))
 	var f := s.figure(1)
 	f.pos = Vector2(18, 13.5)
+	f.surface_id="street"
+	f.elevation=0.0
 	f.actions_left = 2
 	f.spell_effects["fleet_feet"] = true
 	s.active_id = f.id
 	s.forced_combat = false
-	check(c.move_to(MovePlanner.node_at(Vector2(18, 15.5))))
+	check(c.move_on_floor(s.board.floor_geometry().node("street",Vector2(18,15.5))))
 	check(f.spell_effects.is_empty())
 	check(s.tower_visitors.has(f.id))
 	var restored := BattleSnapshot.rebuild(BattleSnapshot.capture(c), db())

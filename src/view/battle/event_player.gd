@@ -340,6 +340,8 @@ func _animate_shot(from: FigureView,to: FigureView,magic: bool=false,spell: Stri
 	var start := from.position + Vector3.UP*from.body_height()
 	if origin is Vector2:
 		start = TableSpace.to_world(origin,state.board.height_at(origin)+1.0)
+	elif origin is Vector3:
+		start=origin
 	var destination := to.position + Vector3.UP*to.body_height()
 	bolt.position = start
 	if start.distance_squared_to(destination)>0.001:

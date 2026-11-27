@@ -61,3 +61,31 @@ func test_restarting_same_map_reuses_city() -> void:
 	check(view._scenery!=city)
 	check_eq(view._scenery.get_child_count(),0)
 	view.free()
+
+
+func test_standard_ruins_use_real_ground_profiles() -> void:
+	var board:=BoardLoader.load_id("frozen_ruins",TerrainDb.load_file())
+	check(board.has_ground_profiles and board.has_ramps)
+	check_eq(board.ground_height_at(Vector2(15.5,11.5)),1.0)
+	check_eq(board.ground_height_at(Vector2(20.5,24.0)),-1.0)
+	check(is_equal_approx(board.ground_height_at(Vector2(11.75,11.5)),0.5))
+	var cost:=TerrainTravel.cost(board,Vector2(10.5,11.5),Vector2(13,11.5))
+	check(is_equal_approx(cost,sqrt(2.5*2.5+1.0)))
+	for at: Vector2 in [Vector2(18,14),Vector2(12,14),Vector2(24,14),Vector2(12,23),Vector2(24,23)]:
+		check(board.can_stand(at,Figure.BASE_RADIUS),"treasure approach")
+	var before:=board.pieces.size()
+	var art:=Node3D.new()
+	BattlefieldDetail.build(art,board,"treasure_skirmish")
+	check(art.get_child_count()>0)
+	check_eq(board.pieces.size(),before)
+	check_eq(board.ground_height_at(Vector2(15.5,11.5)),1.0)
+	art.free()
+
+
+func test_mindscape_stays_terrain_free() -> void:
+	var board:=BoardLoader.load_id("red_king_mind",TerrainDb.load_file())
+	var art:=Node3D.new()
+	BattlefieldDetail.build(art,board,"red_king_mind")
+	check_eq(board.pieces.size(),0)
+	check_eq(art.get_child_count(),0)
+	art.free()

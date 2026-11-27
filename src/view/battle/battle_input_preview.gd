@@ -10,17 +10,42 @@ static func preview(bi: BattleInput) -> void:
 	var s := State.new()
 	var f := bi.c.state.active()
 	bi.hud.set_active_summary(f)
-	if not BattleInputActionPreview.actions(bi, f, s):
-		BattleInputReactionPreview.reactions(bi, f, s)
-	var selected: Array[Vector2] = []
-	for t in bi.targets:
-		if bi.mode == "group_select" and bi.group_selection.has(t.id):
-			selected.append(t.pos)
+	bi.floor_points.clear()
+	bi.movement=null
+	if bi.mode in BattleMovePlan.MODES and f!=null:
+		bi.movement=BattleMovementOptions.query(bi.c,bi.mode,bi.reach)
+		if bi.is_layered():
+			for n: Vector3i in bi.movement.cost:
+				bi.floor_points[n]=bi.movement.world(n)
 		else:
-			s.points.append(t.pos)
-	bi.markers.show_points(s.points, s.color, s.radius)
-	if not selected.is_empty():
-		bi.markers.show_points(selected, Color(1.0, 0.78, 0.15), 0.85, true)
+			for n: Vector2i in bi.movement.cost:
+				bi.nodes.append(n)
+				s.points.append(MoveGrid.to_pos(n))
+		s.hint="Tap or drag within the marked area. Confirm before spending an action."
+		if bi.mode=="exit":
+			s.hint="Choose an exit, then confirm to retreat."
+		elif bi.mode=="jump":
+			s.hint="Choose a jump destination. Landing can cause falling damage."
+		elif bi.mode in ["run_for_it","run_talisman"]:
+			s.hint="Plan a run up to %d inches. Confirm to end activation."%(6 if bi.mode=="run_talisman" else 3)
+		elif bi.mode=="gear_cape_move":
+			s.hint="Plan an escape move. The cape is spent on confirmation."
+	elif bi.is_layered() and BattleFloorInput.preview(bi,s):
+		pass
+	elif not BattleInputActionPreview.actions(bi,f,s):
+		BattleInputReactionPreview.reactions(bi,f,s)
+	if bi.is_layered():
+		BattleFloorInput.draw_points(bi,s)
+	else:
+		var selected: Array[Vector2]=[]
+		for t in bi.targets:
+			if bi.mode=="group_select" and bi.group_selection.has(t.id):
+				selected.append(t.pos)
+			else:
+				s.points.append(t.pos)
+		bi.markers.show_points(s.points,s.color,s.radius)
+		if not selected.is_empty():
+			bi.markers.show_points(selected,Color(1.0,0.78,0.15),0.85,true)
 	if not bi.c._magic.shatter.first.is_empty():
 		s.hint = "Shatterstar: first attempt declared. Choose the second target before rolling. " + s.hint
 	if f != null:
@@ -40,7 +65,7 @@ static func preview(bi: BattleInput) -> void:
 	var action_info:=CombatHudInfo.action(bi,f)
 	if not action_info.is_empty():
 		s.hint=action_info+"\n"+s.hint
-	if bi.mode in ["spell_target","spell_point","counter_select","treasure_spell","treasure_destination","leap_destination","swap_second"] and bi.c.state.spell_catalog.has(bi.selected_spell):
+	if bi.mode in ["spell_target","spell_point","counter_select","treasure_spell","treasure_destination","leap_destination","swap_second","floor_teleport","floor_leap_target","floor_leap","floor_bridge","floor_bridge_end","floor_spell_point","floor_treasure_destination","floor_suggestion"] and bi.c.state.spell_catalog.has(bi.selected_spell):
 		var info: Dictionary=bi.c.state.spell_catalog[bi.selected_spell]
 		var tn:=int(bi.c.state.spellbooks.get(f.side,{}).get(bi.selected_spell,info["number"])) if f!=null else int(info["number"])
 		s.hint="%s · TN %d — %s"%[info["name"],tn,s.hint]
@@ -50,6 +75,7 @@ static func preview(bi: BattleInput) -> void:
 
 ## What the current mode highlights and the hint shown with it.
 class State:
+	var world_points:=PackedVector3Array()
 	var points: Array[Vector2] = []
 	var color := Color(0.28, 0.9, 0.8)
 	var radius := 0.17

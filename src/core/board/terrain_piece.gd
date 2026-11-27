@@ -6,6 +6,7 @@ var kind: TerrainKind
 var rect := Rect2()
 var circular := false
 var eye_host: TerrainPiece
+var eye_solid: Array=[]
 var eye_direction := Vector2.ZERO
 var ramp := false
 var ramp_rotated := false
@@ -16,6 +17,10 @@ var cast_turn := -1
 var caster_id := -1
 var extended_bridge := false
 var elemental_wall := false
+## Explicit support for persistent magic on overlapping floors.
+var surface_id := ""
+var base_height := 0.0
+var dynamic_surface := ""
 
 
 func _init(k: TerrainKind = null, r: Rect2 = Rect2()) -> void:

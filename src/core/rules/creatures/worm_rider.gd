@@ -9,10 +9,12 @@ static func ignored(worm: Figure,target: Figure) -> bool:
 
 static func ready(c: GameController) -> bool:
 	var f := c.state.active()
-	return f!=null and f.def.role in ["wizard","apprentice"] and c.can_act() and ActiveGear.ready(f,ITEM) and c.state.board.floor_layout.is_empty() and c.state.creature_db!=null and not Contact.in_combat(c.state.figures,f)
+	return f!=null and f.def.role in ["wizard","apprentice"] and c.can_act() and ActiveGear.ready(f,ITEM) and c.state.creature_db!=null and not Contact.in_combat(c.state.figures,f)
 
 
 static func legal(c: GameController,at: Vector2,ring: int) -> bool:
+	if not c.state.board.floor_layout.is_empty():
+		return ground_node(c,at)!=null and not ScenarioNull.field_at(c.state.board,at)
 	if not c.state.board.can_stand(at,Figure.BASE_RADIUS):
 		return false
 	var h := c.state.board.height_at(at)
@@ -20,6 +22,20 @@ static func legal(c: GameController,at: Vector2,ring: int) -> bool:
 		if f.in_play() and f.ring_side==ring and absf(f.elevation-h)<0.5 and f.pos.distance_to(at)<Contact.OVERLAP:
 			return false
 	return true
+
+
+## A burrowing worm emerges on the table's ground, never through a roof.
+static func ground_node(c: GameController,at: Vector2) -> Variant:
+	for id: String in c.state.board.floor_layout.get("exit_surfaces",["street"]):
+		var n: Variant=BattlePlacement.support(c.state,at,id)
+		if n!=null:
+			return n
+	return null
+
+
+static func world_point(c: GameController,at: Vector2) -> Vector3:
+	var n: Variant=ground_node(c,at)
+	return c.state.board.floor_geometry().world(n) if n!=null else Vector3(at.x,0,at.y)
 
 
 static func points(c: GameController) -> Array[Vector2]:
@@ -102,6 +118,11 @@ static func _place_token(c: GameController,at: Vector2,ring: int) -> void:
 	kind.height=0.02
 	var marker := TerrainPiece.new(kind,Rect2(at-Vector2(0.3,0.3),Vector2(0.6,0.6)))
 	marker.circular=true
+	if not c.state.board.floor_layout.is_empty():
+		var n: Variant=ground_node(c,at)
+		if n!=null:
+			marker.surface_id=c.state.board.floor_geometry().surface_id(n)
+			marker.base_height=c.state.board.floor_geometry().height(n)
 	c.state.board.pieces.append(marker)
 	c.state.board.invalidate_terrain()
 	c.emit("terrain_changed",{"spell":"worm_rider","created":true})
@@ -130,4 +151,10 @@ static func end_turn(c: GameController) -> void:
 					best=distance
 					chosen=p
 		if is_finite(best):
-			c._encounters._spawn_at("giant_worm",chosen,-1,ring)
+			if not c.state.board.floor_layout.is_empty():
+				var n: Variant=ground_node(c,chosen)
+				if n!=null:
+					var layout:=c.state.board.floor_geometry()
+					c._encounters._spawn_at("giant_worm",chosen,-1,ring,layout.surface_id(n),layout.height(n))
+			else:
+				c._encounters._spawn_at("giant_worm",chosen,-1,ring)

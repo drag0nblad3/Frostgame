@@ -11,6 +11,8 @@ static func build(board: Board,scenario: String) -> Node3D:
 	var root := Node3D.new()
 	root.name="EnvironmentDressing"
 	if RealmScenery.special(scenario):
+		BattlefieldDetail.build(root,board,scenario)
+		MiniatureBatch.bake(root)
 		return root
 	var seed := absi(hash(board.id))
 	var indoor := scenario=="underground_library"
@@ -38,11 +40,7 @@ static func build(board: Board,scenario: String) -> Node3D:
 		var piece := board.pieces[i]
 		if piece.ramp or piece.cast_turn>=0:
 			continue
-		if piece.kind.id=="rubble" and minf(piece.rect.size.x,piece.rect.size.y)>=1.3:
-			var c := piece.rect.get_center()
-			var at := Vector3(c.x,board.ground_height_at(c),c.y)
-			EnvironmentProps.ruin_debris(root,at,scenario,i,minf(0.92,minf(piece.rect.size.x,piece.rect.size.y)*0.48))
-		elif piece.kind.id in ["ruin","hut_wall","tower","null_lower","null_middle","null_upper","null_annex"]:
+		if piece.kind.id in ["ruin","hut_wall","tower","null_lower","null_middle","null_upper","null_annex"]:
 			DistrictArchitecture.relief(root,piece,i,scenario)
 		elif piece.kind.id=="haunted_floor":
 			# Worn interior floorboards stay low and out of hut entrances.
@@ -52,6 +50,7 @@ static func build(board: Board,scenario: String) -> Node3D:
 				EnvironmentProps.paving(root,Vector3(at.x,0.065,at.y),0.27,j,Color("63584d"))
 	if snow and GraphicsQuality.mode()>0:
 		SnowBanks.decorate(root,board,scenario)
+	BattlefieldDetail.build(root,board,scenario)
 	MiniatureBatch.bake(root)
 	return root
 
@@ -60,7 +59,7 @@ static func flat_ground(board: Board,at: Vector2,radius: float) -> bool:
 	var y := board.ground_height_at(at)
 	for offset in [Vector2.ZERO,Vector2(-radius,-radius),Vector2(radius,-radius),Vector2(-radius,radius),Vector2(radius,radius)]:
 		var p: Vector2=at+offset
-		if not board.contains(p,0.1) or absf(board.ground_height_at(p)-y)>0.012:
+		if not board.contains(p,0.1) or board.over_void(p) or absf(board.ground_height_at(p)-y)>0.012:
 			return false
 		for piece in board.pieces:
 			if piece.rect.grow(radius*0.15).has_point(p):

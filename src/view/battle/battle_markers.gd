@@ -16,6 +16,13 @@ func clear() -> void:
 
 
 func show_points(points: Array[Vector2], color: Color, radius: float, append: bool = false) -> void:
+	var world:=PackedVector3Array()
+	for p in points:
+		world.append(TableSpace.to_world(p,board.height_at(p) if board!=null else 0.0))
+	show_world_points(world,color,radius,append)
+
+
+func show_world_points(points: PackedVector3Array,color: Color,radius: float,append: bool=false) -> void:
 	if not append:
 		clear()
 	if points.is_empty():
@@ -50,7 +57,7 @@ func show_points(points: Array[Vector2], color: Color, radius: float, append: bo
 	mm.instance_count = points.size()
 	for i in points.size():
 		var basis := Basis.IDENTITY.scaled(Vector3(1, 0.18, 1)) if radius >= 0.4 else Basis(Vector3.UP, PI * 0.25)
-		mm.set_instance_transform(i, Transform3D(basis, TableSpace.to_world(points[i], 0.065 + (board.height_at(points[i]) if board != null else 0.0))))
+		mm.set_instance_transform(i, Transform3D(basis, points[i]+Vector3.UP*0.065))
 	marker.multimesh = mm
 	marker.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	add_child(marker)
@@ -66,6 +73,13 @@ func clear_move_plan() -> void:
 
 
 func show_move_plan(path: PackedVector2Array) -> void:
+	var world:=PackedVector3Array()
+	for p in path:
+		world.append(TableSpace.to_world(p,board.height_at(p)))
+	show_world_plan(world)
+
+
+func show_world_plan(path: PackedVector3Array) -> void:
 	clear_move_plan()
 	if path.is_empty():
 		return
@@ -83,7 +97,7 @@ func show_move_plan(path: PackedVector2Array) -> void:
 	var end := MeshInstance3D.new()
 	end.mesh=ring
 	end.material_override=mat
-	end.position=TableSpace.to_world(path[-1],board.height_at(path[-1])+0.10)
+	end.position=path[-1]+Vector3.UP*0.10
 	end.scale.y=0.28
 	end.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_plan.add_child(end)
@@ -93,10 +107,10 @@ func show_move_plan(path: PackedVector2Array) -> void:
 	for i in range(1,path.size()):
 		# A linked edge can jump across the board: do not draw a false route.
 		var length := path[i-1].distance_to(path[i])
-		if length>1.5 or length<0.001:
+		if length<0.001 or Vector2(path[i].x-path[i-1].x,path[i].z-path[i-1].z).length()>1.5:
 			continue
 		for p in [path[i-1],path[i]]:
-			vertices.append(TableSpace.to_world(p,board.height_at(p)+0.12))
+			vertices.append(p+Vector3.UP*0.12)
 	if vertices.is_empty():
 		return
 	var shape := ImmediateMesh.new()
