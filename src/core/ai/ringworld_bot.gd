@@ -34,7 +34,7 @@ static func play(c: GameController,f: Figure) -> bool:
 	var evacuate := (f.treasure_id>=0 or (keys==1 and not final_fighter))
 	if evacuate and (not final_fighter or s.side_figures(f.side).size()>1):
 		for i in 2:
-			if RedKingRingworld.escape(c,f):
+			if BattleScenarioAction.execute(c,"ring_escape"):
 				return true
 			if not c.can_move() or not _approach_key(c,f):
 				break
@@ -83,7 +83,7 @@ static func _approach_key(c: GameController,f: Figure) -> bool:
 		if key.in_play() and RedKingRingworld.key_master(key) and key.ring_side==f.ring_side:
 			same.append(key)
 	if same.is_empty():
-		return RedKingRingworld.switch(c,f)
+		return BattleScenarioAction.execute(c,"ring_switch")
 	var reach := c.reach()
 	var best: Variant=null
 	var gain := 0.05
@@ -111,7 +111,7 @@ static func _play_floor(c: GameController,f: Figure) -> bool:
 	var evacuate:=f.treasure_id>=0 or (keys==1 and not final_fighter)
 	if evacuate and (not final_fighter or s.side_figures(f.side).size()>1):
 		for i in 2:
-			if RedKingRingworld.escape(c,f):
+			if BattleScenarioAction.execute(c,"ring_escape"):
 				return true
 			if not c.can_move() or not _approach_key_floor(c,f):
 				break
@@ -139,7 +139,7 @@ static func _approach_key_floor(c: GameController,f: Figure) -> bool:
 		if key.in_play() and RedKingRingworld.key_master(key) and key.ring_side==f.ring_side:
 			keys.append(key)
 	if keys.is_empty():
-		return RedKingRingworld.switch(c,f)
+		return BattleScenarioAction.execute(c,"ring_switch")
 	var reach:=c.layered_reach()
 	if reach.cost.is_empty():
 		return false
