@@ -16,6 +16,8 @@ var board: Board
 ## A reverse distance field must follow incoming one-way connections.
 var reverse_links: Dictionary={}
 var reversed:=false
+## AI avoids lethal scenario paths without preventing player declarations.
+var avoid_lethal:=false
 
 
 func reverse_connections() -> void:
@@ -119,7 +121,15 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 
 
 func segment_allowed(a: Vector3,b: Vector3) -> bool:
-	return board==null or not BattleBoundary.blocks_segment(board.boundaries,Vector2(a.x,a.z),Vector2(b.x,b.z),"movement",mover)
+	if board==null:
+		return true
+	var from:=Vector2(a.x,a.z)
+	var to:=Vector2(b.x,b.z)
+	if avoid_lethal and mover!=null and mover.battle_ref!=null:
+		var s: GameState=mover.battle_ref.get_ref()
+		if s!=null and (RedKingVeil.lethal(s,from,to) or (RedKingHerded.active(s) and minf(from.y,to.y)<=float(s.scenario_data.get("herd_veil",0.0))+Figure.BASE_RADIUS)):
+			return false
+	return not BattleBoundary.blocks_segment(board.boundaries,from,to,"movement",mover)
 
 
 func run_segment_clear(a: Vector3,b: Vector3) -> bool:

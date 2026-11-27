@@ -97,6 +97,9 @@ func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,vi
 	var layout:=c.state.board.floor_geometry()
 	if not layout.standable(n):
 		return
+	var landing:=layout.point(n)
+	if RedKingHerded.contact(c,t,landing) or RedKingVeil.touch(c,t,landing):
+		return
 	var start:=Vector3(t.pos.x,t.elevation,t.pos.y)
 	var old:=t.surface_id
 	t.spell_effects.erase("bones_of_the_earth")
@@ -106,9 +109,12 @@ func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,vi
 	if exhaust:
 		t.magic_exhausted=true
 		t.actions_left=0
+	var check_portal_landing:=path.is_empty() or not visual_spell.is_empty()
 	if path.is_empty():
 		path=PackedVector3Array([start,layout.world(n)])
 	c.emit("layered_move",{"id":t.id,"path":path,"surfaces":[old,t.surface_id],"cost":0.0,"teleport":visual_spell=="teleport" or visual_spell=="transpose","leap":visual_spell=="leap"})
+	if check_portal_landing:
+		RedKingFire.portal_contact(c,t,t.pos,t.pos,{},t.elevation,t.elevation)
 	c._magic.terrain.trigger_landing(t)
 	c._magic.illusions.after_move(t)
 	if falling:
@@ -163,8 +169,18 @@ func force_floor(t: Figure,direction: Vector2,distance: float,ivory_caster: Figu
 	var route:=FloorDisplacement.trace(c,t,direction,distance)
 	if route.is_empty():
 		return
-	if route["path"].size()>1:
-		move_floor(t,route["node"],false,true,"",route["path"])
+	var path: PackedVector3Array=route["path"]
+	var seen: Dictionary={}
+	for i in range(1,path.size()):
+		var from:=Vector2(path[i-1].x,path[i-1].z)
+		var at:=Vector2(path[i].x,path[i].z)
+		if RedKingHerded.contact(c,t,at) or RedKingVeil.touch(c,t,at):
+			return
+		RedKingFire.portal_contact(c,t,from,at,seen,path[i-1].y,path[i].y)
+		if not t.in_play():
+			return
+	if path.size()>1:
+		move_floor(t,route["node"],false,true,"",path)
 	if route["collision"] and ivory_caster!=null and t.in_play():
 		c.emit("gear_used",{"id":ivory_caster.id,"target":t.id,"gear":"gear_rk_ivory_hand","damage":3})
 		c._hurt(t,3,ivory_caster,false)

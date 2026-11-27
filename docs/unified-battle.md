@@ -49,3 +49,5 @@ Haunted Houses, The Keep and Complex Temple also use actual terrain support for 
 
 
 Red King investigation stands, Back Into the Fire and Squatter now accept overlapping supports for normal movement and objective interactions. Ground reinforcements use authored entrance surfaces, portal contacts use physical height, and the room entry test is resolved before crossing the actual threshold. Existing scenario layouts are unchanged. The moving-board/reality topology, sinkhole pull, veil relocation and other specialized scenario conversions are still guarded; general Reality Cracks are not enabled on explicit floors yet.
+
+Herded Like Cattle and Veil path contacts, magical arrivals, emergency relocations and reinforcements now resolve against explicit floor support. The lethal veil is a scenario-wide boundary, not a ground obstacle; the layered AI checks its actual proposed route before committing. Forced relocation searches coplanar support without accidentally transferring to an overhead deck. Remaining moving-terrain and wrapped-topology conversions are not claimed complete.

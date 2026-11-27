@@ -65,11 +65,13 @@ static func _move(c: GameController,f: Figure) -> bool:
 	var reach := c.layered_reach()
 	if reach.cost.is_empty():
 		return false
-	var extracting:=f.treasure_id>=0 or (f.side>=0 and RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state))
+	var extracting:=f.treasure_id>=0 or (f.side>=0 and RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state)) or (f.side==0 and RedKingVeil.active(c.state)) or (f.side>=0 and RedKingHerded.active(c.state) and f.pos.y-float(c.state.scenario_data.get("herd_veil",0.0))<8.0)
+	var safe_route:=RedKingVeil.active(c.state) or RedKingHerded.active(c.state)
 	if extracting:
 		var exits := c.floor_exit_nodes()
-		if not exits.is_empty():
-			return c.exit_on_floor(exits[0])
+		for n in exits:
+			if not safe_route or _safe_path(c,layout,reach.path_to(n)):
+				return c.exit_on_floor(n)
 	var quarry: Figure=null
 	if f.side<0:
 		quarry=PackRules.pursuit(c.state,f)
@@ -79,6 +81,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 		if quarry==null:
 			return _wander(c,f,layout,reach)
 	var grid := LayeredGrid.new(layout,f,c.state.figures)
+	grid.avoid_lethal=safe_route
 	var column:=ScenarioColumns.contact(c.state.board,f.pos,f.elevation)
 	if column!=null and f.side>=0 and f.treasure_id<0:
 		for n: Vector3i in reach.cost:
@@ -129,7 +132,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 					if score<best:
 						best=score
 						goal=n
-	if f.treasure_id>=0 and goal!=null and RunForIt.ready(c,true):
+	if not safe_route and f.treasure_id>=0 and goal!=null and RunForIt.ready(c,true):
 		var run := LayeredMovement.reach(c,false,true,true)
 		var route := long_route.path_to(goal)
 		for i in range(route.size()-1,0,-1):
@@ -137,13 +140,13 @@ static func _move(c: GameController,f: Figure) -> bool:
 				break
 			if run.can_reach(route[i]) and LayeredMovement.move(c,route[i],false,true,true):
 				return true
-	if LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal):
+	if not safe_route and LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal):
 		return true
 	if goal==null or goal==reach.start:
 		return false
 	var path := long_route.path_to(goal)
 	for i in range(path.size()-1,0,-1):
-		if reach.can_reach(path[i]):
+		if reach.can_reach(path[i]) and (not safe_route or _safe_path(c,layout,reach.path_to(path[i]))):
 			return c.move_on_floor(path[i])
 	return false
 
@@ -204,3 +207,12 @@ static func _cape(c: GameController,f: Figure) -> bool:
 			value=score
 			best=node
 	return best!=null and LayeredMovement.move(c,best,true)
+
+
+static func _safe_path(c: GameController,layout: FloorLayout,path: Array[Vector3i]) -> bool:
+	for i in range(1,path.size()):
+		var a:=layout.point(path[i-1])
+		var b:=layout.point(path[i])
+		if RedKingVeil.lethal(c.state,a,b) or (RedKingHerded.active(c.state) and minf(a.y,b.y)<=float(c.state.scenario_data.get("herd_veil",0.0))+Figure.BASE_RADIUS):
+			return false
+	return true

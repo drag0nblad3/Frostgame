@@ -98,7 +98,7 @@ static func nearby_floor(s: GameState,center: Vector2,height: float,radius: floa
 
 ## Authored ground entrances: prefer the lowest legal support, then the
 ## nearest position. Never silently spawn on a roof when the street is blocked.
-static func nearest_ground(s: GameState,center: Vector2,radius: float) -> Variant:
+static func nearest_ground(s: GameState,center: Vector2,radius: float,accept: Callable=Callable()) -> Variant:
 	var layout:=s.board.floor_geometry()
 	var allowed: Array=s.board.floor_layout.get("spawn_surfaces",s.board.floor_layout.get("exit_surfaces",["street"]))
 	var best: Variant=null
@@ -106,7 +106,7 @@ static func nearest_ground(s: GameState,center: Vector2,radius: float) -> Varian
 	for n in nodes(s.board,center,radius):
 		var at:=layout.point(n)
 		var d:=at.distance_squared_to(center)
-		if d>radius*radius+0.001 or d>=score or not allowed.has(layout.surface_id(n)) or not floor_open(s,n):
+		if d>radius*radius+0.001 or d>=score or not allowed.has(layout.surface_id(n)) or (accept.is_valid() and not accept.call(at)) or not floor_open(s,n):
 			continue
 		best=n
 		score=d
