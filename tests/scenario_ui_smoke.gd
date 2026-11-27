@@ -97,7 +97,7 @@ func _run() -> void:
 		_fail("Back did not dismiss guide safely")
 		return
 	scene.hud._open_commands()
-	if not ModalInput.blocked() or not scene.hud._command_screen.visible or scene.hud._command_screen._buttons.size()!=19:
+	if not ModalInput.blocked() or not scene.hud._command_screen.visible or scene.hud._command_screen._buttons.size()!=20:
 		_fail("Battle command screen unavailable")
 		return
 	ModalInput.close_top(root)
