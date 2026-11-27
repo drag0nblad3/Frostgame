@@ -16,10 +16,7 @@ func _ready() -> void:
 	subtitle.text="Adjust performance without changing rules or saves."
 	var col := WorkshopUI.scroll(body)
 	for i in GraphicsQuality.NAMES.size():
-		var card := PanelContainer.new()
-		card.add_theme_stylebox_override("panel",BattleTheme.panel(Color("203441"),Color("60717b")))
-		col.add_child(card)
-		var row := WorkshopUI.column(card)
+		var row := WorkshopUI.section_card(col)
 		var b := WorkshopUI.button(row,GraphicsQuality.NAMES[i],_select.bind(i),true)
 		_choices.append(b)
 		WorkshopUI.label(row,DETAILS[i],24)
