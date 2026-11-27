@@ -4,7 +4,7 @@ extends RefCounted
 
 static func begin(c: GameController) -> void:
 	var s := c.state
-	if s.creature_db==null or not s.creature_db.available("hrut_stinger") or not s.creature_db.available("hrut_warrior") or s.scenario_data.has("hunters_deployed"):
+	if s.creature_db==null or not s.creature_db.available("hrut_stinger") or not s.creature_db.available("hrut_warrior") or bool(s.scenario_data.get("hunters_deployed",false)):
 		return
 	s.scenario_data["hunters_deployed"]=true
 	var priority: Array[int]=s.order.duplicate()
