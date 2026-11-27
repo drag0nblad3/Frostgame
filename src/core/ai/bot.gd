@@ -165,4 +165,4 @@ static func _use_healing(c: GameController, f: Figure) -> void:
 			target = t
 			value = score
 	if target != null:
-		c._potions.drink("healing", target)
+		BattleEquipmentAction.execute(c,"drink",{"id":"healing","target":target.id})
