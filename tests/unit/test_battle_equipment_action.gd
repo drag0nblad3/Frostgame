@@ -74,3 +74,33 @@ func test_teleportation_potion_exhausts_in_both_geometries() -> void:
 		check(actor.magic_exhausted)
 		check(actor.items.is_empty())
 		check_eq(c.command_history.size(),1)
+
+
+func test_expansion_potion_sources_preserve_consumption_contract() -> void:
+	var c := make_game(make_board(),[fig("wizard",0,Vector2(2,2)),fig("thug",1,Vector2(15,14))],Dice.new(71))
+	c.state.active_id=1
+	var f := c.state.active()
+	f.actions_left=2
+	f.items.append({"gear":RedKingCampaignGear.POTION_STAFF,"potion":"strength"})
+	check_eq(c._potions.source(f,"strength"),0)
+	var rng := c.dice._rng.state
+	check(c._potions._consume(f,"strength"))
+	check_eq(c.dice._rng.state,rng)
+	check_eq(f.items.size(),1)
+	check(not f.items[0].has("potion"))
+	f.items.append({"potion":"strength","enchanted":true})
+	var expected := f.items.duplicate(true)
+	var oracle := Dice.new(1)
+	oracle._rng.state=c.dice._rng.state
+	RedKingMaterials.use_potion(expected,1,oracle)
+	check(c._potions._consume(f,"strength"))
+	check_eq(f.items,expected)
+	check_eq(c.dice._rng.state,oracle._rng.state)
+	f.items.append({"potion":"strength"})
+	var before := c.dice._rng.state
+	var count := f.items.size()
+	# A retained enchanted vial loses its enchantment, so either ordinary
+	# source is consumed without a new roll.
+	check(c._potions._consume(f,"strength"))
+	check_eq(c.dice._rng.state,before)
+	check_eq(f.items.size(),count-1)
