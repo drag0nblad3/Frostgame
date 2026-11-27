@@ -10,7 +10,7 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 		return false
 	# Only scenarios whose spatial objectives have been audited can opt
 	# into authored stacked floors. Ordinary maps continue to use the same rules.
-	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle","haunted_houses","the_keep","complex_temple",RedKingFire.ID,RedKingInvestigations.ID,RedKingSquatter.ID,RedKingHerded.ID,RedKingVeil.ID,RedKingMind.ID]:
+	if s.scenario_special not in ["","silent_tower","dreams_well","underground_library","worm_hunts","genie_in_the_bottle","haunted_houses","the_keep","complex_temple",RedKingFire.ID,RedKingInvestigations.ID,RedKingSquatter.ID,RedKingHerded.ID,RedKingVeil.ID,RedKingMind.ID,RedKingTethers.ID,RedKingRingworld.ID]:
 		return false
 	if cape and PlaneWalk.uses_direct(f):
 		return false
@@ -118,6 +118,21 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 	for i in range(1,path.size()):
 		var point:=path[i]
 		var at:=Vector2(point.x,point.z)
+		var before:=path[i-1]
+		if BoardTopology.is_transfer(c.state.board,Vector2(before.x,before.z),at):
+			if chunk.size()>1:
+				c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
+			f.pos=at
+			f.elevation=point.y
+			f.surface_id=surfaces[i]
+			c.emit("layered_move",{"id":f.id,"path":PackedVector3Array([before,point]),"surfaces":[surfaces[i-1],surfaces[i]],"cost":0.0,"teleport":true})
+			chunk=PackedVector3Array([point])
+			chunk_surfaces=[surfaces[i]]
+			c._magic.terrain.trigger_landing(f)
+			if not f.in_play():
+				_stop(c,f,engaged,run,boost)
+				return
+			continue
 		if RedKingHerded.active(c.state) or RedKingVeil.active(c.state):
 			if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
 				f.actions_left=0

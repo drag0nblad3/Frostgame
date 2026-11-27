@@ -33,6 +33,9 @@ static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -
 		return check(board,Vector2(at.x,at.z),to.pos,from)
 	var layout := board.floor_geometry()
 	var target := Vector3(to.pos.x,to.elevation,to.pos.y)
+	if board.ringworld and from.ring_side==0 and Vector2(at.x,at.z).distance_to(to.pos)>18.0:
+		result.clear=false
+		return result
 	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and floor_ray(board,layout,at+Vector3.UP*1.5,target+Vector3.UP,from,false)
 	if board.darkness and maxf(0.0,at.distance_to(target)-2.0*Figure.BASE_RADIUS)>12.0:
 		result.clear=false

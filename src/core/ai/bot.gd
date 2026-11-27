@@ -30,6 +30,8 @@ static func resume_activation(c: GameController) -> bool:
 			if c.awaiting_reaction() or c.state.active()!=f:
 				return true
 	if not c.state.board.floor_layout.is_empty():
+		if RedKingRingworld.active(c.state) and f.side>=0 and RingworldBot.play(c,f):
+			return _finish(c,f)
 		if FuryRules.target(c.state,f)!=null:
 			FuryRules.play(c,f)
 		else:

@@ -117,6 +117,10 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if edge["kind"]=="climb" and mover!=null and (running or mover.def.traits.has("expert_climber") or mover.levitates()):
 			cost=layout.point(n).distance_to(layout.point(next))+ceilf(absf(layout.height(n)-layout.height(next)))
 		out.append({"to":next,"cost":cost})
+	if board!=null:
+		for next in BoardTopology.floor_destinations(board,layout,n,reversed):
+			if open(next):
+				out.append({"to":next,"cost":Figure.BASE_RADIUS})
 	return out
 
 

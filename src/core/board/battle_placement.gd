@@ -20,7 +20,7 @@ static func nodes(board: Board,center: Vector2,radius: float,index: int=-1) -> A
 	return out
 
 
-static func floor_open(s: GameState,n: Vector3i,mover: Figure=null,radius: float=Figure.BASE_RADIUS,body: float=1.6,allow_combat: bool=true,ignore: Figure=null) -> bool:
+static func floor_open(s: GameState,n: Vector3i,mover: Figure=null,radius: float=Figure.BASE_RADIUS,body: float=1.6,allow_combat: bool=true,ignore: Figure=null,ring_side: int=-1) -> bool:
 	var layout:=s.board.floor_geometry()
 	if not layout.standable(n,radius,body) or layout.surface_id(n).begins_with("climb:"):
 		return false
@@ -31,7 +31,7 @@ static func floor_open(s: GameState,n: Vector3i,mover: Figure=null,radius: float
 	if TerrainMagic.ward_blocks(s.board,mover,at,h):
 		return false
 	for other in s.figures:
-		if other==mover or other==ignore or not other.in_play() or (mover!=null and other.ring_side!=mover.ring_side) or absf(other.elevation-h)>=0.5:
+		if other==mover or other==ignore or not other.in_play() or (mover!=null and other.ring_side!=mover.ring_side) or (mover==null and ring_side>=0 and other.ring_side!=ring_side) or absf(other.elevation-h)>=0.5:
 			continue
 		var distance:=other.pos.distance_to(at)
 		if distance<(Contact.OVERLAP if is_equal_approx(radius,Figure.BASE_RADIUS) else Figure.BASE_RADIUS+radius):
@@ -98,7 +98,7 @@ static func nearby_floor(s: GameState,center: Vector2,height: float,radius: floa
 
 ## Authored ground entrances: prefer the lowest legal support, then the
 ## nearest position. Never silently spawn on a roof when the street is blocked.
-static func nearest_ground(s: GameState,center: Vector2,radius: float,accept: Callable=Callable()) -> Variant:
+static func nearest_ground(s: GameState,center: Vector2,radius: float,accept: Callable=Callable(),ring_side: int=-1) -> Variant:
 	var layout:=s.board.floor_geometry()
 	var allowed: Array=s.board.floor_layout.get("spawn_surfaces",s.board.floor_layout.get("exit_surfaces",["street"]))
 	var best: Variant=null
@@ -106,7 +106,7 @@ static func nearest_ground(s: GameState,center: Vector2,radius: float,accept: Ca
 	for n in nodes(s.board,center,radius):
 		var at:=layout.point(n)
 		var d:=at.distance_squared_to(center)
-		if d>radius*radius+0.001 or d>=score or not allowed.has(layout.surface_id(n)) or (accept.is_valid() and not accept.call(at)) or not floor_open(s,n):
+		if d>radius*radius+0.001 or d>=score or not allowed.has(layout.surface_id(n)) or (accept.is_valid() and not accept.call(at)) or not floor_open(s,n,null,Figure.BASE_RADIUS,1.6,true,null,ring_side):
 			continue
 		best=n
 		score=d

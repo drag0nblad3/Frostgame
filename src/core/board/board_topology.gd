@@ -64,3 +64,20 @@ static func is_transfer(board: Board,a: Vector2,b: Vector2) -> bool:
 	if (board.edge_links.is_empty() and not board.wrap_short_edges and not board.wrap_long_edges) or a.distance_to(b)<=MoveGrid.STEP*1.5:
 		return false
 	return destinations(board,MovePlanner.node_at(a)).has(MovePlanner.node_at(b))
+
+
+## Convert authored edge transfers into floor nodes. Wrapped streets and
+## decks preserve physical elevation; a transfer never climbs or drops.
+static func floor_destinations(board: Board,layout: FloorLayout,n: Vector3i,reverse: bool=false) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	var from:=Vector2i(n.x,n.y)
+	if not linked(board) or not layout.standable(n):
+		return out
+	var options:=sources(board,from) if reverse else destinations(board,from)
+	for point in options:
+		var at:=MoveGrid.to_pos(point)
+		for candidate in layout.nodes_at(at):
+			if absf(layout.height(candidate)-layout.height(n))>=0.5 or layout.surface_id(candidate).begins_with("climb:"):
+				continue
+			out.append(candidate)
+	return out

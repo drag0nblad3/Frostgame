@@ -11,7 +11,7 @@ static func play(c: GameController) -> bool:
 
 
 static func perform(c: GameController,f: Figure) -> void:
-	if f.side<0 and (RedKingInvestigations.dormant(c.state,f) or RedKingSquatter.dormant(c,f) or ScenarioGenie.flee(c,f)):
+	if f.side<0 and (RedKingRingworld.creature_turn(c,f) or RedKingInvestigations.dormant(c.state,f) or RedKingSquatter.dormant(c,f) or ScenarioGenie.flee(c,f)):
 		return
 	if not c.awaiting_reaction() and _cape(c,f):
 		if c.state.active()!=f or c.awaiting_reaction():
