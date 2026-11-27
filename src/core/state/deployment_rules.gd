@@ -28,7 +28,7 @@ static func choices(s: GameState,previous: int=-1) -> Array[int]:
 			# The authored investigation tent has two opposite entrances.
 			if previous>=0:
 				options.append((previous+2)%4)
-			elif RedKingInvestigations.active(s):
+			elif RedKingInvestigations.active(s) or s.scenario_special=="dreams_well":
 				options.assign([0,2])
 			else:
 				options.assign([0,1,2,3])

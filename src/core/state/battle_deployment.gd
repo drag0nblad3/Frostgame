@@ -24,6 +24,8 @@ func begin() -> void:
 	if c.state.turn!=0 or DeploymentRules.kind(c.state)=="fixed":
 		done=true
 		return
+	# Real games end by objectives, not the simulation's safety cap (core p.71).
+	c.state.scenario_data["turn_limit"]=0
 	if DeploymentRules.kind(c.state)=="veil":
 		order.assign([0])
 	else:
