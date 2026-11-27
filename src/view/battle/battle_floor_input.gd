@@ -18,7 +18,7 @@ static func append_spells(bi: BattleInput,f: Figure) -> void:
 
 
 static func handles_action(bi: BattleInput,key: String) -> bool:
-	return bi.available.has(key) and (key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation"] or (key.begins_with("spell_") and SummonActions.PLACEMENT.has(key.trim_prefix("spell_"))))
+	return bi.available.has(key) and (key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation"] or (key.begins_with("spell_") and (SummonActions.PLACEMENT.has(key.trim_prefix("spell_")) or TerrainMagic.FLOOR_SPELLS.has(key.trim_prefix("spell_")))))
 
 
 static func action(bi: BattleInput,key: String) -> bool:
@@ -46,7 +46,10 @@ static func action(bi: BattleInput,key: String) -> bool:
 		_:
 			bi.mode="floor_spell_point"
 			bi.selected_spell=key.trim_prefix("spell_")
+			bi.spell_rotated=false
 	bi.available.assign(["potion_cancel"] if key.begins_with("gear_") or key.begins_with("potion_") else ["spell_cancel"])
+	if bi.selected_spell=="fog":
+		bi.available.append("rotate_spell")
 	bi.preview()
 	return false
 
@@ -85,7 +88,7 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 		match bi.mode:
 			"floor_ring_teleport": nodes=GearActions.teleport_floor_points(bi.c,index)
 			"floor_potion_teleport": nodes=bi.c._potions.teleport_floor_points(index)
-			_: nodes=SpellAvailability.floor_placement_points(bi.c._magic,bi.selected_spell,false,index)
+			_: nodes=SpellAvailability.floor_placement_points(bi.c._magic,bi.selected_spell,false,index,bi.spell_rotated)
 		for n in nodes:
 			candidates[n]=true
 		s.hint="Choose a legal placement on this floor."
@@ -209,7 +212,7 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		bi.move_plan.choose_node(bi,node)
 		return false
 	match bi.mode:
-		"floor_teleport","floor_spell_point": return bi._declared(bi.c._magic.start_floor_at(bi.selected_spell,node))
+		"floor_teleport","floor_spell_point": return bi._declared(bi.c._magic.start_floor_at(bi.selected_spell,node,bi.spell_rotated))
 		"floor_ring_teleport": return GearActions.teleport_on_floor(bi.c,node)
 		"floor_potion_teleport": return bi.c._potions.teleport_on_floor(node)
 		"floor_treasure_destination": return bi._declared(bi.c._magic.start_floor_treasure(bi.selected_spell,bi.spell_first,node))

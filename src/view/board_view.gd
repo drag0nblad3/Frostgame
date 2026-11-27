@@ -106,6 +106,9 @@ func show_floor(layout: FloorLayout,id: String) -> void:
 		return
 	var index:=layout.index_of(id)
 	_floor_art.cut_at(INF if index<0 else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level))
+	for p: TerrainPiece in _pieces:
+		if not p.surface_id.is_empty():
+			_pieces[p]["node"].visible=id.is_empty() or p.surface_id==id
 
 
 func scenery_ready() -> bool:
@@ -172,6 +175,7 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 			if root==null:
 				root=Node3D.new()
 				_build_piece(root,board,piece)
+			root.position.y=piece.base_height if not piece.surface_id.is_empty() else 0.0
 			root.name="Terrain_"+piece.kind.id
 			_pieces[piece]={"node":root,"key":live[piece]}
 			add_child(root)
@@ -192,7 +196,7 @@ func _remove(node: Node) -> void:
 
 
 static func _piece_key(p: TerrainPiece) -> String:
-	return str([p.kind.id,p.kind.height,p.rect,p.circular,p.ramp,p.ramp_rotated,p.ramp_start,p.ramp_end,p.level])
+	return str([p.kind.id,p.kind.height,p.rect,p.circular,p.ramp,p.ramp_rotated,p.ramp_start,p.ramp_end,p.level,p.surface_id,p.base_height])
 
 
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:

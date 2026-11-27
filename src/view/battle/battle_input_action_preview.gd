@@ -73,7 +73,13 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 			if option["kind"] == "eye_face":
 				s.points.append(option["at"])
 			elif option["kind"] == "terrain":
-				s.points.append(option["piece"].rect.get_center())
+				var p: TerrainPiece=option["piece"]
+				if bi.is_layered() and not p.surface_id.is_empty():
+					var n:=bi.floor_layout.node(p.surface_id,p.rect.get_center())
+					if n.z>=0:
+						bi.floor_points[n]=bi.floor_layout.world(n)
+				else:
+					s.points.append(p.rect.get_center())
 			elif option["kind"]=="floor_bridge":
 				var index:=bi.floor_layout.index_of(str(option["surface"]))
 				if index>=0:

@@ -105,11 +105,15 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 		f.surface_id=surfaces[i]
 		chunk.append(point)
 		chunk_surfaces.append(surfaces[i])
-		if ScenarioNull.field_at(c.state.board,f.pos):
+		var hits:=c._magic.terrain.triggered(f,f.pos,f.elevation)
+		if ScenarioNull.field_at(c.state.board,f.pos) or not hits.is_empty():
 			c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
 			chunk=PackedVector3Array([point])
 			chunk_surfaces=[surfaces[i]]
 			ScenarioNull.enter(c,f)
+			if f.in_play():
+				for p in hits:
+					c._magic.terrain.explode(p)
 			if not f.in_play():
 				c.finish_movement(f,engaged,false)
 				if run:

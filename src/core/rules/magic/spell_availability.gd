@@ -154,11 +154,13 @@ static func floor_placement_ready(sa: SpellActions,id: String) -> bool:
 	return not sa.c.state.board.floor_layout.is_empty() and f!=null and sa.c.can_act() and CasterLoadout.is_caster(f.def.role) and not Contact.in_combat(sa.c.state.figures,f) and sa.available_spell(f,id) and (not f.spell_effects.has("blinding_light") or id in ["raise_zombie","summon_demon","illusionary_soldier"])
 
 
-static func floor_placement_points(sa: SpellActions,id: String,first_only: bool=false,index: int=-1) -> Array[Vector3i]:
+static func floor_placement_points(sa: SpellActions,id: String,first_only: bool=false,index: int=-1,rotated: bool=false) -> Array[Vector3i]:
 	var out: Array[Vector3i]=[]
 	if not floor_placement_ready(sa,id):
 		return out
 	var f:=sa.c.state.active()
+	if TerrainMagic.FLOOR_SPELLS.has(id):
+		return sa.terrain.floor_points(f,id,first_only,index,rotated)
 	if SummonActions.PLACEMENT.has(id):
 		return sa.summons.floor_points(f,id,first_only,index)
 	if id=="teleport" and not sa.c.state.group.in_progress() and not f.surface_id.begins_with("climb:"):
@@ -231,7 +233,7 @@ static func menu_options(sa: SpellActions,f: Figure) -> Array[String]:
 				if can_cast(sa,id,t.id,true):
 					out.append("enchant_ammo")
 					break
-		if not treasure_options(sa,id).is_empty() or not counter_options(sa,id).is_empty() or not floor_placement_points(sa,id,true).is_empty():
+		if not treasure_options(sa,id).is_empty() or not counter_options(sa,id).is_empty() or not floor_placement_points(sa,id,true).is_empty() or (id=="fog" and not floor_placement_points(sa,id,true,-1,true).is_empty()):
 			out.append(id)
 			continue
 		if not placement_points(sa,id,true).is_empty() or (id in ["fog","wall","bridge"] and not placement_points(sa,id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not placement_points(sa,id,true,false,true).is_empty() or not placement_points(sa,id,true,true,true).is_empty())):

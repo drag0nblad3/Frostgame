@@ -109,6 +109,7 @@ func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,vi
 	if path.is_empty():
 		path=PackedVector3Array([start,layout.world(n)])
 	c.emit("layered_move",{"id":t.id,"path":path,"surfaces":[old,t.surface_id],"cost":0.0,"teleport":visual_spell=="teleport" or visual_spell=="transpose","leap":visual_spell=="leap"})
+	c._magic.terrain.trigger_landing(t)
 	c._magic.illusions.after_move(t)
 	if falling:
 		LayeredFall.apply(c,t,start.y-t.elevation,t)

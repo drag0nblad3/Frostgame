@@ -37,7 +37,16 @@ func options(f: Figure) -> Array[Dictionary]:
 			if eye.distance_to(target)<=24.0 and LayeredSight.clear(layout,eye,target) and not BattleBoundary.blocks_segment(s.board.boundaries,f.pos,at,"sight",f):
 				result.append({"kind":"floor_bridge","target":f.id,"spell":"bridge","surface":id,"label":"Conjured bridge · "+id})
 	for p in s.board.pieces:
-		if p.cast_turn < 0 or not s.board.floor_layout.is_empty():
+		if p.cast_turn<0:
+			continue
+		if not s.board.floor_layout.is_empty():
+			if p.surface_id.is_empty():
+				continue
+			var at:=p.rect.get_center()
+			var edge:=f.pos.clamp(p.rect.position,p.rect.end).lerp(f.pos,0.02)
+			var layout:=s.board.floor_geometry()
+			if LineOfSight.floor_point_visible(s.board,layout,f,Vector3(at.x,p.base_height,at.y)) or LineOfSight.floor_point_visible(s.board,layout,f,Vector3(edge.x,p.base_height+minf(p.kind.height,1.0),edge.y)):
+				result.append({"kind":"terrain","target":f.id,"piece":p,"spell":p.kind.id.trim_prefix("spell_"),"label":p.kind.name+" · "+p.surface_id})
 			continue
 		var center := p.rect.get_center()
 		if f.pos.distance_to(center) <= 24 and (WizardEye.visible(s.board, f, center) or _visible_edge(f, p)):

@@ -41,7 +41,7 @@ func _compute_open(n: Vector3i) -> bool:
 		return false
 	var at := layout.world(n)
 	var point:=layout.point(n)
-	if board!=null and (board.over_void(point,Figure.BASE_RADIUS) or BattleBoundary.blocks_position(board.boundaries,point,mover)):
+	if board!=null and (board.over_void(point,Figure.BASE_RADIUS) or BattleBoundary.blocks_position(board.boundaries,point,mover) or TerrainMagic.ward_blocks(board,mover,point,at.y)):
 		return false
 	for other in others:
 		if MovementContact.blocks(mover,other,others,point,at.y,running,layout.surface_id(n)):
@@ -75,6 +75,9 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if not layout.clearance(start.lerp(finish,0.5),Figure.BASE_RADIUS,1.6):
 			continue
 		var mult := layout.surfaces[n.z].rough
+		if board!=null:
+			var middle:=start.lerp(finish,0.5)
+			mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y))
 		if running or (mover!=null and mover.levitates()):
 			mult=1.0
 		out.append({"to":next,"cost":start.distance_to(finish)*mult})

@@ -28,6 +28,8 @@ static func floor_open(s: GameState,n: Vector3i,mover: Figure=null,radius: float
 	if s.board.over_void(at,radius) or BattleBoundary.blocks_position(s.board.boundaries,at,mover) or BattleBoundary.blocks_end(s.board.boundaries,at):
 		return false
 	var h:=layout.height(n)
+	if TerrainMagic.ward_blocks(s.board,mover,at,h):
+		return false
 	for other in s.figures:
 		if other==mover or other==ignore or not other.in_play() or (mover!=null and other.ring_side!=mover.ring_side) or absf(other.elevation-h)>=0.5:
 			continue

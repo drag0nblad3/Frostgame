@@ -40,7 +40,15 @@ static func floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Vector3,obs
 		return false
 	if apply_darkness and board.darkness and a.distance_to(b)>12.0:
 		return false
-	return LayeredSight.clear(layout,a,b)
+	if not LayeredSight.clear(layout,a,b):
+		return false
+	for p in board.pieces:
+		if p.surface_id.is_empty() or not p.kind.blocks_los:
+			continue
+		var volume:=AABB(Vector3(p.rect.position.x,p.base_height,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
+		if LayeredSight.intersects(a,b,volume):
+			return false
+	return true
 
 
 static func floor_point_visible(board: Board,layout: FloorLayout,f: Figure,at: Vector3,limit: float=24.0) -> bool:

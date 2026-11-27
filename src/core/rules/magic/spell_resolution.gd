@@ -62,7 +62,7 @@ static func _finish_one(sa: SpellActions, health: int) -> bool:
 	if TerrainMagic.SPELLS.has(id):
 		var extended: bool=p.get("effect",{}).get("extended_bridge",false)
 		if not extended or ActiveGear.spend(f,TerrainMagic.EXTENDED):
-			sa.terrain.apply(f,id,p["at"],p["rotated"],int(result["roll"]),extended)
+			sa.terrain.apply(f,id,p["at"],p["rotated"],int(result["roll"]),extended,str(p.get("effect",{}).get("surface_id","")))
 		return true
 	if SummonActions.PLACEMENT.has(id):
 		var effect: Dictionary=p.get("effect",{})

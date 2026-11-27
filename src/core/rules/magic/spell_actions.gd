@@ -123,13 +123,17 @@ func start_at(id: String, at: Vector2, rotated: bool = false,extended: bool=fals
 	return _roll(id,c.state.active_id,at,rotated,-1,{"extended_bridge":true} if extended else {})
 
 
-func start_floor_at(id: String,n: Vector3i) -> bool:
+func start_floor_at(id: String,n: Vector3i,rotated: bool=false) -> bool:
 	if not SpellAvailability.floor_placement_ready(self,id):
 		return false
 	var f:=c.state.active()
 	var layout:=c.state.board.floor_geometry()
 	if id=="teleport":
 		return LayeredMagic.start_teleport(c,n)
+	if TerrainMagic.FLOOR_SPELLS.has(id):
+		if not terrain.can_place_floor(f,id,n,rotated):
+			return false
+		return _roll(id,f.id,layout.point(n),rotated,-1,{"surface_id":layout.surface_id(n)})
 	if not SummonActions.PLACEMENT.has(id) or not summons.can_place_floor(f,id,n):
 		return false
 	return _roll(id,f.id,layout.point(n),false,-1,{"floor_destination":n,"surface_id":layout.surface_id(n)})

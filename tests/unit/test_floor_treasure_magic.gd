@@ -14,6 +14,7 @@ func test_telekinesis_respects_deck_and_retains_surface() -> void:
 	f.actions_left=2
 	var upper:=TreasureToken.new(0,Vector2(7,5))
 	upper.surface_id="roof"
+	upper.central=false
 	var lower:=TreasureToken.new(1,Vector2(7,5))
 	lower.surface_id="street"
 	c.state.treasures.assign([upper,lower])
