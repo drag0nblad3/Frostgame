@@ -148,7 +148,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 		for i in range(route.size()-1,0,-1):
 			if reach.can_reach(route[i]):
 				break
-			if run.can_reach(route[i]) and c.commit_movement("run_boost",route[i]):
+			if run.can_reach(route[i]) and c.commit_movement("run_talisman",route[i]):
 				return true
 	if not safe_route and LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal):
 		return true
@@ -216,7 +216,7 @@ static func _cape(c: GameController,f: Figure) -> bool:
 		if distance>=3.0 and score>value:
 			value=score
 			best=node
-	return best!=null and c.commit_movement("cape",best)
+	return best!=null and c.commit_movement("gear_cape_move",best)
 
 
 static func _safe_path(c: GameController,layout: FloorLayout,path: Array[Vector3i]) -> bool:
