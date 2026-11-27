@@ -10,6 +10,7 @@ signal roster_pressed
 signal campaign_pressed
 signal save_battle_pressed
 signal resume_battle_pressed
+signal resume_expedition_pressed
 signal scenario_selected(id: String)
 signal briefing_pressed
 signal inspect_pressed
@@ -448,6 +449,7 @@ func _menu_action(id: int) -> void:
 		14: title_requested.emit()
 		15: graphics_requested.emit()
 		16: _open_journal()
+		19: resume_expedition_pressed.emit()
 		17:
 			_pace=(_pace+1)%PACE_NAMES.size()
 			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)
