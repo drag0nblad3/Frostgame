@@ -21,3 +21,14 @@ func test_shared_command_glyphs() -> void:
 	check_eq(ActionArt.command("attack_cancel",{}),ActionArt.ICONS["cancel"])
 	check_eq(ActionArt.command("ammo_shot",{}),ActionArt.ICONS["shoot"])
 	check_eq(ActionArt.command("fight_hand",{}),ActionArt.ICONS["fight"])
+
+
+func test_journal_retains_recent_nonempty_entries() -> void:
+	var history: Array[String]=[]
+	BattleJournal.record(history,"")
+	check_eq(history.size(),0)
+	for i in range(BattleJournal.LIMIT+5):
+		BattleJournal.record(history,str(i))
+	check_eq(history.size(),BattleJournal.LIMIT)
+	check_eq(history[0],"5")
+	check_eq(history[-1],str(BattleJournal.LIMIT+4))
