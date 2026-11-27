@@ -32,7 +32,9 @@ static func resume_activation(c: GameController) -> bool:
 		if RedKingBot.prepare(c,f):
 			if c.awaiting_reaction() or c.state.active()!=f:
 				return true
-	if RedKingMind.is_wizard(c.state,f):
+	if RedKingRingworld.active(c.state) and f.side>=0 and RingworldBot.play(c,f):
+		pass
+	elif RedKingMind.is_wizard(c.state,f):
 		RedKingBot.mind(c,f)
 	elif FuryRules.target(c.state, f) != null:
 		FuryRules.play(c, f)

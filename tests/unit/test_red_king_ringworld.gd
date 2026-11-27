@@ -62,3 +62,24 @@ func test_escape_and_finale() -> void:
 	check(b.spell_effects.has("ring_left_behind"))
 	check(not a.out_of_action)
 	check_eq(RedKingRingworld.reinforcements(20)["types"].size(),5)
+
+
+func test_final_key_is_preserved_for_evacuation() -> void:
+	var c := _fixture()
+	var s := c.state
+	var carrier := s.figures[0]
+	var key: Figure=null
+	for f in s.figures:
+		if RedKingRingworld.key_master(f):
+			if key==null:
+				key=f
+			else:
+				f.out_of_action=true
+	carrier.ring_side=key.ring_side
+	carrier.pos=key.pos+Vector2.RIGHT
+	carrier.elevation=key.elevation
+	carrier.actions_left=2
+	s.active_id=carrier.id
+	check(RingworldBot.protected_key(s,carrier,key))
+	check(RingworldBot.play(c,carrier))
+	check(carrier.exited)

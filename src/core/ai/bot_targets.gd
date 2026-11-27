@@ -16,6 +16,8 @@ static func can_harm(f: Figure, t: Figure, weapon: WeaponDef) -> bool:
 static func weakest_contact(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	for e in Contact.enemies_of(s.figures, f):
+		if RingworldBot.protected_key(s,f,e):
+			continue
 		if RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(e):
 			continue
 		var score := float(e.health) / MagicTactics.importance(e) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
@@ -43,7 +45,7 @@ static func best_shot(s: GameState, f: Figure) -> Figure:
 	var best: Figure = null
 	var best_v := 0.0
 	for t in s.figures:
-		if t.side == f.side or Contact.in_combat(s.figures, t) or Shooting.blocked_reason(s.board, s.figures, f, t) != "":
+		if t.side == f.side or RingworldBot.protected_key(s,f,t) or Contact.in_combat(s.figures, t) or Shooting.blocked_reason(s.board, s.figures, f, t) != "":
 			continue
 		var v := shot_value(s, f, f.pos, t)
 		if v > best_v:
@@ -61,7 +63,7 @@ static func shooting_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 		if _touches_enemy(s, f, at):
 			continue
 		for t in s.figures:
-			if t.side == f.side or not t.in_play():
+			if t.side == f.side or not t.in_play() or RingworldBot.protected_key(s,f,t):
 				continue
 			if not Shooting.possible_from(s.board, s.figures, f, at, t):
 				continue
@@ -79,7 +81,7 @@ static func charge_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 	for n: Vector2i in r.nodes():
 		var at := MoveGrid.to_pos(n)
 		for t in s.figures:
-			if t.side == f.side or not t.in_play() or t.ring_side!=f.ring_side or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos) or absf(s.board.height_at(at) - t.elevation) >= 0.5:
+			if t.side == f.side or not t.in_play() or RingworldBot.protected_key(s,f,t) or t.ring_side!=f.ring_side or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos) or absf(s.board.height_at(at) - t.elevation) >= 0.5:
 				continue
 			var score: float = t.health * 10.0 + r.cost[n] + (0.0 if can_harm(f, t, f.melee) else 1000.0)
 			if RedKingTethers.pylon(t) or RedKingRingworld.key_master(t) or RedKingMadMan.is_ryce(t):

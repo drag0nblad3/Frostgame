@@ -4,17 +4,7 @@ extends RefCounted
 
 static func play(c: GameController, f: Figure) -> bool:
 	if RedKingRingworld.active(c.state):
-		if f.treasure_id>=0 and RedKingRingworld.remaining(c.state)>1 and RedKingRingworld.escape(c,f):
-			return true
-		var same_plane := false
-		for key in c.state.figures:
-			if key.in_play() and RedKingRingworld.key_master(key) and key.ring_side==f.ring_side:
-				same_plane=true
-		if not same_plane and RedKingRingworld.switch(c,f):
-			return true
-		# Do not use ordinary table-edge retreat logic here.
-		if f.treasure_id>=0 or same_plane:
-			return false
+		return RingworldBot.play(c,f)
 	if RedKingMind.active(c.state):
 		return _mind_move(c,f)
 	if RedKingMadMan.hunter(f):
@@ -110,10 +100,10 @@ static func _nearest(c: GameController, f: Figure) -> TreasureToken:
 			continue
 		var d := route + (3.0 if token.frozen else 0.0)
 		for ally in c.state.side_figures(f.side):
-			if ally != f and ally.treasure_id < 0 and not ally.def.traits.has("animal") and float(field.get(MovePlanner.node_at(ally.pos), INF)) + 2.0 < route:
+			if ally != f and ally.ring_side==f.ring_side and ally.treasure_id < 0 and not ally.def.traits.has("animal") and float(field.get(MovePlanner.node_at(ally.pos), INF)) + 2.0 < route:
 				d += 2.0
 		for enemy in c.state.figures:
-			if not enemy.in_play() or enemy.side == f.side or enemy.spell_effects.has("plane_walk"):
+			if not enemy.in_play() or enemy.side == f.side or enemy.ring_side!=f.ring_side or enemy.spell_effects.has("plane_walk"):
 				continue
 			if Vector3(enemy.pos.x, enemy.elevation, enemy.pos.y).distance_to(Vector3(token.pos.x, c.state.board.height_at(token.pos), token.pos.y)) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 1.0:
 				d += 4.0 if BotTargets.can_harm(f, enemy, f.melee) else 14.0

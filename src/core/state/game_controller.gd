@@ -53,7 +53,7 @@ func start_game() -> void:
 
 ## Figures the side to play may activate now.
 func activatable() -> Array[Figure]:
-	if state.over or state.pending_initiative or state.scenario_data.has("rk_end_choice") or state.scenario_data.has("rk_priority_choice"):
+	if state.over or awaiting_reaction():
 		var none: Array[Figure] = []
 		return none
 	return state.waiting(state.current_side())

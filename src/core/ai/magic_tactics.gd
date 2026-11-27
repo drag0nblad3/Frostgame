@@ -43,7 +43,7 @@ static func value(c: GameController, f: Figure, t: Figure, id: String) -> float:
 			return 0.0
 		score = (5.0 + t.effective_fight() * 0.8 + t.health * 0.15) * priority
 	elif id in ATTACKS:
-		if ally:
+		if ally or RingworldBot.protected_key(s,f,t):
 			return 0.0
 		if t.def.traits.has("immune_normal") and id in ["bone_dart", "poison_dart"]:
 			return 0.0

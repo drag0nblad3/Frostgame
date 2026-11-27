@@ -54,7 +54,7 @@ static func special_shot(c: GameController,f: Figure,normal: Figure) -> bool:
 	var wraith := false
 	var score := 0.0
 	for t in c.state.figures:
-		if not t.in_play() or t.side==f.side or t.ring_side!=f.ring_side:
+		if not t.in_play() or t.side==f.side or t.ring_side!=f.ring_side or RingworldBot.protected_key(c.state,f,t) or Contact.in_combat(c.state.figures,t):
 			continue
 		var ammo := c.can_shoot(t.id,false,true)
 		var ray := normal==null and c.can_shoot(t.id,true,false)
