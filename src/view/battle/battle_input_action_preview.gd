@@ -48,13 +48,13 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 				s.points.assign(WormRider.points(bi.c))
 			s.hint="Choose a worm summoning token location. On a 1 the rival relocates it."
 		"gear_bottle_imp":
-			s.points.assign(GearActions.bottle_points(bi.c))
+			s.points.assign(BattleEquipmentAction.points(bi.c,"bottle_imp"))
 			s.hint="Place the released uncontrolled imp within 1 inch."
 		"gear_teleport":
-			s.points.assign(GearActions.teleport_points(bi.c))
+			s.points.assign(BattleEquipmentAction.points(bi.c,"ring_teleport"))
 			s.hint = "Choose a destination within 8 inches."
 		"potion_point":
-			s.points.assign(bi.c._potions.points(bi.selected_potion))
+			s.points.assign(BattleEquipmentAction.points(bi.c,"potion_"+bi.selected_potion))
 			s.hint = "Choose the potion destination."
 		"potion_coat":
 			s.hint = "Choose melee weapon or ammunition."
