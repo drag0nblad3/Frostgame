@@ -8,7 +8,7 @@ const TITLES := ["Dislocation","Dark diagonal","Low gravity","Outward spin","Nul
 
 
 static func allowed(s: GameState) -> bool:
-	return s!=null and s.board.floor_layout.is_empty() and s.content_profile.rule("red_king_reality_cracks") and s.scenario_data.get("reality_enabled",false) and (not s.scenario_special.begins_with("red_king_") or s.scenario_special=="red_king_squatter")
+	return s!=null and s.content_profile.rule("red_king_reality_cracks") and s.scenario_data.get("reality_enabled",false) and (not s.scenario_special.begins_with("red_king_") or s.scenario_special=="red_king_squatter")
 
 
 static func id(s: GameState) -> int:

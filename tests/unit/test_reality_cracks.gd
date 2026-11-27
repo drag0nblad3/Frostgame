@@ -191,3 +191,24 @@ func test_last_figure_can_decline_random_exchange() -> void:
 	check(RealityCracks.answer_exchange(c,-1))
 	check_eq(f.pos,before)
 	check(not s.scenario_data.has("rk_end_choice"))
+
+
+func test_all_cracks_dispatch_on_explicit_floors() -> void:
+	for effect in range(1,21):
+		var c:=_fixture()
+		var s:=c.state
+		s.board.pieces.clear()
+		s.board.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"roof","rect":[2,2,10,10],"level":4}],"solids":[[2,3.8,2,10,0.2,10]]}
+		s.board.invalidate_terrain()
+		for f in s.figures:
+			f.surface_id="street"
+			f.elevation=0.0
+		for t in s.treasures:
+			t.surface_id="street"
+		check(RealityCracks.allowed(s))
+		check(RealityCracks.apply(c,effect))
+		check(s.board.floor_geometry().errors.is_empty(),str(effect))
+		var saved:=BattleSnapshot.capture(c)
+		check(not saved.is_empty(),str(effect))
+		var restored:=BattleSnapshot.rebuild(saved,s.creature_db)
+		check(restored!=null,str(effect))
