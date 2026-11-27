@@ -16,6 +16,25 @@ func _run() -> void:
 	if scene._picker==null or scene._picker._list.item_count!=12:
 		_fail("Battle map catalog missing")
 		return
+	# Cycle every catalogue entry, including expansion maps, without changing the save.
+	var picker: SkirmishPicker=scene._picker
+	picker._entries=ScenarioBriefing.all_entries()
+	picker._populate()
+	var started := Time.get_ticks_msec()
+	for i in picker._ids.size():
+		picker._inspect(i)
+		if picker._table._board!=picker._map._board or picker._table.get_child_count()!=0 or picker._boards.size()>4:
+			_fail("Scenario preview constructed a scene or duplicated board data")
+			return
+		var cached: Board=picker._table._board
+		picker._inspect(i)
+		if picker._table._board!=cached:
+			_fail("Repeated selection reloaded its board")
+			return
+		await process_frame
+	print("Scenario catalogue cycle: %d entries, %d ms including frames"%[picker._ids.size(),Time.get_ticks_msec()-started])
+	picker._entries=ScenarioBriefing.available_entries(WarbandSlots.content_profile())
+	picker._populate()
 	var index: int=scene._picker._ids.find("complex_temple")
 	if index<0:
 		_fail("Temple missing from catalogue")
