@@ -13,7 +13,7 @@ static func preview(bi: BattleInput) -> void:
 	bi.floor_points.clear()
 	bi.movement=null
 	if bi.mode in BattleMovePlan.MODES and f!=null:
-		bi.movement=BattleMovementOptions.query(bi.c,bi.mode,bi.reach)
+		bi.movement=BattleSpace.movement(bi.c,bi.mode,bi.reach)
 		if bi.is_layered():
 			for n: Vector3i in bi.movement.cost:
 				bi.floor_points[n]=bi.movement.world(n)
