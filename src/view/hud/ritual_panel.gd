@@ -105,8 +105,8 @@ func _refresh_supply() -> void:
 	var id_text := str(option["id"])
 	var info: Dictionary=JsonFile.read("res://data/spells.json")[id_text]
 	var tn := int(campaign.data["spells"].get(id_text,info["number"]))
-	var unit: Dictionary=campaign.data["units"][int(option["caster"])]
-	_ritual_detail.text=("Scroll Shield: automatic ritual success." if option.get("shield",false) else "TN %d · %s · No Health empowerment; preparation modifiers may apply."%[tn,str(unit["type"]).capitalize()])+"\n\n"+SpellReference.text(id_text)
+	var caster_unit: Dictionary=campaign.data["units"][int(option["caster"])]
+	_ritual_detail.text=("Scroll Shield: automatic ritual success." if option.get("shield",false) else "TN %d · %s · No Health empowerment; preparation modifiers may apply."%[tn,str(caster_unit["type"]).capitalize()])+"\n\n"+SpellReference.text(id_text)
 	_ritual_detail.show()
 	if option.get("shield",false):
 		return
