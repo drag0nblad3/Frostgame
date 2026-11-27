@@ -161,6 +161,8 @@ static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> voi
 			if index>=0:
 				for at in s.points:
 					world.append(TableSpace.to_world(at,bi.floor_layout.surfaces[index].height_at(at)))
+	if s!=null:
+		world.append_array(s.world_points)
 	bi.markers.show_world_points(world,s.color if s!=null else Color(0.28,0.9,0.8),s.radius if s!=null else 0.17)
 	if not selected.is_empty():
 		bi.markers.show_world_points(selected,Color(1.0,0.78,0.15),0.85,true)

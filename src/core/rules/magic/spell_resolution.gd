@@ -126,6 +126,8 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 	if origin is Vector3 and not s.board.floor_layout.is_empty():
 		los=LineOfSight.Result.new()
 		los.clear=LineOfSight.floor_ray(s.board,s.board.floor_geometry(),origin,Vector3(t.pos.x,t.elevation+1.0,t.pos.y),f,false)
+		if los.clear:
+			LineOfSight.floor_cover(s.board,origin-Vector3.UP*1.0,Vector3(t.pos.x,t.elevation,t.pos.y),los)
 	if s.board.floor_layout.is_empty() and not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and from==f.pos and TigerEye.witness(s.board,f,t.pos,float(s.spell_catalog[spell].get("range",24.0)))!=null:
 		los.clear=true
 		los.intervening+=1

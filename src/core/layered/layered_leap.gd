@@ -17,7 +17,7 @@ static func eligible(c: GameController,t: Figure) -> bool:
 		return false
 	if t.spell_effects.has("bones_of_the_earth") or t.spell_effects.has("petrify") or t.surface_id.begins_with("climb:"):
 		return false
-	return f==t or (IllusionRules.visible_to(s.figures,f,t) and LineOfSight.within_centres(s.board,f,t,float(s.spell_catalog["leap"].get("range",24.0))))
+	return f==t or (IllusionRules.visible_to(s.figures,f,t) and LineOfSight.spell_visible(s.board,f,t,float(s.spell_catalog["leap"].get("range",24.0))))
 
 
 static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,grid: LayeredGrid) -> PackedVector3Array:

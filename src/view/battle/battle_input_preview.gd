@@ -75,6 +75,7 @@ static func preview(bi: BattleInput) -> void:
 
 ## What the current mode highlights and the hint shown with it.
 class State:
+	var world_points:=PackedVector3Array()
 	var points: Array[Vector2] = []
 	var color := Color(0.28, 0.9, 0.8)
 	var radius := 0.17

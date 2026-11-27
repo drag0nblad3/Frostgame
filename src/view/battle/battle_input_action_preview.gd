@@ -35,7 +35,10 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 			s.hint="Plan a legal escape move. Confirm to authorize the move and spend the cape."
 		"gear_tiger_point":
 			for option in TigerEye.eye_options(bi.c):
-				s.points.append(option["at"])
+				if bi.is_layered():
+					s.world_points.append(option["world"])
+				else:
+					s.points.append(option["at"])
 			s.hint="Move the Wizard Eye along its supporting surface (up to 4″)."
 		"gear_worm_point":
 			s.points.assign(WormRider.points(bi.c))
@@ -73,7 +76,7 @@ static func actions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> 
 			if option["kind"] == "eye_face":
 				if bi.is_layered():
 					var at: Vector2=option["at"]
-					bi.floor_points[Vector3i.ZERO]=Vector3(at.x,float(option["height"]),at.y)
+					s.world_points.append(Vector3(at.x,float(option["height"]),at.y))
 				else:
 					s.points.append(option["at"])
 			elif option["kind"] == "terrain":

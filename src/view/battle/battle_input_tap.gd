@@ -6,6 +6,18 @@ extends RefCounted
 static func tap(bi: BattleInput, screen: Vector2) -> bool:
 	if bi.is_layered() and (bi.mode in BattleMovePlan.MODES or bi.mode in BattleFloorInput.POINT_MODES or bi.mode=="floor_leap_target"):
 		return BattleFloorInput.tap(bi,screen)
+	if bi.is_layered() and bi.mode=="gear_tiger_point":
+		var best: Variant=null
+		var distance:=28.0
+		for option in TigerEye.eye_options(bi.c):
+			var point: Vector3=option["world"]
+			if bi.camera.is_position_behind(point):
+				continue
+			var d:=bi.camera.unproject_position(point).distance_to(screen)
+			if d<distance:
+				best=option["at"]
+				distance=d
+		return best!=null and TigerEye.move_eye(bi.c,best)
 	if bi.is_layered() and bi.mode=="treasure_spell":
 		var best: TreasureToken
 		var distance:=28.0

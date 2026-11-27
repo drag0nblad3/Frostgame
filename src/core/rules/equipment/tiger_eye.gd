@@ -59,12 +59,19 @@ static func perimeter(rect: Rect2,at: Vector2,normal: Vector2) -> float:
 static func eye_options(c: GameController) -> Array[Dictionary]:
 	var out: Array[Dictionary]=[]
 	var f := c.state.active()
-	if not active(f) or not c.can_act() or Contact.in_combat(c.state.figures,f) or int(f.used_gear.get("rk_tiger_eye_turn",-1))==c.state.turn or not c.state.board.floor_layout.is_empty():
+	if not active(f) or not c.can_act() or Contact.in_combat(c.state.figures,f) or int(f.used_gear.get("rk_tiger_eye_turn",-1))==c.state.turn:
 		return out
 	var eye := WizardEye.marker(c.state.board,f)
 	if eye==null:
 		return out
-	var rect := eye.eye_host.rect.grow(0.15)
+	var rect:=Rect2()
+	if eye.eye_host!=null:
+		rect=eye.eye_host.rect.grow(0.15)
+	elif eye.eye_solid.size()==6:
+		var v:=eye.eye_solid
+		rect=Rect2(v[0],v[2],v[3],v[5]).grow(0.15)
+	else:
+		return out
 	var start := perimeter(rect,eye.rect.get_center(),eye.eye_direction)
 	var length := (rect.size.x+rect.size.y)*2
 	for step in range(-8,9):
@@ -86,7 +93,7 @@ static func eye_options(c: GameController) -> Array[Dictionary]:
 			at=Vector2(rect.position.x,rect.end.y-(pos-rect.size.x*2-rect.size.y))
 			normal=Vector2.LEFT
 		if c.state.board.contains(at) and not ScenarioNull.field_at(c.state.board,at,0.0) and at.distance_to(eye.rect.get_center())>0.1:
-			out.append({"at":at,"direction":normal})
+			out.append({"at":at,"direction":normal,"world":Vector3(at.x,eye.base_height,at.y)})
 	return out
 
 

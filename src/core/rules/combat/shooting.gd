@@ -103,7 +103,9 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 
 
 static func wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
-	if not board.floor_layout.is_empty() or board.reality_sphere or f.ring_side!=t.ring_side or RuleHooks.first("sight", [board, f.pos, t.pos, f]) != null:
+	if not board.floor_layout.is_empty():
+		return floor_wraith_line(board,f,t)
+	if board.reality_sphere or f.ring_side!=t.ring_side or RuleHooks.first("sight", [board, f.pos, t.pos, f]) != null:
 		return null
 	var best: LineOfSight.Result=null
 	for piece in board.pieces:
@@ -115,3 +117,34 @@ static func wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
 		if result.clear and (best==null or target_mod(result)<target_mod(best)):
 			best=result
 	return best
+
+
+static func floor_wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
+	if f.ring_side!=t.ring_side or board.reality_sphere or (board.darkness and Shooting.distance(f,t)>12.0) or BattleBoundary.blocks_segment(board.boundaries,f.pos,t.pos,"sight",f):
+		return null
+	var a:=Vector3(f.pos.x,f.elevation+1.5,f.pos.y)
+	var b:=Vector3(t.pos.x,t.elevation+1.0,t.pos.y)
+	var blocks: Array[AABB]=[]
+	for solid in board.floor_geometry().solids:
+		if LayeredSight.intersects(a,b,solid):
+			blocks.append(solid)
+	for p in board.pieces:
+		if p.surface_id.is_empty() or not p.kind.blocks_los:
+			continue
+		var volume:=AABB(Vector3(p.rect.position.x,p.base_height,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
+		if not blocks.has(volume) and LayeredSight.intersects(a,b,volume):
+			blocks.append(volume)
+	if blocks.size()>1:
+		return null
+	var result:=LineOfSight.Result.new()
+	LineOfSight.floor_cover(board,Vector3(f.pos.x,f.elevation,f.pos.y),Vector3(t.pos.x,t.elevation,t.pos.y),result)
+	if blocks.is_empty():
+		if result.cover==0 and result.intervening==0:
+			return null
+		if result.cover>0:
+			result.cover=0
+		else:
+			result.intervening=maxi(0,result.intervening-1)
+	else:
+		result.intervening+=1
+	return result

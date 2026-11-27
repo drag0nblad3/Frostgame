@@ -53,7 +53,7 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 			t = ShotTarget.randomize(sa.c.dice, s.figures, t)
 			t=CreatureEffects.reflection_target(sa.c,f,t,id)
 			var old_health := t.health
-			sa._shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt", id)
+			sa._shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board,f,t.pos,float(s.spell_catalog[id].get("range",24.0))) if s.board.floor_layout.is_empty() else null, id == "elemental_bolt", id == "elemental_bolt", id)
 			if id == "poison_dart" and t.health < old_health:
 				sa.c.poison(t)
 			return t

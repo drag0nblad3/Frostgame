@@ -14,7 +14,7 @@ func can_target(f: Figure, id: String, token: TreasureToken) -> bool:
 		return false
 	if id=="telekinesis" and not s.board.floor_layout.is_empty():
 		var at:=origin_world(token)
-		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and LineOfSight.floor_point_visible(s.board,s.board.floor_geometry(),f,at,16.0)
+		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and WizardEye.floor_origin(s.board,f,at,16.0,0.02)!=null
 	if id == "telekinesis":
 		return token.on_ground() and not s.museum and (not token.central or token.ever_collected) and Vector2(f.pos.distance_to(token.pos), f.elevation - s.board.height_at(token.pos)).length() <= 16.0 and WizardEye.visible(s.board, f, token.pos)
 	if id == "fools_gold":
@@ -59,13 +59,13 @@ func can_place_floor(f: Figure,id: String,token: TreasureToken,n: Vector3i) -> b
 		return false
 	var a:=origin_world(token)
 	var b:=layout.world(n)
-	if a.distance_to(b)>limit_for(f,id)+0.001 or not LineOfSight.floor_point_visible(s.board,layout,f,b):
+	if a.distance_to(b)>limit_for(f,id)+0.001 or WizardEye.floor_origin(s.board,f,b,24.0,0.02)==null:
 		return false
 	if id=="telekinesis":
 		var steps:=maxi(2,ceili(a.distance_to(b)*4.0))
 		for i in range(1,steps):
 			var at:=a.lerp(b,float(i)/steps)
-			if not LineOfSight.floor_point_visible(s.board,layout,f,at) or not layout.clearance(at,TreasureRules.TOKEN_RADIUS,0.5):
+			if WizardEye.floor_origin(s.board,f,at,24.0,0.02)==null or not layout.clearance(at,TreasureRules.TOKEN_RADIUS,0.5):
 				return false
 	return true
 

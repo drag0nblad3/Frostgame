@@ -170,7 +170,7 @@ static func _floor_declaration_valid(sa: SpellActions,f: Figure,t: Figure,entry:
 	if t!=f:
 		var spec: Dictionary=s.spell_catalog[id]
 		var limit:=1.0 if spec.get("kind","")=="touch" else float(spec.get("range",24.0))
-		return LineOfSight.within_centres(s.board,f,t,limit) and IllusionRules.visible_to(s.figures,f,t) and not ScenarioNull.muted(t)
+		return (LineOfSight.within_centres(s.board,f,t,limit) or (spec.get("kind","") not in ["touch","area_shot"] and LineOfSight.spell_visible(s.board,f,t,limit)) or (spec.get("kind","")!="touch" and TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),limit)!=null)) and IllusionRules.visible_to(s.figures,f,t) and not ScenarioNull.muted(t)
 	return true
 
 
