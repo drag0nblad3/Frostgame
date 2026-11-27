@@ -43,8 +43,8 @@ static func play(c: GameController, f: Figure) -> bool:
 		return false
 	var id: String = chosen["spell"]
 	if c.state.spellbooks.get(f.side, {}).has(id) and int(c.state.spellbooks[f.side][id]) >= 10 and f.next_cast_gear == "":
-		if not GearActions.arm(c, "gear_gloves_casting"):
-			GearActions.arm(c, "gear_wand_light")
+		if not BattleEquipmentAction.execute(c,"arm",{"id":"gear_gloves_casting"}):
+			BattleEquipmentAction.execute(c,"arm",{"id":"gear_wand_light"})
 	var declared := c._magic.start_floor_at(id,chosen["node"]) if chosen.has("node") else (c._magic.start_at(id,chosen["at"]) if chosen.has("at") else BattleAction.execute(c,"cast",chosen["target"],id))
 	if not declared:
 		return false
