@@ -326,10 +326,12 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	if start:
 		controller.start_game()
 	else:
-		for event in controller.history.slice(-8):
-			var line := Explainer.text(state, event)
-			if line != "":
+		for event in controller.history.slice(-BattleJournal.LIMIT):
+			var line := Explainer.text(state,event)
+			if not line.is_empty():
 				hud.add_line(line)
+			var roll := RollSummary.describe(state,event)
+			BattleJournal.record(hud._history,roll)
 	_update_status()
 	_dirty = true
 	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,float(Time.get_ticks_usec()-began)/1000.0])
