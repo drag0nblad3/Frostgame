@@ -35,12 +35,16 @@ static func command_button(value: String,action: Callable,primary: bool=false,fo
 	return b
 
 
-static func stat_card(parent: Node,name: String,value: String) -> void:
+static func section_card(parent: Node,edge: Color=Color("60717b")) -> VBoxContainer:
 	var card := PanelContainer.new()
 	card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	card.add_theme_stylebox_override("panel",BattleTheme.panel(Color("203441"),Color("47616f")))
+	card.add_theme_stylebox_override("panel",BattleTheme.panel(Color("203441"),edge))
 	parent.add_child(card)
-	var col := column(card)
+	return column(card)
+
+
+static func stat_card(parent: Node,name: String,value: String) -> void:
+	var col := section_card(parent,Color("47616f"))
 	col.add_theme_constant_override("separation",0)
 	label(col,name,18,MUTED).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
 	label(col,value,37,GOLD).horizontal_alignment=HORIZONTAL_ALIGNMENT_CENTER
