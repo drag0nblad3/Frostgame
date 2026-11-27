@@ -37,6 +37,15 @@ func _ready() -> void:
 	if profile.enabled.has("red_king") and profile.allows("campaigns","red_king"):
 		_pages.append({"title":"The Red King campaign","text":"Select the book under Rulebook content on Home. Start its ordered storyline in a fresh campaign. The Expedition page shows the next encounter and any departure blockers. Resolve treasure, prepare rituals, recruit and assign gear before leaving. The optional Veil and rescue-linked Mindscape can be skipped. In Act III, regular hiring and the base are unavailable; roll replacements and carry or discard new loot. The chronicle shows chapter progress."})
 		_pages.append({"title":"Red King equipment","text":"Select an item in Equipment to read its implemented effects and available recipients. Artefacts must be studied before equipping; some items require a permanent spell or animal binding. Look for contextual battle actions and preparation options. Equipment in a sealed vault or carried by separated figures cannot be reassigned until reconciliation."})
+	var spells := SpellReference.catalog()
+	for school: String in WarbandAdvice.SCHOOLS:
+		var lines: Array[String]=[]
+		for id: String in spells:
+			var spec: Dictionary=spells[id]
+			if spec["school"]==school and profile.allows("spells",id):
+				lines.append("%s · Base TN %d\n%s"%[spec["name"],spec["number"],SpellReference.describe(id)])
+		if not lines.is_empty():
+			_pages.append({"title":school.capitalize()+" spells","text":"\n\n".join(lines)})
 	for id: String in ScenarioBriefing.available_entries(profile):
 		_pages.append({"title":ScenarioBriefing.title(id),"text":ScenarioBriefing.description(id)})
 	for page in _pages:

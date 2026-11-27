@@ -56,6 +56,7 @@ var _roll_panel: PanelContainer
 var _roll_label: Label
 var _roll_timer: Timer
 var _spell_catalog: Dictionary
+var _spellbook: BattleSpellbook
 
 
 func _ready() -> void:
@@ -347,3 +348,11 @@ func _fit_actions() -> void:
 			visible_count+=1
 	var rows := maxi(1,ceili(float(visible_count)/maxf(1.0,floorf(bounds.size.x/150.0))))
 	_action_scroll.custom_minimum_size.y=minf(float(rows)*54.0,bounds.size.y*0.26)
+
+
+func open_spellbook(state: GameState,options: Array[String]) -> void:
+	if _spellbook==null:
+		_spellbook=BattleSpellbook.new()
+		add_child(_spellbook)
+		_spellbook.chosen.connect(func(key: String) -> void: action_pressed.emit(key))
+	_spellbook.open(state,options)

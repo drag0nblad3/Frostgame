@@ -30,3 +30,16 @@ func test_storm_and_petrification() -> void:
 	c._magic.on_end_activation(target)
 	check_eq(target.action_limit(), 2)
 	check_eq(target.effective_fight(), 0)
+
+
+func test_spell_reference_covers_every_spell() -> void:
+	var catalog := SpellReference.catalog()
+	for id: String in catalog:
+		var details := SpellReference.entry(id)
+		check(not str(details.get("effect","")).is_empty())
+		check(not str(details.get("target","")).is_empty())
+		check(not str(details.get("duration","")).is_empty())
+		check(SpellReference.chance(id,int(catalog[id]["number"]),-2)<=SpellReference.chance(id,int(catalog[id]["number"]),0))
+	check_eq(SpellReference.chance("heal",8,0),65)
+	check_eq(SpellReference.chance("heal",8,-2),55)
+	check_eq(SpellReference.chance("summon_demon",1,0),95)

@@ -91,11 +91,11 @@ func _describe() -> void:
 	var tn := draft.casting_number(candidate)
 	WorkshopUI.label(_detail,str(info["name"]),32,WorkshopUI.GOLD)
 	WorkshopUI.label(_detail,"%s · Casting number %d"%[str(info["school"]).capitalize(),tn],24)
-	WorkshopUI.label(_detail,"WIZARD %d%%   /   APPRENTICE %d%%"%[clampi(21-tn,0,20)*5,clampi(19-tn,0,20)*5],25,Color("a7d6da"))
-	WorkshopUI.label(_detail,ActionArt.spell_details(info,tn),22)
-	WorkshopUI.label(_detail,WarbandAdvice.EFFECTS.get(candidate,WarbandAdvice.KINDS.get(str(info["kind"]),"Check targeting instructions in battle.")),23)
+	WorkshopUI.label(_detail,"UNMODIFIED CAST: WIZARD %d%% / APPRENTICE %d%%"%[SpellReference.chance(candidate,tn,0),SpellReference.chance(candidate,tn,-2)],25,Color("a7d6da"))
+	WorkshopUI.label(_detail,"Base TN %d · School adjustment %+d"%[info["number"],tn-int(info["number"])],21,WorkshopUI.MUTED)
+	SpellReference.populate(_detail,candidate,info)
 	if Rituals.BEFORE.has(candidate) or Rituals.AFTER.has(candidate):
-		WorkshopUI.label(_detail,"Campaign ritual · "+("before battle" if Rituals.BEFORE.has(candidate) else "after battle"),20,WorkshopUI.MUTED)
+		WorkshopUI.label(_detail,("Campaign only · " if info["kind"]=="ritual" else "Also available in campaign · ")+("before battle" if Rituals.BEFORE.has(candidate) else "after battle"),21,WorkshopUI.GOLD)
 	elif info["kind"]=="unimplemented":
 		WorkshopUI.label(_detail,"Not available in digital combat yet.",20,Color("edaa91"))
 	var conflict := _conflict(candidate)

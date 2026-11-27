@@ -390,6 +390,8 @@ func _on_action(key: String) -> void:
 	if _human_turn() and player.idle() and not _dirty:
 		if player_input.action(key):
 			_lock_after_action()
+		elif key=="cast" and player_input.mode=="spell_menu":
+			hud.open_spellbook(controller.state,player_input.cast_options)
 
 
 func _on_tap(at: Vector2) -> void:

@@ -9,6 +9,7 @@ var shears: OptionButton
 var bottle: CheckButton
 var shield_roll: Button
 var callback: Callable
+var _description: Label
 var dice := Dice.new(0)
 
 
@@ -27,6 +28,7 @@ func setup(p: CampaignProgress, changed: Callable) -> void:
 			callback.call())
 	choices = OptionButton.new()
 	add_child(choices)
+	_description=WorkshopUI.label(self,"",23,WorkshopUI.PAPER)
 	enchant_supply=CheckButton.new()
 	enchant_supply.custom_minimum_size.y=44
 	enchant_supply.hide()
@@ -96,8 +98,19 @@ func _refresh_supply() -> void:
 	enchant_supply.hide()
 	enchant_supply.set_pressed_no_signal(false)
 	if choices.item_count==0:
+		_description.text="No eligible rituals in this campaign phase."
 		return
 	var option: Dictionary=choices.get_selected_metadata()
+	var spell_id := str(option["id"])
+	var spec: Dictionary=SpellReference.catalog().get(spell_id,{})
+	var tn := int(campaign.data["spells"].get(spell_id,spec.get("number",0)))
+	_description.text=("%s · TN %d · No Health empowerment\n"%[spec.get("name",spell_id),tn])+SpellReference.describe(spell_id)
+	if option.get("shield",false):
+		_description.text+="\nScroll Shield: automatically resolves this ritual."
+	elif campaign.data["units"][int(option["caster"])]["type"]=="apprentice":
+		_description.text+="\nApprentice: −2 to casting; base and equipment bonuses may apply."
+	else:
+		_description.text+="\nBase and equipment bonuses may apply."
 	if option.get("shield",false):
 		return
 	var db := FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.from_campaign(campaign.data))
