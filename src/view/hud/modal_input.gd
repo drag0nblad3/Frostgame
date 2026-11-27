@@ -51,6 +51,9 @@ static func close_top(root: Node) -> bool:
 		popup.hide()
 		return true
 	if window!=null:
+		if window.has_method("navigate_back"):
+			window.call("navigate_back")
+			return true
 		# Same cancellation path as X; never emit confirmed or commit edits.
 		window.close_requested.emit()
 		if is_instance_valid(window) and not window.is_queued_for_deletion():

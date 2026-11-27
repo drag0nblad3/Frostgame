@@ -95,10 +95,18 @@ jobs:
       - name: Capture compact phone warband editor
         run: |
           set -o pipefail
-          for tab in spells recruits; do
+          for tab in spells recruits wizard full-roster; do
             timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/interface_capture.gd -- "previews/phone-$tab.png" "$tab" 2>&1 | tee "$tab.log"
             ! grep -E "SCRIPT ERROR|Parse Error" "$tab.log"
             test -s "previews/phone-$tab.png"
+          done
+      - name: Capture portrait workshop
+        run: |
+          set -o pipefail
+          for tab in roster wizard spells recruits; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 720x1560 -s tools/interface_capture.gd -- "previews/portrait-$tab.png" "$tab" 2>&1 | tee "portrait-$tab.log"
+            ! grep -E "SCRIPT ERROR|Parse Error" "portrait-$tab.log"
+            test -s "previews/portrait-$tab.png"
           done
       - uses: actions/upload-artifact@v4
         if: always()
