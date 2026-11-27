@@ -73,8 +73,11 @@ func build(board: Board) -> void:
 		_city_key=city_key
 		_city_next=4
 		_city_board=null
-		if cinematic or not is_inside_tree() or RealmScenery.special(scenario) or scenario in ["underground_library","training_yard"]:
-			_scenery=CityScenery.build(board,scenario,cinematic)
+		_scenery=CityScenery.load_baked(board,scenario,cinematic)
+		if _scenery!=null:
+			print("Map load: using pre-baked city ",scenario)
+		elif cinematic or not is_inside_tree() or RealmScenery.special(scenario) or scenario in ["underground_library","training_yard"]:
+			_scenery=CityScenery.build_procedural(board,scenario,cinematic)
 		else:
 			_scenery=Node3D.new()
 			_scenery.name="CityScenery"

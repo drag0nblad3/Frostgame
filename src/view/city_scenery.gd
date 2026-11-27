@@ -4,7 +4,20 @@ extends RefCounted
 ## Foreground districts are hidden only during low-angle outside camera views.
 
 
+static func baked_path(board: Board,scenario: String,cinematic: bool=false) -> String:
+	return BakedVisuals.DIR+"city/%s_%s_%d_%s.scn"%[scenario,str(board.size).sha256_text().substr(0,12),GraphicsQuality.mode(),"title" if cinematic else "battle"]
+
+
+static func load_baked(board: Board,scenario: String,cinematic: bool=false) -> Node3D:
+	return BakedVisuals.load_scene(baked_path(board,scenario,cinematic))
+
+
 static func build(board: Board, scenario: String, cinematic: bool = false) -> Node3D:
+	var baked := load_baked(board,scenario,cinematic)
+	return baked if baked!=null else build_procedural(board,scenario,cinematic)
+
+
+static func build_procedural(board: Board, scenario: String, cinematic: bool = false) -> Node3D:
 	var root := Node3D.new()
 	root.name = "CityScenery"
 	if scenario in ["underground_library", "training_yard"]:
