@@ -92,11 +92,9 @@ func _describe() -> void:
 	WorkshopUI.label(_detail,str(info["name"]),32,WorkshopUI.GOLD)
 	WorkshopUI.label(_detail,"%s · Casting number %d"%[str(info["school"]).capitalize(),tn],24)
 	WorkshopUI.label(_detail,"WIZARD %d%%   /   APPRENTICE %d%%"%[clampi(21-tn,0,20)*5,clampi(19-tn,0,20)*5],25,Color("a7d6da"))
-	WorkshopUI.label(_detail,ActionArt.spell_details(info,tn),22)
-	WorkshopUI.label(_detail,WarbandAdvice.EFFECTS.get(candidate,WarbandAdvice.KINDS.get(str(info["kind"]),"Check targeting instructions in battle.")),23)
-	if Rituals.BEFORE.has(candidate) or Rituals.AFTER.has(candidate):
-		WorkshopUI.label(_detail,"Campaign ritual · "+("before battle" if Rituals.BEFORE.has(candidate) else "after battle"),20,WorkshopUI.MUTED)
-	elif info["kind"]=="unimplemented":
+	WorkshopUI.label(_detail,"Base TN %d + school adjustment %d"%[info["number"],tn-int(info["number"])],22,WorkshopUI.MUTED)
+	SpellReference.append_details(_detail,candidate)
+	if info["kind"]=="unimplemented":
 		WorkshopUI.label(_detail,"Not available in digital combat yet.",20,Color("edaa91"))
 	var conflict := _conflict(candidate)
 	if conflict:

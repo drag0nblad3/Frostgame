@@ -56,6 +56,7 @@ var _roll_panel: PanelContainer
 var _roll_label: Label
 var _roll_timer: Timer
 var _spell_catalog: Dictionary
+var _casting_book: BattleSpellbook
 
 
 func _ready() -> void:
@@ -242,6 +243,15 @@ func set_auto(on: bool) -> void:
 	_auto.set_pressed_no_signal(on)
 
 
+func open_spellbook(caster: String,entries: Array[Dictionary]) -> void:
+	if _casting_book==null:
+		_casting_book=BattleSpellbook.new()
+		add_child(_casting_book)
+		_casting_book.chosen.connect(func(key: String) -> void: action_pressed.emit(key))
+		_casting_book.cancelled.connect(func() -> void: action_pressed.emit("spell_cancel"))
+	_casting_book.open(caster,entries)
+
+
 func set_actions(available: Array[String], mode: String, hint: String) -> void:
 	_hint.text = hint
 	_context_tip.text = FieldGuide.tip(mode)
@@ -251,6 +261,8 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 		b.disabled = not available.has(key)
 		b.visible = available.has(key)
 		b.set_pressed_no_signal(key == mode and b.toggle_mode)
+		if key.begins_with("spell_") and _spell_catalog.has(key.trim_prefix("spell_")):
+			b.tooltip_text=SpellReference.text(key.trim_prefix("spell_"))
 	_action_scroll.scroll_vertical=0
 	call_deferred("_fit_actions")
 
