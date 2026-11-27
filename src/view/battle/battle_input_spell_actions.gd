@@ -102,17 +102,16 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 				bi.hud.open_spellbook(f.label(),SpellReference.battle_entries(bi.c.state,f,bi.cast_options))
 			return false
 		"spell_cancel":
-			bi.c._magic.shatter.first.clear()
+			BattleSpellAction.execute(bi.c,"cancel_declaration")
 			bi.mode = ""
 			bi.refresh()
 			return false
 		"vampire_donor","vampire_plus","vampire_minus":
 			var cast := bi.mode=="empower"
-			var p := bi.c.state.pending_cast if cast else bi.c.state.pending_resistance
 			if key=="vampire_donor":
-				VampireStaff.cycle(bi.c,p,cast)
+				BattleSpellAction.execute(bi.c,"vampire_donor",{"cast":cast})
 			else:
-				VampireStaff.adjust(bi.c,p,cast,1 if key=="vampire_plus" else -1)
+				BattleSpellAction.execute(bi.c,"vampire_adjust",{"cast":cast,"delta":1 if key=="vampire_plus" else -1})
 			if cast:
 				bi.empower=mini(bi.empower,bi.c.cast_max_empowerment())
 				bi._empower_buttons()
