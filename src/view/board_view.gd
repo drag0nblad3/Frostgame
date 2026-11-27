@@ -80,7 +80,7 @@ func build(board: Board) -> void:
 		_scenery=CityScenery.load_baked(board,scenario,cinematic)
 		if _scenery!=null:
 			print("Map load: using pre-baked city ",scenario)
-		elif cinematic or not is_inside_tree() or RealmScenery.special(scenario) or scenario in ["underground_library","training_yard"]:
+		elif cinematic or not is_inside_tree():
 			_scenery=CityScenery.build_procedural(board,scenario,cinematic)
 		else:
 			_scenery=Node3D.new()
@@ -161,7 +161,7 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 			_floor=StoneFinish.floor_surface(board,scenario)
 		_ground=BakedTerrain.take(baked,"Ground")
 		if _ground==null:
-			_ground=DistrictGround.build(board,_floor.material_override)
+			_ground=DistrictGround.build(board,_floor.material_override,scenario)
 		add_child(_ground)
 		add_child(_floor)
 		_ground_key=ground_key

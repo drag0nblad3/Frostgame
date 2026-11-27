@@ -16,9 +16,14 @@ static func strips(size: Vector2) -> Array[Rect2]:
 	]
 
 
-static func build(board: Board,material: Material) -> Node3D:
+static func build(board: Board,material: Material,scenario: String="") -> Node3D:
 	var root := Node3D.new()
 	root.name="DistrictGround"
+	var exterior:=material as ShaderMaterial
+	if exterior!=null:
+		exterior=exterior.duplicate() as ShaderMaterial
+		exterior.set_shader_parameter("exterior_style",int(ExteriorProfile.get_profile(scenario).get("ground",0)))
+		material=exterior
 	for rect in strips(board.size):
 		var plane := PlaneMesh.new()
 		plane.size=rect.size

@@ -12,6 +12,7 @@ uniform vec2 footprint_origin = vec2(0.0);
 uniform vec2 footprint_size = vec2(36.0);
 uniform bool city_paving = false;
 uniform bool battle_boundary = false;
+uniform int exterior_style = 0;
 uniform bool walkable_roof = false;
 uniform float building_height = 4.0;
 varying vec3 world_pos;
@@ -137,6 +138,42 @@ void fragment() {
 		snow = 0.0;
 	}
 	vec3 surface_color = mix(rock, ice, snow * 0.90);
+	// Exterior material varies by district, blending in only outside the
+	// marked playable rectangle. Interior rules and terrain art are unchanged.
+	if (ground && top && exterior_style != 0) {
+		vec2 outside = max(-horizontal,horizontal-footprint_size);
+		float dist = max(outside.x,outside.y);
+		float blend = smoothstep(0.15,3.1,dist);
+		vec3 scenic = surface_color;
+		float broad = noise2(horizontal*0.32);
+		if (exterior_style == 1) {
+			// Parallel frozen canal with dark banks; purely scenic.
+			float channel = smoothstep(1.8,2.8,dist)*(1.0-smoothstep(6.6,7.3,dist));
+			scenic = mix(surface_color,mix(vec3(0.12,0.25,0.34),vec3(0.36,0.57,0.66),broad),channel*0.96);
+		} else if (exterior_style == 2) {
+			scenic = mix(stone_color.rgb*0.72,ice,broad*snow_amount*0.95);
+		} else if (exterior_style == 3) {
+			float grout = min(abs(fract(horizontal.x*0.42)-0.5),abs(fract(horizontal.y*0.42)-0.5));
+			scenic = stone_color.rgb*(0.78+0.35*broad)*mix(0.60,1.0,smoothstep(0.01,0.045,grout));
+		} else if (exterior_style == 4) {
+			float crack = abs(fract(horizontal.x*0.17+horizontal.y*0.29+broad*0.7)-0.5);
+			scenic = mix(ice,vec3(0.38,0.58,0.70),broad*0.55);
+			scenic *= 1.0-0.48*(1.0-smoothstep(0.012,0.035,crack));
+		} else if (exterior_style == 5) {
+			float seams = smoothstep(0.02,0.06,abs(fract(horizontal.x*1.8)-0.5));
+			scenic = vec3(0.22,0.15,0.11)*(0.75+0.42*broad)*mix(0.54,1.0,seams);
+		} else if (exterior_style == 6) {
+			scenic = mix(stone_color.rgb*0.53,vec3(0.29,0.17,0.14),broad*0.8);
+			scenic += vec3(0.12,0.045,0.012)*smoothstep(0.77,0.92,chips);
+		} else {
+			float vein = 1.0-smoothstep(0.009,0.035,abs(fract(horizontal.x*0.18-horizontal.y*0.23+broad)-0.5));
+			scenic = mix(stone_color.rgb*0.35,stone_color.rgb*1.35,vein*0.65);
+			if (exterior_style == 8) {
+				scenic = mix(scenic,stone_color.rgb*0.12,smoothstep(5.0,23.0,dist)*0.94);
+			}
+		}
+		surface_color = mix(surface_color,scenic,blend);
+	}
 	if (ground && battle_boundary && top) {
 		// The playable extent is marked by a thin inlaid stone band, not a raised frame.
 		vec2 p_edge = min(horizontal, footprint_size-horizontal);

@@ -28,8 +28,7 @@ func _run() -> void:
 			if sample and id!="treasure_skirmish":
 				continue
 			var state := ScenarioLoader.load_id(id,db,terrain)
-			if id not in ["underground_library","training_yard"]:
-				_bake_city(state.board,id,false)
+			_bake_city(state.board,id,false)
 			_bake_terrain(state.board,id)
 			# All standard scenario deployments at Balanced; default roster at
 			# the other settings. This avoids a huge cross-product of identities.
@@ -80,7 +79,7 @@ func _bake_terrain(board: Board,scenario: String) -> void:
 	var floor := StoneFinish.floor_surface(board,scenario)
 	floor.name="Floor"
 	source.add_child(floor)
-	var ground:=DistrictGround.build(board,floor.material_override)
+	var ground:=DistrictGround.build(board,floor.material_override,scenario)
 	ground.name="Ground"
 	source.add_child(ground)
 	for i in board.pieces.size():

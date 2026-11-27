@@ -11,7 +11,7 @@ static func supports(piece: TerrainPiece) -> bool:
 
 
 static func path_for(board: Board,scenario: String) -> String:
-	var signature: Array=[2,board.id,board.size,board.has_ground_profiles,board.void_regions]
+	var signature: Array=[3,board.id,board.size,board.has_ground_profiles,board.void_regions]
 	for p in board.pieces:
 		signature.append([p.kind.id,p.kind.height,p.kind.ground_surface,p.kind.walkable_top,p.rect,p.circular,p.ramp,p.ramp_rotated,p.ramp_start,p.ramp_end,p.level,p.cast_turn])
 	return BakedVisuals.DIR+"terrain/%s_%d_%s.scn"%[scenario,GraphicsQuality.mode(),str(signature).sha256_text()]
