@@ -244,7 +244,8 @@ func _play(e: GameEvent) -> void:
 			_view(d["id"]).visible = false
 	# Don’t let non-animated results flash by in a single process tick.
 	if not _busy and not line.is_empty() and e.type not in ["activate","end_activation","move","layered_move","push_back","force_combat"]:
-		_hold(NOTICE_HOLD if e.type in NOTICES or e.type.begins_with("reality_") else RESULT_HOLD)
+		var next: GameEvent = _queue[0] if not _queue.is_empty() else null
+		_hold(BattlePresentation.hold(e,next,e.type in NOTICES or e.type.begins_with("reality_")))
 
 
 
