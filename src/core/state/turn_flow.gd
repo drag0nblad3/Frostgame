@@ -21,7 +21,9 @@ func start_turn() -> void:
 		_finish(0)
 		return
 	s.turn += 1
-	if s.turn > (18 if RedKingHerded.active(s) else GameState.MAX_TURNS):
+	# The cap is a headless simulation safeguard, not a tabletop rule (p. 71).
+	var limit:=int(s.scenario_data.get("turn_limit",18 if RedKingHerded.active(s) else GameState.MAX_TURNS))
+	if limit>0 and s.turn>limit:
 		if RedKingVeil.active(s):
 			RedKingVeil.finish(_c)
 			_finish(0 if RedKingVeil.xp(_c,0)>0 else 1)

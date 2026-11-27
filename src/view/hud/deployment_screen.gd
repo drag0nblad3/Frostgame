@@ -49,6 +49,8 @@ func open(p: DeploymentPlan) -> void:
 		var label_text: String=DeploymentRules.EDGE_NAMES[e]
 		if DeploymentRules.mode(p.scenario).begins_with("corner"):
 			label_text="Left starting corner" if e==0 else "Right starting corner"
+		if DeploymentRules.mode(p.scenario)=="ring":
+			label_text="Central wizard deployment"
 		_edges.add_item(label_text,e)
 	for i in _edges.item_count:
 		if _edges.get_item_id(i)==p.edge[p.human]:

@@ -65,6 +65,11 @@ func _process(_delta: float) -> bool:
 		return true
 	panel.refresh()
 	scene._begin_campaign_battle()
+	if scene._deployment==null or not scene._deployment.visible:
+		printerr("Campaign deployment confirmation missing")
+		quit(1)
+		return true
+	scene._deployment._confirm()
 	var s: GameState = scene.controller.state
 	var found := false
 	for f in s.figures:

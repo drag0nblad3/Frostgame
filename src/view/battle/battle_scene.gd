@@ -254,6 +254,9 @@ func new_game(seed_value: int,prepared: GameState=null,manual_deploy: bool=false
 		state=ScenarioLoader.from_dict(data,_figures,_terrain)
 	print("Map load: rules state %.1f ms (reused=%s)"%[float(Time.get_ticks_usec()-began)/1000.0,prepared!=null])
 	state.reaction_side = -2 if watch_mode else player_side
+	# Actual expeditions end through their scenario objectives, not the simulation cap.
+	if _training<0:
+		state.scenario_data["turn_limit"]=0
 	var candidate:=GameController.new(state,Dice.new(seed_value))
 	if DeploymentRules.mode(_scenario_id)!="fixed" and state.side_count()==2:
 		var draft:=DeploymentPlan.new(state,_scenario_id,player_side,candidate.dice)

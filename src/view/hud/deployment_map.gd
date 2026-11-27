@@ -38,7 +38,10 @@ func _draw() -> void:
 	var origin:=_origin()
 	draw_rect(Rect2(origin,b.size*k),Color("a5b8c2"))
 	var points: Array=plan.candidates.get(plan.edge[plan.human],[])
+	var chosen:=plan.state.figure(selected)
 	for at: Vector2 in points:
+		if chosen!=null and not plan._formation_ok(chosen,at):
+			continue
 		draw_rect(Rect2(origin+(at-Vector2.ONE*0.25)*k,Vector2.ONE*0.5*k),Color("438da0"))
 	for region in b.void_regions:
 		draw_rect(Rect2(origin+region.position*k,region.size*k),Color("243345"))

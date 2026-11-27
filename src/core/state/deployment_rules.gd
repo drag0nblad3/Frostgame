@@ -13,18 +13,27 @@ static func mode(id: String) -> String:
 		"red_king_back_into_fire","red_king_herded": return "corner6"
 		"red_king_bridge": return "corner4"
 		"red_king_veil": return "veil"
+		"red_king_ringworld": return "ring"
+		"red_king_investigations": return "edge"
 	return "fixed"
 
 
 static func choices(id: String) -> Array[int]:
+	# Preserve the authored well symmetry and the camp's two entrances.
+	if id=="dreams_well":
+		return [1,3]
+	if id=="red_king_investigations":
+		return [0,2]
 	match mode(id):
 		"edge","door": return [0,1,2,3]
 		"corner6","corner4": return [0,1]
-		"veil": return [0]
+		"veil","ring": return [0]
 	return []
 
 
 static func rival(id: String,edge: int) -> int:
+	if mode(id)=="ring":
+		return 0
 	return 1-edge if mode(id).begins_with("corner") else posmod(edge+2,4)
 
 
@@ -40,6 +49,8 @@ static func zone(id: String,size: Vector2,edge: int,at: Vector2) -> bool:
 	if not Rect2(Vector2.ZERO,size).has_point(at):
 		return false
 	var m:=mode(id)
+	if m=="ring":
+		return at.distance_to(size*0.5)<=11.001
 	if m=="door":
 		return at.distance_to(edge_point(size,edge))<=6.001
 	if m.begins_with("corner"):
@@ -75,7 +86,7 @@ static func legal(s: GameState,at: Vector2,draft: Dictionary,id: int) -> Diction
 	if p.is_empty():
 		return {}
 	for f in s.figures:
-		if f.id==id or f.side>=0 or not f.in_play():
+		if f.id==id or f.side>=0 or not f.in_play() or (s.board.ringworld and f.ring_side!=0):
 			continue
 		if absf(f.elevation-float(p["height"]))<0.5 and f.pos.distance_to(at)<Contact.OVERLAP:
 			return {}
@@ -87,7 +98,7 @@ static func legal(s: GameState,at: Vector2,draft: Dictionary,id: int) -> Diction
 		if absf(float(other["height"])-float(p["height"]))<0.5 and other_at.distance_to(at)<Contact.OVERLAP:
 			return {}
 	for token in s.treasures:
-		if not token.on_ground():
+		if not token.on_ground() or (s.board.ringworld and token.ring_side!=0):
 			continue
 		var h:=TreasureRules.token_height(s,token)
 		if not is_nan(h) and absf(h-float(p["height"]))<0.5 and token.pos.distance_to(at)<Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS:
