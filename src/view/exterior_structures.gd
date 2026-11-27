@@ -48,7 +48,7 @@ static func defence(root: Node3D,kind: String,at: Vector3,stone: Color,wood: Col
 				MiniatureFactory.cylinder(root,at+oriented(Vector3(x,5.2,0),side),1.02,1.02,0.28,stone.lightened(0.20))
 
 
-static func dwelling(root: Node3D,kind: String,at: Vector3,stone: Color,wood: Color,trim: Color,side: int,seed: int) -> void:
+static func dwelling(root: Node3D,kind: String,at: Vector3,stone: Color,wood: Color,trim: Color,_side: int,_seed: int) -> void:
 	var w:=4.2 if kind in ["warehouse","market"] else 2.8
 	var d:=2.6
 	var h:=2.4 if kind=="warehouse" else 1.8

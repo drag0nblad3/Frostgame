@@ -9,8 +9,8 @@ static func quay(root: Node3D,kind: String,at: Vector3,stone: Color,trim: Color,
 		# Flat distant bridge span with low parapets.
 		MiniatureFactory.box(root,at+Vector3.UP*0.48,ExteriorStructures.oriented(Vector3(2.2,0.45,5.3),side),stone)
 		for sign_value: float in [-1.0,1.0]:
-			MiniatureFactory.box(root,at+axis*1.08+Vector3.UP*0.90,ExteriorStructures.oriented(Vector3(0.18,0.40,5.3),side),trim)
-			MiniatureFactory.box(root,at+across*2.4+Vector3.UP*0.22,ExteriorStructures.oriented(Vector3(2.45,0.44,0.60),side),stone)
+			MiniatureFactory.box(root,at+axis*sign_value*1.08+Vector3.UP*0.90,ExteriorStructures.oriented(Vector3(0.18,0.40,5.3),side),trim)
+			MiniatureFactory.box(root,at+across*sign_value*2.4+Vector3.UP*0.22,ExteriorStructures.oriented(Vector3(2.45,0.44,0.60),side),stone)
 	else:
 		MiniatureFactory.box(root,at+Vector3.UP*0.31,ExteriorStructures.oriented(Vector3(4.5,0.62,0.95),side),stone)
 		for i in 3:

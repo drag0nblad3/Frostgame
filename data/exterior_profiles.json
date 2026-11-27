@@ -329,6 +329,22 @@
         "gate",
         "tree"
       ]
+    },
+    "far_sides": {
+      "0": [
+        "floating",
+        "memory",
+        "shard"
+      ],
+      "2": [
+        "city",
+        "hall",
+        "tower"
+      ]
+    },
+    "landmark_sides": {
+      "0": "memory",
+      "2": "gate"
     }
   },
   "red_king_back_into_fire": {
@@ -412,6 +428,22 @@
         "wall",
         "tower"
       ]
+    },
+    "far_sides": {
+      "0": [
+        "floating",
+        "shard",
+        "ruin"
+      ],
+      "2": [
+        "wall",
+        "fortress",
+        "tower"
+      ]
+    },
+    "landmark_sides": {
+      "0": "floating",
+      "2": "fortress"
     }
   },
   "red_king_sinkhole": {

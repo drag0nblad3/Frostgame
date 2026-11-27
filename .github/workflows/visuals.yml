@@ -1,7 +1,7 @@
 name: Visual previews
 on:
   pull_request:
-    paths: ['src/view/**', 'data/boards/**', 'data/visual_palettes.json', 'tools/capture.gd', 'tools/miniature_gallery.gd', 'tools/interface_capture.gd', 'assets/**', '.github/workflows/visuals.yml']
+    paths: ['src/view/**', 'data/boards/**', 'data/visual_palettes.json', 'data/exterior_profiles.json', 'tools/capture.gd', 'tools/miniature_gallery.gd', 'tools/interface_capture.gd', 'assets/**', '.github/workflows/visuals.yml']
   workflow_dispatch:
 concurrency:
   group: visual-${{ github.ref }}
@@ -151,3 +151,35 @@ jobs:
         with:
           name: Frostgame-Visual-Previews
           path: previews/
+
+  exterior:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Godot
+        run: |
+          wget -q https://github.com/godotengine/godot/releases/download/4.5.1-stable/Godot_v4.5.1-stable_linux.x86_64.zip
+          unzip -q Godot_v4.5.1-stable_linux.x86_64.zip
+          mv Godot_v4.5.1-stable_linux.x86_64 /usr/local/bin/godot
+      - name: Import
+        run: |
+          set -euo pipefail
+          godot --headless --import 2>&1 | tee import.log
+          ! grep -E 'SCRIPT ERROR|Parse Error' import.log
+      - name: Render exterior-focused scenario comparisons
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: |
+          set -euo pipefail
+          mkdir -p exterior-previews
+          for scenario in mausoleum underground_library worm_hunts red_king_investigations red_king_bridge red_king_herded; do
+            timeout 60s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/capture.gd -- "exterior-previews/$scenario.png" 0 "$scenario" exterior 2>&1 | tee "$scenario.log"
+            ! grep -E 'SCRIPT ERROR|Parse Error|Shader compilation failed|SHADER ERROR|Shader error' "$scenario.log"
+            test -s "exterior-previews/$scenario.png"
+          done
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: Frostgame-Exterior-Comparisons
+          path: exterior-previews/
