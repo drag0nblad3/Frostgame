@@ -147,3 +147,36 @@ func test_tabletop_finish_covers_catalog_and_stays_batched() -> void:
 		# Limit draw calls even for articulated and emissive figures.
 		check(meshes.size()<100)
 		model.free()
+
+
+func test_higher_detail_increases_geometry_without_draw_call_growth() -> void:
+	var defs := db()
+	var f := Figure.new(2,defs.get_def("wizard"),0,Vector2.ZERO,defs.unarmed())
+	var low := MiniatureFactory.create(f,Color.BLUE,"illusionist",0)
+	var high := MiniatureFactory.create(f,Color.BLUE,"illusionist",2)
+	var lv := 0
+	var hv := 0
+	for mesh: MeshInstance3D in low.find_children("*","MeshInstance3D",true,false):
+		for i in mesh.mesh.get_surface_count():
+			lv+=mesh.mesh.surface_get_array_len(i)
+	for mesh: MeshInstance3D in high.find_children("*","MeshInstance3D",true,false):
+		for i in mesh.mesh.get_surface_count():
+			hv+=mesh.mesh.surface_get_array_len(i)
+	check(hv>lv*1.3)
+	check(high.find_children("*","MeshInstance3D",true,false).size()<=low.find_children("*","MeshInstance3D",true,false).size()+4)
+	low.free()
+	high.free()
+
+
+func test_secondary_rigs_move_and_reset() -> void:
+	var defs := db()
+	for id: String in ["wizard","giant_worm","ice_toad"]:
+		var f := Figure.new(3,defs.get_def(id),0,Vector2.ZERO,defs.unarmed())
+		var model := MiniatureFactory.create(f,Color.BLUE,"illusionist",2)
+		var part := "Cape" if id=="wizard" else ("Segment8" if id=="giant_worm" else "Leg1")
+		check(model.has_node(part))
+		MiniatureMotion.travel(model,MiniatureMotion.profile(f),1.3,0.12,true)
+		check((model.get_node(part) as Node3D).rotation.length()>0.01)
+		MiniatureMotion.reset(model)
+		check((model.get_node(part) as Node3D).rotation.is_zero_approx())
+		model.free()

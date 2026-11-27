@@ -21,6 +21,11 @@ var _profile := "walk"
 var _weapon := ""
 var _ranged := ""
 var _running := false
+var _active := false
+var _posing := false
+var _last_move_pos := Vector3.ZERO
+var _idle_phase := 0.0
+var _idle_elapsed := 0.0
 
 
 func setup(f: Figure, _side_name: String) -> void:
@@ -168,12 +173,13 @@ func begin_move(distance: float=0.0) -> void:
 	_running=distance>=4.0
 	_moving = true
 	_stride = 0.0
+	_last_move_pos=position
 	set_process(true)
 
 
 func end_move() -> void:
 	_moving = false
-	set_process(false)
+	set_process(_active and GraphicsQuality.mode()>0)
 	if _model != null:
 		_model.position.y = _model_rest_y
 		_model.rotation.x = 0.0
@@ -183,38 +189,62 @@ func end_move() -> void:
 
 
 func _process(delta: float) -> void:
-	if not _moving or _model == null:
+	if _model==null:
 		return
-	_model.rotation.y=lerp_angle(_model.rotation.y,_facing,1.0-exp(-24.0*delta))
-	_stride += delta * MiniatureMotion.frequency(_profile)*(1.25 if _running else 1.0)
-	MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y,_running)
+	if _moving:
+		_model.rotation.y=lerp_angle(_model.rotation.y,_facing,1.0-exp(-24.0*delta))
+		var distance := position.distance_to(_last_move_pos)
+		_last_move_pos=position
+		_stride+=minf(distance,1.0)*TAU/(1.35 if _running else 0.92)
+		MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y,_running)
+	elif _active and not _posing:
+		_idle_elapsed+=delta
+		if _idle_elapsed<0.05:
+			return
+		_idle_phase+=_idle_elapsed*2.4
+		_idle_elapsed=0.0
+		SecondaryMotion.idle(_model,_profile,_idle_phase,_model_rest_y)
 
 
 func attack_pose(amount: float) -> void:
+	_posing=not is_zero_approx(amount)
 	if _model != null:
 		MiniatureMotion.action(_model,_profile,"attack",amount,_model_rest_y,_weapon)
 
 
 func cast_pose(amount: float) -> void:
+	_posing=not is_zero_approx(amount)
 	if _model != null:
 		MiniatureMotion.action(_model,_profile,"cast",amount,_model_rest_y,_weapon)
 
 
 func shot_pose(amount: float) -> void:
+	_posing=not is_zero_approx(amount)
 	if _model != null:
 		MiniatureMotion.action(_model,_profile,"shot",amount,_model_rest_y,_ranged)
 
 
 func recoil_pose(amount: float) -> void:
+	_posing=not is_zero_approx(amount)
 	if _model != null:
 		MiniatureMotion.action(_model,_profile,"recoil",amount,_model_rest_y,_weapon)
 
 
 func set_active(on: bool) -> void:
 	_ring.visible = on
+	_active=on
+	set_process(_moving or (on and GraphicsQuality.mode()>0))
+	if not on and not _moving and not _posing and _model!=null:
+		MiniatureMotion.reset(_model)
+		_model.position.y=_model_rest_y
+		_model.rotation.x=0.0
+		_model.rotation.z=0.0
 
 
 func take_out() -> void:
+	set_process(false)
+	_active=false
+	_moving=false
 	_plate.visible = false
 	_ring.visible = false
 	_health_fill.hide()

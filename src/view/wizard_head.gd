@@ -36,8 +36,9 @@ static func _face_mesh(root: Node3D,p: Vector3,size: Vector3,color: Color) -> vo
 	var shape := SphereMesh.new()
 	shape.radius=0.5
 	shape.height=1.0
-	shape.radial_segments=12
-	shape.rings=7
+	var quality := MiniatureFactory.detail(root) if size.length()>0.18 else 0
+	shape.radial_segments=[12,20,28][quality]
+	shape.rings=[7,12,16][quality]
 	MiniatureFactory.mesh(root,shape,p,color).scale=size
 
 

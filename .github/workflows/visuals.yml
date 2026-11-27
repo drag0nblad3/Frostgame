@@ -140,6 +140,12 @@ jobs:
           timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1560x720 -s tools/capture.gd -- previews/spell-effects.png 0 treasure_skirmish effects 2>&1 | tee spell-effects.log
           if grep -E "SCRIPT ERROR|Parse Error|Shader compilation failed|SHADER ERROR|Shader error" spell-effects.log; then exit 1; fi
           test -s previews/spell-effects.png
+      - name: Capture articulated miniature poses
+        run: |
+          set -euo pipefail
+          timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1920x1200 -s tools/miniature_gallery.gd -- previews/miniature-motion.png motion 2>&1 | tee motion-gallery.log
+          if grep -E "SCRIPT ERROR|Parse Error|Node not inside tree" motion-gallery.log; then exit 1; fi
+          test -s previews/miniature-motion.png
       - uses: actions/upload-artifact@v4
         if: always()
         with:

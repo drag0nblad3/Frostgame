@@ -111,10 +111,13 @@ static func demon(root: Node3D, id: String) -> void:
 	for x: float in [-0.09, 0.09]:
 		CreatureSculpt.eye(root, Vector3(x, 1.34, -0.225), Color(1.0, 0.54, 0.20))
 		CreatureSculpt.limb(root, Vector3(x * 0.7, 1.19, -0.31), Vector3(x * 0.7, 1.10, -0.33), 0.026, horn, 0.06)
+	var tail_pivot := MiniaturePose.joint(root,root,"Tail",Vector3(0,0.55,0.18))
+	var tail_first := root.get_child_count()
 	var tail := [Vector3(0, 0.55, 0.18), Vector3(0.17, 0.36, 0.42), Vector3(0.43, 0.42, 0.49), Vector3(0.48, 0.69, 0.40)]
 	for i in range(1, tail.size()):
 		CreatureSculpt.limb(root, tail[i - 1], tail[i], 0.08 - i * 0.012, skin, 0.75)
 	CreatureSculpt.limb(root, tail[-1], tail[-1] + Vector3(-0.03, 0.18, -0.04), 0.075, horn, 0.0)
+	MiniaturePose.attach(root,tail_pivot,tail_first)
 	if major:
 		WeaponSculpt.metal(MiniatureFactory.sphere(root, Vector3(0, 0.95, -0.22), Vector3(0.43, 0.48, 0.13), BRONZE.darkened(0.30)))
 		CreatureSculpt.eye(root, Vector3(0, 0.97, -0.30), Color(1.0, 0.42, 0.13))
@@ -143,7 +146,11 @@ static func worm(root: Node3D) -> void:
 	for i in 9:
 		var t := float(i) / 8.0
 		spine.append(Vector3(sin(t * PI) * 0.32, 0.20 + t * 1.57, 0.22 - t * t * 0.57))
+	var segments: Array[Node3D]=[]
 	for i in spine.size():
+		var segment := MiniaturePose.joint(root,root,"Segment%d"%i,spine[i])
+		segments.append(segment)
+		var first := root.get_child_count()
 		var t := float(i) / 8.0
 		var radius := 0.38 - t * 0.105
 		MiniatureFactory.sphere(root, spine[i], Vector3(radius * 2, 0.37, radius * 1.88), hide.lightened(0.18 * t))
@@ -157,6 +164,8 @@ static func worm(root: Node3D) -> void:
 		for k in 4:
 			var angle := TAU*k/4.0+0.3
 			MiniatureFactory.sphere(root,spine[i]+Vector3(cos(angle)*radius*0.86,0.095,sin(angle)*radius*0.83),Vector3.ONE*0.075,hide.darkened(0.15))
+		MiniaturePose.attach(root,segment,first)
+	var mouth_first := root.get_child_count()
 	var mouth := spine[-1] + Vector3(0, 0.04, -0.23)
 	MiniatureFactory.sphere(root, mouth, Vector3(0.47, 0.47, 0.14), SHADOW)
 	var rim := TorusMesh.new()
@@ -168,3 +177,4 @@ static func worm(root: Node3D) -> void:
 		var outer := mouth + Vector3(cos(angle) * 0.21, sin(angle) * 0.21, -0.09)
 		var inner := mouth + Vector3(cos(angle) * 0.12, sin(angle) * 0.12, -0.14)
 		CreatureSculpt.limb(root, outer, inner, 0.038, BONE, 0.0)
+	MiniaturePose.attach(root,segments[-1],mouth_first)

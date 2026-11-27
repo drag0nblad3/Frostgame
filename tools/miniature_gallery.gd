@@ -36,7 +36,10 @@ func _setup() -> void:
 	if invasion_gallery:
 		db=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.new(["red_king"]))
 		ids=["blood_marked_berserker","burning_man","foulhorn","red_king_herald","hrut_warrior","hrut_stinger","hrut_longhammer","hrut_darter","red_king_key_master","mindshrike","nullman","kalamon_ryce","red_king_pylon"]
-	var close_gallery := school_gallery or soldier_gallery or beast_gallery or supernatural_gallery or invasion_gallery
+	var motion_gallery := args.size()>1 and args[1]=="motion"
+	if motion_gallery:
+		ids=["wizard","knight","archer","wolf","ice_toad","giant_worm","wraith","ice_spider","snow_troll","zombie"]
+	var close_gallery := school_gallery or soldier_gallery or beast_gallery or supernatural_gallery or invasion_gallery or motion_gallery
 	for i in ids.size():
 		var def := db.get_def(ids[i])
 		var columns := 5 if close_gallery else 6
@@ -58,6 +61,15 @@ func _setup() -> void:
 		if school_gallery:
 			v._plate.text = str(schools[i]).capitalize() + "\n" + f.def.name
 		v.face_toward(Vector3(6, 0, -12))
+		if motion_gallery:
+			if i==0:
+				v.cast_pose(0.85)
+			elif i==1:
+				v.attack_pose(0.90)
+			elif i==2:
+				v.shot_pose(0.90)
+			else:
+				MiniatureMotion.travel(v._model,v._profile,1.3,v._model_rest_y,true)
 	var base := BoxMesh.new()
 	base.size = Vector3(15, 0.25, 14)
 	MiniatureFactory.mesh(_scene, base, Vector3(7, -0.14, 7), Color(0.58, 0.65, 0.73))

@@ -7,25 +7,31 @@ static func cape(root: Node3D, color: Color, length: float, width: float = 0.35)
 	var surface := SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
 	var points: Array[Vector3] = []
-	const FOLDS := 8
+	var folds: int=[8,14,20][MiniatureFactory.detail(root)]
+	var pivot := MiniaturePose.joint(root,root,"Cape",Vector3(0,1.12,0.12))
+	var first := root.get_child_count()
 	for j in 4:
 		var t := float(j) / 3.0
-		for i in FOLDS + 1:
-			var u := float(i) / float(FOLDS) * 2.0 - 1.0
+		for i in folds + 1:
+			var u := float(i) / float(folds) * 2.0 - 1.0
 			var w := lerpf(0.22, width, t)
 			var y := 1.13 - length * t + 0.025 * sin(i * 2.2) * t
 			var z := 0.16 + 0.17 * t + 0.04 * cos(i * PI) * (0.45 + t) - 0.09 * u * u
 			points.append(Vector3(u * w, y, z))
 	for j in 3:
-		for i in FOLDS:
-			var a := j * (FOLDS + 1) + i
-			var b := a + FOLDS + 1
+		for i in folds:
+			var a := j * (folds + 1) + i
+			var b := a + folds + 1
 			for k: int in [a, b, a + 1, a + 1, b, b + 1]:
 				surface.add_vertex(points[k])
 	surface.generate_normals()
 	var mesh := MiniatureFactory.mesh(root, surface.commit(), Vector3.ZERO, color)
 	var mat: StandardMaterial3D = mesh.material_override
 	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	if MiniatureFactory.detail(root)>0:
+		for i in folds:
+			CreatureSculpt.limb(root,points[3*(folds+1)+i],points[3*(folds+1)+i+1],0.015,color.lightened(0.25),1.0)
+	MiniaturePose.attach(root,pivot,first)
 	# Embroidered clasp and paired shoulders.
 	for x: float in [-0.16, 0.16]:
 		MiniatureFactory.sphere(root, Vector3(x, 1.14, -0.13), Vector3.ONE * 0.10, Color(0.76, 0.59, 0.27))

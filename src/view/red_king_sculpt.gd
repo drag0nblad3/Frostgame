@@ -16,8 +16,11 @@ static func create(root: Node3D,f: Figure) -> bool:
 				MiniatureFactory.sphere(root,Vector3(side*0.31,1.07,0),Vector3(0.34,0.30,0.38),DARK)
 				MiniatureFactory.box(root,Vector3(side*0.18,0.47,-0.12),Vector3(0.22,0.32,0.18),DARK)
 				if id=="hrut_stinger":
+					var wing := MiniaturePose.joint(root,root,"WingR" if side>0 else "WingL",Vector3(side*0.12,1.0,0.16))
+					var wing_first := root.get_child_count()
 					CreatureSculpt.limb(root,Vector3(side*0.12,1.0,0.16),Vector3(side*0.66,1.63,0.24),0.10,RED,0.25)
 					MiniatureFactory.sphere(root,Vector3(side*0.47,1.23,0.25),Vector3(0.5,0.78,0.10),RED.darkened(0.35)).rotation.z=-side*0.63
+					MiniaturePose.attach(root,wing,wing_first)
 			MiniatureFactory.sphere(root,Vector3(0,0.95,-0.20),Vector3(0.48,0.48,0.16),DARK)
 			MiniatureFactory.box(root,Vector3(0,0.94,-0.29),Vector3(0.09,0.30,0.035),BRONZE)
 			MiniatureFactory.sphere(root,Vector3(0,1.37,-0.03),Vector3(0.36,0.31,0.36),DARK)
@@ -27,11 +30,13 @@ static func create(root: Node3D,f: Figure) -> bool:
 				MiniatureFactory.box(root,Vector3(side*0.16,0.74,-0.24),Vector3(0.16,0.21,0.08),BRONZE if id=="hrut_warrior" else DARK)
 				CreatureSculpt.eye(root,Vector3(side*0.09,1.38,-0.20),Color("ffae50"))
 			if id=="hrut_longhammer":
+				var hammer_first := root.get_child_count()
 				# A broad twin-headed hammer rather than a sword with a cap.
 				CreatureSculpt.limb(root,Vector3(0.38,0.68,-0.25),Vector3(0.46,1.58,-0.38),0.055,BRONZE,1.0)
 				MiniatureFactory.box(root,Vector3(0.46,1.58,-0.38),Vector3(0.62,0.26,0.28),DARK)
 				for side: float in [-1.0,1.0]:
 					MiniatureFactory.box(root,Vector3(0.46+side*0.31,1.58,-0.38),Vector3(0.12,0.31,0.32),BRONZE)
+				MiniaturePose.attach(root,MiniaturePose.hand_parent(root.get_node("RightArm") as Node3D),hammer_first)
 			else:
 				MiniatureFactory.weapon(root,f)
 			if id=="hrut_darter":
@@ -95,9 +100,12 @@ static func create(root: Node3D,f: Figure) -> bool:
 			for i in 7:
 				var a := TAU*float(i)/7.0
 				var p := Vector3(cos(a)*0.23,0.97,sin(a)*0.26)
+				var tentacle := MiniaturePose.joint(root,root,"Tendril%d"%i,p)
+				var tendril_first := root.get_child_count()
 				var q := p+Vector3(cos(a)*0.16,-0.39,sin(a)*0.18)
 				CreatureSculpt.limb(root,p,q,0.07,Color("89b8bb"),0.4)
 				CreatureSculpt.limb(root,q,q+Vector3(0.04,-0.24,-0.06),0.045,Color("b3d1cf"),0.0)
+				MiniaturePose.attach(root,tentacle,tendril_first)
 			MiniatureFactory.sphere(root,Vector3(0,1.08,-0.38),Vector3(0.33,0.20,0.10),DARK)
 			for x: float in [-0.18,0.18]:
 				CreatureSculpt.eye(root,Vector3(x,1.20,-0.30),Color("f5d47a"))
