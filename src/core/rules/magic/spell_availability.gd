@@ -50,10 +50,10 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 		if not s.board.floor_layout.is_empty():
 			var direct:=LineOfSight.within_centres(s.board,f,t,limit)
 			var remote:=kind not in ["touch","area_shot"] and LineOfSight.spell_visible(s.board,f,t,limit)
-			if not direct and not remote and (kind=="touch" or TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),limit)==null):
+			if not direct and not remote and (kind=="touch" or TigerEye.floor_witness(s.board,f,BattleSpace.center(t),limit)==null):
 				return false
 		elif kind == "area_shot":
-			if Shooting.distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
+			if BattleSpace.edge_distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
 				return false
 		elif not WizardEye.visible(s.board,f,t.pos,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
 			return false
@@ -141,7 +141,7 @@ static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=
 	var out: Array[Vector3i]=[]
 	var s:=sa.c.state
 	var layout:=s.board.floor_geometry()
-	var origin:=Vector3(t.pos.x,t.elevation,t.pos.y)
+	var origin:=BattleSpace.center(t)
 	var start:=layout.node(t.surface_id,t.pos)
 	if not layout.standable(start):
 		return out
