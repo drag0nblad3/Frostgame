@@ -276,3 +276,6 @@ Settlement previews the actual first survival roll on a copied campaign and clon
 
 ### Shifting ruins choices
 Reality Crack 15 now uses a checkpoint-safe priority queue: each side selects a different terrain piece in reverse priority order, twice. Human players choose highlighted terrain and legal destination; rivals choose legal offsets automatically. Moving terrain carries standing figures, ground treasure on that terrain and attached Wizard Eyes. Whole-inch offsets are a digital touch-interface compromise. Priority does not advance until all legal moves have resolved.
+
+### Layered rival refinement
+Rivals can use the Cape to withdraw from melee on supported floor graphs, boosted runs to progress toward exits when their ordinary reach is shorter, and nine-inch bridge candidates when the Extended Scroll is available. Layered cast resolution now shares ordinary scroll insurance, Fate Stone, power-pool, and Golden Fang selection rather than ignoring those options. The AI does not sacrifice persistent allies for Vampire Staff automatically; this remains a conservative design choice until value and campaign cost are modeled.

@@ -21,7 +21,10 @@ static func try_cast(c: GameController,f: Figure,layout: FloorLayout,long_route:
 		var approach: float=long_route.cost[a]
 		if approach>MoveRules.allowance(f) or a.z!=long_route.start.z:
 			continue
-		for delta: Vector2i in [Vector2i(12,0),Vector2i(-12,0),Vector2i(0,12),Vector2i(0,-12)]:
+		var directions: Array[Vector2i]=[Vector2i(12,0),Vector2i(-12,0),Vector2i(0,12),Vector2i(0,-12)]
+		if ActiveGear.ready(f,TerrainMagic.EXTENDED):
+			directions.append_array([Vector2i(18,0),Vector2i(-18,0),Vector2i(0,18),Vector2i(0,-18)])
+		for delta: Vector2i in directions:
 			for goal in objectives:
 				if goal.z==a.z:
 					continue

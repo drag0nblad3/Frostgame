@@ -33,3 +33,20 @@ func test_bot_prefers_ordinary_move_to_nearby_loot() -> void:
 	check_eq(f.surface_id,"street")
 	check_eq(f.moves_taken,1)
 	check_eq(f.actions_left,1)
+
+
+func test_layered_bot_cape_withdrawal() -> void:
+	var b := make_board([],Vector2(20,12))
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,20,12],"level":0}]}
+	var f := fig("wizard",0,Vector2(5,5))
+	var enemy := fig("thug",1,Vector2(6,5))
+	f.surface_id="street"
+	enemy.surface_id="street"
+	var c := make_game(b,[f,enemy],Dice.new(13))
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.items.append({"gear":GearActions.CAPE})
+	check(Contact.in_combat(c.state.figures,f))
+	check(LayeredBattleBot._cape(c,f))
+	check(not Contact.in_combat(c.state.figures,f))
+	check(f.used_gear.has(GearActions.CAPE))

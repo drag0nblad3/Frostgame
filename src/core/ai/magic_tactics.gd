@@ -20,7 +20,7 @@ static func near_enemy(s: GameState, f: Figure) -> float:
 
 static func probability(c: GameController, f: Figure, id: String) -> float:
 	if not c.state.spellbooks.get(f.side, {}).has(id):
-		return 1.0 if ScrollActions.has_scroll(f, id) else 0.0
+		return 1.0 if ScrollActions.has_scroll(f,id) or not ScrollShield.source(f,id).is_empty() else 0.0
 	var tn := int(c.state.spellbooks[f.side][id])
 	var mod := f.roll_penalty() + WordMagic.modifier(c.state, id) + BaseRules.casting_bonus(f.campaign_base, id) + ActiveGear.casting_bonus(f, id) + RealityCracks.casting_modifier(c.state,id) + RedKingSinkhole.casting_modifier(c.state,f)
 	if f.def.role == "apprentice":
