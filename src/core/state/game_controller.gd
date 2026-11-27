@@ -86,7 +86,7 @@ func layered_reach() -> LayeredReach:
 
 
 func move_on_floor(node: Vector3i) -> bool:
-	return LayeredMovement.move(self,node)
+	return BattleRecord.run(self,"move_on_floor",{"node":node},func() -> bool: return LayeredMovement.move(self,node))
 
 
 func floor_exit_nodes() -> Array[Vector3i]:
@@ -94,7 +94,7 @@ func floor_exit_nodes() -> Array[Vector3i]:
 
 
 func exit_on_floor(node: Vector3i) -> bool:
-	return LayeredLoot.exit(self,node)
+	return BattleRecord.run(self,"exit_on_floor",{"node":node},func() -> bool: return LayeredLoot.exit(self,node))
 
 
 func teleport_on_floor(node: Vector3i) -> bool:
@@ -223,7 +223,11 @@ func can_end_activation() -> bool:
 
 
 func end_activation() -> void:
-	ControllerActivation.end_activation(self)
+	BattleRecord.run(self,"end_activation",{},func() -> bool:
+		if not can_end_activation():
+			return false
+		ControllerActivation.end_activation(self)
+		return true)
 
 
 func _spend(f: Figure) -> void:
@@ -243,11 +247,11 @@ func pick_up(id: int) -> bool:
 
 
 func drop_treasure(at: Vector2) -> bool:
-	return _loot.drop(at)
+	return BattleRecord.run(self,"drop_treasure",{"at":at},func() -> bool: return _loot.drop(at))
 
 
 func exit_table(node: Vector2i) -> bool:
-	return _loot.exit_table(node)
+	return BattleRecord.run(self,"exit_table",{"node":node},func() -> bool: return _loot.exit_table(node))
 
 
 func can_drop_treasure(at: Vector2) -> bool:
@@ -296,7 +300,7 @@ func resolve_push(own_figure: bool,distance: float=1.0) -> bool:
 
 
 func stay_in_combat() -> bool:
-	return ControllerMovement.stay_in_combat(self)
+	return BattleRecord.run(self,"stay_in_combat",{},func() -> bool: return ControllerMovement.stay_in_combat(self))
 
 
 func can_cast(spell: String, target: int,ammo: bool=false) -> bool:
@@ -316,11 +320,11 @@ func cast_max_empowerment() -> int:
 
 
 func answer_initiative(use: bool) -> bool:
-	return _flow.answer_initiative(use)
+	return BattleRecord.run(self,"answer_initiative",{"use":use},func() -> bool: return _flow.answer_initiative(use))
 
 
 func answer_fate_combat(use: bool) -> bool:
-	return _fate_combat.answer(use)
+	return BattleRecord.run(self,"answer_fate_combat",{"use":use},func() -> bool: return _fate_combat.answer(use))
 
 
 func answer_elemental_combat(use: bool) -> bool:
