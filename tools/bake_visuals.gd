@@ -30,6 +30,7 @@ func _run() -> void:
 			var state := ScenarioLoader.load_id(id,db,terrain)
 			if id not in ["underground_library","training_yard"]:
 				_bake_city(state.board,id,false)
+			_bake_terrain(state.board,id)
 			# All standard scenario deployments at Balanced; default roster at
 			# the other settings. This avoids a huge cross-product of identities.
 			if quality==1 or id=="treasure_skirmish":
@@ -39,7 +40,9 @@ func _run() -> void:
 					if sample:
 						break
 		if not sample:
-			_bake_city(BoardLoader.load_id("silent_tower",terrain),"silent_tower",true)
+			var title_board := BoardLoader.load_id("silent_tower",terrain)
+			_bake_city(title_board,"silent_tower",true)
+			_bake_terrain(title_board,"silent_tower")
 			# Neutral creatures also occur as random encounters and summons.
 			for id: String in db.figures:
 				var def := db.get_def(id)
@@ -64,6 +67,48 @@ func _bake_city(board: Board,id: String,cinematic: bool) -> void:
 	var path := CityScenery.baked_path(board,id,cinematic)
 	if not _written.has(path):
 		_save(path,CityScenery.build_procedural(board,id,cinematic))
+
+
+func _bake_terrain(board: Board,scenario: String) -> void:
+	var path := BakedTerrain.path_for(board,scenario)
+	if _written.has(path) or _failure:
+		return
+	var source := Node3D.new()
+	source.name="BakedTerrain"
+	var view := BoardView.new()
+	view.scenario_id=scenario
+	var floor := StoneFinish.floor_surface(board,scenario)
+	floor.name="Floor"
+	source.add_child(floor)
+	for i in board.pieces.size():
+		var piece := board.pieces[i]
+		if not BakedTerrain.supports(piece):
+			continue
+		var node := Node3D.new()
+		node.name="Piece%d"%i
+		view._build_piece(node,board,piece)
+		source.add_child(node)
+	var decoration := EnvironmentDressing.build(board,scenario)
+	decoration.name="Decoration"
+	source.add_child(decoration)
+	view.free()
+	_save(path,source)
+	if not _failure:
+		_verify_terrain(board,scenario)
+
+
+func _verify_terrain(board: Board,scenario: String) -> void:
+	var view := BoardView.new()
+	view.scenario_id=scenario
+	view.build(board)
+	var valid := view._floor.has_meta("baked_visual") and view._decoration.has_meta("baked_visual")
+	for piece in board.pieces:
+		if BakedTerrain.supports(piece):
+			valid=valid and view._pieces[piece]["node"].has_meta("baked_visual")
+	if not valid:
+		printerr("Visual bake terrain runtime fallback unexpected: ",scenario)
+		_failure=true
+	view.free()
 
 
 func _bake_figure(f: Figure,color: Color) -> void:

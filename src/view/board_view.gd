@@ -89,14 +89,19 @@ func build(board: Board) -> void:
 			_city_started=Time.get_ticks_usec()
 		add_child(_scenery)
 	set_process(not cinematic)
-	sync_terrain(board)
+	var baked := BakedVisuals.load_scene(BakedTerrain.path_for(board,scenario))
+	if baked!=null:
+		print("Map load: using pre-baked terrain ",scenario)
+	sync_terrain(board,baked)
+	if baked!=null:
+		baked.free()
 
 
 func scenery_ready() -> bool:
 	return _city_next>=4
 
 
-func sync_terrain(board: Board) -> void:
+func sync_terrain(board: Board,baked: Node3D=null) -> void:
 	if board!=_board:
 		build(board)
 		return
@@ -124,7 +129,9 @@ func sync_terrain(board: Board) -> void:
 	if _floor==null or _ground_key!=ground_key:
 		_remove(_floor)
 		_remove(_ground)
-		_floor=StoneFinish.floor_surface(board,scenario)
+		_floor=BakedTerrain.take(baked,"Floor") as MeshInstance3D
+		if _floor==null:
+			_floor=StoneFinish.floor_surface(board,scenario)
 		_ground=DistrictGround.build(board,_floor.material_override)
 		add_child(_ground)
 		add_child(_floor)
@@ -135,15 +142,21 @@ func sync_terrain(board: Board) -> void:
 			_pieces.erase(piece)
 	for piece in live:
 		if not _pieces.has(piece):
-			var root := Node3D.new()
+			var root: Node3D
+			if baked!=null and BakedTerrain.supports(piece):
+				root=BakedTerrain.take(baked,"Piece%d"%board.pieces.find(piece))
+			if root==null:
+				root=Node3D.new()
+				_build_piece(root,board,piece)
 			root.name="Terrain_"+piece.kind.id
-			_build_piece(root,board,piece)
 			_pieces[piece]={"node":root,"key":live[piece]}
 			add_child(root)
 	var deco_key := str(static_parts)
 	if _decoration==null or _decoration_key!=deco_key:
 		_remove(_decoration)
-		_decoration=EnvironmentDressing.build(board,scenario)
+		_decoration=BakedTerrain.take(baked,"Decoration")
+		if _decoration==null:
+			_decoration=EnvironmentDressing.build(board,scenario)
 		add_child(_decoration)
 		_decoration_key=deco_key
 

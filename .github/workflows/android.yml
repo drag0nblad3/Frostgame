@@ -116,7 +116,22 @@ jobs:
           grep -Fxq 'assets/data/scenarios/underground_library.json' "$RUNNER_TEMP/apk-files.txt"
           grep -Fxq 'assets/data/scenarios/red_king_ringworld.json' "$RUNNER_TEMP/apk-files.txt"
           grep -Eq '^assets/assets/baked/city/.*\.scn$' "$RUNNER_TEMP/apk-files.txt"
-          grep -Eq '^assets/assets/baked/miniatures/.*\.scn$' "$RUNNER_TEMP/apk-files.txt"
+          grep -Eq '^assets/assets/baked/miniatures/.*\.scn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Frostgame-Android
+          path: build/Frostgame.apk
+          if-no-files-found: error
+          retention-days: 30
+ "$RUNNER_TEMP/apk-files.txt"
+          grep -Eq '^assets/assets/baked/terrain/.*\.scn
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Frostgame-Android
+          path: build/Frostgame.apk
+          if-no-files-found: error
+          retention-days: 30
+ "$RUNNER_TEMP/apk-files.txt"
       - uses: actions/upload-artifact@v4
         with:
           name: Frostgame-Android

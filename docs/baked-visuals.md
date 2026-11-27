@@ -18,13 +18,13 @@ after changing visual source or data.
 Coverage: core and enabled expansion scenario outskirts for all three quality
 settings, the cinematic title city, standard deployments at Balanced, default
 skirmish deployment at all settings, and neutral creatures at all settings.
-Indoor/training city generation is skipped. Exact model matching includes
+Indoor/training city generation is skipped. All scenario terrain bundles include the floor, static architecture and ground dressing. Exact geometry matching protects against stale art on modified boards; dynamic pieces always use procedural generation. Exact model matching includes
 identity, equipment, school, side color, armour, traits, and detail level.
 Nonmatching custom models and missing assets use procedural generation.
 The packed scenes preserve independent joint nodes and immutable mesh resources;
 invisibility still applies per-instance material overrides.
 
 These are render resources, not game states. Terrain collision, movement,
-objectives, spells and saves continue to use live board data. On-board terrain
+objectives, spells and saves continue to use live board data. Dynamic terrain, altered boards
 and unusual custom equipment are still generated at runtime. GPU shader
 compilation and mesh uploads can still cause first-use latency.
