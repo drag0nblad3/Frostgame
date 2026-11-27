@@ -16,6 +16,10 @@ var _timer: Timer
 var _recent: Array[String]=[]
 var _frames: Array[Dictionary]=[]
 var _map: ReplayMap
+var _table: ReplayTable
+var _view_mode: Button
+var _rotate: Button
+var _use_3d:=false
 var _map_panel: VBoxContainer
 var _map_label: Label
 var _figure_label: Label
@@ -45,10 +49,21 @@ func _ready() -> void:
 	_floor.custom_minimum_size.y=46
 	_floor.item_selected.connect(_select_surface)
 	_map_panel.add_child(_floor)
+	var view_controls:=HBoxContainer.new()
+	_map_panel.add_child(view_controls)
+	_view_mode=WorkshopUI.button(view_controls,"3D table",_toggle_table)
+	_view_mode.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	_rotate=WorkshopUI.button(view_controls,"Rotate",_rotate_table)
+	_rotate.hide()
 	_map=ReplayMap.new()
 	_map.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_map.size_flags_vertical=Control.SIZE_EXPAND_FILL
 	_map_panel.add_child(_map)
+	_table=ReplayTable.new()
+	_table.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	_table.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_map_panel.add_child(_table)
+	_table.hide()
 	_figure_label=WorkshopUI.label(_map_panel,"Tap a figure for details",18,WorkshopUI.MUTED)
 	_figure_label.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
 	_map.figure_selected.connect(func(value: String) -> void:
@@ -86,6 +101,11 @@ func open(entries: Array[String],timeline: Array[Dictionary]=[],frames: Array[Di
 	_timeline.assign(timeline)
 	_frames.assign(frames)
 	_map_frame={}
+	_use_3d=false
+	_view_mode.text="3D table"
+	_rotate.hide()
+	_table.hide()
+	_map.show()
 	_floor.clear()
 	_cursor=0
 	_replay=false
@@ -163,7 +183,27 @@ func _show_map(event_end: int) -> void:
 
 
 func _select_surface(index: int) -> void:
-	_map.show_frame(_map_frame,str(_floor.get_item_metadata(index)) if index>=0 else "")
+	var surface:=str(_floor.get_item_metadata(index)) if index>=0 else ""
+	var use_table:=_use_3d and not _map_frame.is_empty()
+	_table.visible=use_table
+	_map.visible=not use_table
+	_rotate.visible=use_table
+	_view_mode.disabled=_map_frame.is_empty()
+	if use_table:
+		_figure_label.text="Schematic 3D view · labels show figure ID and Health"
+		_table.show_frame(_map_frame,surface)
+	else:
+		_map.show_frame(_map_frame,surface)
+
+
+func _toggle_table() -> void:
+	_use_3d=not _use_3d
+	_view_mode.text="Tactical map" if _use_3d else "3D table"
+	_select_surface(_floor.selected)
+
+
+func _rotate_table() -> void:
+	_table.rotate_view()
 
 
 func _navigate(direction: int) -> void:
