@@ -5,7 +5,7 @@ extends RefCounted
 
 static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := sa.c.state
-	if not s.board.floor_layout.is_empty() and id in ["blink","transpose","suggestion","leap","push","plane_walk","elemental_ball"]:
+	if not s.board.floor_layout.is_empty() and id in ["suggestion","leap","plane_walk"]:
 		# These effects still require an explicit floor placement/origin.
 		# All other figure-targeted effects use the standard rules below.
 		return false

@@ -111,8 +111,13 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 	if f.ring_side!=t.ring_side or (RedKingTethers.pylon(t) and not magical) or not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
 		return
 	var s := sa.c.state
-	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
-	var los := LineOfSight.check(s.board, from, t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	# The explosion's origin can be an actual point in space, not a
+	# projected x/z point reinterpreted as the uppermost floor.
+	var from: Vector2=WizardEye.origin(s.board,f,t.pos) if origin==null else (Vector2(origin.x,origin.z) if origin is Vector3 else origin)
+	var los:=LineOfSight.check(s.board,from,t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if origin is Vector3 and not s.board.floor_layout.is_empty():
+		los=LineOfSight.Result.new()
+		los.clear=LineOfSight.floor_ray(s.board,s.board.floor_geometry(),origin,Vector3(t.pos.x,t.elevation+1.0,t.pos.y),f,false)
 	if s.board.floor_layout.is_empty() and not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and from==f.pos and TigerEye.witness(s.board,f,t.pos,float(s.spell_catalog[spell].get("range",24.0)))!=null:
 		los.clear=true
 		los.intervening+=1
@@ -133,7 +138,7 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
-	var event := {"id":f.id,"target":t.id,"attack":a,"defence":d,"spell":spell,"origin":from if s.board.floor_layout.is_empty() else null}
+	var event := {"id":f.id,"target":t.id,"attack":a,"defence":d,"spell":spell,"origin":from if s.board.floor_layout.is_empty() else (origin if origin is Vector3 else null)}
 	# Only these spell pipelines can safely suspend without skipping subsequent effects.
 	if elemental and spell in ["elemental_bolt","elemental_ball"] and dmg>0 and t.side==s.reaction_side and ActiveGear.ready(t,RedKingElemental.AMULET):
 		s.scenario_data["rk_spell_absorption"]={"event":event,"damage":dmg}
@@ -164,7 +169,8 @@ static func _continue_ball(sa: SpellActions) -> void:
 		if other==null:
 			continue
 		var recipient := CreatureEffects.reflection_target(sa.c,f,other,"elemental_ball")
-		sa._shot(f,recipient,5,f.pos if recipient==f or other.id==int(queue["center"]) else queue["origin"],true,true,"elemental_ball")
+		var origin: Variant=f.pos if recipient==f or other.id==int(queue["center"]) else (queue["origin"] if s.board.floor_layout.is_empty() else queue.get("origin_world",queue["origin"]))
+		sa._shot(f,recipient,5,origin,true,true,"elemental_ball")
 		if s.scenario_data.has("rk_spell_absorption"):
 			return
 	s.scenario_data.erase("rk_ball_queue")

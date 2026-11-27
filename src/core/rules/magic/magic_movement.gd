@@ -119,6 +119,9 @@ func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,vi
 func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=null) -> void:
 	if direction.is_zero_approx():
 		return
+	if not c.state.board.floor_layout.is_empty():
+		force_floor(t,direction,distance,ivory_caster)
+		return
 	var b := c.state.board
 	var origin := t.pos
 	var last := origin
@@ -155,7 +158,44 @@ func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=n
 		c._hurt(t,3,ivory_caster,false)
 
 
+func force_floor(t: Figure,direction: Vector2,distance: float,ivory_caster: Figure=null) -> void:
+	var route:=FloorDisplacement.trace(c,t,direction,distance)
+	if route.is_empty():
+		return
+	if route["path"].size()>1:
+		move_floor(t,route["node"],false,true,"",route["path"])
+	if route["collision"] and ivory_caster!=null and t.in_play():
+		c.emit("gear_used",{"id":ivory_caster.id,"target":t.id,"gear":"gear_rk_ivory_hand","damage":3})
+		c._hurt(t,3,ivory_caster,false)
+
+
 func swap(a: Figure, b: Figure) -> void:
+	if not c.state.board.floor_layout.is_empty():
+		var layout:=c.state.board.floor_geometry()
+		var n:=layout.node(a.surface_id,a.pos)
+		var m:=layout.node(b.surface_id,b.pos)
+		if not BattlePlacement.floor_open(c.state,m,a,Figure.BASE_RADIUS,1.6,true,b) or not BattlePlacement.floor_open(c.state,n,b,Figure.BASE_RADIUS,1.6,true,a):
+			return
+		# Swap positions before evaluating either figure's arrival effects.
+		var old_a:=Vector3(a.pos.x,a.elevation,a.pos.y)
+		var old_b:=Vector3(b.pos.x,b.elevation,b.pos.y)
+		var surface_a:=a.surface_id
+		var surface_b:=b.surface_id
+		a.pos=layout.point(m)
+		a.elevation=layout.height(m)
+		a.surface_id=surface_b
+		b.pos=layout.point(n)
+		b.elevation=layout.height(n)
+		b.surface_id=surface_a
+		for t in [a,b]:
+			t.spell_effects.erase("bones_of_the_earth")
+		c.emit("layered_move",{"id":a.id,"path":PackedVector3Array([old_a,old_b]),"surfaces":[surface_a,surface_b],"cost":0.0,"teleport":true})
+		c.emit("layered_move",{"id":b.id,"path":PackedVector3Array([old_b,old_a]),"surfaces":[surface_b,surface_a],"cost":0.0,"teleport":true})
+		c._magic.illusions.after_move(a)
+		c._magic.illusions.after_move(b)
+		ScenarioSites.end_move(c,a)
+		ScenarioSites.end_move(c,b)
+		return
 	var pos := a.pos
 	var other := b.pos
 	move(a,other,false,false,false,"transpose")
@@ -207,7 +247,7 @@ func finish_blink(f: Figure,t: Figure,direction: Vector2,extend: bool,reroll: bo
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:
-	return a != b and a.ring_side==b.ring_side and f.ring_side==b.ring_side and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check(c.state.board, f.pos, b.pos).clear
+	return a != b and a.ring_side==b.ring_side and f.ring_side==b.ring_side and b.in_play() and not ScenarioNull.muted(a) and not ScenarioNull.muted(b) and Shooting.distance(a, b) <= 12.0 and Shooting.distance(f, b) <= 24.0 and LineOfSight.check_figures(c.state.board,f,b).clear
 
 
 func transpose(f: Figure, a: Figure, b: Figure, roll: int) -> void:

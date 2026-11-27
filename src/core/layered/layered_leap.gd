@@ -68,13 +68,4 @@ static func apply(c: GameController,t: Figure,effect: Dictionary) -> void:
 	var n: Vector3i = effect["floor_destination"]
 	if not layout.standable(n) or layout.surface_id(n)!=effect["surface_id"]:
 		return
-	var old := t.surface_id
-	t.spell_effects.erase("bones_of_the_earth")
-	t.pos=layout.point(n)
-	t.elevation=layout.height(n)
-	t.surface_id=layout.surface_id(n)
-	t.magic_exhausted=true
-	t.actions_left=0
-	c.emit("layered_move",{"id":t.id,"path":effect["leap_path"],"surfaces":[old,t.surface_id],"cost":0.0,"leap":true})
-	c._magic.illusions.after_move(t)
-	ScenarioSites.end_move(c,t)
+	c._magic.movement.move_floor(t,n,true,false,"leap",effect["leap_path"])

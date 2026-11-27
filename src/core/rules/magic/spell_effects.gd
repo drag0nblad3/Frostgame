@@ -98,7 +98,7 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 			var ids: Array[int]=[]
 			for other in affected:
 				ids.append(other.id)
-			s.scenario_data["rk_ball_queue"]={"caster":f.id,"center":t.id,"origin":t.pos,"targets":ids}
+			s.scenario_data["rk_ball_queue"]={"caster":f.id,"center":t.id,"origin":t.pos,"origin_world":Vector3(t.pos.x,t.elevation+1.0,t.pos.y),"targets":ids}
 			sa._continue_ball()
 		"destroy_undead":
 			var raw := sa.c.dice.d20()
