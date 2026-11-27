@@ -99,3 +99,27 @@ func test_worm_hunts_authored_starting_positions_are_legal() -> void:
 	var s := ScenarioLoader.load_id("worm_hunts",db(),terrain())
 	for f in s.figures:
 		check(s.board.can_stand(f.pos,Figure.BASE_RADIUS),"Illegal starting position: "+f.label())
+
+
+func test_shared_attack_preview_does_not_spend_actions_or_roll() -> void:
+	var c := make_game(make_board(),[fig("wizard",0,Vector2(10,10)),fig("wizard",1,Vector2(11,10))],Dice.new(4242))
+	c.state.creature_db=db()
+	c.start_game()
+	var options := c.activatable()
+	check(not options.is_empty())
+	if options.is_empty():
+		return
+	var actor := options[0]
+	check(c.activate(actor.id))
+	var target := 2 if actor.id==1 else 1
+	var rng := c.dice._rng.state
+	var events := c.history.size()
+	var commands := c.command_history.size()
+	var actions := actor.actions_left
+	var detail := BattleAction.attack_preview(c,"fight",target)
+	check(not detail.is_empty())
+	check_eq(detail.get("cost",-1),1)
+	check_eq(c.dice._rng.state,rng)
+	check_eq(c.history.size(),events)
+	check_eq(c.command_history.size(),commands)
+	check_eq(actor.actions_left,actions)
