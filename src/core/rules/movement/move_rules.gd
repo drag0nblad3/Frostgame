@@ -8,8 +8,8 @@ extends RefCounted
 ## TODO(rules): confirm the half-Move second action and rounding in 2e.
 static func allowance(f: Figure) -> float:
 	var speed := float(f.effective_move())
-	if f.carries_normal_treasure() and not RealityCracks.low_gravity(f):
-		if RedKingVeil.active(RedKingVeil.of(f)) or RedKingHerded.active(RedKingVeil.of(f)) or RedKingBridge.active(RedKingVeil.of(f)):
+	if f.carries_normal_treasure() and not RuleHooks.any("treasure_no_slowdown", [f]):
+		if RuleHooks.any("treasure_light_slowdown", [f]):
 			speed=maxf(1.0,speed-1.0)
 		else:
 			speed *= 0.5

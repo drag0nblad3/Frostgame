@@ -59,18 +59,10 @@ func push(own: bool,distance: float=1.0) -> bool:
 	var other := c.state.figure(c.state.push_loser if own else c.state.push_winner)
 	var from := moving.pos
 	var old_height := moving.elevation
-	if RedKingBridge.active(c.state) and c.state.board.over_void(dest,Figure.BASE_RADIUS):
-		var last := from
-		for i in range(1,5):
-			var at := from.lerp(dest,float(i)/4.0)
-			if RedKingBridge.forced_void(c,moving,at,last):
-				clear()
-				return true
-			last=at
-	if RedKingVeil.touch(c,moving,dest):
+	if RuleHooks.any("forced_move_void", [c, moving, from, dest]) or RuleHooks.any("forced_move_blocked", [c, moving, dest]):
 		clear()
 		return true
-	RedKingFire.portal_contact(c,moving,from,dest,{})
+	RuleHooks.run("forced_contact", [c, moving, from, dest])
 	if not moving.in_play():
 		clear()
 		return true
@@ -97,7 +89,7 @@ func _clear_path(moving: Figure, dest: Vector2,allow_void: bool=false) -> bool:
 		var p := moving.pos.lerp(dest,float(i)/steps)
 		if BattleBoundary.blocks_segment(c.state.board.boundaries,moving.pos,p,"movement",moving) or BattleBoundary.blocks_position(c.state.board.boundaries,p,moving):
 			return false
-		if allow_void and RedKingBridge.active(c.state) and c.state.board.over_void(p,Figure.BASE_RADIUS):
+		if allow_void and RuleHooks.any("forced_path_void", [c, p]):
 			return true
 		if not c.state.board.can_stand(p, Figure.BASE_RADIUS):
 			return false
@@ -130,9 +122,9 @@ func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []
 func force_contact(info: Dictionary) -> void:
 	var guard: Figure = info["guard"]
 	var from := guard.pos
-	if RedKingVeil.touch(c,guard,info["dest"]):
+	if RuleHooks.any("forced_move_blocked", [c, guard, info["dest"]]):
 		return
-	RedKingFire.portal_contact(c,guard,from,info["dest"],{})
+	RuleHooks.run("forced_contact", [c, guard, from, info["dest"]])
 	if not guard.in_play():
 		return
 	guard.pos = info["dest"]

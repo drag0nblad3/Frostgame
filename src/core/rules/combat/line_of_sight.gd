@@ -34,13 +34,9 @@ static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 
 
 static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null) -> Result:
-	var relation := RealityCrackGeometry.cross_relation(board,from,to)
-	if relation!=0:
-		var result := Result.new()
-		result.clear=relation==1
-		return result
-	if board.reality_sphere:
-		return RealityCrackGeometry.wrapped_sight(board,from,to,observer)
+	var special: Variant = RuleHooks.first("sight", [board, from, to, observer])
+	if special != null:
+		return special
 	return plain_check(board,from,to,observer)
 
 

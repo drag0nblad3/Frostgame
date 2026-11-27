@@ -11,13 +11,9 @@ const INTERVENING := 1
 
 ## Range is measured base edge to base edge.
 static func distance(a: Figure, b: Figure) -> float:
-	var s := RedKingVeil.of(a)
-	if s!=null:
-		var relation := RealityCrackGeometry.cross_relation(s.board,a.pos,b.pos)
-		if relation!=0:
-			return 12.0 if relation==1 else INF
-		if s.board.reality_sphere:
-			return maxf(0.0,Vector2(RealityCrackGeometry.sight_distance(s.board,a.pos,b.pos),a.elevation-b.elevation).length()-2.0*Figure.BASE_RADIUS)
+	var special: Variant = RuleHooks.first("range", [a, b])
+	if special != null:
+		return float(special)
 	return maxf(Vector3(a.pos.x, a.elevation, a.pos.y).distance_to(Vector3(b.pos.x, b.elevation, b.pos.y)) - 2.0 * Figure.BASE_RADIUS, 0.0)
 
 
@@ -33,7 +29,7 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "not a target"
 	if ammo and (wraith or not MagicAmmo.ready(shooter)):
 		return "no enchanted ammunition"
-	if RedKingTethers.pylon(target) and not ammo and not WeaponActions.magic_attack(shooter,shooter.ranged):
+	if RuleHooks.any("objective_figure", [target]) and not ammo and not WeaponActions.magic_attack(shooter,shooter.ranged):
 		return "pylon requires magical shooting"
 	if target.side == shooter.side and not Contact.in_combat(figures, target):
 		return "not an enemy"
@@ -88,7 +84,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	var magic_shoot := 0 if null_target else (1 if ammo else MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id))
 	var magic_damage := 0 if null_target or ammo else MagicEquipment.bonus(shooter, "damage", shooter.ranged.id)
 	var magical := not null_target and (ammo or WeaponActions.magic_attack(shooter,shooter.ranged))
-	var st := sr - (2 if RealityCracks.low_gravity(shooter) else 0) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and not ammo and shooter.spell_effects.has("enchant_weapon") else 0) + (3 if HolyLantern.glow(target) else 0), 10) + shooter.roll_penalty()
+	var st := sr + RuleHooks.total("shoot_modifier", [shooter]) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and not ammo and shooter.spell_effects.has("enchant_weapon") else 0) + (3 if HolyLantern.glow(target) else 0), 10) + shooter.roll_penalty()
 	var tt := tr + mini(target.effective_fight() + Melee.secret_hrut_bonus(target,shooter) + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
@@ -99,7 +95,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 		dmg = 0
 	if target.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(shooter,shooter.ranged) and shooter.ranged.id=="genie_bolt":
 		dmg=0
-	if RedKingTethers.pylon(target) and not magical:
+	if RuleHooks.any("objective_figure", [target]) and not magical:
 		dmg=0
 	if target.def.traits.has("missile_resistant") and shooter.ranged.id in ["bow","crossbow","javelin"] and not magical:
 		dmg=mini(dmg,2)
@@ -107,7 +103,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 
 
 static func wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
-	if not board.floor_layout.is_empty() or board.reality_sphere or f.ring_side!=t.ring_side or RealityCrackGeometry.cross_relation(board,f.pos,t.pos)!=0:
+	if not board.floor_layout.is_empty() or board.reality_sphere or f.ring_side!=t.ring_side or RuleHooks.first("sight", [board, f.pos, t.pos, f]) != null:
 		return null
 	var best: LineOfSight.Result=null
 	for piece in board.pieces:
