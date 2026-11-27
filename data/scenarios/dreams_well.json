@@ -24,14 +24,14 @@
           "type": "knight",
           "at": [
             20,
-            4.5
+            3
           ]
         },
         {
           "type": "man_at_arms",
           "at": [
             13,
-            4.5
+            3
           ]
         },
         {
@@ -78,7 +78,7 @@
         {
           "type": "apprentice",
           "at": [
-            21,
+            20,
             33
           ]
         },
@@ -86,21 +86,21 @@
           "type": "barbarian",
           "at": [
             16,
-            31.5
+            33
           ]
         },
         {
           "type": "treasure_hunter",
           "at": [
             23,
-            31.5
+            34
           ]
         },
         {
           "type": "thug",
           "at": [
             19,
-            31.5
+            33.5
           ]
         },
         {
