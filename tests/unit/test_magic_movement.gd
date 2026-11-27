@@ -74,3 +74,20 @@ func test_pulsing_gem_restricted_power_and_glow() -> void:
 	check_eq(f.shooting_defence_penalty(),-1)
 	check_eq(PowerPool.spend(f,1,"blink"),1)
 	check_eq(f.shooting_defence_penalty(),-2)
+
+
+func test_blink_direction_decision() -> void:
+	var c := _game([1,6])
+	var caster := c.state.active()
+	var target := c.state.figure(2)
+	c.state.reaction_side=0
+	caster.items.append({"gear":PowerPool.GEM})
+	var before := target.pos
+	c._magic.movement.blink(caster,target,15)
+	check(c.awaiting_reaction())
+	check_eq(target.pos,before)
+	check(c.state.scenario_data["rk_direction_choice"]["gem"])
+	check(RedKingDirection.answer(c,"gem"))
+	check(not c.awaiting_reaction())
+	check(target.pos!=before)
+	check_eq(caster.shooting_defence_penalty(),-1)

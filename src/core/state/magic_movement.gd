@@ -166,13 +166,19 @@ func blink(f: Figure,t: Figure,roll: int,extend: bool=false,reroll: bool=false) 
 
 func _blink_result(success: bool,f: Figure,t: Figure,extend: bool,reroll: bool) -> void:
 	if not success and t.in_play():
+		if RedKingDirection.offer(c,"blink",t,f,extend):
+			return
 		var direction := RedKingDirection.direction(c)
 		if reroll:
 			direction=RedKingDirection.direction(c)
-		if extend or reroll:
-			f.used_gear["rk_gem_glow"]=int(f.used_gear.get("rk_gem_glow",0))+1
-			c.emit("gear_used",{"id":f.id,"gear":PowerPool.GEM})
-		force(t,direction,6.0 if extend else 4.0)
+		finish_blink(f,t,direction,extend,reroll)
+
+
+func finish_blink(f: Figure,t: Figure,direction: Vector2,extend: bool,reroll: bool) -> void:
+	if extend or reroll:
+		f.used_gear["rk_gem_glow"]=int(f.used_gear.get("rk_gem_glow",0))+1
+		c.emit("gear_used",{"id":f.id,"gear":PowerPool.GEM})
+	force(t,direction,6.0 if extend else 4.0)
 
 
 func can_swap(f: Figure, a: Figure, b: Figure) -> bool:

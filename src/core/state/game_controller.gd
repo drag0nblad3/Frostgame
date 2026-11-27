@@ -583,7 +583,7 @@ func answer_elemental_combat(use: bool) -> bool:
 
 
 func awaiting_reaction() -> bool:
-	if state.scenario_data.has("rk_end_choice") or state.scenario_data.has("rk_priority_choice") or state.scenario_data.has("rk_spell_absorption"):
+	if state.scenario_data.has("rk_end_choice") or state.scenario_data.has("rk_priority_choice") or state.scenario_data.has("rk_spell_absorption") or state.scenario_data.has("rk_direction_choice"):
 		return true
 	if not state.pending_combat.is_empty() or state.pending_initiative or not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
 		return true

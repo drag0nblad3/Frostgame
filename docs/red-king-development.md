@@ -294,3 +294,6 @@ After both Fate Stone opportunities, ordinary fight/shoot resolution now offers 
 
 ### Spell absorption reactions
 Elemental Bolt and Elemental Ball now pause on the actual incoming elemental damage for a human amulet bearer, before applying damage. Ball resolves its target list sequentially, preserving unprocessed targets and continuing after each decision; reflected shots still use the original targeting rules. The pending spell offer and ball queue use figure IDs and plain checkpoint data. Shatterstar retains its existing restriction on checkpointing during a chained cast. Other synchronous elemental sources still use pre-arming.
+
+### Random heading reactions
+Blink and Kalamon Ryce's wandering now support a post-roll heading decision, with a marked direction and a binding reroll. A living human-controlled Teetotum bearer may spend the item; a human Blink caster with a Pulsing Gem may instead reroll through the gem (including its cumulative shooting defence penalty). Declining costs nothing. The remaining Ryce turn, including hunter deployment and crack checks, continues after the choice. Other random movement sources retain the older pre-arm fallback. The displayed heading is not a guarantee that terrain or figures permit the full movement.

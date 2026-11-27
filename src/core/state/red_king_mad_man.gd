@@ -48,7 +48,14 @@ static func end_turn(c: GameController) -> void:
 		return
 	var npc := s.figure(int(s.scenario_data.get("ryce_id",-1)))
 	if npc!=null and npc.in_play():
+		if RedKingDirection.offer(c,"ryce",npc):
+			return
 		wander(c,npc,RedKingDirection.direction(c))
+	after_wander(c)
+
+
+static func after_wander(c: GameController) -> void:
+	var s := c.state
 	if s.turn==2 and not s.scenario_data.get("hunters_deployed",false):
 		deploy_hunters(c)
 		if s.scenario_data.has("rk_end_choice"):

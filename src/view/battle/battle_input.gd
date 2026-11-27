@@ -75,6 +75,16 @@ func refresh() -> void:
 		mode = "initiative_choice"
 		preview()
 		return
+	if c.state.scenario_data.has("rk_direction_choice"):
+		var choice: Dictionary=c.state.scenario_data["rk_direction_choice"]
+		available.assign(["direction_keep"])
+		if int(choice["teetotum"])>=0:
+			available.append("direction_teetotum")
+		if choice["gem"]:
+			available.append("direction_gem")
+		mode="direction_reaction"
+		preview()
+		return
 	if c.state.scenario_data.has("rk_spell_absorption"):
 		available.assign(["elemental_absorb","elemental_pass"])
 		mode="elemental_spell_reaction"
@@ -409,6 +419,16 @@ func preview() -> void:
 				hint+=" • Golden Fang selected: +1 Fight on success."
 			if p.get("scroll", false):
 				hint = "%s: scroll casting result 14. Confirm to resolve." % c.state.spell_catalog[p["id"]]["name"]
+		"direction_reaction":
+			var choice: Dictionary=c.state.scenario_data["rk_direction_choice"]
+			var target := c.state.figure(int(choice["target"]))
+			var direction := RedKingDirection.vector(int(choice["heading"]))
+			var length := 6.0 if choice["kind"]=="ryce" or choice["extend"] else 4.0
+			for step in range(1,int(length)+1):
+				var point := target.pos+direction*float(step)
+				if c.state.board.contains(point):
+					points.append(point)
+			hint="%s: marked random heading. Keep it or use an available item to reroll. The new heading is binding."%target.label()
 		"elemental_spell_reaction":
 			var offer: Dictionary=c.state.scenario_data["rk_spell_absorption"]
 			var target := c.state.figure(int(offer["event"]["target"]))
@@ -610,6 +630,8 @@ func action(key: String) -> bool:
 		return c.break_ice()
 	if key.begins_with("weapon_"):
 		return c.select_melee(key.trim_prefix("weapon_"))
+	if key in ["direction_keep","direction_teetotum","direction_gem"]:
+		return RedKingDirection.answer(c,key.trim_prefix("direction_"))
 	if key in ["elemental_absorb","elemental_pass"]:
 		return c.answer_elemental_combat(key=="elemental_absorb")
 	if key in ["fate_combat_yes", "fate_combat_no"]:
@@ -1047,7 +1069,7 @@ func _empower_buttons() -> void:
 	if not p.get("scroll",false) and not PowerPool.words_only(caster,str(p["id"])):
 		_vampire_buttons(p,true,caster)
 	if p.get("id","")=="blink" and ActiveGear.has(caster,PowerPool.GEM) and not MagicEquipment.suppressed(caster):
-		available.append_array(["gem_extend","gem_reroll"])
+		available.append("gem_extend")
 	if p.get("id","")=="animate_skull" and RedKingMaterials.fang_count(c.state.figure(p["caster"]))>0:
 		available.append("cast_fang")
 	if not p.get("scroll", false) and ActiveGear.ready(c.state.figure(p["caster"]), "gear_fate_stone"):

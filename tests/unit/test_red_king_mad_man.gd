@@ -79,3 +79,17 @@ func test_hunter_player_deployment() -> void:
 			counts[f.side]+=1
 	check_eq(counts,[2,3])
 	check(not restored.state.scenario_data.has("rk_end_choice"))
+
+
+func test_ryce_heading_can_be_kept_without_spending_teetotum() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	s.turn=1
+	s.figures[0].items.append({"gear":RedKingDirection.ITEM})
+	RedKingMadMan.end_turn(c)
+	check_eq(s.scenario_data.get("rk_direction_choice",{}).get("kind",""),"ryce")
+	if s.scenario_data.has("rk_direction_choice"):
+		check(RedKingDirection.answer(c,"keep"))
+	check(ActiveGear.ready(s.figures[0],RedKingDirection.ITEM))
+	check(not s.scenario_data.has("rk_direction_choice"))

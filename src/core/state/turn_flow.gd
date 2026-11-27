@@ -123,7 +123,7 @@ func _settle() -> void:
 			RedKingBridge.end_turn(_c)
 			RedKingRingworld.end_turn(_c)
 			RealityCracks.on_end_turn(_c)
-			if s.scenario_data.has("rk_end_choice"):
+			if s.scenario_data.has("rk_end_choice") or s.scenario_data.has("rk_direction_choice"):
 				return
 			resume_end_turn()
 			return
@@ -148,7 +148,7 @@ func _settle() -> void:
 ## A pending end-of-turn choice pauses before the remaining end-turn hooks.
 func resume_end_turn() -> void:
 	var s := _c.state
-	if s.over or s.scenario_data.has("rk_end_choice"):
+	if s.over or s.scenario_data.has("rk_end_choice") or s.scenario_data.has("rk_direction_choice"):
 		return
 	if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
 		return
