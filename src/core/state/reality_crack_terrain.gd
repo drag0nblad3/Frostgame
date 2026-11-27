@@ -122,52 +122,97 @@ static func hoof(c: GameController,initial: bool) -> void:
 
 static func shift_ruins(c: GameController) -> void:
 	var s := c.state
-	var moved: Array[TerrainPiece]=[]
 	var order := s.order.duplicate()
 	order.reverse()
 	if order.is_empty():
 		for side in s.side_count():
 			order.append(side)
-	for round in 2:
-		for side in order:
-			var choices: Array[TerrainPiece]=[]
-			for p in s.board.pieces:
-				if not p.kind.ground_surface and not p.kind.id.begins_with("spell_") and not moved.has(p):
-					choices.append(p)
-			if choices.is_empty():
-				return
-			var start := c.dice.pick(choices.size())
-			for i in choices.size():
-				var p := choices[(start+i)%choices.size()]
-				var offset := _legal_offset(c,p)
-				if offset.is_zero_approx():
-					continue
-				_translate(c,p,offset)
-				moved.append(p)
-				break
+	order.append_array(order.duplicate())
+	s.scenario_data["rk_ruins_queue"]={"sides":order,"moved":[]}
+	_continue_shift(c)
 
 
-static func _legal_offset(c: GameController,p: TerrainPiece) -> Vector2:
+static func _continue_shift(c: GameController) -> void:
 	var s := c.state
-	for attempt in 30:
-		var offset := RealityCracks.direction(c)*float(c.dice.pick(10)+1)
-		var target := Rect2(p.rect.position+offset,p.rect.size)
-		if not s.board.contains(target.position) or not s.board.contains(target.end):
-			continue
-		var clear := true
-		for other in s.board.pieces:
-			if other!=p and not other.kind.ground_surface and target.intersects(other.rect):
-				clear=false
-				break
-		if not clear:
-			continue
-		for f in s.figures:
-			if f.in_play() and not p.rect.has_point(f.pos) and target.grow(Figure.BASE_RADIUS).has_point(f.pos):
-				clear=false
-				break
-		if clear:
-			return offset
-	return Vector2.ZERO
+	var queue: Dictionary=s.scenario_data["rk_ruins_queue"]
+	while not queue["sides"].is_empty():
+		var side: int=queue["sides"].pop_front()
+		var choices: Array[int]=[]
+		for i in s.board.pieces.size():
+			var p := s.board.pieces[i]
+			if p.kind.ground_surface or p.kind.id.begins_with("spell_") or queue["moved"].has(i):
+				continue
+			if not _offsets(c,p,true).is_empty():
+				choices.append(i)
+		if choices.is_empty():
+			break
+		if side==s.reaction_side:
+			s.scenario_data["rk_priority_choice"]={"kind":"ruins","options":choices}
+			c.emit("reality_ruins_choice",{})
+			return
+		var start := c.dice.pick(choices.size())
+		var index := choices[start]
+		var p := s.board.pieces[index]
+		var offsets := _offsets(c,p)
+		var offset: Vector2=offsets[c.dice.pick(offsets.size())]
+		_translate(c,p,offset)
+		queue["moved"].append(index)
+	s.scenario_data.erase("rk_ruins_queue")
+	RealityCracks.clear(c)
+
+
+static func shift_points(c: GameController,index: int) -> Array[Vector2]:
+	var out: Array[Vector2]=[]
+	if not c.state.scenario_data.get("rk_priority_choice",{}).get("options",[]).has(index):
+		return out
+	var piece := c.state.board.pieces[index]
+	for offset in _offsets(c,piece):
+		out.append(piece.rect.get_center()+offset)
+	return out
+
+
+static func answer_shift(c: GameController,index: int,at: Vector2) -> bool:
+	var s := c.state
+	if not shift_points(c,index).has(at):
+		return false
+	var p := s.board.pieces[index]
+	var queue: Dictionary=s.scenario_data["rk_ruins_queue"]
+	queue["moved"].append(index)
+	s.scenario_data.erase("rk_priority_choice")
+	_translate(c,p,at-p.rect.get_center())
+	_continue_shift(c)
+	if not s.scenario_data.has("rk_priority_choice"):
+		c._flow.resume_priority()
+	return true
+
+
+## Whole-inch destinations keep the mobile marker layer small. Fractional
+## original positions are preserved instead of snapping the terrain itself.
+static func _offsets(c: GameController,p: TerrainPiece,first: bool=false) -> Array[Vector2]:
+	var out: Array[Vector2]=[]
+	for x in range(-10,11):
+		for y in range(-10,11):
+			var offset := Vector2(x,y)
+			if offset.is_zero_approx() or offset.length_squared()>100.001 or not _valid_offset(c,p,offset):
+				continue
+			out.append(offset)
+			if first:
+				return out
+	return out
+
+
+static func _valid_offset(c: GameController,p: TerrainPiece,offset: Vector2) -> bool:
+	var s := c.state
+	var target := Rect2(p.rect.position+offset,p.rect.size)
+	if not s.board.contains(target.position) or not s.board.contains(target.end):
+		return false
+	for other in s.board.pieces:
+		if other!=p and other.eye_host!=p and not other.kind.ground_surface and target.intersects(other.rect):
+			return false
+	for f in s.figures:
+		if f.in_play() and not (p.contains(f.pos) and f.elevation>=p.kind.height-0.01) and target.grow(Figure.BASE_RADIUS).has_point(f.pos):
+			return false
+	return true
 
 
 static func _translate(c: GameController,p: TerrainPiece,offset: Vector2) -> void:

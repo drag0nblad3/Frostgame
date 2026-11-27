@@ -96,7 +96,6 @@ static func apply(c: GameController,effect: int) -> bool:
 			clear(c)
 		15:
 			RealityCrackTerrain.shift_ruins(c)
-			clear(c)
 		16:
 			RealityCrackTerrain.hoof(c,true)
 		17,18,20:

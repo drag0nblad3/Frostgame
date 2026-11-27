@@ -88,3 +88,35 @@ func test_secret_exchange_player_selection() -> void:
 	check(RealityCracks.answer_exchange(c,id))
 	check_eq(s.figure(id).pos,previous)
 	check(not s.scenario_data.has("rk_end_choice"))
+
+
+func test_shifting_ruins_player_choices() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	s.order.assign([0,1])
+	check(RealityCracks.apply(c,15))
+	var choice: Dictionary=s.scenario_data.get("rk_priority_choice",{})
+	check_eq(choice.get("kind",""),"ruins")
+	if choice.is_empty():
+		return
+	var first := int(choice["options"][0])
+	var points := RealityCrackTerrain.shift_points(c,first)
+	check(not points.is_empty())
+	if points.is_empty():
+		return
+	check(not RealityCrackTerrain.answer_shift(c,first,Vector2(-1,-1)))
+	var saved := BattleSnapshot.capture(c)
+	var restored := BattleSnapshot.rebuild(saved,s.creature_db)
+	check(restored!=null)
+	if restored==null:
+		return
+	check(RealityCrackTerrain.answer_shift(restored,first,points[0]))
+	check_eq(restored.state.board.pieces[first].rect.get_center(),points[0])
+	var next: Dictionary=restored.state.scenario_data.get("rk_priority_choice",{})
+	if not next.is_empty():
+		check(not next["options"].has(first))
+		var second := int(next["options"][0])
+		var destinations := RealityCrackTerrain.shift_points(restored,second)
+		check(RealityCrackTerrain.answer_shift(restored,second,destinations[0]))
+	check(not restored.state.scenario_data.has("rk_priority_choice"))

@@ -88,6 +88,13 @@ func _roll_initiative(use: bool) -> void:
 	_c.emit("turn_start", {"turn": s.turn, "order": s.order, "rolls": ini["rolls"]})
 	RedKingHill.priority(_c,ini["rolls"])
 	RealityCracks.on_priority(_c,ini["rolls"])
+	resume_priority()
+
+
+func resume_priority() -> void:
+	var s := _c.state
+	if s.scenario_data.has("rk_priority_choice") or s.over:
+		return
 	_c.emit("phase", {"phase": s.phase})
 	_settle()
 

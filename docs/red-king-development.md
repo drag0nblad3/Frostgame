@@ -273,3 +273,6 @@ Veil of Unreality now offers the wizard player's choice to redirect the rival's 
 
 ### Explicit Mindscape survival choice
 Settlement previews the actual first survival roll on a copied campaign and cloned RNG, including preceding casualty rolls. The human player may decline the optional reroll or reveal the second roll and choose either result; the dialog explains the adjusted outcome including Death Mask, Ring of Destiny and accessible sarcophagus. The actual settlement replays the chosen rolls and persists only on confirmation. Headless tests retain the automatic fallback. Secret of the Hrut can also be spent after the ordered storyline has returned to free-form encounters.
+
+### Shifting ruins choices
+Reality Crack 15 now uses a checkpoint-safe priority queue: each side selects a different terrain piece in reverse priority order, twice. Human players choose highlighted terrain and legal destination; rivals choose legal offsets automatically. Moving terrain carries standing figures, ground treasure on that terrain and attached Wizard Eyes. Whole-inch offsets are a digital touch-interface compromise. Priority does not advance until all legal moves have resolved.

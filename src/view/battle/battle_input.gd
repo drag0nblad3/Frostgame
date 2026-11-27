@@ -47,6 +47,10 @@ func refresh() -> void:
 	item_options.clear()
 	reach = null
 	var f := c.state.active()
+	if c.state.scenario_data.has("rk_priority_choice"):
+		mode="ruins_piece"
+		preview()
+		return
 	var end_choice: Dictionary=c.state.scenario_data.get("rk_end_choice",{})
 	if end_choice.get("kind","")=="memory":
 		available.assign(["mind_skip"])
@@ -398,6 +402,14 @@ func preview() -> void:
 			points.append(roller.pos)
 			radius = 0.65
 			hint = "%s rolled %d. Opposed totals: %d vs %d. Use Fate Stone? New roll is binding." % [roller.label(), p["roll"], p["own_total"], p["opposing_total"]]
+		"ruins_piece":
+			for index: int in c.state.scenario_data["rk_priority_choice"]["options"]:
+				points.append(c.state.board.pieces[index].rect.get_center())
+			radius=0.8
+			hint="Shifting ruins: choose a highlighted terrain piece. Each piece can move only once."
+		"ruins_destination":
+			points.assign(RealityCrackTerrain.shift_points(c,spell_first))
+			hint="Choose a legal new centre for the selected terrain (up to 10″). Figures and treasure on it move too."
 		"mind_token":
 			for token in c.state.treasures:
 				if token.on_ground():
@@ -524,6 +536,11 @@ func preview() -> void:
 
 func action(key: String) -> bool:
 	if not available.has(key):
+		return false
+	if key=="ruins_back":
+		mode="ruins_piece"
+		available.clear()
+		preview()
 		return false
 	if key=="veil_keep":
 		return RedKingVeil.answer_target(c,int(c.state.scenario_data["rk_end_choice"]["target"]))
@@ -875,6 +892,22 @@ func tap(screen: Vector2) -> bool:
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode=="ruins_piece":
+		for index: int in c.state.scenario_data["rk_priority_choice"]["options"]:
+			if c.state.board.pieces[index].rect.has_point(at):
+				spell_first=index
+				mode="ruins_destination"
+				available.assign(["ruins_back"])
+				preview()
+				return false
+	if mode=="ruins_destination":
+		var best := Vector2(INF,INF)
+		var distance := 0.65
+		for candidate in RealityCrackTerrain.shift_points(c,spell_first):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RealityCrackTerrain.answer_shift(c,spell_first,best)
 	if mode=="mind_token":
 		for token in tokens:
 			if at.distance_to(token.pos)<=0.9:
