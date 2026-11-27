@@ -8,11 +8,9 @@ const LEATHER := Color("594335")
 
 static func body(root: Node3D,plate: bool,heavy: bool,dye: Color) -> void:
 	if plate:
-		var breast := MiniatureFactory.sphere(root,Vector3(0,0.98,-0.14),Vector3(0.48,0.44,0.20),STEEL)
-		WeaponSculpt.metal(breast)
+		ArmourShapes.cuirass(root,STEEL,heavy)
 		for i in 3:
-			var platelet := MiniatureFactory.box(root,Vector3(0,0.85-i*0.047,-0.23),Vector3(0.40-i*0.025,0.062,0.07),STEEL.darkened(i*0.07))
-			WeaponSculpt.metal(platelet)
+			ArmourShapes.lame(root,0.85-i*0.047,0.40-i*0.025,STEEL.darkened(i*0.07))
 	else:
 		# Offset rows of overlapping mail links, visible around the surcoat.
 		for row in 5:

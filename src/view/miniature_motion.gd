@@ -151,6 +151,12 @@ static func action(root: Node3D,kind: String,act: String,amount: float,rest: flo
 			root.rotation.x=-0.05*t
 			MiniaturePose.arms(root,-0.46*t if weapon=="crossbow" else -0.25*t,-0.86*t)
 			MiniaturePose.bend_arms(root,-0.66*t if weapon=="bow" else -0.48*t,-0.20*t)
+		"guard":
+			root.rotation.x=0.075*t
+			MiniaturePose.arms(root,-0.40*t,-0.66*t)
+			MiniaturePose.bend_arms(root,-0.40*t,-0.36*t)
+			SecondaryMotion.arm_spread(root,0.16*t,-0.13*t)
+			MiniaturePose.legs(root,[-0.08*t,0.14*t])
 		"recoil":
 			root.rotation.x=0.25*t
 			root.rotation.z=-0.07*t

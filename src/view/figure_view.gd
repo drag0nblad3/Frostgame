@@ -195,7 +195,7 @@ func _process(delta: float) -> void:
 		_model.rotation.y=lerp_angle(_model.rotation.y,_facing,1.0-exp(-24.0*delta))
 		var distance := position.distance_to(_last_move_pos)
 		_last_move_pos=position
-		_stride+=minf(distance,1.0)*TAU/(1.35 if _running else 0.92)
+		_stride+=minf(distance,1.5)*TAU/(2.0 if _running else 1.60)
 		MiniatureMotion.travel(_model,_profile,_stride,_model_rest_y,_running)
 	elif _active and not _posing:
 		_idle_elapsed+=delta
@@ -222,6 +222,12 @@ func shot_pose(amount: float) -> void:
 	_posing=not is_zero_approx(amount)
 	if _model != null:
 		MiniatureMotion.action(_model,_profile,"shot",amount,_model_rest_y,_ranged)
+
+
+func guard_pose(amount: float) -> void:
+	_posing=not is_zero_approx(amount)
+	if _model!=null:
+		MiniatureMotion.action(_model,_profile,"guard",amount,_model_rest_y,_weapon)
 
 
 func recoil_pose(amount: float) -> void:
