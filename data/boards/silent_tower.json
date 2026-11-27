@@ -13,7 +13,9 @@
         8,
         3,
         4
-      ]
+      ],
+      "id": "architecture:0",
+      "surface": "street"
     },
     {
       "kind": "ruin",
@@ -22,7 +24,9 @@
         24,
         3,
         4
-      ]
+      ],
+      "id": "architecture:1",
+      "surface": "street"
     },
     {
       "kind": "wall",
@@ -31,7 +35,9 @@
         25,
         5,
         0.5
-      ]
+      ],
+      "id": "architecture:2",
+      "surface": "street"
     },
     {
       "kind": "wall",
@@ -40,7 +46,9 @@
         9,
         5,
         0.5
-      ]
+      ],
+      "id": "architecture:3",
+      "surface": "street"
     },
     {
       "kind": "rubble",
@@ -49,16 +57,9 @@
         14,
         2,
         3
-      ]
-    },
-    {
-      "kind": "rubble",
-      "rect": [
-        26,
-        19,
-        2,
-        3
-      ]
+      ],
+      "id": "architecture:4",
+      "surface": "street"
     },
     {
       "kind": "platform",
@@ -67,7 +68,9 @@
         20,
         3,
         3
-      ]
+      ],
+      "id": "architecture:5",
+      "surface": "street"
     },
     {
       "kind": "platform",
@@ -76,70 +79,625 @@
         13,
         3,
         3
-      ]
+      ],
+      "id": "architecture:6",
+      "surface": "street"
     },
     {
-      "kind": "null_annex",
+      "kind": "rubble",
       "rect": [
-        9,
-        16,
-        4,
-        4
-      ]
-    },
-    {
-      "kind": "null_annex",
-      "rect": [
-        23,
-        16,
-        4,
-        4
-      ]
-    },
-    {
-      "kind": "null_walk",
-      "rect": [
-        13,
-        17,
-        3,
-        2
-      ]
-    },
-    {
-      "kind": "null_walk",
-      "rect": [
-        20,
-        17,
-        3,
-        2
-      ]
-    },
-    {
-      "kind": "null_lower",
-      "rect": [
-        15,
-        15,
-        6,
-        6
-      ]
-    },
-    {
-      "kind": "null_middle",
-      "rect": [
-        16,
-        16,
-        4,
-        4
-      ]
-    },
-    {
-      "kind": "null_upper",
-      "rect": [
-        17,
-        17,
+        26,
+        24,
         2,
         2
-      ]
+      ],
+      "surface": "street"
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        4,
+        12,
+        4,
+        0.5
+      ],
+      "surface": "street"
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        28,
+        17,
+        4,
+        0.5
+      ],
+      "surface": "street"
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        5,
+        28,
+        3,
+        2
+      ],
+      "surface": "street"
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        29,
+        6,
+        3,
+        2
+      ],
+      "surface": "street"
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        14,
+        7.5,
+        4,
+        0.5
+      ],
+      "surface": "street"
+    },
+    {
+      "kind": "wall",
+      "rect": [
+        18,
+        28,
+        4,
+        0.5
+      ],
+      "surface": "street"
     }
-  ]
+  ],
+  "floor_layout": {
+    "surfaces": [
+      {
+        "id": "street",
+        "rect": [
+          0,
+          0,
+          36,
+          36
+        ],
+        "level": 0
+      },
+      {
+        "id": "west_annex",
+        "rect": [
+          6,
+          14,
+          5,
+          8
+        ],
+        "level": 3
+      },
+      {
+        "id": "east_annex",
+        "rect": [
+          25,
+          14,
+          5,
+          8
+        ],
+        "level": 6
+      },
+      {
+        "id": "west_walk",
+        "rect": [
+          10,
+          16,
+          5,
+          3
+        ],
+        "level": 3
+      },
+      {
+        "id": "east_walk",
+        "rect": [
+          21,
+          18,
+          5,
+          3
+        ],
+        "level": 6
+      },
+      {
+        "id": "tower_first",
+        "rect": [
+          14,
+          14,
+          8,
+          8
+        ],
+        "level": 3
+      },
+      {
+        "id": "tower_second",
+        "rect": [
+          14,
+          14,
+          8,
+          8
+        ],
+        "level": 6
+      },
+      {
+        "id": "tower_roof",
+        "rect": [
+          14,
+          14,
+          8,
+          8
+        ],
+        "level": 10
+      },
+      {
+        "id": "stair_lower",
+        "rect": [
+          14,
+          10,
+          4,
+          3
+        ],
+        "level": 0,
+        "end_level": 3,
+        "axis": "x"
+      },
+      {
+        "id": "stair_mid",
+        "rect": [
+          18,
+          10,
+          4,
+          3
+        ],
+        "level": 3,
+        "end_level": 6,
+        "axis": "x"
+      },
+      {
+        "id": "stair_upper",
+        "rect": [
+          18,
+          23,
+          4,
+          3
+        ],
+        "level": 6,
+        "end_level": 10,
+        "axis": "x"
+      },
+      {
+        "id": "stair_first_landing",
+        "rect": [
+          17,
+          12,
+          2,
+          3
+        ],
+        "level": 3
+      },
+      {
+        "id": "stair_second_landing",
+        "rect": [
+          20,
+          12,
+          3,
+          3
+        ],
+        "level": 6
+      },
+      {
+        "id": "stair_north_landing",
+        "rect": [
+          17,
+          21,
+          2,
+          3
+        ],
+        "level": 6
+      },
+      {
+        "id": "stair_roof_landing",
+        "rect": [
+          21,
+          22,
+          2,
+          2.5
+        ],
+        "level": 10
+      }
+    ],
+    "solids": [
+      [
+        14,
+        2.6,
+        14,
+        8,
+        0.4,
+        8
+      ],
+      [
+        14,
+        5.6,
+        14,
+        8,
+        0.4,
+        8
+      ],
+      [
+        14,
+        9.6,
+        14,
+        8,
+        0.4,
+        8
+      ],
+      [
+        6,
+        2.6,
+        14,
+        5,
+        0.4,
+        8
+      ],
+      [
+        25,
+        5.6,
+        14,
+        5,
+        0.4,
+        8
+      ],
+      [
+        11,
+        2.8,
+        16,
+        3,
+        0.2,
+        3
+      ],
+      [
+        22,
+        5.8,
+        18,
+        3,
+        0.2,
+        3
+      ],
+      [
+        14,
+        0,
+        14,
+        0.4,
+        2.6,
+        2
+      ],
+      [
+        14,
+        3,
+        14,
+        0.4,
+        2.6,
+        2
+      ],
+      [
+        21.6,
+        6,
+        14,
+        0.4,
+        3.6,
+        2
+      ]
+    ],
+    "links": [
+      {
+        "from": [
+          "west_annex",
+          10.5,
+          17.5
+        ],
+        "to": [
+          "west_walk",
+          11,
+          17.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "west_walk",
+          14,
+          17.5
+        ],
+        "to": [
+          "tower_first",
+          14.5,
+          17.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "tower_second",
+          21.5,
+          19.5
+        ],
+        "to": [
+          "east_walk",
+          22,
+          19.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "east_walk",
+          25,
+          19.5
+        ],
+        "to": [
+          "east_annex",
+          25.5,
+          19.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "street",
+          13.5,
+          11.5
+        ],
+        "to": [
+          "stair_lower",
+          14.5,
+          11.5
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stair_lower",
+          17.5,
+          11.5
+        ],
+        "to": [
+          "stair_first_landing",
+          18,
+          12.5
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stair_first_landing",
+          18,
+          14
+        ],
+        "to": [
+          "tower_first",
+          18,
+          14.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "stair_first_landing",
+          18,
+          12.5
+        ],
+        "to": [
+          "stair_mid",
+          18.5,
+          11.5
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stair_mid",
+          21.5,
+          11.5
+        ],
+        "to": [
+          "stair_second_landing",
+          22,
+          12.5
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stair_second_landing",
+          20.5,
+          14
+        ],
+        "to": [
+          "tower_second",
+          20.5,
+          14.5
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "tower_second",
+          18,
+          21.5
+        ],
+        "to": [
+          "stair_north_landing",
+          18,
+          22
+        ],
+        "kind": "walk"
+      },
+      {
+        "from": [
+          "stair_north_landing",
+          18,
+          23.5
+        ],
+        "to": [
+          "stair_upper",
+          18.5,
+          24.5
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stair_upper",
+          21.5,
+          24.5
+        ],
+        "to": [
+          "stair_roof_landing",
+          22,
+          23.5
+        ],
+        "kind": "stairs"
+      },
+      {
+        "from": [
+          "stair_roof_landing",
+          22,
+          22.5
+        ],
+        "to": [
+          "tower_roof",
+          21.5,
+          21.5
+        ],
+        "kind": "walk"
+      }
+    ],
+    "climbs": [
+      {
+        "id": "west_annex_ladder",
+        "from": [
+          "street",
+          5.5,
+          18
+        ],
+        "to": [
+          "west_annex",
+          6.5,
+          18
+        ]
+      },
+      {
+        "id": "east_annex_ladder",
+        "from": [
+          "street",
+          30.5,
+          18
+        ],
+        "to": [
+          "east_annex",
+          29.5,
+          18
+        ]
+      },
+      {
+        "id": "tower_south_lower",
+        "from": [
+          "street",
+          18,
+          13.5
+        ],
+        "to": [
+          "tower_first",
+          18,
+          14.5
+        ]
+      },
+      {
+        "id": "tower_south_upper",
+        "from": [
+          "street",
+          19.5,
+          13.5
+        ],
+        "to": [
+          "tower_roof",
+          19.5,
+          14.5
+        ]
+      },
+      {
+        "id": "tower_north_second",
+        "from": [
+          "street",
+          18,
+          22.5
+        ],
+        "to": [
+          "tower_second",
+          18,
+          21.5
+        ]
+      }
+    ],
+    "exit_surfaces": [
+      "street"
+    ],
+    "null_regions": [
+      [
+        14,
+        14,
+        8,
+        8
+      ],
+      [
+        6,
+        14,
+        5,
+        8
+      ],
+      [
+        25,
+        14,
+        5,
+        8
+      ],
+      [
+        10,
+        16,
+        5,
+        3
+      ],
+      [
+        21,
+        18,
+        5,
+        3
+      ],
+      [
+        14,
+        10,
+        9,
+        5
+      ],
+      [
+        17,
+        21,
+        6,
+        5
+      ]
+    ],
+    "tower_region": [
+      14,
+      14,
+      8,
+      8
+    ]
+  }
 }

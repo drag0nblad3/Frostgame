@@ -10,7 +10,7 @@ static func id_for(f: Figure,turn: int,at: Vector2,support: String) -> String:
 
 static func solid_for(entry: Dictionary) -> AABB:
 	var r: Array=entry["rect"]
-	return AABB(Vector3(r[0],entry["height"],r[1]),Vector3(r[2],3.0,r[3]))
+	return AABB(Vector3(r[0],entry["height"],r[1]),Vector3(r[2],float(entry.get("thickness",3.0)),r[3]))
 
 
 static func legal(s: GameState,layout: FloorLayout,f: Figure,n: Vector3i,rect: Rect2) -> bool:
@@ -56,6 +56,8 @@ static func add_volume(layout: FloorLayout,entry: Dictionary) -> void:
 	var solid:=solid_for(entry)
 	layout.solids.append(solid)
 	layout.magic_solids.append(solid)
+	if not bool(entry.get("walkable",true)):
+		return
 	var surface:=FloorSurface.from_dict({"id":id,"rect":entry["rect"],"level":solid.end.y})
 	layout.surfaces.append(surface)
 
@@ -71,6 +73,7 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 	var along:=Vector2.DOWN if rotated else Vector2.RIGHT
 	var across:=Vector2.RIGHT if rotated else Vector2.DOWN
 	var h:=float(entry["height"])
+	var rise:=surface.level-h
 	var length:=rect.size.y if rotated else rect.size.x
 	var width:=rect.size.x if rotated else rect.size.y
 	for i in range(1,int(length*2)):
@@ -82,14 +85,15 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 			if not layout.standable(a) or not layout.standable(b) or not is_equal_approx(layout.height(a),h):
 				continue
 			var clear:=true
-			for step in range(31):
-				if not layout.clearance(Vector3(outside.x,h+float(step)*0.1,outside.y),Figure.BASE_RADIUS,1.6):
+			var steps:=maxi(1,ceili(rise*10.0))
+			for step in range(steps+1):
+				if not layout.clearance(Vector3(outside.x,h+rise*float(step)/steps,outside.y),Figure.BASE_RADIUS,1.6):
 					clear=false
 					break
 			if not clear:
 				continue
 			for step in range(11):
-				if not layout.clearance(Vector3(outside.x,h+3.0,outside.y).lerp(layout.world(b),step/10.0),Figure.BASE_RADIUS,1.6):
+				if not layout.clearance(Vector3(outside.x,h+rise,outside.y).lerp(layout.world(b),step/10.0),Figure.BASE_RADIUS,1.6):
 					clear=false
 					break
 			if clear:

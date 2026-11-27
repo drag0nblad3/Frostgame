@@ -2,6 +2,8 @@ class_name CampaignDeployment
 extends RefCounted
 ## Find a legal non-overlapping position nearest a campaign roster's assigned starting point.
 static func legal(s: GameState,at: Vector2,ring: int,source: Dictionary) -> bool:
+	if not s.board.floor_layout.is_empty() and BattlePlacement.support(s,at,"street")==null:
+		return false
 	if not s.board.can_stand(at,Figure.BASE_RADIUS):
 		return false
 	for f in s.figures:

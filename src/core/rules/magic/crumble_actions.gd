@@ -18,7 +18,7 @@ func options(f: Figure) -> Array[Dictionary]:
 			continue
 		var near := Vector2(clampf(f.pos.x, p.rect.position.x, p.rect.end.x), clampf(f.pos.y, p.rect.position.y, p.rect.end.y)).lerp(f.pos, 0.02)
 		if not board.floor_layout.is_empty():
-			# Only temporary wall geometry currently has a destructive terrain contract.
+			# Freestanding authored architecture and conjured walls share a destruction contract.
 			if p.dynamic_surface.is_empty() or not LineOfSight.floor_point_visible(board,board.floor_geometry(),f,Vector3(near.x,p.base_height+0.5,near.y)):
 				continue
 		elif not LineOfSight.check(board,f.pos,near).clear:
@@ -33,6 +33,9 @@ func apply(p: TerrainPiece) -> void:
 		return
 	if p.kind.id == "spell_wall":
 		c._magic.terrain.remove(p)
+		return
+	if not s.board.floor_layout.is_empty():
+		_floor_crumble(p)
 		return
 	# Remove a doorway-width strip through the simplified solid ruin footprint.
 	var r := p.rect
@@ -69,3 +72,62 @@ func apply(p: TerrainPiece) -> void:
 		c.emit("terrain_fall", {"id": t.id})
 		if damage > 0 and MagicEquipment.bonus(t, "slow_fall") == 0:
 			c._hurt(t, damage, t, false)
+
+
+func _floor_crumble(p: TerrainPiece) -> void:
+	if p.dynamic_surface.is_empty():
+		return
+	var s:=c.state
+	var before:=s.board.floor_geometry()
+	var id:=p.dynamic_surface
+	var entries: Array=s.board.floor_layout.get("walls",[])
+	var template: Dictionary={}
+	for i in range(entries.size()-1,-1,-1):
+		if entries[i]["id"]==id:
+			template=entries[i].duplicate(true)
+			entries.remove_at(i)
+	if template.is_empty() or not template.get("architectural",false):
+		return
+	var r:=p.rect
+	var along_x:=r.size.x>=r.size.y
+	var length:=r.size.x if along_x else r.size.y
+	var remaining:=maxf(0.0,(length-1.5)*0.5)
+	WizardEye.remove_attached(s.board,p)
+	s.board.pieces.erase(p)
+	var replacements: Array[String]=[]
+	if remaining>0.01:
+		var size:=Vector2(remaining,r.size.y) if along_x else Vector2(r.size.x,remaining)
+		for start: Vector2 in [r.position,r.end-size]:
+			var part:=TerrainPiece.new(p.kind,Rect2(start,size))
+			part.surface_id=p.surface_id
+			part.base_height=p.base_height
+			part.dynamic_surface=id+":part:"+str(replacements.size())
+			var row:=template.duplicate(true)
+			row["id"]=part.dynamic_surface
+			row["rect"]=[start.x,start.y,size.x,size.y]
+			entries.append(row)
+			replacements.append(part.dynamic_surface)
+			s.board.pieces.append(part)
+	s.board.floor_layout["walls"]=entries
+	s.board.invalidate_terrain()
+	var layout:=s.board.floor_geometry()
+	# Bases on surviving masonry do not fall merely because the support was
+	# split into two identifiers. Those over the gap get the normal fall.
+	for f in s.figures:
+		if not f.in_play() or f.surface_id!=id:
+			continue
+		for next in replacements:
+			var n:=layout.node(next,f.pos)
+			if layout.standable(n) and is_equal_approx(layout.height(n),f.elevation):
+				f.surface_id=next
+				break
+	for token in s.treasures:
+		if not token.on_ground() or token.surface_id!=id:
+			continue
+		for next in replacements:
+			var n:=layout.node(next,token.pos)
+			if layout.standable(n,TreasureRules.TOKEN_RADIUS,0.5):
+				token.surface_id=next
+				break
+	c.emit("terrain_changed",{"spell":"crumble","created":false})
+	FloorSupportRemoval.resolve(c,before,id)

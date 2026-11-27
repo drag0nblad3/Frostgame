@@ -68,7 +68,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				var x := 1.0+1.2*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.2*floori(deploy_index/4.0)]
 			deploy_index += 1
-			if wb.get("campaign_roster",false) and s.scenario_special.begins_with("red_king_") and not RedKingMind.active(s):
+			if wb.get("campaign_roster",false) and (s.scenario_special.begins_with("red_king_") or not s.board.floor_layout.is_empty()) and not RedKingMind.active(s):
 				var repaired: Variant=CampaignDeployment.find(s,Vector2(at[0],at[1]),side,d)
 				if repaired==null:
 					s.scenario_data["deployment_error"]="No legal starting position for "+str(entry["type"])+". Reduce the deployed roster."

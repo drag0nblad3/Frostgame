@@ -30,7 +30,27 @@ static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
 	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and floor_ray(board,layout,Vector3(from.pos.x,from.elevation+1.5,from.pos.y),Vector3(to.pos.x,to.elevation+1.0,to.pos.y),from,false)
 	if board.darkness and Shooting.distance(from,to)>12.0:
 		result.clear=false
+	if result.clear:
+		floor_cover(board,Vector3(from.pos.x,from.elevation,from.pos.y),Vector3(to.pos.x,to.elevation,to.pos.y),result)
 	return result
+
+
+static func floor_cover(board: Board,a: Vector3,b: Vector3,result: Result) -> void:
+	var from:=Vector2(a.x,a.z)
+	var to:=Vector2(b.x,b.z)
+	for p in board.pieces:
+		if p.surface_id.is_empty() or p.kind.cover==TerrainKind.Cover.NONE:
+			continue
+		var interval:=Geom.clip(from,to,p.rect)
+		if interval.size()!=2:
+			continue
+		var h:=lerpf(a.y,b.y,(float(interval[0])+float(interval[1]))*0.5)
+		if h<p.base_height-0.5 or h>p.base_height+p.kind.height+0.5:
+			continue
+		if Geom.point_rect_distance(to,p.rect)<=COVER_REACH:
+			result.cover=maxi(result.cover,p.kind.cover)
+		elif Geom.point_rect_distance(from,p.rect)>COVER_REACH:
+			result.intervening+=1
 
 
 ## Floor geometry ray, shared by attacks and all explicit floor-targeted

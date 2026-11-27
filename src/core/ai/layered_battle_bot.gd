@@ -31,7 +31,7 @@ static func _act(c: GameController,f: Figure) -> bool:
 			c.fight(enemy.id)
 			return true
 	for token in c.state.treasures:
-		if c.can_pick_up(token.id):
+		if f.side>=0 and c.can_pick_up(token.id):
 			return c.pick_up(token.id)
 	if MagicBot.play(c,f):
 		return true
@@ -48,7 +48,7 @@ static func _act(c: GameController,f: Figure) -> bool:
 
 
 static func _move(c: GameController,f: Figure) -> bool:
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	var reach := c.layered_reach()
 	if reach.cost.is_empty():
 		return false
@@ -68,7 +68,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 			if LayeredLoot.is_exit(c.state,layout,n):
 				goal=n
 				best=distance
-		else:
+		elif f.side>=0:
 			for token in c.state.treasures:
 				if token.on_ground() and token.surface_id==layout.surface_id(n) and token.pos.distance_to(layout.point(n))<=0.8:
 					goal=n
@@ -81,7 +81,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 			if distance>=best or n==reach.start:
 				continue
 			for enemy in c.state.figures:
-				if enemy.in_play() and enemy.side!=f.side and absf(enemy.elevation-layout.height(n))<0.5 and Contact.touching(enemy.pos,layout.point(n)):
+				if enemy.in_play() and enemy.side!=f.side and Contact.touches_position(enemy,layout.point(n),layout.height(n),layout.surface_id(n)):
 					best=distance
 					goal=n
 	if f.treasure_id>=0 and goal!=null and RunForIt.ready(c,true):
@@ -106,7 +106,7 @@ static func _move(c: GameController,f: Figure) -> bool:
 static func _cape(c: GameController,f: Figure) -> bool:
 	if not GearActions.cape_ready(c) or (f.treasure_id<0 and f.health>4 and f.def.role not in ["wizard","apprentice"]):
 		return false
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	var reach := LayeredMovement.reach(c,true)
 	var best: Variant=null
 	var value := 0.0

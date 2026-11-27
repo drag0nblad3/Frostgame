@@ -31,6 +31,14 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 			piece.ramp_rotated = profile.get("axis","x") == "y"
 			piece.ramp_start = float(profile.get("start",0.0))
 			piece.ramp_end = float(profile.get("end",0.0))
+		if not b.floor_layout.is_empty():
+			piece.surface_id=str(p.get("surface","street"))
+			piece.base_height=float(p.get("base_height",0.0))
+			if piece.kind.blocks_move and not piece.kind.ground_surface:
+				piece.dynamic_surface=str(p.get("id","architecture:"+str(b.pieces.size())))
+				var entries: Array=b.floor_layout.get("walls",[])
+				entries.append({"id":piece.dynamic_surface,"support":piece.surface_id,"height":piece.base_height,"thickness":piece.kind.height,"walkable":piece.kind.walkable_top,"rect":r.duplicate(),"architectural":true})
+				b.floor_layout["walls"]=entries
 		b.pieces.append(piece)
 	var boundaries: Array[Dictionary]=[]
 	for entry: Dictionary in d.get("boundaries",[]):

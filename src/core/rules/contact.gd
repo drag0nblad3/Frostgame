@@ -30,7 +30,16 @@ static func in_combat(figures: Array[Figure], f: Figure) -> bool:
 ## Shared spatial contact test. Surfaces disambiguate stacked routes;
 ## physical base overlap still applies across adjacent surface identities.
 static func touches_position(f: Figure,at: Vector2,height: float,surface: String="") -> bool:
-	return absf(f.elevation-height)<0.5 and (surface.is_empty() or f.surface_id.is_empty() or f.surface_id==surface) and touching(f.pos,at)
+	if absf(f.elevation-height)>=0.5 or not touching(f.pos,at):
+		return false
+	if surface.is_empty() or f.surface_id.is_empty() or f.surface_id==surface:
+		return true
+	if f.battle_ref==null:
+		return false
+	var s: GameState=f.battle_ref.get_ref()
+	if s==null or s.board.floor_layout.is_empty():
+		return false
+	return LineOfSight.floor_ray(s.board,s.board.floor_geometry(),Vector3(f.pos.x,f.elevation+0.5,f.pos.y),Vector3(at.x,height+0.5,at.y),f,false)
 
 
 static func figures_touch(a: Figure, b: Figure) -> bool:
