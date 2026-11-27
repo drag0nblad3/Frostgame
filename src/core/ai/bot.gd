@@ -21,6 +21,10 @@ static func resume_activation(c: GameController) -> bool:
 		MagicBot.resolve(c)
 		if c.awaiting_reaction():
 			return true
+	if f.side>=0:
+		_use_healing(c,f)
+		if c.awaiting_reaction():
+			return true
 	if not c.state.board.floor_layout.is_empty():
 		LayeredBattleBot.perform(c,f)
 		if c.awaiting_reaction() or c.state.active()!=f:
@@ -31,9 +35,6 @@ static func resume_activation(c: GameController) -> bool:
 		c.end_activation()
 		return true
 	if f.side >= 0:
-		_use_healing(c, f)
-		if c.awaiting_reaction():
-			return true
 		if RedKingBot.prepare(c,f):
 			if c.awaiting_reaction() or c.state.active()!=f:
 				return true

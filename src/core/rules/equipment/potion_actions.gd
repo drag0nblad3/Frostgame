@@ -6,7 +6,7 @@ var catalog: Dictionary
 const POINTS := ["explosive_cocktail", "teleportation"]
 const COATINGS := ["poison", "fairy_dust"]
 ## Only effects that still need floor-aware placement/route contracts.
-const FLOOR_PENDING := ["explosive_cocktail","burrowing","fury","null","shatterstar","ethereal_vacuum"]
+const FLOOR_PENDING := ["fury","shatterstar"]
 
 
 func _init(controller: GameController) -> void:
@@ -195,6 +195,42 @@ func use_at(id: String, at: Vector2) -> bool:
 	if not success:
 		return true
 	_report(f, f, id)
+	return true
+
+
+func cocktail_floor_legal(n: Vector3i) -> bool:
+	if c.state.board.floor_layout.is_empty() or not can_drink("explosive_cocktail"):
+		return false
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	if not layout.contains(n,0.0):
+		return false
+	var at:=layout.world(n)
+	return Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(at)<=8.001 and c._magic.terrain.can_place_floor(f,"grenade",n)
+
+
+func cocktail_floor_points(index: int=-1,first_only: bool=false) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	if c.state.board.floor_layout.is_empty() or not can_drink("explosive_cocktail"):
+		return out
+	for n in BattlePlacement.nodes(c.state.board,c.state.active().pos,8.0,index):
+		if cocktail_floor_legal(n):
+			out.append(n)
+			if first_only:
+				break
+	return out
+
+
+func cocktail_on_floor(n: Vector3i) -> bool:
+	if not cocktail_floor_legal(n):
+		return false
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var success:=_consume(f,"explosive_cocktail")
+	c._spend(f)
+	if success:
+		c._magic.terrain.apply(f,"grenade",layout.point(n),false,14,false,layout.surface_id(n))
+		_report(f,f,"explosive_cocktail")
 	return true
 
 

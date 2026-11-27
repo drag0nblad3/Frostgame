@@ -17,7 +17,11 @@ func options(f: Figure) -> Array[Dictionary]:
 		if p.kind.id != "spell_wall" and (p.cast_turn >= 0 or not p.kind.blocks_move or p.kind.height < 1.0):
 			continue
 		var near := Vector2(clampf(f.pos.x, p.rect.position.x, p.rect.end.x), clampf(f.pos.y, p.rect.position.y, p.rect.end.y)).lerp(f.pos, 0.02)
-		if not LineOfSight.check(board, f.pos, near).clear:
+		if not board.floor_layout.is_empty():
+			# Only temporary wall geometry currently has a destructive terrain contract.
+			if p.dynamic_surface.is_empty() or not LineOfSight.floor_point_visible(board,board.floor_geometry(),f,Vector3(near.x,p.base_height+0.5,near.y)):
+				continue
+		elif not LineOfSight.check(board,f.pos,near).clear:
 			continue
 		out.append({"kind": "terrain", "target": f.id, "piece": p, "label": "%s at %.1f, %.1f" % [p.kind.name, p.rect.get_center().x, p.rect.get_center().y]})
 	return out

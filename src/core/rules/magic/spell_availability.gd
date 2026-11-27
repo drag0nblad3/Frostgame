@@ -115,7 +115,7 @@ static func counter_options(sa: SpellActions, id: String) -> Array[Dictionary]:
 		return empty
 	if not sa.available_spell(f, id):
 		return empty
-	if not sa.c.state.board.floor_layout.is_empty() and id in ["wizard_eye","crumble"]:
+	if not sa.c.state.board.floor_layout.is_empty() and id=="wizard_eye":
 		return empty
 	if id == "wizard_eye":
 		return sa.eye.options(f)

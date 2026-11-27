@@ -2,7 +2,7 @@ class_name BattleFloorInput
 extends RefCounted
 ## Geometry adapter only. All menus, reactions, attack confirmation and
 ## movement planning belong to BattleInput and BattleHud, on every board.
-const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle","floor_spell_point","floor_ring_teleport","floor_potion_teleport","floor_treasure_destination","floor_suggestion"]
+const POINT_MODES := ["floor_teleport","floor_leap","floor_bridge","floor_bridge_end","floor_bottle","floor_spell_point","floor_ring_teleport","floor_potion_teleport","floor_cocktail","floor_treasure_destination","floor_suggestion"]
 
 
 static func append_spells(bi: BattleInput,f: Figure) -> void:
@@ -18,7 +18,7 @@ static func append_spells(bi: BattleInput,f: Figure) -> void:
 
 
 static func handles_action(bi: BattleInput,key: String) -> bool:
-	return bi.available.has(key) and (key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation"] or (key.begins_with("spell_") and (SummonActions.PLACEMENT.has(key.trim_prefix("spell_")) or TerrainMagic.FLOOR_SPELLS.has(key.trim_prefix("spell_")))))
+	return bi.available.has(key) and (key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation","potion_explosive_cocktail"] or (key.begins_with("spell_") and (SummonActions.PLACEMENT.has(key.trim_prefix("spell_")) or TerrainMagic.FLOOR_SPELLS.has(key.trim_prefix("spell_")))))
 
 
 static func action(bi: BattleInput,key: String) -> bool:
@@ -42,6 +42,9 @@ static func action(bi: BattleInput,key: String) -> bool:
 			bi.selected_spell=""
 		"potion_teleportation":
 			bi.mode="floor_potion_teleport"
+			bi.selected_spell=""
+		"potion_explosive_cocktail":
+			bi.mode="floor_cocktail"
 			bi.selected_spell=""
 		_:
 			bi.mode="floor_spell_point"
@@ -92,6 +95,10 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 		for n in nodes:
 			candidates[n]=true
 		s.hint="Choose a legal placement on this floor."
+	elif bi.mode=="floor_cocktail":
+		for n in bi.c._potions.cocktail_floor_points(index):
+			candidates[n]=true
+		s.hint="Choose a visible point within 8 inches. The blast originates at the selected height."
 	elif bi.mode=="floor_suggestion":
 		for n in SpellAvailability.floor_suggestion_points(bi.c._magic,t,false,index):
 			candidates[n]=true
@@ -219,6 +226,7 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		"floor_teleport","floor_spell_point": return bi._declared(bi.c._magic.start_floor_at(bi.selected_spell,node,bi.spell_rotated))
 		"floor_ring_teleport": return GearActions.teleport_on_floor(bi.c,node)
 		"floor_potion_teleport": return bi.c._potions.teleport_on_floor(node)
+		"floor_cocktail": return bi.c._potions.cocktail_on_floor(node)
 		"floor_suggestion": return bi._declared(bi.c._magic.start_floor_suggestion(bi.spell_first,node))
 		"floor_treasure_destination": return bi._declared(bi.c._magic.start_floor_treasure(bi.selected_spell,bi.spell_first,node))
 		"floor_leap": return bi.c.leap_on_floor(bi.spell_first,node)

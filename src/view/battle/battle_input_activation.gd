@@ -49,7 +49,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 	for weapon in bi.c.selectable_melee():
 		bi.available.append("weapon_" + weapon.id)
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
-		if GearActions.can_use(bi.c,id) and (id!="gear_ring_teleportation" or not bi.is_layered() or not GearActions.teleport_floor_points(bi.c,-1,true).is_empty()):
+		if GearActions.can_use(bi.c,id) and (id!="gear_ring_teleportation" or not bi.is_layered() or not GearActions.teleport_floor_points(bi.c,-1,true).is_empty()) and (id!="gear_horn_destruction" or not bi.is_layered() or not bi.c._magic.crumble.options(f).is_empty()):
 			bi.available.append(id)
 	if not TigerEye.eye_options(bi.c).is_empty():
 		bi.available.append("gear_tiger_eye_move")
@@ -74,7 +74,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 	for item in f.items:
 		var id := str(item.get("potion", ""))
 		for t in bi.c.state.figures:
-			if bi.c._potions.can_drink(id,t) and (id!="teleportation" or not bi.is_layered() or not bi.c._potions.teleport_floor_points(-1,true).is_empty()):
+			if bi.c._potions.can_drink(id,t) and (id!="teleportation" or not bi.is_layered() or not bi.c._potions.teleport_floor_points(-1,true).is_empty()) and (id!="explosive_cocktail" or not bi.is_layered() or not bi.c._potions.cocktail_floor_points(-1,true).is_empty()):
 				var key := "potion_" + id
 				if not bi.available.has(key):
 					bi.available.append(key)
@@ -150,7 +150,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		# Geometry-dependent gear/potions must be migrated before exposure.
 		# Shared melee, shooting, group, reaction and spell menus stay common.
 		for key in bi.available.duplicate():
-			if key.begins_with("gear_") and key not in [GearActions.CAPE,"gear_rk_bottle_imp","gear_death_mask_toggle","gear_gloves_casting","gear_wand_light","gear_ring_transference","gear_ring_teleportation"]:
+			if key.begins_with("gear_") and key not in [GearActions.CAPE,"gear_rk_bottle_imp","gear_death_mask_toggle","gear_gloves_casting","gear_wand_light","gear_ring_transference","gear_ring_teleportation","gear_horn_destruction"]:
 				bi.available.erase(key)
 		for key in ["fight_hand","wraith_shot"]:
 			bi.available.erase(key)
