@@ -48,7 +48,7 @@ func _run() -> void:
 		quit(1)
 		return
 	title_scene._buttons["skirmish"].pressed.emit()
-	if title_scene._picker==null or title_scene._picker._list.get_child_count()!=12:
+	if title_scene._picker==null or title_scene._picker._list.item_count!=12:
 		printerr("Standard scenario catalog incomplete")
 		quit(1)
 		return
@@ -56,7 +56,30 @@ func _run() -> void:
 		printerr("Experimental maps exposed in player menu")
 		quit(1)
 		return
-	title_scene._picker.hide()
+	if title_scene._picker._chosen.is_empty() or title_scene._picker._name.text.is_empty() or not ModalInput.blocked():
+		printerr("Scenario dossier missing")
+		quit(1)
+		return
+	title_scene._picker._inspect(1)
+	if title_scene._picker._chosen!=title_scene._picker._ids[1]:
+		quit(1)
+		return
+	ModalInput.close_top(root)
+	if title_scene._picker.visible:
+		quit(1)
+		return
+	# Inspect the new campaign screen without creating or replacing a save.
+	var start := CampaignStartScreen.new()
+	title_scene.add_child(start)
+	start.open()
+	if not start.visible or start._lineup._models.is_empty() or start._story_button.disabled==WarbandSlots.content_profile().enabled.has("red_king"):
+		printerr("Campaign creation choices missing")
+		quit(1)
+		return
+	ModalInput.close_top(root)
+	if start.visible:
+		quit(1)
+		return
 	title_scene._buttons["warband"].pressed.emit()
 	if title_scene._editor==null or not title_scene._editor.visible:
 		printerr("Home warband editor missing")
