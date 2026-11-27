@@ -108,6 +108,16 @@ jobs:
             ! grep -E "SCRIPT ERROR|Parse Error" "portrait-$tab.log"
             test -s "previews/portrait-$tab.png"
           done
+      - name: Capture expedition launch screens
+        run: |
+          set -o pipefail
+          for orientation in 1560x720 720x1560; do
+            for page in home skirmish campaign; do
+              timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution "$orientation" -s tools/title_capture.gd -- "previews/launch-$orientation-$page.png" "$page" 2>&1 | tee "launch-$orientation-$page.log"
+              ! grep -E "SCRIPT ERROR|Parse Error|Node not inside tree" "launch-$orientation-$page.log"
+              test -s "previews/launch-$orientation-$page.png"
+            done
+          done
       - uses: actions/upload-artifact@v4
         if: always()
         with:

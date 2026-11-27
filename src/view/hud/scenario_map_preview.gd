@@ -2,11 +2,22 @@ class_name ScenarioMapPreview
 extends Control
 ## Overhead terrain schematic generated directly from the playable board definition.
 var _board: Board
+var _treasures: Array[Vector2]=[]
 
 
 func setup(id: String) -> void:
+	_treasures.clear()
 	_board=BoardLoader.load_id(id,TerrainDb.load_file())
 	mouse_filter=Control.MOUSE_FILTER_IGNORE
+	queue_redraw()
+
+
+func setup_scenario(data: Dictionary) -> void:
+	setup(str(data["board"]))
+	for token: Variant in data.get("treasures",[]):
+		var at: Array=token.get("at",[]) if token is Dictionary else (token if token is Array else [])
+		if at.size()>=2:
+			_treasures.append(Vector2(float(at[0]),float(at[1])))
 	queue_redraw()
 
 
@@ -38,4 +49,8 @@ func _draw() -> void:
 			var tint := Color("a48956").lightened(clampf(height/30.0,0.0,0.4))
 			draw_rect(area,tint)
 			draw_rect(area,Color("655537"),false,1.0)
+	for at in _treasures:
+		var point := origin+at*scale_factor
+		draw_circle(point,5.0,Color("60482a"))
+		draw_circle(point,3.5,Color("f1ca7c"))
 	draw_rect(Rect2(origin,_board.size*scale_factor),Color("52646b"),false,2)

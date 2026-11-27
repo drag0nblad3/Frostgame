@@ -128,7 +128,7 @@ func _open_launch_intent() -> void:
 		"training": _start_training(0)
 		"guide": _open_guide()
 		"skirmish": _open_map_picker()
-		"selected_skirmish": _open_briefing(false)
+		"selected_skirmish": pass # Confirmed in the full-screen battlefield catalogue.
 
 
 func _confirm_title() -> void:
@@ -474,7 +474,9 @@ func _open_map_picker() -> void:
 		_picker.selected.connect(func(id: String) -> void:
 			_scenario_id=id
 			hud.select_scenario(id)
-			_open_briefing(true))
+			_campaign_battle=false
+			watch_mode=false
+			new_game(0))
 	_picker.open(false)
 
 

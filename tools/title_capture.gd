@@ -7,7 +7,15 @@ func _initialize() -> void:
 
 
 func _setup() -> void:
-	root.add_child(load("res://scenes/title.tscn").instantiate())
+	var scene: Node=load("res://scenes/title.tscn").instantiate()
+	root.add_child(scene)
+	var args := OS.get_cmdline_user_args()
+	if args.size()>1 and args[1]=="skirmish":
+		scene._choose_scenario()
+	elif args.size()>1 and args[1]=="campaign":
+		var start := CampaignStartScreen.new()
+		scene.add_child(start)
+		start.open()
 
 
 func _process(_delta: float) -> bool:

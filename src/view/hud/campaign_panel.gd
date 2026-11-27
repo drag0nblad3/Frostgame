@@ -446,7 +446,7 @@ func _command(parent: Control, label: String, callback: Callable) -> Button:
 
 func fit_phone() -> void:
 	var bounds := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
-	_scroll.custom_minimum_size=Vector2(minf(900,bounds.x*0.86),minf(440,bounds.y*0.58))
+	_scroll.custom_minimum_size=Vector2(bounds.x*0.90,maxf(180,bounds.y-190.0))
 
 
 func select_scenario(id: String) -> void:

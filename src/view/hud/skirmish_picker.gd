@@ -1,89 +1,134 @@
 class_name SkirmishPicker
-extends AcceptDialog
-## Scrollable scenario chooser with real schematic terrain previews.
+extends ExpeditionScreen
+## Full-height scenario catalogue. Inspect one battlefield before explicitly launching.
 signal selected(id: String)
-var _list: VBoxContainer
-var _scroll: ScrollContainer
+signal edit_requested
+
+var _list: ItemList
+var _entries := {}
+var _ids: Array[String]=[]
+var _chosen := ""
 var _from_home := false
-var _context: Label
+var _split: BoxContainer
+var _map: ScenarioMapPreview
+var _table: ScenarioTablePreview
+var _detail: VBoxContainer
+var _name: Label
+var _category: Label
+var _edit: Button
+var _filter: OptionButton
 
 
 func _ready() -> void:
-	title="Choose battlefield"
-	theme=BattleTheme.create()
-	exclusive=true
-	get_ok_button().text="Cancel"
-	var col := VBoxContainer.new()
-	add_child(col)
-	_context=Label.new()
-	_context.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	col.add_child(_context)
-	_scroll=ScrollContainer.new()
-	_scroll.horizontal_scroll_mode=ScrollContainer.SCROLL_MODE_DISABLED
-	col.add_child(_scroll)
-	_list=VBoxContainer.new()
+	build("CHOOSE BATTLEFIELD","Start skirmish",_start)
+	var row := HBoxContainer.new()
+	body.add_child(row)
+	_filter=OptionButton.new()
+	_filter.add_item("All battlefields")
+	_filter.add_item("Core scenarios")
+	_filter.add_item("The Red King")
+	_filter.custom_minimum_size.y=56
+	_filter.add_theme_font_size_override("font_size",23)
+	_filter.size_flags_horizontal=Control.SIZE_EXPAND_FILL
+	row.add_child(_filter)
+	_filter.item_selected.connect(func(_i: int) -> void: _populate())
+	_edit=WorkshopUI.button(row,"Edit warband",func() -> void:
+		hide()
+		edit_requested.emit())
+	_split=BoxContainer.new()
+	_split.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_split.add_theme_constant_override("separation",12)
+	body.add_child(_split)
+	_list=ItemList.new()
 	_list.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	_list.add_theme_constant_override("separation",8)
-	_scroll.add_child(_list)
+	_list.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_list.size_flags_stretch_ratio=0.9
+	_list.custom_minimum_size.y=130
+	_list.add_theme_font_size_override("font_size",25)
+	_list.add_theme_constant_override("v_separation",20)
+	_split.add_child(_list)
+	_list.item_selected.connect(_inspect)
+	var visual := WorkshopUI.column(_split)
+	visual.size_flags_stretch_ratio=1.7
+	_category=WorkshopUI.label(visual,"",18,WorkshopUI.GOLD)
+	_name=WorkshopUI.label(visual,"",30)
+	_table=ScenarioTablePreview.new()
+	_table.custom_minimum_size.y=170
+	_table.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	visual.add_child(_table)
+	_map=ScenarioMapPreview.new()
+	_map.custom_minimum_size.y=120
+	_map.size_flags_vertical=Control.SIZE_EXPAND_FILL
+	_map.size_flags_stretch_ratio=0.7
+	visual.add_child(_map)
+	_detail=WorkshopUI.scroll(_split)
+	_detail.get_parent().size_flags_stretch_ratio=1.15
 
 
 func open(from_home: bool=false) -> void:
 	_from_home=from_home
-	var viewport := PhoneSafeArea.safe_rect(get_parent().get_viewport(),14).size
-	_scroll.custom_minimum_size=Vector2(minf(760,viewport.x*0.88),minf(490,viewport.y*0.67))
+	_edit.visible=from_home
+	_filter.set_item_disabled(2,not WarbandSlots.content_profile().enabled.has("red_king"))
+	if _filter.is_item_disabled(_filter.selected):
+		_filter.select(0)
+	_entries=ScenarioBriefing.available_entries(WarbandSlots.content_profile())
 	_populate()
-	PhoneSafeArea.popup_dialog(self)
+	show_screen()
+
+
+func _reflow() -> void:
+	if _split!=null:
+		_split.vertical=size.x<size.y
 
 
 func _populate() -> void:
-	for child in _list.get_children():
-		_list.remove_child(child)
-		child.queue_free()
-	_context.text="Using %s."%WarbandSlots.roster().get("name","the default expedition")
-	if not _from_home:
-		_context.text+=" Starting a new battle replaces unsaved progress."
-	var entries := ScenarioBriefing.available_entries(WarbandSlots.content_profile())
-	for id: String in entries:
-		var entry: Array=entries[id]
-		var data: Dictionary=JsonFile.read(ScenarioLoader.DIR+id+".json")
-		var heading := str(entry[0])
-		if id.begins_with("red_king_"):
-			for stage: Dictionary in RedKingCampaign.stages():
-				if stage["id"]==id:
-					heading="Red King · %02d · %s"%[stage["number"],heading]
-					break
-		_card(id,heading,entry[1]+"\n"+entry[2],str(data["board"]))
-	_scroll.scroll_vertical=0
+	_list.clear()
+	_ids.clear()
+	for id: String in _entries:
+		var red := id.begins_with("red_king_")
+		if (_filter.selected==1 and red) or (_filter.selected==2 and not red):
+			continue
+		_ids.append(id)
+		_list.add_item(str(_entries[id][0]))
+	if _ids.is_empty():
+		action.disabled=true
+		return
+	var index := maxi(0,_ids.find(_chosen))
+	_list.select(index)
+	_inspect(index)
 
 
-func _card(id: String,label: String,description: String,board: String) -> void:
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel",BattleTheme.panel(Color("202e38"),Color("657980"),3))
-	_list.add_child(panel)
-	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation",12)
-	panel.add_child(row)
-	var preview := ScenarioMapPreview.new()
-	preview.custom_minimum_size=Vector2(100,100)
-	preview.setup(board)
-	row.add_child(preview)
-	var col := VBoxContainer.new()
-	col.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-	row.add_child(col)
-	var heading := Label.new()
-	heading.text=label
-	heading.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	heading.add_theme_font_size_override("font_size",21)
-	col.add_child(heading)
-	var detail := Label.new()
-	detail.text=description
-	detail.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
-	detail.add_theme_font_size_override("font_size",18)
-	col.add_child(detail)
-	var button := Button.new()
-	button.text="Start skirmish" if _from_home else "Choose"
-	button.custom_minimum_size.y=52
-	button.pressed.connect(func() -> void:
-		hide()
-		selected.emit(id))
-	col.add_child(button)
+func _inspect(index: int) -> void:
+	_chosen=_ids[index]
+	var entry: Array=_entries[_chosen]
+	var data: Dictionary=JsonFile.read(ScenarioLoader.DIR+_chosen+".json")
+	_name.text=str(entry[0])
+	_category.text="THE RED KING · EXPANSION" if _chosen.begins_with("red_king_") else "CORE · SKIRMISH"
+	_table.setup(str(data["board"]),_chosen)
+	_map.setup_scenario(data)
+	WorkshopUI.clear(_detail)
+	WorkshopUI.label(_detail,"OBJECTIVE",18,WorkshopUI.GOLD)
+	WorkshopUI.label(_detail,str(entry[1]),26)
+	WorkshopUI.label(_detail,"BATTLEFIELD RULES",18,WorkshopUI.GOLD)
+	WorkshopUI.label(_detail,str(entry[2]),24)
+	WorkshopUI.label(_detail,"EXPEDITION",18,WorkshopUI.GOLD)
+	var roster := WarbandSlots.roster()
+	if roster.is_empty():
+		var bands: Array=data.get("warbands",[])
+		var fallback: Dictionary=bands[0] if not bands.is_empty() else {}
+		WorkshopUI.label(_detail,"Scenario's preset warband · %s"%fallback.get("name","Default"),23)
+	else:
+		WorkshopUI.label(_detail,"%s · %d members"%[roster.get("name","Warband"),roster.get("figures",[]).size()],24)
+	var board := BoardLoader.load_id(str(data["board"]),TerrainDb.load_file())
+	WorkshopUI.label(_detail,"%d″ × %d″ board · %d initial treasure markers"%[board.size.x,board.size.y,data.get("treasures",[]).size()],21,WorkshopUI.MUTED)
+	WorkshopUI.label(_detail,"Gold dots show initial treasure locations. Special objectives may change during play.",19,WorkshopUI.MUTED)
+	subtitle.text="Standalone battle · Campaign progression is unchanged." if _from_home else "Starting a new battle replaces unsaved progress."
+	action.text="Start "+str(entry[0])
+	action.disabled=false
+
+
+func _start() -> void:
+	if not _ids.has(_chosen):
+		return
+	hide()
+	selected.emit(_chosen)
