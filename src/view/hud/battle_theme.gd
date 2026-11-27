@@ -43,8 +43,8 @@ static func create() -> Theme:
 	theme.set_color("font_hover_color", "PopupMenu", Color(1.0, 0.90, 0.65))
 	# Larger embedded window X and scroll tracks, in logical UI units.
 	# A 42-unit close icon has a much larger hit target than Godot's default.
-	var close := _close_texture(Color("e9e3d3"),Color("344752"))
-	var close_pressed := _close_texture(Color.WHITE,Color("8a5b3d"))
+	var close := preload("res://assets/glyphs/window_close.svg")
+	var close_pressed := preload("res://assets/glyphs/window_close_pressed.svg")
 	theme.set_icon("close","Window",close)
 	theme.set_icon("close_pressed","Window",close_pressed)
 	theme.set_constant("title_height","Window",58)
@@ -71,17 +71,3 @@ static func create() -> Theme:
 	theme.set_constant("v_separation", "VBoxContainer", 4)
 	return theme
 
-
-static var _close_icons := {}
-
-
-static func _close_texture(foreground: Color,background: Color) -> Texture2D:
-	var key := str(foreground)+str(background)
-	if _close_icons.has(key):
-		return _close_icons[key]
-	var svg := '<svg xmlns="http://www.w3.org/2000/svg" width="42" height="42" viewBox="0 0 42 42"><rect x="1" y="1" width="40" height="40" rx="7" fill="#%s"/><path d="M13 13 L29 29 M29 13 L13 29" stroke="#%s" stroke-width="3.8" stroke-linecap="round"/></svg>'%[background.to_html(false),foreground.to_html(false)]
-	var image := Image.new()
-	image.load_svg_from_string(svg)
-	var texture := ImageTexture.create_from_image(image)
-	_close_icons[key]=texture
-	return texture

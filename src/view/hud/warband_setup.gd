@@ -40,10 +40,12 @@ func setup(db: FigureDb,saved: Dictionary={}) -> void:
 	root.add_child(frame)
 	var header := HBoxContainer.new()
 	frame.add_child(header)
-	_back=WorkshopUI.button(header,"‹ Home",navigate_back)
+	_back=WorkshopUI.button(header,"Home",navigate_back)
+	MenuSymbols.apply(_back,"back","Return to home")
 	_heading=WorkshopUI.label(header,"YOUR EXPEDITION",30,WorkshopUI.GOLD)
 	_heading.size_flags_horizontal=Control.SIZE_EXPAND_FILL
 	_save=WorkshopUI.button(header,"Save warband",_confirm,true)
+	MenuSymbols.apply(_save,"save","Confirm warband")
 	_summary=WorkshopUI.label(frame,"",22,WorkshopUI.GOLD)
 	_body=VBoxContainer.new()
 	_body.size_flags_vertical=Control.SIZE_EXPAND_FILL
@@ -103,7 +105,8 @@ func _show(page: Control,heading: String) -> void:
 		child.visible=child==page
 	_page=page
 	_heading.text=heading
-	_back.text="‹ Home" if page==_overview else "‹ Warband"
+	_back.text="Home" if page==_overview else "Warband"
+	_back.tooltip_text="Return to home" if page==_overview else "Return to previous warband page"
 	_update_summary()
 
 
