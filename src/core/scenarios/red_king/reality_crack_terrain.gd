@@ -20,6 +20,8 @@ static func _make_disc(c: GameController,id: String,center: Vector2,radius: floa
 	kind.walkable_top=false
 	var piece := TerrainPiece.new(kind,Rect2(center-Vector2.ONE*radius,Vector2.ONE*radius*2.0))
 	piece.circular=true
+	if not c.state.board.floor_layout.is_empty() and not RealityFloorTerrain.place_disc(c,piece):
+		return null
 	c.state.board.pieces.append(piece)
 	c.state.board.invalidate_terrain()
 	c.emit("terrain_changed",{"spell":id,"created":true})
@@ -30,6 +32,9 @@ static func _relocate_touching(c: GameController,p: TerrainPiece) -> void:
 	var s := c.state
 	var center := p.rect.get_center()
 	var radius := p.rect.size.x*0.5
+	if not s.board.floor_layout.is_empty():
+		RealityFloorTerrain.relocate_touching(c,p)
+		return
 	for f in s.figures.duplicate():
 		if not f.in_play() or f.pos.distance_to(center)>radius+Figure.BASE_RADIUS:
 			continue
@@ -60,6 +65,9 @@ static func portal(c: GameController) -> void:
 	var at := s.board.size*0.5+RealityCracks.direction(c)*(float(c.dice.d20())*0.5)
 	at=at.clamp(Vector2.ONE,s.board.size-Vector2.ONE)
 	var piece := _make_disc(c,"reality_portal",at,1.0)
+	if piece==null:
+		RealityCracks.clear(c)
+		return
 	_relocate_touching(c,piece)
 	spawn_portal(c)
 
@@ -71,6 +79,19 @@ static func spawn_portal(c: GameController) -> void:
 		return
 	var center := gate.rect.get_center()
 	var desired := center+RealityCracks.direction(c)*1.5
+	if not s.board.floor_layout.is_empty():
+		var layout:=s.board.floor_geometry()
+		var best_floor: Variant=null
+		var value:=INF
+		for n in BattlePlacement.nearby_floor(s,center,gate.base_height,2.5,gate.surface_id):
+			var at:=layout.point(n)
+			var d:=at.distance_squared_to(desired)
+			if at.distance_to(center)>=1.5-0.001 and d<value:
+				best_floor=n
+				value=d
+		if best_floor!=null:
+			c._encounters._spawn_on_floor("hrut_warrior",best_floor)
+		return
 	var grid := MoveGrid.new(s.board,null,s.figures)
 	var base := MovePlanner.node_at(center)
 	var best: Variant=null
@@ -97,6 +118,7 @@ static func hoof(c: GameController,initial: bool) -> void:
 	var target := origin+RealityCracks.direction(c)*floorf(float(c.dice.d20())/3.0)
 	if not s.board.contains(target,1.5):
 		if piece!=null:
+			RealityFloorTerrain.remove_disc(s,piece)
 			s.board.pieces.erase(piece)
 			s.board.invalidate_terrain()
 			c.emit("terrain_changed",{"spell":"reality_hoof","created":false})
@@ -104,18 +126,27 @@ static func hoof(c: GameController,initial: bool) -> void:
 		return
 	if piece==null:
 		piece=_make_disc(c,"reality_hoof",target,1.5)
+		if piece==null:
+			RealityCracks.clear(c)
+			return
+	elif not s.board.floor_layout.is_empty():
+		if not RealityFloorTerrain.move_disc(c,piece,target):
+			return
+		s.board.invalidate_terrain()
+		c.emit("terrain_changed",{"spell":"reality_hoof","created":true})
 	else:
 		piece.rect.position=target-Vector2.ONE*1.5
 		s.board.invalidate_terrain()
 		c.emit("terrain_changed",{"spell":"reality_hoof","created":true})
+	target=piece.rect.get_center()
 	for f in s.figures.duplicate():
-		if not f.in_play() or f.pos.distance_to(target)>1.5+Figure.BASE_RADIUS:
+		if not f.in_play() or f.pos.distance_to(target)>1.5+Figure.BASE_RADIUS or (not s.board.floor_layout.is_empty() and not RealityFloorTerrain.touches_height(piece,f.elevation,1.6)):
 			continue
 		for id in f.carried_treasures():
 			c._loot.lose(s.treasure(id))
 		RealityCracks.environmental_attack(c,f,10,false)
 	for token in s.treasures:
-		if token.on_ground() and token.pos.distance_to(target)<=1.5+TreasureRules.TOKEN_RADIUS:
+		if token.on_ground() and token.pos.distance_to(target)<=1.5+TreasureRules.TOKEN_RADIUS and (s.board.floor_layout.is_empty() or RealityFloorTerrain.touches_height(piece,TreasureRules.token_height(s,token),0.5)):
 			c._loot.lose(token)
 	_relocate_touching(c,piece)
 
@@ -203,6 +234,8 @@ static func _offsets(c: GameController,p: TerrainPiece,first: bool=false) -> Arr
 
 static func _valid_offset(c: GameController,p: TerrainPiece,offset: Vector2) -> bool:
 	var s := c.state
+	if not s.board.floor_layout.is_empty():
+		return RealityFloorRuins.valid(s,p,offset)
 	var target := Rect2(p.rect.position+offset,p.rect.size)
 	if not s.board.contains(target.position) or not s.board.contains(target.end):
 		return false
@@ -217,6 +250,9 @@ static func _valid_offset(c: GameController,p: TerrainPiece,offset: Vector2) -> 
 
 static func _translate(c: GameController,p: TerrainPiece,offset: Vector2) -> void:
 	var s := c.state
+	if not s.board.floor_layout.is_empty():
+		RealityFloorRuins.shift(c,p,offset)
+		return
 	var riders: Array[Figure]=[]
 	var tokens: Array[TreasureToken]=[]
 	for f in s.figures:

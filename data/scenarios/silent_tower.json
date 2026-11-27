@@ -131,23 +131,28 @@
   "treasures": [
     [
       18,
-      18
+      18,
+      "tower_roof"
     ],
     [
       10,
-      12
+      12,
+      "street"
     ],
     [
       26,
-      12
+      12,
+      "street"
     ],
     [
       10,
-      24
+      24,
+      "street"
     ],
     [
       26,
-      24
+      24,
+      "street"
     ]
   ],
   "random_encounters": true,

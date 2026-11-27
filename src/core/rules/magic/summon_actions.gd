@@ -39,9 +39,9 @@ func can_control(f: Figure, t: Figure, id: String) -> bool:
 	return t.is_demon() if id == "control_demon" else t.def.traits.has(CONTROL[id])
 
 
-func can_place(f: Figure, id: String, at: Vector2) -> bool:
-	var s := c.state
-	if s.creature_db == null or ScenarioNull.field_at(s.board, at) or not s.board.can_stand(at, Figure.BASE_RADIUS):
+func _limit_allows(f: Figure,id: String) -> bool:
+	var s:=c.state
+	if s.creature_db==null:
 		return false
 	if id=="animate_skull" and count_summoned(c.state,f,id)>= (2 if skull_staff(f) else 1):
 		return false
@@ -51,23 +51,54 @@ func can_place(f: Figure, id: String, at: Vector2) -> bool:
 		return false
 	if id == "summon_demon" and controlled(f, "control_demon") != null:
 		return false
-	var dist := f.pos.distance_to(at)
-	var height_delta := s.board.height_at(at) - f.elevation
+	return true
+
+
+func can_place(f: Figure,id: String,at: Vector2) -> bool:
+	var s:=c.state
+	if not _limit_allows(f,id) or ScenarioNull.field_at(s.board,at) or not s.board.can_stand(at,Figure.BASE_RADIUS):
+		return false
+	return _placement_at(f,id,at,s.board.height_at(at)) and LineOfSight.check(s.board,f.pos,at).clear
+
+
+func _placement_at(f: Figure,id: String,at: Vector2,height: float) -> bool:
+	var s:=c.state
+	var dist:=f.pos.distance_to(at)
+	var height_delta:=height-f.elevation
 	if id == "animate_skull" and Vector2(dist, height_delta).length() > 6.001:
 		return false
 	if id in ["raise_zombie", "summon_demon", "illusionary_soldier"] and (dist > (1.25 if id == "raise_zombie" else 2.0) or absf(height_delta) >= 0.5):
 		return false
-	if not LineOfSight.check(s.board, f.pos, at).clear:
-		return false
 	for t in s.figures:
 		if not t.in_play():
 			continue
-		var d := Vector2(t.pos.distance_to(at), t.elevation - s.board.height_at(at)).length()
+		var d := Vector2(t.pos.distance_to(at),t.elevation-height).length()
 		if d < Contact.OVERLAP or (id == "imp" and d < 4.0):
 			return false
 		if id in ["raise_zombie", "summon_demon", "illusionary_soldier"] and t.side != f.side and d <= Contact.CONTACT:
 			return false
 	return true
+
+
+func can_place_floor(f: Figure,id: String,n: Vector3i) -> bool:
+	var s:=c.state
+	var layout:=s.board.floor_geometry()
+	if not _limit_allows(f,id) or not BattlePlacement.floor_open(s,n) or ScenarioNull.field_at(s.board,layout.point(n)):
+		return false
+	return _placement_at(f,id,layout.point(n),layout.height(n)) and LineOfSight.floor_point_visible(s.board,layout,f,layout.world(n),s.board.size.length()+12.0 if id=="imp" else 6.0)
+
+
+func floor_points(f: Figure,id: String,first_only: bool=false,index: int=-1) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	if not _limit_allows(f,id):
+		return out
+	var radius:=6.0 if id=="animate_skull" else (c.state.board.size.length() if id=="imp" else 2.0)
+	for n in BattlePlacement.nodes(c.state.board,f.pos,radius,index):
+		if can_place_floor(f,id,n):
+			out.append(n)
+			if first_only:
+				break
+	return out
 
 
 func points(f: Figure, id: String, first_only: bool = false) -> Array[Vector2]:
@@ -136,7 +167,7 @@ func vanish(t: Figure) -> void:
 	c.emit("exit", {"id": t.id})
 
 
-func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int,golden_fang: bool=false) -> void:
+func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int,golden_fang: bool=false,surface: String="",height: float=0.0) -> void:
 	var type := id
 	var side := -1
 	match id:
@@ -156,7 +187,7 @@ func spawn(f: Figure, id: String, at: Vector2, roll: int, tn: int,golden_fang: b
 			side = f.side
 		"animate_skull":
 			type = "animated_skull"
-	var t := c._encounters._spawn_at(type, at, side,f.ring_side)
+	var t := c._encounters._spawn_at(type,at,side,f.ring_side,surface,height)
 	if id=="animate_skull" and golden_fang and RedKingMaterials.spend_fang(f):
 		t.used_gear["rk_golden_fang"]=true
 		c.emit("gear_used",{"id":f.id,"target":t.id,"gear":RedKingMaterials.FANGS})
@@ -177,6 +208,14 @@ func miscast_demon(f: Figure) -> void:
 	var s := c.state
 	var roll := c.dice.d20()
 	var type := "imp" if roll <= 10 else ("minor_demon" if roll <= 17 else "major_demon")
+	if not s.board.floor_layout.is_empty():
+		var layout:=s.board.floor_geometry()
+		for n in BattlePlacement.nodes(s.board,f.pos,1.25,layout.index_of(f.surface_id)):
+			if not BattlePlacement.floor_open(s,n) or not is_equal_approx(layout.world(n).distance_to(Vector3(f.pos.x,f.elevation,f.pos.y)),1.0) or ScenarioNull.field_at(s.board,layout.point(n)):
+				continue
+			c._encounters._spawn_at(type,layout.point(n),-1,f.ring_side,layout.surface_id(n),layout.height(n))
+			return
+		return
 	for i in 16:
 		var at := f.pos + Vector2.RIGHT.rotated(TAU * i / 16.0)
 		if not s.board.can_stand(at, Figure.BASE_RADIUS) or absf(s.board.height_at(at) - f.elevation) >= 0.5:

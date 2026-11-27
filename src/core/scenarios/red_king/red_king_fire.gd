@@ -19,7 +19,7 @@ static func unlock_bonus(f: Figure) -> int:
 
 static func can_unlock(c: GameController,token: TreasureToken) -> bool:
 	var f := c.state.active()
-	return locked(c.state,token) and token.on_ground() and f!=null and f.side>=0 and c.can_act() and not Contact.in_combat(c.state.figures,f) and not IllusionRules.phantom(f) and not f.spell_effects.has("plane_walk") and absf(f.elevation-c.state.board.height_at(token.pos))<0.5 and f.pos.distance_to(token.pos)<=Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01
+	return locked(c.state,token) and token.on_ground() and f!=null and f.side>=0 and c.can_act() and not Contact.in_combat(c.state.figures,f) and not IllusionRules.phantom(f) and not f.spell_effects.has("plane_walk") and TreasureRules.in_reach(c.state,f,token,Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01)
 
 
 static func unlock(c: GameController,f: Figure,token: TreasureToken) -> bool:
@@ -44,19 +44,33 @@ static func portals(s: GameState) -> Array[TerrainPiece]:
 	return result
 
 
-static func portal_contact(c: GameController,f: Figure,from: Vector2,to: Vector2,seen: Dictionary) -> void:
-	if not active(c.state) or not f.in_play():
-		return
-	for p in portals(c.state):
-		var center := p.rect.get_center()
-		var reach := p.rect.size.x*0.5+Figure.BASE_RADIUS
-		if seen.has(center) or center.distance_to(Geometry2D.get_closest_point_to_segment(center,from,to))>reach+0.001:
+## The same contact rule accepts real route elevations for explicit floors.
+static func portal_hits(s: GameState,from: Vector2,to: Vector2,seen: Dictionary,from_height: float=NAN,to_height: float=NAN) -> Array[TerrainPiece]:
+	var hits: Array[TerrainPiece]=[]
+	if not active(s):
+		return hits
+	for p in portals(s):
+		var center:=p.rect.get_center()
+		var reach:=p.rect.size.x*0.5+Figure.BASE_RADIUS
+		var closest:=Geometry2D.get_closest_point_to_segment(center,from,to)
+		if seen.has(p) or center.distance_to(closest)>reach+0.001:
 			continue
-		# Leaving a contact already made does not apply another hit.
+		if not s.board.floor_layout.is_empty() and not is_nan(from_height) and not is_nan(to_height):
+			var h:=lerpf(from_height,to_height,clampf(from.distance_to(closest)/maxf(from.distance_to(to),0.001),0.0,1.0))
+			if h>=p.base_height+p.kind.height or h+1.6<=p.base_height:
+				continue
 		if from.distance_to(center)<=reach+0.001 and to.distance_to(center)>from.distance_to(center):
 			continue
-		seen[center]=true
-		var damage := RedKingElemental.reduce(c,f,maxi(0,5-CreatureEffects.elemental_resistance(f)))
+		hits.append(p)
+	return hits
+
+
+static func portal_contact(c: GameController,f: Figure,from: Vector2,to: Vector2,seen: Dictionary,from_height: float=NAN,to_height: float=NAN) -> void:
+	if not f.in_play():
+		return
+	for p in portal_hits(c.state,from,to,seen,from_height,to_height):
+		seen[p]=true
+		var damage:=RedKingElemental.reduce(c,f,maxi(0,5-CreatureEffects.elemental_resistance(f)))
 		c.emit("portal_contact",{"id":f.id,"amount":damage})
 		c._hurt(f,damage,f,true)
 		if not f.in_play():
@@ -78,6 +92,21 @@ static func end_turn(c: GameController) -> void:
 			targets.append(f)
 	targets.sort_custom(func(a: Figure,b: Figure) -> bool:return a.pos.distance_squared_to(origin)<b.pos.distance_squared_to(origin))
 	var desired := targets[0].pos if not targets.is_empty() else origin+Vector2.UP*3.0
+	if not s.board.floor_layout.is_empty():
+		var layout:=s.board.floor_geometry()
+		var best_floor: Variant=null
+		var value:=INF
+		for n in BattlePlacement.nearby_floor(s,origin,gate.base_height,3.0,gate.surface_id):
+			var at:=layout.point(n)
+			var radius:=at.distance_to(origin)
+			var score:=radius*100.0+at.distance_to(desired)
+			if radius>=1.5 and score<value:
+				best_floor=n
+				value=score
+		if best_floor!=null:
+			c._encounters._spawn_on_floor("hrut_warrior",best_floor)
+			c.emit("portal_emergence",{"at":origin})
+		return
 	var grid := MoveGrid.new(s.board,null,s.figures)
 	var best: Variant=null
 	var score := INF

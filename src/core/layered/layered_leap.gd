@@ -17,7 +17,7 @@ static func eligible(c: GameController,t: Figure) -> bool:
 		return false
 	if t.spell_effects.has("bones_of_the_earth") or t.spell_effects.has("petrify") or t.surface_id.begins_with("climb:"):
 		return false
-	return f==t or LineOfSight.check_figures(s.board,f,t).clear
+	return f==t or (IllusionRules.visible_to(s.figures,f,t) and LineOfSight.spell_visible(s.board,f,t,float(s.spell_catalog["leap"].get("range",24.0))))
 
 
 static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,grid: LayeredGrid) -> PackedVector3Array:
@@ -29,9 +29,10 @@ static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,gri
 	var limit := 5.0 if t.treasure_id>=0 else 10.0
 	if a.distance_to(b)<0.1 or a.distance_to(b)>limit+0.001:
 		return empty
-	for enemy in c.state.figures:
-		if enemy.in_play() and enemy.side!=t.side and absf(enemy.elevation-b.y)<0.5 and Contact.touching(enemy.pos,layout.point(n)):
-			return empty
+	if not MovementContact.enemies_at(c.state.figures,t,layout.point(n),b.y,layout.surface_id(n)).is_empty():
+		return empty
+	if BattleBoundary.blocks_segment(c.state.board.boundaries,t.pos,layout.point(n),"movement",t):
+		return empty
 	# A straight trajectory is preferred. Test several bounded vertical arcs
 	# without allowing horizontal curves around obstacles.
 	for rise: float in [0.0,1.0,2.0,3.0]:
@@ -55,7 +56,7 @@ static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,gri
 static func start(c: GameController,t: Figure,n: Vector3i) -> bool:
 	if not eligible(c,t):
 		return false
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	var points := path(c,t,n,layout,LayeredGrid.new(layout,t,c.state.figures))
 	if points.is_empty():
 		return false
@@ -63,14 +64,10 @@ static func start(c: GameController,t: Figure,n: Vector3i) -> bool:
 
 
 static func apply(c: GameController,t: Figure,effect: Dictionary) -> void:
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
-	var n: Vector3i = effect["floor_destination"]
-	if not layout.standable(n) or layout.surface_id(n)!=effect["surface_id"]:
+	var layout := c.state.board.floor_geometry()
+	var saved: Vector3i=effect["floor_destination"]
+	var n:=layout.node(str(effect["surface_id"]),MoveGrid.to_pos(Vector2i(saved.x,saved.y)))
+	var points:=path(c,t,n,layout,LayeredGrid.new(layout,t,c.state.figures))
+	if points.is_empty():
 		return
-	var old := t.surface_id
-	t.pos=layout.point(n)
-	t.elevation=layout.height(n)
-	t.surface_id=layout.surface_id(n)
-	t.magic_exhausted=true
-	t.actions_left=0
-	c.emit("layered_move",{"id":t.id,"path":effect["leap_path"],"surfaces":[old,t.surface_id],"cost":0.0,"leap":true})
+	c._magic.movement.move_floor(t,n,true,false,"leap",points)

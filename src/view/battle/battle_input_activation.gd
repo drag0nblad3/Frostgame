@@ -49,7 +49,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 	for weapon in bi.c.selectable_melee():
 		bi.available.append("weapon_" + weapon.id)
 	for id in ["gear_ring_teleportation", "gear_horn_destruction", "gear_gloves_casting", "gear_wand_light"]:
-		if GearActions.can_use(bi.c, id):
+		if GearActions.can_use(bi.c,id) and (id!="gear_ring_teleportation" or not bi.is_layered() or not GearActions.teleport_floor_points(bi.c,-1,true).is_empty()) and (id!="gear_horn_destruction" or not bi.is_layered() or not bi.c._magic.crumble.options(f).is_empty()):
 			bi.available.append(id)
 	if not TigerEye.eye_options(bi.c).is_empty():
 		bi.available.append("gear_tiger_eye_move")
@@ -63,9 +63,9 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		bi.available.append("gear_teetotum_arm")
 	if ActiveGear.ready(f,RedKingElemental.AMULET):
 		bi.available.append("gear_absorb_arm")
-	if GearActions.cape_ready(bi.c) and bi.c.state.board.floor_layout.is_empty():
+	if GearActions.cape_ready(bi.c) and (not bi.is_layered() or LayeredMovement.eligible(bi.c,true)):
 		bi.available.append(GearActions.CAPE)
-	if not GearActions.bottle_points(bi.c).is_empty():
+	if (not GearActions.bottle_floor_points(bi.c).is_empty() if bi.is_layered() else not GearActions.bottle_points(bi.c).is_empty()):
 		bi.available.append("gear_rk_bottle_imp")
 	for t in bi.c.state.figures:
 		if GearActions.transfer_max(bi.c, t) > 0:
@@ -74,7 +74,7 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 	for item in f.items:
 		var id := str(item.get("potion", ""))
 		for t in bi.c.state.figures:
-			if bi.c._potions.can_drink(id, t):
+			if bi.c._potions.can_drink(id,t) and (id!="teleportation" or not bi.is_layered() or not bi.c._potions.teleport_floor_points(-1,true).is_empty()) and (id!="explosive_cocktail" or not bi.is_layered() or not bi.c._potions.cocktail_floor_points(-1,true).is_empty()):
 				var key := "potion_" + id
 				if not bi.available.has(key):
 					bi.available.append(key)
@@ -89,17 +89,25 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 			break
 	if bi.c.can_use_stored_action():
 		bi.available.append("use_stored_action")
-	if RunForIt.ready(bi.c):
+	if RunForIt.ready(bi.c) and (not bi.is_layered() or LayeredMovement.eligible(bi.c)):
 		bi.available.append("run_for_it")
-	if RunForIt.ready(bi.c,true):
+	if RunForIt.ready(bi.c,true) and (not bi.is_layered() or LayeredMovement.eligible(bi.c)):
 		bi.available.append("run_talisman")
 	if bi.c.can_move():
-		bi.reach = bi.c.reach()
-		bi.available.append("move")
-		for n: Vector2i in bi.reach.nodes():
-			if bi.c.can_exit_table(n, bi.reach):
-				bi.available.append("exit")
-				break
+		if bi.is_layered():
+			if LayeredMovement.eligible(bi.c):
+				bi.available.append("move")
+				if not bi.c.floor_exit_nodes().is_empty():
+					bi.available.append("exit")
+				if not LayeredJump.plans(bi.c).is_empty():
+					bi.available.append("jump")
+		else:
+			bi.reach=bi.c.reach()
+			bi.available.append("move")
+			for n: Vector2i in bi.reach.nodes():
+				if bi.c.can_exit_table(n,bi.reach):
+					bi.available.append("exit")
+					break
 	for enemy in bi.c.state.figures:
 		if bi.c.can_fight_hand(enemy.id) and not bi.available.has("fight_hand"):
 			bi.available.append("fight_hand")
@@ -115,26 +123,9 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 		if bi.c.can_pick_up(token.id):
 			bi.available.append("collect")
 			break
-	bi.cast_options.clear()
-	for id: String in bi.c._magic.available_spells(f):
-		if id=="enchant_weapon":
-			for t in bi.c.state.figures:
-				if bi.c.can_cast(id,t.id,true):
-					bi.cast_options.append("enchant_ammo")
-					break
-		if not bi.c._magic.treasure_options(id).is_empty():
-			bi.cast_options.append(id)
-			continue
-		if not bi.c._magic.counter_options(id).is_empty():
-			bi.cast_options.append(id)
-			continue
-		if not bi.c._magic.placement_points(id,true).is_empty() or (id in ["fog","wall","bridge"] and not bi.c._magic.placement_points(id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not bi.c._magic.placement_points(id,true,false,true).is_empty() or not bi.c._magic.placement_points(id,true,true,true).is_empty())):
-			bi.cast_options.append(id)
-			continue
-		for t in bi.c.state.figures:
-			if bi.c.can_cast(id, t.id):
-				bi.cast_options.append(id)
-				break
+	bi.cast_options.assign(SpellAvailability.menu_options(bi.c._magic,f))
+	if bi.is_layered():
+		BattleFloorInput.append_spells(bi,f)
 	if not bi.cast_options.is_empty():
 		bi.available.append("cast")
 	for t in bi.c.state.figures:
@@ -155,6 +146,14 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 			bi.available.append("drop_shrunk")
 	if bi.c.can_end_activation():
 		bi.available.append("end")
+	if bi.is_layered():
+		# Geometry-dependent gear/potions must be migrated before exposure.
+		# Shared melee, shooting, group, reaction and spell menus stay common.
+		for key in bi.available.duplicate():
+			if key.begins_with("gear_") and key not in [GearActions.CAPE,"gear_rk_bottle_imp","gear_death_mask_toggle","gear_gloves_casting","gear_wand_light","gear_ring_transference","gear_ring_teleportation","gear_horn_destruction","gear_tiger_eye_move","gear_teetotum_arm","gear_absorb_arm","gear_lantern_toggle","gear_worm_summon"]:
+				bi.available.erase(key)
+		if not LayeredBridge.owned(bi.c.state,f.id).is_empty() and not bi.available.has("cancel_bridge"):
+			bi.available.append("cancel_bridge")
 	# Keep equipment choices behind one button. Reactions and selected
 	# item targets retain their existing dedicated confirmation controls.
 	for key in bi.available.duplicate():

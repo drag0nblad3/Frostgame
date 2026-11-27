@@ -32,7 +32,8 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 			else:
 				sa.movement.move(t,p["at"],true,false,true,id)
 		"suggestion":
-			sa.resistance.attempt(t, int(result["roll"]), sa._suggestion_result.bind(t, p["at"]),(5 if t.def.traits.has("blood_marked") else 0)+RedKingGear.puppet_penalty(f,t))
+			var callback:=sa._floor_suggestion_result.bind(t,p["at"],p["effect"]["surface_id"]) if p.get("effect",{}).has("surface_id") else sa._suggestion_result.bind(t,p["at"])
+			sa.resistance.attempt(t,int(result["roll"]),callback,(5 if t.def.traits.has("blood_marked") else 0)+RedKingGear.puppet_penalty(f,t))
 			return true
 		"push":
 			sa.movement.push(f, t)
@@ -52,7 +53,7 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 			t = ShotTarget.randomize(sa.c.dice, s.figures, t)
 			t=CreatureEffects.reflection_target(sa.c,f,t,id)
 			var old_health := t.health
-			sa._shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board, f, t.pos, float(s.spell_catalog[id].get("range", 24.0))), id == "elemental_bolt", id == "elemental_bolt", id)
+			sa._shot(f, t, int(s.spell_catalog[id]["power"]), WizardEye.origin(s.board,f,t.pos,float(s.spell_catalog[id].get("range",24.0))) if s.board.floor_layout.is_empty() else null, id == "elemental_bolt", id == "elemental_bolt", id)
 			if id == "poison_dart" and t.health < old_health:
 				sa.c.poison(t)
 			return t
@@ -64,11 +65,11 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 			return true
 		"banish":
 			for other in s.figures:
-				if other.in_play() and other.ring_side==f.ring_side and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.ring_side==f.ring_side and not ScenarioNull.muted(other) and other.is_demon() and Shooting.distance(f, other) <= 24.0 and LineOfSight.check_figures(s.board,f,other).clear:
 					sa._banish(f, other, int(result["roll"])+MagicEquipment.bonus(f,"banish_resistance_tn"), 4)
 		"scatter_shot":
 			for other in s.figures:
-				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check(s.board, f.pos, other.pos).clear:
+				if other.in_play() and other.ring_side==f.ring_side and other.side != f.side and Shooting.distance(f, other) <= 12 and LineOfSight.check_figures(s.board,f,other).clear:
 					sa._shot(f, CreatureEffects.reflection_target(sa.c,f,ShotTarget.randomize(sa.c.dice,s.figures,other),id), 0, f.pos, false, true, id)
 		"destructive_sphere":
 			for other in s.figures:
@@ -91,14 +92,14 @@ static func apply(sa: SpellActions, s: GameState, p: Dictionary, f: Figure, t: F
 		"elemental_ball":
 			var affected: Array[Figure] = []
 			for other in s.figures:
-				if other.in_play() and other.ring_side==t.ring_side and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check(s.board, t.pos, other.pos).clear):
+				if other.in_play() and other.ring_side==t.ring_side and Shooting.distance(t, other) <= 1.0 and (other == t or LineOfSight.check_figures(s.board,t,other).clear):
 					for member in ShotTarget.participants(s.figures, other):
 						if not affected.has(member):
 							affected.append(member)
 			var ids: Array[int]=[]
 			for other in affected:
 				ids.append(other.id)
-			s.scenario_data["rk_ball_queue"]={"caster":f.id,"center":t.id,"origin":t.pos,"targets":ids}
+			s.scenario_data["rk_ball_queue"]={"caster":f.id,"center":t.id,"origin":t.pos,"origin_world":Vector3(t.pos.x,t.elevation+1.0,t.pos.y),"targets":ids}
 			sa._continue_ball()
 		"destroy_undead":
 			var raw := sa.c.dice.d20()

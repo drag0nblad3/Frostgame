@@ -28,6 +28,8 @@ static func nullify(c: GameController) -> void:
 	for p in s.board.pieces.duplicate():
 		if p.cast_turn >= 0 and s.board.pieces.has(p):
 			c._magic.terrain.remove(p)
+	for bridge: Dictionary in s.board.floor_layout.get("bridges",[]).duplicate():
+		LayeredBridge.remove(c,str(bridge["surface"]["id"]))
 	var casters: Array[Figure] = []
 	for t in s.figures:
 		if t.in_play() and t.def.role in ["wizard", "apprentice"]:

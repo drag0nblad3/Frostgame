@@ -18,6 +18,8 @@ var _pieces := {}
 var _decoration: Node3D
 var _ground: Node3D
 var _floor: MeshInstance3D
+var _floor_art: LayeredGatehouseArt
+var _floor_revision := 0
 var _boundary_view: Node3D
 var _boundary_key := ""
 var _ground_key := ""
@@ -64,6 +66,8 @@ func build(board: Board) -> void:
 	_boundary_view=null
 	_boundary_key=""
 	_floor=null
+	_floor_art=null
+	_floor_revision=0
 	_decoration=null
 	_ground_key=""
 	_decoration_key=""
@@ -97,6 +101,18 @@ func build(board: Board) -> void:
 		baked.free()
 
 
+func show_floor(layout: FloorLayout,id: String) -> void:
+	if not is_instance_valid(_floor_art):
+		return
+	var index:=layout.index_of(id)
+	_floor_art.cut_at(INF if index<0 else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level))
+	for p: TerrainPiece in _pieces:
+		if p.kind.id=="spell_wizard_eye" and not p.surface_id.is_empty():
+			_pieces[p]["node"].visible=index<0 or p.base_height<=maxf(layout.surfaces[index].level,layout.surfaces[index].end_level)+1.5
+		elif not p.surface_id.is_empty():
+			_pieces[p]["node"].visible=id.is_empty() or p.surface_id==id or (not p.dynamic_surface.is_empty() and FloorSupportRemoval.removed(id,p.dynamic_surface))
+
+
 func scenery_ready() -> bool:
 	return _city_next>=4
 
@@ -106,6 +122,17 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 		build(board)
 		return
 	var scenario := board.id if scenario_id.is_empty() else scenario_id
+	if not board.floor_layout.is_empty():
+		var revision:=board.floor_layout.hash()
+		if not is_instance_valid(_floor_art) or _floor_revision!=revision:
+			_remove(_floor_art)
+			_floor_art=LayeredGatehouseArt.new()
+			add_child(_floor_art)
+			_floor_art.build(FloorLayout.from_dict(board.floor_layout),false,scenario)
+			_floor_revision=revision
+	elif is_instance_valid(_floor_art):
+		_remove(_floor_art)
+		_floor_art=null
 	var boundary_key := str(board.boundaries)+str(board.edge_links)+str(board.void_regions)
 	if _boundary_view==null or _boundary_key!=boundary_key:
 		_remove(_boundary_view)
@@ -150,6 +177,7 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 			if root==null:
 				root=Node3D.new()
 				_build_piece(root,board,piece)
+			root.position.y=piece.base_height if not piece.surface_id.is_empty() else 0.0
 			root.name="Terrain_"+piece.kind.id
 			_pieces[piece]={"node":root,"key":live[piece]}
 			add_child(root)
@@ -170,7 +198,7 @@ func _remove(node: Node) -> void:
 
 
 static func _piece_key(p: TerrainPiece) -> String:
-	return str([p.kind.id,p.kind.height,p.rect,p.circular,p.ramp,p.ramp_rotated,p.ramp_start,p.ramp_end,p.level])
+	return str([p.kind.id,p.kind.height,p.rect,p.circular,p.ramp,p.ramp_rotated,p.ramp_start,p.ramp_end,p.level,p.surface_id,p.base_height])
 
 
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:

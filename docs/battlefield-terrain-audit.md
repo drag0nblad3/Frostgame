@@ -28,6 +28,6 @@ References: Frostgrave Second Edition, p.38 and scenario setup pp.140–151; The
 | Ethereal Tethers (p.50) | Five pylons in X, no starting treasures, later linked edges. | Keep all pylon bases and topology unchanged. |
 | Bridge (p.53) | 30×36, 6-inch void with 4-inch bridge. | Do not fill void or add barriers to bridge. |
 | Ringworld (p.56 onward) | Matched realities and jagged structures. | Existing solid geometry preserved; no new independent obstruction or side asymmetry. Exact setup page not independently confirmed. |
-| Layered maps | Independent surface graph, legal stairs/climbs, visible floor selection. | Separate layered art needs its own footprint-aware pass; no changes here. |
+| Layered maps | Independent surface graph, legal stairs/climbs, visible floor selection. | The common BoardView now displays stacked solid volumes using the same architectural relief helper as exposed ruins, retaining independent cutaway visibility. |
 
 The general rulebook guidance is a design target rather than an imposed artificial 12-inch sight cap. A fuller density and scenario-fidelity pass should sample actual ground-level rays, test all deployment zones and treasure access, and run balance simulations before modifying named scenarios. Existing layout approximations (especially the tower interiors and mausoleum) are not silently redesigned here.

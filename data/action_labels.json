@@ -205,5 +205,6 @@
   "drop_shrunk": "Drop shrunk treasure",
   "potion_fury": "Philtre of Fury",
   "potion_burrowing": "Bottle of Burrowing",
-  "potion_ethereal_vacuum": "Ethereal Vacuum"
+  "potion_ethereal_vacuum": "Ethereal Vacuum",
+  "jump": "Jump"
 }

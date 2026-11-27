@@ -47,11 +47,19 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 
 ## Could `shooter` shoot `target` if it stood at `at`? (range, sight, target free)
 static func possible_from(board: Board, figures: Array[Figure], shooter: Figure, at: Vector2, target: Figure) -> bool:
-	if shooter.ring_side!=target.ring_side or shooter.ranged == null or not IllusionRules.visible_to(figures, shooter, target) or Contact.in_combat(figures, target):
+	return possible_from_world(board,figures,shooter,Vector3(at.x,board.height_at(at),at.y),target)
+
+
+## Shared candidate-shot test for the movement planner. Current-shot
+## authorization still goes through GameController.can_shoot.
+static func possible_from_world(board: Board,figures: Array[Figure],shooter: Figure,at: Vector3,target: Figure) -> bool:
+	if shooter.ring_side!=target.ring_side or shooter.ranged==null or not target.in_play() or not IllusionRules.visible_to(figures,shooter,target) or Contact.in_combat(figures,target):
 		return false
-	if maxf(Vector2(at.distance_to(target.pos),board.height_at(at)-target.elevation).length() - 2.0 * Figure.BASE_RADIUS, 0.0) > shooter.ranged.range_in:
+	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(at.x,at.z),target.pos)
+	var range_in:=RealityCrackGeometry.world_distance(board,at,Vector3(target.pos.x,target.elevation,target.pos.y))
+	if (range_in if relation!=0 else maxf(range_in-2.0*Figure.BASE_RADIUS,0.0))>shooter.ranged.range_in:
 		return false
-	return LineOfSight.check(board, at, target.pos,shooter).clear
+	return LineOfSight.check_from_world(board,shooter,at,target).clear
 
 
 ## Bonus to the target's roll from terrain.
@@ -103,7 +111,9 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 
 
 static func wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
-	if not board.floor_layout.is_empty() or board.reality_sphere or f.ring_side!=t.ring_side or RuleHooks.first("sight", [board, f.pos, t.pos, f]) != null:
+	if not board.floor_layout.is_empty():
+		return floor_wraith_line(board,f,t)
+	if board.reality_sphere or f.ring_side!=t.ring_side or RuleHooks.first("sight", [board, f.pos, t.pos, f]) != null:
 		return null
 	var best: LineOfSight.Result=null
 	for piece in board.pieces:
@@ -115,3 +125,34 @@ static func wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
 		if result.clear and (best==null or target_mod(result)<target_mod(best)):
 			best=result
 	return best
+
+
+static func floor_wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:
+	if f.ring_side!=t.ring_side or board.reality_sphere or (board.darkness and Shooting.distance(f,t)>12.0) or BattleBoundary.blocks_segment(board.boundaries,f.pos,t.pos,"sight",f):
+		return null
+	var a:=Vector3(f.pos.x,f.elevation+1.5,f.pos.y)
+	var b:=Vector3(t.pos.x,t.elevation+1.0,t.pos.y)
+	var blocks: Array[AABB]=[]
+	for solid in board.floor_geometry().solids:
+		if LayeredSight.intersects(a,b,solid):
+			blocks.append(solid)
+	for p in board.pieces:
+		if p.surface_id.is_empty() or not p.kind.blocks_los:
+			continue
+		var volume:=AABB(Vector3(p.rect.position.x,p.base_height,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
+		if not blocks.has(volume) and LayeredSight.intersects(a,b,volume):
+			blocks.append(volume)
+	if blocks.size()>1:
+		return null
+	var result:=LineOfSight.Result.new()
+	LineOfSight.floor_cover(board,Vector3(f.pos.x,f.elevation,f.pos.y),Vector3(t.pos.x,t.elevation,t.pos.y),result)
+	if blocks.is_empty():
+		if result.cover==0 and result.intervening==0:
+			return null
+		if result.cover>0:
+			result.cover=0
+		else:
+			result.intervening=maxi(0,result.intervening-1)
+	else:
+		result.intervening+=1
+	return result

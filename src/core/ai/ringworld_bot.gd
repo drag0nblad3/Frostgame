@@ -25,6 +25,8 @@ static func protected_key(s: GameState,f: Figure,t: Figure) -> bool:
 
 static func play(c: GameController,f: Figure) -> bool:
 	var s := c.state
+	if not s.board.floor_layout.is_empty():
+		return _play_floor(c,f)
 	var keys := RedKingRingworld.remaining(s)
 	if keys==0 or IllusionRules.phantom(f):
 		return false
@@ -97,3 +99,64 @@ static func _approach_key(c: GameController,f: Figure) -> bool:
 				gain=improvement
 				best=n
 	return best!=null and c.move_to(best)
+
+
+## Same evacuation policy, with the floor graph supplying legal approach nodes.
+static func _play_floor(c: GameController,f: Figure) -> bool:
+	var s:=c.state
+	var keys:=RedKingRingworld.remaining(s)
+	if keys==0 or IllusionRules.phantom(f):
+		return false
+	var final_fighter:=sacrifice(s,f.side)==f
+	var evacuate:=f.treasure_id>=0 or (keys==1 and not final_fighter)
+	if evacuate and (not final_fighter or s.side_figures(f.side).size()>1):
+		for i in 2:
+			if RedKingRingworld.escape(c,f):
+				return true
+			if not c.can_move() or not _approach_key_floor(c,f):
+				break
+		return f.moves_taken>0
+	if keys>1 and not Contact.in_combat(s.figures,f) and f.treasure_id<0:
+		for token in s.treasures:
+			if c.can_pick_up(token.id):
+				return c.pick_up(token.id)
+		for token in s.treasures:
+			if token.on_ground() and token.ring_side==f.ring_side and token.pos.distance_to(f.pos)<=10.0 and not f.def.traits.has("animal"):
+				return false
+	if keys==1 and s.side_figures(f.side).size()>1:
+		return c.can_move() and _approach_key_floor(c,f)
+	for key in s.figures:
+		if key.in_play() and RedKingRingworld.key_master(key) and key.ring_side==f.ring_side:
+			if c.can_fight(key.id) or c.can_shoot(key.id) or c.can_cast("elemental_bolt",key.id):
+				return false
+	return c.can_move() and _approach_key_floor(c,f)
+
+
+static func _approach_key_floor(c: GameController,f: Figure) -> bool:
+	var layout:=c.state.board.floor_geometry()
+	var keys: Array[Figure]=[]
+	for key in c.state.figures:
+		if key.in_play() and RedKingRingworld.key_master(key) and key.ring_side==f.ring_side:
+			keys.append(key)
+	if keys.is_empty():
+		return RedKingRingworld.switch(c,f)
+	var reach:=c.layered_reach()
+	if reach.cost.is_empty():
+		return false
+	var route:=LayeredReach.search(LayeredGrid.new(layout,f,c.state.figures),reach.start,100.0)
+	var best: Variant=null
+	var score:=INF
+	for n: Vector3i in route.cost:
+		if n==reach.start or float(route.cost[n])>=score:
+			continue
+		for key in keys:
+			if Contact.touches_position(key,layout.point(n),layout.height(n),layout.surface_id(n)):
+				score=float(route.cost[n])
+				best=n
+	if best==null:
+		return false
+	var path:=route.path_to(best)
+	for i in range(path.size()-1,0,-1):
+		if reach.can_reach(path[i]):
+			return c.move_on_floor(path[i])
+	return false

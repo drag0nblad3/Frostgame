@@ -11,9 +11,9 @@ static func well(s: GameState) -> TerrainPiece:
 	return null
 
 
-static func inside_well(s: GameState, at: Vector2) -> bool:
+static func inside_well(s: GameState, at: Vector2,height: float=NAN) -> bool:
 	var p := well(s)
-	return p != null and p.contains(at)
+	return p!=null and p.contains(at) and (is_nan(height) or absf(height-p.base_height)<0.5)
 
 
 static func can_drink(c: GameController) -> bool:
@@ -21,7 +21,7 @@ static func can_drink(c: GameController) -> bool:
 	var p := well(c.state)
 	if f == null or p == null or not c.can_act() or f.def.role not in ["wizard", "apprentice"] or c.state.well_drinkers.has(f.id) or Contact.in_combat(c.state.figures, f):
 		return false
-	return f.elevation < 0.5 and f.pos.distance_to(p.rect.get_center()) <= p.rect.size.x * 0.5 + Figure.BASE_RADIUS + 0.1
+	return absf(f.elevation-p.base_height)<0.5 and f.pos.distance_to(p.rect.get_center()) <= p.rect.size.x * 0.5 + Figure.BASE_RADIUS + 0.1
 
 
 static func drink(c: GameController) -> bool:
@@ -50,6 +50,25 @@ static func spawn_worm(c: GameController) -> void:
 	var token := candidates[c.dice.pick(candidates.size())]
 	var carrier := s.figure(token.carrier_id)
 	var origin := carrier.pos if carrier != null else token.pos
+	if not s.board.floor_layout.is_empty():
+		var height:=carrier.elevation if carrier!=null else TreasureRules.token_height(s,token)
+		var support:=carrier.surface_id if carrier!=null else token.surface_id
+		if is_nan(height):
+			return
+		var layout:=s.board.floor_geometry()
+		var candidates_on_floor:=BattlePlacement.nearby_floor(s,origin,height,1.5,support)
+		var best: Variant=null
+		var distance:=INF
+		for n in candidates_on_floor:
+			var d:=layout.point(n).distance_to(origin)
+			if d>=0.75 and d<distance:
+				best=n
+				distance=d
+		if best!=null:
+			var creature:=c._encounters._spawn_on_floor("giant_worm",best)
+			s.worm_spawned=true
+			c.emit("worm_emerges",{"id":creature.id,"treasure":token.id})
+		return
 	var grid := MoveGrid.new(s.board, null, s.figures)
 	var center := MovePlanner.node_at(origin)
 	var points: Array[Vector2i] = []
@@ -71,7 +90,7 @@ static func spawn_worm(c: GameController) -> void:
 static func can_break_ice(c: GameController) -> bool:
 	var f := c.state.active()
 	var token := c.state.treasure(0)
-	return c.state.scenario_special == "underground_library" and f != null and token != null and token.frozen and token.on_ground() and c.can_act() and not Contact.in_combat(c.state.figures, f) and not IllusionRules.phantom(f) and absf(f.elevation - c.state.board.height_at(token.pos)) < 0.5 and f.pos.distance_to(token.pos) <= Figure.BASE_RADIUS + TreasureRules.TOKEN_RADIUS + 0.01
+	return c.state.scenario_special == "underground_library" and f != null and token != null and token.frozen and token.on_ground() and c.can_act() and not Contact.in_combat(c.state.figures, f) and not IllusionRules.phantom(f) and TreasureRules.in_reach(c.state,f,token,Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01)
 
 
 static func break_ice(c: GameController) -> bool:

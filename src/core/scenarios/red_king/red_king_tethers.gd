@@ -27,6 +27,8 @@ static func setup(s: GameState) -> void:
 			continue
 		var token := TreasureToken.new(s.treasures.size(),f.pos)
 		token.central=false
+		token.surface_id=f.surface_id
+		token.ring_side=f.ring_side
 		token.lost=true
 		token.bonus_gold=20
 		s.treasures.append(token)
@@ -43,6 +45,8 @@ static func destroyed(c: GameController,f: Figure,by: Figure) -> void:
 		return
 	token.lost=false
 	token.pos=f.pos
+	token.surface_id=f.surface_id
+	token.ring_side=f.ring_side
 	c.emit("pylon_destroyed",{"id":f.id,"treasure":token.id,"at":token.pos})
 	if by!=null and by.side>=0:
 		c.emit("tether_xp",{"side":by.side,"xp":50})
@@ -68,6 +72,24 @@ static func end_turn(c: GameController) -> void:
 			continue
 		var id := arrival(c.dice.d20())
 		if id.is_empty() or not s.creature_db.available(id):
+			continue
+		if not s.board.floor_layout.is_empty():
+			var layout:=s.board.floor_geometry()
+			var best_floor: Variant=null
+			var value:=INF
+			for n in BattlePlacement.nearby_floor(s,f.pos,f.elevation,2.5,f.surface_id):
+				var at:=layout.point(n)
+				var distance:=at.distance_to(f.pos)
+				if distance<1.0-0.001:
+					continue
+				for target in s.figures:
+					if target.side>=0 and target.in_play():
+						var score:=distance*100.0+at.distance_to(target.pos)
+						if score<value:
+							value=score
+							best_floor=n
+			if best_floor!=null:
+				c._encounters._spawn_on_floor(id,best_floor)
 			continue
 		var grid := MoveGrid.new(s.board,null,s.figures)
 		var center := MovePlanner.node_at(f.pos)

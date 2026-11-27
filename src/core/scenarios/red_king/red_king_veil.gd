@@ -95,6 +95,16 @@ static func _spawn(c: GameController,slot: Dictionary,returning: bool) -> bool:
 			1: origin=Vector2(s.board.size.x*0.5,y-1.0)
 			2: origin=Vector2(0.5,y*0.5)
 			3: origin=Vector2(s.board.size.x-0.5,y*0.5)
+	if not s.board.floor_layout.is_empty():
+		var landing: Variant=BattlePlacement.nearest_ground(s,origin,4.0,func(p: Vector2) -> bool: return p.y<y-Figure.BASE_RADIUS)
+		if landing==null:
+			return false
+		var layout:=s.board.floor_geometry()
+		var spawned:=c._encounters._spawn_at(slot["type"],layout.point(landing),1,0,layout.surface_id(landing),layout.height(landing))
+		slot["id"]=spawned.id
+		slot["entered"]=true
+		c.emit("veil_arrival",{"id":spawned.id,"returning":returning})
+		return true
 	var grid := MoveGrid.new(s.board,null,s.figures)
 	var best: Variant=null
 	var distance := INF

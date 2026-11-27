@@ -17,20 +17,101 @@ class Result:
 	var intervening := 0
 
 
-## The layered fixture uses physical floor volumes instead of a highest-surface ray.
+## Canonical figure-to-figure sight. A geometry provider supplies the physical obstruction test.
 static func check_figures(board: Board,from: Figure,to: Figure) -> Result:
-	if from.ring_side!=to.ring_side:
-		var blocked := Result.new()
-		blocked.clear=false
-		return blocked
-	if board.floor_layout.is_empty():
-		return check(board,from.pos,to.pos,from)
+	return check_from_world(board,from,Vector3(from.pos.x,from.elevation,from.pos.y),to)
+
+
+## Physical sight from an actual or hypothetical legal standing position.
+## The caller supplies the true height; no mutation or highest-floor lookup.
+static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -> Result:
 	var result := Result.new()
-	var layout := FloorLayout.from_dict(board.floor_layout)
-	result.clear = layout.errors.is_empty() and LayeredSight.figures_clear(layout,from,to)
-	if board.darkness and Shooting.distance(from,to)>12.0:
+	if from.ring_side!=to.ring_side:
 		result.clear=false
+		return result
+	if board.floor_layout.is_empty():
+		return check(board,Vector2(at.x,at.z),to.pos,from)
+	var layout := board.floor_geometry()
+	var target := Vector3(to.pos.x,to.elevation,to.pos.y)
+	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(at.x,at.z),to.pos)
+	if relation!=0:
+		result.clear=relation==1
+		return result
+	if board.reality_sphere:
+		return RealityCrackGeometry.floor_sight(board,layout,at+Vector3.UP*1.5,target+Vector3.UP,from)
+	if board.ringworld and from.ring_side==0 and Vector2(at.x,at.z).distance_to(to.pos)>18.0:
+		result.clear=false
+		return result
+	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and floor_ray(board,layout,at+Vector3.UP*1.5,target+Vector3.UP,from,false)
+	if board.darkness and maxf(0.0,at.distance_to(target)-2.0*Figure.BASE_RADIUS)>12.0:
+		result.clear=false
+	if result.clear:
+		floor_cover(board,at,target,result)
 	return result
+
+
+static func floor_cover(board: Board,a: Vector3,b: Vector3,result: Result) -> void:
+	var from:=Vector2(a.x,a.z)
+	var to:=Vector2(b.x,b.z)
+	for p in board.pieces:
+		if p.surface_id.is_empty() or p.kind.cover==TerrainKind.Cover.NONE:
+			continue
+		var interval:=Geom.clip(from,to,p.rect)
+		if interval.size()!=2:
+			continue
+		var h:=lerpf(a.y,b.y,(float(interval[0])+float(interval[1]))*0.5)
+		if h<p.base_height-0.5 or h>p.base_height+p.kind.height+0.5:
+			continue
+		if Geom.point_rect_distance(to,p.rect)<=COVER_REACH:
+			result.cover=maxi(result.cover,p.kind.cover)
+		elif Geom.point_rect_distance(from,p.rect)>COVER_REACH:
+			result.intervening+=1
+
+
+## Floor geometry ray, shared by attacks and all explicit floor-targeted
+## magic. It includes authored boundaries and magical darkness.
+static func floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Vector3,observer: Figure=null,apply_darkness: bool=true) -> bool:
+	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(a.x,a.z),Vector2(b.x,b.z))
+	if relation!=0:
+		return relation==1
+	if board.reality_sphere:
+		return RealityCrackGeometry.floor_sight(board,layout,a,b,observer,apply_darkness).clear
+	return physical_floor_ray(board,layout,a,b,observer,apply_darkness)
+
+
+static func physical_floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Vector3,observer: Figure=null,apply_darkness: bool=true) -> bool:
+	if not layout.errors.is_empty() or BattleBoundary.blocks_segment(board.boundaries,Vector2(a.x,a.z),Vector2(b.x,b.z),"sight",observer):
+		return false
+	if apply_darkness and board.darkness and a.distance_to(b)>12.0:
+		return false
+	if not LayeredSight.clear(layout,a,b):
+		return false
+	for p in board.pieces:
+		if p.surface_id.is_empty() or not p.kind.blocks_los:
+			continue
+		var volume:=AABB(Vector3(p.rect.position.x,p.base_height,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
+		if LayeredSight.intersects(a,b,volume):
+			return false
+	return true
+
+
+static func floor_point_visible(board: Board,layout: FloorLayout,f: Figure,at: Vector3,limit: float=24.0) -> bool:
+	var start:=Vector3(f.pos.x,f.elevation,f.pos.y)
+	return RealityCrackGeometry.world_distance(board,start,at)<=limit+0.001 and floor_ray(board,layout,start+Vector3.UP*1.5,at+Vector3.UP*0.02,f)
+
+
+## Spells that use centre range (not weapon base-edge range) use actual
+## figure elevations even when two figures share the same horizontal point.
+static func within_centres(board: Board,from: Figure,to: Figure,limit: float=24.0) -> bool:
+	return RealityCrackGeometry.world_distance(board,Vector3(from.pos.x,from.elevation,from.pos.y),Vector3(to.pos.x,to.elevation,to.pos.y))<=limit+0.001 and check_figures(board,from,to).clear
+
+
+static func spell_visible(board: Board,from: Figure,to: Figure,limit: float=24.0) -> bool:
+	if from.ring_side!=to.ring_side:
+		return false
+	if board.floor_layout.is_empty():
+		return WizardEye.visible(board,from,to.pos,limit)
+	return WizardEye.floor_origin(board,from,Vector3(to.pos.x,to.elevation,to.pos.y),limit)!=null
 
 
 static func check(board: Board, from: Vector2, to: Vector2,observer: Figure=null) -> Result:
@@ -102,6 +183,8 @@ static func _ray_hits_piece(board: Board, from: Vector2, to: Vector2, piece: Ter
 static func _ray_hits_ground(board: Board,from: Vector2,to: Vector2) -> bool:
 	var a := board.height_at(from)+1.5
 	var b := board.height_at(to)+1.0
+	if board.ground_max<=minf(a,b)+0.001:
+		return false
 	var steps := maxi(1,ceili(from.distance_to(to)/0.10))
 	for i in range(1,steps):
 		var t := float(i)/steps

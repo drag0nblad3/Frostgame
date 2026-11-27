@@ -65,8 +65,37 @@ func start_treasure(id: String, token_id: int, at: Vector2) -> bool:
 	return _roll(id, c.state.active_id, at, false, -1, {"token": token_id})
 
 
+func start_floor_treasure(id: String,token_id: int,n: Vector3i) -> bool:
+	var token:=c.state.treasure(token_id)
+	var f:=c.state.active()
+	if c.state.board.floor_layout.is_empty() or token==null or not treasure_options(id).has(token) or not treasure_magic.can_place_floor(f,id,token,n):
+		return false
+	var layout:=c.state.board.floor_geometry()
+	return _roll(id,f.id,layout.point(n),false,-1,{"token":token_id,"surface_id":layout.surface_id(n)})
+
+
+func start_floor_suggestion(target_id: int,n: Vector3i) -> bool:
+	if c.state.board.floor_layout.is_empty() or not can_cast("suggestion",target_id):
+		return false
+	var t:=c.state.figure(target_id)
+	if not SpellAvailability.floor_suggestion_points(self,t).has(n):
+		return false
+	var layout:=c.state.board.floor_geometry()
+	return _roll("suggestion",target_id,layout.point(n),false,-1,{"surface_id":layout.surface_id(n)})
+
+
+func _floor_suggestion_result(success: bool,t: Figure,at: Vector2,surface: String) -> void:
+	if success or not t.in_play():
+		return
+	c._loot.drop_on_death(t)
+	var layout:=c.state.board.floor_geometry()
+	var n:=layout.node(surface,at)
+	if SpellAvailability.floor_suggestion_points(self,t).has(n) and (at!=t.pos or surface!=t.surface_id):
+		movement.move_floor(t,n)
+
+
 func start_move(id: String, target_id: int, at: Vector2) -> bool:
-	if not can_cast(id, target_id):
+	if not c.state.board.floor_layout.is_empty() or not can_cast(id,target_id):
 		return false
 	var f := c.state.active()
 	var t := c.state.figure(target_id)
@@ -114,6 +143,22 @@ func start_at(id: String, at: Vector2, rotated: bool = false,extended: bool=fals
 	return _roll(id,c.state.active_id,at,rotated,-1,{"extended_bridge":true} if extended else {})
 
 
+func start_floor_at(id: String,n: Vector3i,rotated: bool=false) -> bool:
+	if not SpellAvailability.floor_placement_ready(self,id):
+		return false
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	if id=="teleport":
+		return LayeredMagic.start_teleport(c,n)
+	if TerrainMagic.FLOOR_SPELLS.has(id):
+		if not terrain.can_place_floor(f,id,n,rotated):
+			return false
+		return _roll(id,f.id,layout.point(n),rotated,-1,{"surface_id":layout.surface_id(n)})
+	if not SummonActions.PLACEMENT.has(id) or not summons.can_place_floor(f,id,n):
+		return false
+	return _roll(id,f.id,layout.point(n),false,-1,{"floor_destination":n,"surface_id":layout.surface_id(n)})
+
+
 func _roll(id: String, target_id: int, at: Variant = null, rotated: bool = false, second: int = -1, effect: Dictionary = {}) -> bool:
 	var f := c.state.active()
 	if shatter.eligible(f, c.state, id):
@@ -145,7 +190,11 @@ func _roll_authorized(id: String, target_id: int, at: Variant, rotated: bool, se
 	var t := c.state.figure(target_id)
 	var spec: Dictionary=c.state.spell_catalog[id]
 	var limit := float(spec.get("range",24.0))
-	var tiger_used: bool= t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
+	var tiger_used: bool= c.state.board.floor_layout.is_empty() and t!=null and t!=f and spec.get("kind","")!="touch" and not WizardEye.visible(c.state.board,f,t.pos,limit) and TigerEye.witness(c.state.board,f,t.pos,limit)!=null
+	if not c.state.board.floor_layout.is_empty() and t!=null and t!=f and spec.get("kind","")!="touch":
+		var b:=c.state.board
+		var directly:=LineOfSight.within_centres(b,f,t,limit) if spec.get("kind","")=="area_shot" else LineOfSight.spell_visible(b,f,t,limit)
+		tiger_used=not directly and TigerEye.floor_witness(b,f,Vector3(t.pos.x,t.elevation,t.pos.y),limit)!=null
 	var known: bool = c.state.spellbooks.get(f.side, {}).has(id)
 	var scroll_roll := 0 if known else ScrollActions.consume_roll(f,id)
 	var scroll := scroll_roll>0

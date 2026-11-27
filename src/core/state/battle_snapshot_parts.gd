@@ -4,7 +4,7 @@ extends RefCounted
 const FIGURE := ["id", "campaign_id", "injury_types", "familiar", "beauty_tests", "last_plane_attempt", "plane_attempts", "campaign_base", "original_side", "controller_id", "control_spell", "control_roll", "summoned_by", "prepared_demon_caster", "summon_spell", "side", "pos", "elevation", "surface_id", "ring_side", "health", "out_of_action", "exited", "treasure_id", "second_treasure_id", "shrunk_treasure_id", "disengaged", "spell_effects", "items", "elemental_shield", "poisoned", "poison_weapon", "empowerment_used", "used_gear", "next_cast_gear", "petrified_skip", "magic_exhausted", "last_time_walk", "walk_phases", "stored_action_turn", "used_stored_action", "non_moves", "activated", "actions_left", "moves_taken", "acted", "loaded", "destroyed_weapons"]
 const DEFINITION := ["id", "name", "role", "move", "fight", "shoot", "armour", "will", "health", "cost", "specialist", "shield", "traits", "verify"]
 const BOARD := ["id", "name", "size", "darkness", "floor_layout", "boundaries", "edge_links", "void_regions", "wrap_short_edges", "wrap_long_edges", "reality_sphere", "reality_cross", "ringworld", "low_gravity"]
-const TERRAIN := ["rect", "circular", "eye_direction", "ramp", "ramp_rotated", "ramp_start", "ramp_end", "level", "cast_turn", "caster_id", "extended_bridge", "elemental_wall"]
+const TERRAIN := ["rect", "circular", "eye_direction", "eye_solid", "ramp", "ramp_rotated", "ramp_start", "ramp_end", "level", "cast_turn", "caster_id", "extended_bridge", "elemental_wall", "surface_id", "base_height", "dynamic_surface"]
 const KIND := ["id", "name", "blocks_los", "blocks_move", "cover", "move_mult", "height", "walkable_top", "stairs", "ground_surface"]
 
 

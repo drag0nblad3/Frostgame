@@ -5,7 +5,9 @@ extends RefCounted
 
 static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := sa.c.state
-	if not s.board.floor_layout.is_empty() and not LayeredFigureSpells.SUPPORTED.has(id):
+	if not s.board.floor_layout.is_empty() and id=="leap":
+		# These effects still require an explicit floor placement/origin.
+		# All other figure-targeted effects use the standard rules below.
 		return false
 	var f := s.active()
 	var t := s.figure(target_id)
@@ -46,7 +48,9 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 	var limit := 1.0 if kind == "touch" else float(spell.get("range", 24.0))
 	if t != f:
 		if not s.board.floor_layout.is_empty():
-			if not LayeredFigureSpells.visible(s.board,f,t,limit):
+			var direct:=LineOfSight.within_centres(s.board,f,t,limit)
+			var remote:=kind not in ["touch","area_shot"] and LineOfSight.spell_visible(s.board,f,t,limit)
+			if not direct and not remote and (kind=="touch" or TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),limit)==null):
 				return false
 		elif kind == "area_shot":
 			if Shooting.distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
@@ -75,7 +79,7 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 	if id=="control_demon" and t.def.traits.has("immune_control_demon"):
 		return false
 	if id == "suggestion":
-		return t != f and not t.mind_locked()
+		return t != f and not t.mind_locked() and (s.board.floor_layout.is_empty() or not floor_suggestion_points(sa,t,true).is_empty())
 	if id == "bones_of_the_earth":
 		return not t.def.traits.has("large") and t.elevation < 0.01 and not t.spell_effects.has(id)
 	if id == "leap":
@@ -128,8 +132,52 @@ static func treasure_options(sa: SpellActions, id: String) -> Array[TreasureToke
 	if id not in ["telekinesis", "fools_gold"] or f == null or not sa.c.can_act() or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light") or not sa.available_spell(f, id):
 		return out
 	for token in sa.c.state.treasures:
-		if sa.treasure_magic.can_target(f, id, token) and not sa.treasure_magic.points(f, id, token, true).is_empty():
+		if sa.treasure_magic.can_target(f,id,token) and (not sa.treasure_magic.points(f,id,token,true).is_empty() if sa.c.state.board.floor_layout.is_empty() else not sa.treasure_magic.floor_points(f,id,token,true).is_empty()):
 			out.append(token)
+	return out
+
+
+static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=false,index: int=-1) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	var s:=sa.c.state
+	var layout:=s.board.floor_geometry()
+	var origin:=Vector3(t.pos.x,t.elevation,t.pos.y)
+	var start:=layout.node(t.surface_id,t.pos)
+	if not layout.standable(start):
+		return out
+	# The common route graph supplies safe inclines, stairs and short climbs.
+	# Allow leaving existing contact as the ordinary Suggestion rule does.
+	var grid:=LayeredGrid.new(layout,t,s.figures)
+	var reach:=LayeredReach.search(grid,start,3.0,true)
+	for n: Vector3i in reach.cost:
+		if index>=0 and n.z!=index:
+			continue
+		if n==start:
+			out.append(n)
+		elif BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) and not ScenarioNull.field_at(s.board,layout.point(n)) and not layout.surface_id(n).begins_with("climb:"):
+			out.append(n)
+		if first_only and not out.is_empty():
+			return out
+	# Safe downward displacements can fall up to three inches without harm.
+	for n in BattlePlacement.nodes(s.board,t.pos,3.0,index):
+		if out.has(n) or not BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) or ScenarioNull.field_at(s.board,layout.point(n)):
+			continue
+		var dest:=layout.world(n)
+		if dest.y>=origin.y or origin.distance_to(dest)>3.001:
+			continue
+		if not LayeredFall.clear_descent(layout,dest,origin.y):
+			continue
+		var edge:=Vector3(dest.x,origin.y,dest.z)
+		var clear:=true
+		for step in range(1,maxi(2,ceili(origin.distance_to(edge)*4.0))+1):
+			var count:=maxi(2,ceili(origin.distance_to(edge)*4.0))
+			if not layout.clearance(origin.lerp(edge,float(step)/count),Figure.BASE_RADIUS,1.6):
+				clear=false
+				break
+		if clear and not BattleBoundary.blocks_segment(s.board.boundaries,t.pos,layout.point(n),"movement",t):
+			out.append(n)
+			if first_only:
+				return out
 	return out
 
 
@@ -142,6 +190,25 @@ static func suggestion_points(sa: SpellActions, t: Figure) -> Array[Vector2]:
 			if Vector2(t.pos.distance_to(at), t.elevation - sa.c.state.board.height_at(at)).length() <= 3.0 and ElevationRules.fall_damage(t.elevation - sa.c.state.board.height_at(at)) == 0 and sa.movement.landing(t, at):
 				if not out.has(at):
 					out.append(at)
+	return out
+
+
+static func floor_placement_ready(sa: SpellActions,id: String) -> bool:
+	var f:=sa.c.state.active()
+	return not sa.c.state.board.floor_layout.is_empty() and f!=null and sa.c.can_act() and CasterLoadout.is_caster(f.def.role) and not Contact.in_combat(sa.c.state.figures,f) and sa.available_spell(f,id) and (not f.spell_effects.has("blinding_light") or id in ["raise_zombie","summon_demon","illusionary_soldier"])
+
+
+static func floor_placement_points(sa: SpellActions,id: String,first_only: bool=false,index: int=-1,rotated: bool=false) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	if not floor_placement_ready(sa,id):
+		return out
+	var f:=sa.c.state.active()
+	if TerrainMagic.FLOOR_SPELLS.has(id):
+		return sa.terrain.floor_points(f,id,first_only,index,rotated)
+	if SummonActions.PLACEMENT.has(id):
+		return sa.summons.floor_points(f,id,first_only,index)
+	if id=="teleport" and not sa.c.state.group.in_progress() and not f.surface_id.begins_with("climb:"):
+		return BattlePlacement.teleports(sa.c.state,f,24.0,index,first_only)
 	return out
 
 
@@ -198,4 +265,26 @@ static func available_spells(sa: SpellActions, f: Figure) -> Array[String]:
 	for id in ScrollShield.spells(f):
 		if not out.has(id) and not CircletDefence.immune(f,id):
 			out.append(id)
+	return out
+
+
+## The same catalogue and action validators feed every battle spellbook.
+static func menu_options(sa: SpellActions,f: Figure) -> Array[String]:
+	var out: Array[String]=[]
+	for id in available_spells(sa,f):
+		if id=="enchant_weapon":
+			for t in sa.c.state.figures:
+				if can_cast(sa,id,t.id,true):
+					out.append("enchant_ammo")
+					break
+		if not treasure_options(sa,id).is_empty() or not counter_options(sa,id).is_empty() or not floor_placement_points(sa,id,true).is_empty() or (id in ["fog","wall"] and not floor_placement_points(sa,id,true,-1,true).is_empty()):
+			out.append(id)
+			continue
+		if not placement_points(sa,id,true).is_empty() or (id in ["fog","wall","bridge"] and not placement_points(sa,id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not placement_points(sa,id,true,false,true).is_empty() or not placement_points(sa,id,true,true,true).is_empty())):
+			out.append(id)
+			continue
+		for t in sa.c.state.figures:
+			if can_cast(sa,id,t.id):
+				out.append(id)
+				break
 	return out

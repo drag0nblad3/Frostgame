@@ -68,7 +68,7 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 				var x := 1.0+1.2*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.2*floori(deploy_index/4.0)]
 			deploy_index += 1
-			if wb.get("campaign_roster",false) and s.scenario_special.begins_with("red_king_") and not RedKingMind.active(s):
+			if wb.get("campaign_roster",false) and (s.scenario_special.begins_with("red_king_") or not s.board.floor_layout.is_empty()) and not RedKingMind.active(s):
 				var repaired: Variant=CampaignDeployment.find(s,Vector2(at[0],at[1]),side,d)
 				if repaired==null:
 					s.scenario_data["deployment_error"]="No legal starting position for "+str(entry["type"])+". Reduce the deployed roster."
@@ -115,13 +115,13 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			for item: Dictionary in entry.get("items", []):
 				unit.items.append(item.duplicate(true))
 			unit.campaign_id = int(entry.get("campaign_id", -1))
-			unit.elevation = s.board.height_at(unit.pos)
+			assign_support(s,unit,str(entry.get("surface",at[2] if at.size()>2 else "")))
 			s.figures.append(unit)
 			next_id += 1
 	for entry: Dictionary in d.get("creatures", []):
 		var at: Array = entry["at"]
 		var creature := Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed())
-		creature.elevation = s.board.height_at(creature.pos)
+		assign_support(s,creature,str(entry.get("surface",at[2] if at.size()>2 else "")))
 		creature.ring_side=int(entry.get("ring_side",0))
 		s.figures.append(creature)
 		next_id += 1
@@ -129,11 +129,13 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 		var token := TreasureToken.new(s.treasures.size(), Vector2(at[0], at[1]))
 		token.central = token.id == int(d.get("central_treasure", -1 if s.museum or not s.reinforcement_points.is_empty() else 0))
 		token.frozen = (s.scenario_special == "underground_library" and token.central) or s.scenario_special == "complex_temple" or (RedKingFire.active(s) and token.central)
+		assign_token_support(s,token,str(at[2]) if at.size()>2 else "")
 		s.treasures.append(token)
 	for at: Array in d.get("investigation_stands",[]):
 		var stand := TreasureToken.new(s.treasures.size(),Vector2(at[0],at[1]))
 		stand.central=false
 		stand.investigation=true
+		assign_token_support(s,stand,str(at[2]) if at.size()>2 else "")
 		s.treasures.append(stand)
 	if RedKingRingworld.active(s):
 		RedKingRingworld.setup(s)
@@ -160,3 +162,39 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if warbands[side].get("red_king_artefact_recovered",false):
 				s.scenario_data["reduced_hunters_%d"%side]=true
 	return s
+
+
+static func assign_support(s: GameState,f: Figure,id: String="") -> void:
+	if s.board.floor_layout.is_empty():
+		f.elevation=s.board.height_at(f.pos)
+		return
+	var n: Variant=BattlePlacement.support(s,f.pos,id)
+	if n==null:
+		_report_support_error(s,f.label(),f.pos,id)
+		return
+	var layout:=s.board.floor_geometry()
+	f.surface_id=layout.surface_id(n)
+	f.elevation=layout.height(n)
+
+
+static func assign_token_support(s: GameState,t: TreasureToken,id: String="") -> void:
+	if s.board.floor_layout.is_empty():
+		return
+	var n: Variant=BattlePlacement.support(s,t.pos,id,TreasureRules.TOKEN_RADIUS,0.5,false)
+	if n==null:
+		# Frozen temple treasures are intentionally inside their guardian column.
+		if t.frozen and s.scenario_special=="complex_temple":
+			for p in s.board.pieces:
+				if p.kind.id=="temple_column" and p.rect.get_center().distance_to(t.pos)<0.01 and (id.is_empty() or p.surface_id==id):
+					t.surface_id=p.surface_id
+					return
+		_report_support_error(s,"Treasure "+str(t.id),t.pos,id)
+		return
+	t.surface_id=s.board.floor_geometry().surface_id(n)
+
+
+static func _report_support_error(s: GameState,label: String,at: Vector2,id: String) -> void:
+	var errors: Array=s.scenario_data.get("support_errors",[])
+	errors.append("%s at %s on '%s' has no legal support."%[label,str(at),id])
+	s.scenario_data["support_errors"]=errors
+	s.scenario_data["deployment_error"]="; ".join(errors)

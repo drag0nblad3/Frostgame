@@ -118,9 +118,60 @@ static func _dispatch_shatter(sa: SpellActions, entry: Dictionary) -> void:
 	var t := sa.c.state.figure(entry["target"])
 	if t == null or not t.in_play():
 		return
-	if entry["second"] >= 0 and not sa.c.state.figure(entry["second"]).in_play():
+	if entry["second"]>=0:
+		var second:=sa.c.state.figure(entry["second"])
+		if second==null or not second.in_play():
+			return
+	if not sa.c.state.board.floor_layout.is_empty() and not _floor_declaration_valid(sa,f,t,entry):
+		sa.c.emit("spell_expired",{"id":f.id,"spell":entry["id"],"reason":"destination_or_target_changed"})
 		return
 	sa._authorize_roll(entry["id"], entry["target"], entry["at"], entry["rotated"], entry["second"], entry["effect"])
+
+
+static func _floor_declaration_valid(sa: SpellActions,f: Figure,t: Figure,entry: Dictionary) -> bool:
+	var s:=sa.c.state
+	var layout:=s.board.floor_geometry()
+	var id:=str(entry["id"])
+	var effect: Dictionary=entry["effect"]
+	if effect.has("layered_bridge"):
+		return LayeredBridge.can_apply(sa.c,effect["layered_bridge"])
+	if effect.has("surface_id"):
+		var surface:=str(effect["surface_id"])
+		if layout.index_of(surface)<0:
+			return false
+		var at: Variant=entry["at"]
+		if effect.has("floor_destination"):
+			var saved: Vector3i=effect["floor_destination"]
+			at=MoveGrid.to_pos(Vector2i(saved.x,saved.y))
+		if not at is Vector2:
+			return false
+		var n:=layout.node(surface,at)
+		if id=="teleport":
+			return BattlePlacement.teleport_legal(s,f,n)
+		if id=="leap":
+			return not LayeredLeap.path(sa.c,t,n,layout,LayeredGrid.new(layout,t,s.figures)).is_empty()
+		if TerrainMagic.FLOOR_SPELLS.has(id):
+			return sa.terrain.can_place_floor(f,id,n,bool(entry["rotated"]))
+		if SummonActions.PLACEMENT.has(id):
+			return sa.summons.can_place_floor(f,id,n)
+		if id=="suggestion":
+			return SpellAvailability.floor_suggestion_points(sa,t).has(n)
+		if effect.has("token"):
+			var token:=s.treasure(int(effect["token"]))
+			return token!=null and sa.treasure_magic.can_place_floor(f,id,token,n)
+	if effect.get("kind","")=="eye_face" and not effect.get("eye_solid",[]).is_empty():
+		return s.board.floor_layout.get("solids",[]).has(effect["eye_solid"])
+	if effect.has("piece"):
+		return s.board.pieces.has(effect["piece"])
+	if effect.get("kind","")=="floor_bridge":
+		return layout.index_of(str(effect["surface"]))>=0
+	if id=="transpose":
+		return sa.movement.can_swap(f,t,s.figure(int(entry["second"])))
+	if t!=f:
+		var spec: Dictionary=s.spell_catalog[id]
+		var limit:=1.0 if spec.get("kind","")=="touch" else float(spec.get("range",24.0))
+		return (LineOfSight.within_centres(s.board,f,t,limit) or (spec.get("kind","") not in ["touch","area_shot"] and LineOfSight.spell_visible(s.board,f,t,limit)) or (spec.get("kind","")!="touch" and TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),limit)!=null)) and IllusionRules.visible_to(s.figures,f,t) and not ScenarioNull.muted(t)
+	return true
 
 
 static func advance_shatter(sa: SpellActions) -> void:

@@ -10,6 +10,8 @@ static func plans(c: GameController) -> Dictionary:
 		return out
 	var s := c.state
 	var f := s.active()
+	if FuryRules.target(s,f)!=null or PlaneWalk.uses_direct(f):
+		return out
 	var layout := FloorLayout.from_dict(s.board.floor_layout)
 	if not layout.errors.is_empty():
 		return out
@@ -30,7 +32,7 @@ static func plans(c: GameController) -> Dictionary:
 			continue
 		var delta := layout.point(target)-layout.point(takeoff)
 		var distance := delta.length()
-		if distance<=0.001 or distance>4.0:
+		if distance<=0.001 or distance>(7.0 if s.board.low_gravity else 4.0):
 			continue
 		var run := layout.point(takeoff)-layout.point(start)
 		if run.length()+0.001<distance or run.normalized().dot(delta.normalized())<0.999:
@@ -80,15 +82,15 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	if not options.has(n):
 		return false
 	var f := c.state.active()
+	var engaged:=Contact.in_combat(c.state.figures,f)
 	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
 	var plan: Dictionary = options[n]
 	var old := f.surface_id
 	f.pos=layout.point(n)
 	f.elevation=layout.height(n)
 	f.surface_id=layout.surface_id(n)
-	f.actions_left-=1
-	f.moves_taken+=1
+	c.spend_move(f)
 	c.emit("layered_move",{"id":f.id,"path":plan["path"],"surfaces":[old,f.surface_id],"cost":plan["cost"],"jump":true})
 	LayeredFall.apply(c,f,float(plan["fall"]),f)
-	ScenarioNull.enter(c,f)
+	c.finish_movement(f,engaged,f.in_play())
 	return true

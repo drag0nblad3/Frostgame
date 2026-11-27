@@ -7,8 +7,10 @@ var name := ""
 var darkness := false
 var size := Vector2(36, 36)
 var pieces: Array[TerrainPiece] = []
-## Authored experimental floor data. Legacy maps leave this empty.
+## Authored overlapping surfaces. Exposed terrain uses the heightfield provider.
 var floor_layout := {}
+var _floor_geometry: FloorLayout
+var _floor_geometry_hash := 0
 ## Serialized rule boundaries; ordinary battlefields have none.
 var boundaries: Array[Dictionary]=[]
 ## Directed links between edge segments and their destination centers.
@@ -21,6 +23,16 @@ var ringworld := false
 var low_gravity := false
 ## Regions with no traversable surface at any elevation.
 var void_regions: Array[Rect2]=[]
+
+
+## Read-only derived geometry; dynamic bridges invalidate it by changing
+## the authored dictionary. Never modify this layout in place.
+func floor_geometry() -> FloorLayout:
+	var revision:=floor_layout.hash()
+	if _floor_geometry==null or revision!=_floor_geometry_hash:
+		_floor_geometry=FloorLayout.from_dict(floor_layout)
+		_floor_geometry_hash=revision
+	return _floor_geometry
 
 
 func over_void(at: Vector2,radius: float=0.0) -> bool:
@@ -82,6 +94,8 @@ var static_step_cache := PackedFloat64Array()
 var field_cache := {}
 var has_ground_profiles := false
 var has_ramps := false
+var _ground_profiles: Array[TerrainPiece]=[]
+var ground_max := 0.0
 
 
 ## Index of `p` in the quarter-inch lattice arrays, or -1 off the lattice or table.
@@ -142,9 +156,9 @@ func _can_stand(p: Vector2, radius: float) -> bool:
 
 ## Ground profiles replace the zero plane; elevated decks can sit above them.
 func ground_piece_at(p: Vector2) -> TerrainPiece:
-	for i in range(pieces.size()-1,-1,-1):
-		var piece := pieces[i]
-		if piece.kind.ground_surface and piece.contains(p):
+	for i in range(_ground_profiles.size()-1,-1,-1):
+		var piece := _ground_profiles[i]
+		if piece.contains(p):
 			return piece
 	return null
 
@@ -195,9 +209,14 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 func invalidate_terrain() -> void:
 	has_ground_profiles = false
 	has_ramps = false
+	_ground_profiles.clear()
+	ground_max=0.0
 	for piece in pieces:
 		has_ground_profiles = has_ground_profiles or piece.kind.ground_surface
 		has_ramps = has_ramps or piece.ramp
+		if piece.kind.ground_surface:
+			_ground_profiles.append(piece)
+			ground_max=maxf(ground_max,maxf(piece.surface_height(piece.rect.position),piece.surface_height(piece.rect.end)))
 	_reset_caches()
 	field_cache.clear()
 

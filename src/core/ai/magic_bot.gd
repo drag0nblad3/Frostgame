@@ -22,10 +22,16 @@ static func plan(c: GameController, f: Figure) -> Dictionary:
 		var score := (5.5 if id == "summon_demon" else 4.0) * MagicTactics.probability(c, f, id)
 		if score <= best_value:
 			continue
-		var points := c._magic.placement_points(id, true)
-		if not points.is_empty():
-			best_value = score
-			best = {"spell": id, "at": points[0], "score": score}
+		if c.state.board.floor_layout.is_empty():
+			var points:=c._magic.placement_points(id,true)
+			if not points.is_empty():
+				best_value=score
+				best={"spell":id,"at":points[0],"score":score}
+		else:
+			var points:=SpellAvailability.floor_placement_points(c._magic,id,true)
+			if not points.is_empty():
+				best_value=score
+				best={"spell":id,"node":points[0],"score":score}
 	return best
 
 
@@ -39,7 +45,7 @@ static func play(c: GameController, f: Figure) -> bool:
 	if c.state.spellbooks.get(f.side, {}).has(id) and int(c.state.spellbooks[f.side][id]) >= 10 and f.next_cast_gear == "":
 		if not GearActions.arm(c, "gear_gloves_casting"):
 			GearActions.arm(c, "gear_wand_light")
-	var declared := c._magic.start_at(id, chosen["at"]) if chosen.has("at") else c.start_cast(id, chosen["target"])
+	var declared := c._magic.start_floor_at(id,chosen["node"]) if chosen.has("node") else (c._magic.start_at(id,chosen["at"]) if chosen.has("at") else c.start_cast(id,chosen["target"]))
 	if not declared:
 		return false
 	if not c.awaiting_reaction():

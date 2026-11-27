@@ -48,20 +48,33 @@ static func _finish_one(sa: SpellActions, health: int) -> bool:
 		sa.weapons.destroy(t, p["effect"]["weapon"])
 		return true
 	if id in ["telekinesis", "fools_gold"]:
-		sa.treasure_magic.apply(f, id, s.treasure(p["effect"]["token"]), p["at"], int(result["roll"]))
+		var token:=s.treasure(p["effect"]["token"])
+		if p["effect"].has("surface_id"):
+			sa.treasure_magic.apply_floor(f,id,token,p["at"],p["effect"]["surface_id"],int(result["roll"]))
+		else:
+			sa.treasure_magic.apply(f,id,token,p["at"],int(result["roll"]))
 		return true
 	if id=="bridge" and p.get("effect",{}).has("layered_bridge"):
 		var bridge: Dictionary=p["effect"]["layered_bridge"]
-		if not bridge.get("extended",false) or ActiveGear.spend(f,TerrainMagic.EXTENDED):
+		if LayeredBridge.can_apply(sa.c,bridge) and (not bridge.get("extended",false) or ActiveGear.spend(f,TerrainMagic.EXTENDED)):
 			LayeredBridge.apply(sa.c,bridge)
 		return true
 	if TerrainMagic.SPELLS.has(id):
 		var extended: bool=p.get("effect",{}).get("extended_bridge",false)
 		if not extended or ActiveGear.spend(f,TerrainMagic.EXTENDED):
-			sa.terrain.apply(f,id,p["at"],p["rotated"],int(result["roll"]),extended)
+			sa.terrain.apply(f,id,p["at"],p["rotated"],int(result["roll"]),extended,str(p.get("effect",{}).get("surface_id","")))
 		return true
 	if SummonActions.PLACEMENT.has(id):
-		sa.summons.spawn(f,id,p["at"],int(result["roll"]),int(p["tn"]),bool(p.get("golden_fang",false)))
+		var effect: Dictionary=p.get("effect",{})
+		var surface:=str(effect.get("surface_id",""))
+		var height:=0.0
+		if not surface.is_empty():
+			var layout:=s.board.floor_geometry()
+			var node:=layout.node(surface,p["at"])
+			if not sa.summons.can_place_floor(f,id,node):
+				return true
+			height=layout.height(node)
+		sa.summons.spawn(f,id,p["at"],int(result["roll"]),int(p["tn"]),bool(p.get("golden_fang",false)),surface,height)
 		sa.illusions.sweep()
 		return true
 	if not t.in_play():
@@ -102,9 +115,23 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 	if f.ring_side!=t.ring_side or (RedKingTethers.pylon(t) and not magical) or not t.in_play() or t.spell_effects.has("plane_walk") or ScenarioNull.muted(t) or (magical and t.def.traits.has("antithetical_magic")):
 		return
 	var s := sa.c.state
-	var from: Vector2 = WizardEye.origin(s.board, f, t.pos) if origin == null else origin
-	var los := LineOfSight.check(s.board, from, t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
-	if not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and from==f.pos and TigerEye.witness(s.board,f,t.pos,float(s.spell_catalog[spell].get("range",24.0)))!=null:
+	# The explosion's origin can be an actual point in space, not a
+	# projected x/z point reinterpreted as the uppermost floor.
+	var from: Vector2=WizardEye.origin(s.board,f,t.pos) if origin==null else (Vector2(origin.x,origin.z) if origin is Vector3 else origin)
+	var los:=LineOfSight.check(s.board,from,t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if not s.board.floor_layout.is_empty() and origin==null and not spell.is_empty() and spell!="elemental_ball":
+		var remote: Variant=WizardEye.floor_origin(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),float(s.spell_catalog.get(spell,{}).get("range",24.0)))
+		if remote!=null:
+			origin=remote
+	if origin is Vector3 and not s.board.floor_layout.is_empty():
+		los=LineOfSight.Result.new()
+		los.clear=LineOfSight.floor_ray(s.board,s.board.floor_geometry(),origin,Vector3(t.pos.x,t.elevation+1.0,t.pos.y),f,false)
+		if los.clear:
+			LineOfSight.floor_cover(s.board,origin-Vector3.UP*1.0,Vector3(t.pos.x,t.elevation,t.pos.y),los)
+	if s.board.floor_layout.is_empty() and not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and from==f.pos and TigerEye.witness(s.board,f,t.pos,float(s.spell_catalog[spell].get("range",24.0)))!=null:
+		los.clear=true
+		los.intervening+=1
+	if not s.board.floor_layout.is_empty() and not los.clear and spell in ["elemental_bolt","bone_dart","poison_dart","elemental_ball"] and not origin is Vector3 and TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),float(s.spell_catalog[spell].get("range",24.0)))!=null:
 		los.clear=true
 		los.intervening+=1
 	if not los.clear and (not s.board.floor_layout.is_empty() or RedKingHill.cracked(s)):
@@ -124,7 +151,7 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 		dmg = 0
 	if elemental and MagicEquipment.bonus(t, "absorb") > 0:
 		dmg = ceili(dmg / 2.0)
-	var event := {"id":f.id,"target":t.id,"attack":a,"defence":d,"spell":spell,"origin":from if s.board.floor_layout.is_empty() else null}
+	var event := {"id":f.id,"target":t.id,"attack":a,"defence":d,"spell":spell,"origin":from if s.board.floor_layout.is_empty() else (origin if origin is Vector3 else null)}
 	# Only these spell pipelines can safely suspend without skipping subsequent effects.
 	if elemental and spell in ["elemental_bolt","elemental_ball"] and dmg>0 and t.side==s.reaction_side and ActiveGear.ready(t,RedKingElemental.AMULET):
 		s.scenario_data["rk_spell_absorption"]={"event":event,"damage":dmg}
@@ -155,7 +182,8 @@ static func _continue_ball(sa: SpellActions) -> void:
 		if other==null:
 			continue
 		var recipient := CreatureEffects.reflection_target(sa.c,f,other,"elemental_ball")
-		sa._shot(f,recipient,5,f.pos if recipient==f or other.id==int(queue["center"]) else queue["origin"],true,true,"elemental_ball")
+		var origin: Variant=f.pos if recipient==f or other.id==int(queue["center"]) else (queue["origin"] if s.board.floor_layout.is_empty() else queue.get("origin_world",queue["origin"]))
+		sa._shot(f,recipient,5,origin,true,true,"elemental_ball")
 		if s.scenario_data.has("rk_spell_absorption"):
 			return
 	s.scenario_data.erase("rk_ball_queue")

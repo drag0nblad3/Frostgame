@@ -3,9 +3,6 @@ extends RefCounted
 ## Dijkstra over the MoveGrid: everywhere a figure can get to with `allowance`
 ## inches of movement, and distance fields for the bot.
 
-const NO_LINKS: Array[Vector2i] = []
-
-
 static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 	var r := MoveReach.new()
 	r.start = from
@@ -23,27 +20,7 @@ static func reach(grid: MoveGrid, from: Vector2, allowance: float) -> MoveReach:
 				r.cost[n] = c
 				r.prev[n] = null
 				heap.push(c, n)
-	while not heap.is_empty():
-		var top := heap.pop()
-		var c: float = top[0]
-		var n: Vector2i = top[1]
-		if c > r.cost.get(n, INF) or grid.stops(n):
-			continue
-		for d: Vector2i in MoveGrid.NEIGHBORS:
-			var m := n + d
-			if not grid.open(m):
-				continue
-			var nc := c + grid.step_cost(n, m)
-			if nc <= allowance + 0.001 and nc < r.cost.get(m, INF):
-				r.cost[m] = nc
-				r.prev[m] = n
-				heap.push(nc, m)
-		for m: Vector2i in (BoardTopology.destinations(grid.board,n) if linked else NO_LINKS):
-			var nc := c+Figure.BASE_RADIUS
-			if grid.open(m) and nc<=allowance+0.001 and nc<r.cost.get(m,INF):
-				r.cost[m]=nc
-				r.prev[m]=n
-				heap.push(nc,m)
+	RouteSearch.expand(grid,null,heap,r.cost,r.prev,allowance,true,null,true,1 if linked else 0)
 	for node: Vector2i in r.nodes():
 		if BattleBoundary.blocks_end(grid.board.boundaries,MoveGrid.to_pos(node)):
 			r.cost.erase(node)
@@ -77,25 +54,7 @@ static func distance_field(board: Board, target: Vector2) -> Dictionary:
 					var c := target.distance_to(MoveGrid.to_pos(n))
 					field[n] = c
 					heap.push(c, n)
-	while not heap.is_empty():
-		var top := heap.pop()
-		var c: float = top[0]
-		var n: Vector2i = top[1]
-		if c > field.get(n, INF):
-			continue
-		for d: Vector2i in MoveGrid.NEIGHBORS:
-			var m := n + d
-			if not grid.open(m):
-				continue
-			var nc := c + grid.step_cost(n, m)
-			if nc < field.get(m, INF):
-				field[m] = nc
-				heap.push(nc, m)
-		for m: Vector2i in (BoardTopology.sources(board,n) if linked else NO_LINKS):
-			var nc := c+Figure.BASE_RADIUS
-			if grid.open(m) and nc<field.get(m,INF):
-				field[m]=nc
-				heap.push(nc,m)
+	RouteSearch.expand(grid,null,heap,field,{},INF,false,null,false,2 if linked else 0)
 	return field
 
 
@@ -122,20 +81,7 @@ static func exit_field(s: GameState,side: int=-1) -> Dictionary:
 				continue
 			field[node] = 0.0
 			heap.push(0.0, node)
-	while not heap.is_empty():
-		var top := heap.pop()
-		var cost: float = top[0]
-		var node: Vector2i = top[1]
-		if cost > field.get(node, INF):
-			continue
-		for direction: Vector2i in MoveGrid.NEIGHBORS:
-			var next := node + direction
-			if not grid.open(next):
-				continue
-			var distance := cost + grid.step_cost(next, node)
-			if distance < field.get(next, INF):
-				field[next] = distance
-				heap.push(distance, next)
+	RouteSearch.expand(grid,null,heap,field,{},INF,false,null,false,0,true)
 	return field
 
 

@@ -34,7 +34,7 @@ static func can_switch(c: GameController,f: Figure) -> bool:
 	if not active(c.state) or f==null or f!=c.state.active() or not c.can_move() or c.state.group.in_progress():
 		return false
 	for other in c.state.figures:
-		if other!=f and other.in_play() and other.ring_side!=f.ring_side and other.pos.distance_to(f.pos)<Contact.OVERLAP:
+		if other!=f and other.in_play() and other.ring_side!=f.ring_side and absf(other.elevation-f.elevation)<0.5 and other.pos.distance_to(f.pos)<Contact.OVERLAP:
 			return false
 	return true
 
@@ -103,6 +103,24 @@ static func _random_move(c: GameController,f: Figure) -> void:
 	if not c.can_move():
 		return
 	var direction := RedKingDirection.direction(c)
+	if not c.state.board.floor_layout.is_empty():
+		var layout:=c.state.board.floor_geometry()
+		var options:=c.layered_reach()
+		var best_floor: Variant=null
+		var score_floor:=0.0
+		for n: Vector3i in options.cost:
+			var delta:=layout.point(n)-f.pos
+			if absf(delta.y)>c.state.board.size.y*0.5:
+				delta.y-=signf(delta.y)*c.state.board.size.y
+			if delta.length()<0.01 or delta.normalized().dot(direction)<0.85:
+				continue
+			if delta.dot(direction)>score_floor:
+				best_floor=n
+				score_floor=delta.dot(direction)
+		if best_floor!=null:
+			c.move_on_floor(best_floor)
+			_switch_at_edge(c,f)
+		return
 	var reach := c.reach()
 	var best: Variant=null
 	var score := 0.0
@@ -120,6 +138,10 @@ static func _random_move(c: GameController,f: Figure) -> void:
 	if best==null:
 		return
 	c.move_to(best)
+	_switch_at_edge(c,f)
+
+
+static func _switch_at_edge(c: GameController,f: Figure) -> void:
 	if f.in_play() and not c.awaiting_reaction() and minf(f.pos.x,c.state.board.size.x-f.pos.x)<=Figure.BASE_RADIUS+0.01:
 		var clear := true
 		for other in c.state.figures:
@@ -145,6 +167,12 @@ static func end_turn(c: GameController) -> void:
 	var origin: Vector2=MARKERS[row["marker"]]
 	for type: String in row["types"]:
 		if not s.creature_db.available(type):
+			continue
+		if not s.board.floor_layout.is_empty():
+			var landing: Variant=BattlePlacement.nearest_ground(s,origin,3.0,Callable(),plane)
+			if landing!=null:
+				var layout:=s.board.floor_geometry()
+				c._encounters._spawn_at(type,layout.point(landing),-1,plane,layout.surface_id(landing),layout.height(landing))
 			continue
 		var occupied: Array[Figure]=[]
 		for f in s.figures:

@@ -57,7 +57,7 @@ static func _points(c: GameController,corner: Vector2) -> Array[Vector2]:
 		for y in range(-12,13):
 			var n := center+Vector2i(x,y)
 			var at := MoveGrid.to_pos(n)
-			if at.distance_squared_to(corner)<=36.001 and grid.open(n):
+			if at.distance_squared_to(corner)<=36.001 and (grid.open(n) if c.state.board.floor_layout.is_empty() else BattlePlacement.ground_at(c.state,at)!=null):
 				out.append(at)
 	return out
 
@@ -99,5 +99,14 @@ static func answer(c: GameController,at: Vector2) -> bool:
 
 
 static func _spawn(c: GameController,side: int,at: Vector2,stinger: bool) -> void:
-	var unit := c._encounters._spawn_at("hrut_stinger" if stinger else "hrut_warrior",at,side)
+	var kind:="hrut_stinger" if stinger else "hrut_warrior"
+	var unit: Figure
+	if not c.state.board.floor_layout.is_empty():
+		var n: Variant=BattlePlacement.ground_at(c.state,at)
+		if n==null:
+			return
+		var layout:=c.state.board.floor_geometry()
+		unit=c._encounters._spawn_at(kind,at,side,0,layout.surface_id(n),layout.height(n))
+	else:
+		unit=c._encounters._spawn_at(kind,at,side)
 	unit.spell_effects["red_king_hunter"]=true

@@ -22,7 +22,7 @@ static func guarded(s: GameState,t: TreasureToken) -> bool:
 	if not active(s) or t==null or not t.central or not t.on_ground():
 		return false
 	for f in s.figures:
-		if is_herald(s,f) and f.in_play() and f.pos.distance_to(t.pos)<=Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01:
+		if is_herald(s,f) and f.in_play() and TreasureRules.in_reach(s,f,t,Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS+0.01):
 			return true
 	return false
 
@@ -68,10 +68,22 @@ static func _straddles(s: GameState,at: Vector2) -> bool:
 
 
 static func seam_points(c: GameController,f: Figure) -> Array[Vector2]:
-	var grid := MoveGrid.new(c.state.board,f,c.state.figures)
-	var origin := MovePlanner.node_at(f.pos)
 	var by_slope := {}
 	var distance := {}
+	if not c.state.board.floor_layout.is_empty():
+		var layout:=c.state.board.floor_geometry()
+		for n in BattlePlacement.nearby_floor(c.state,f.pos,f.elevation,4.25,"",f):
+			var at:=layout.point(n)
+			if _straddles(c.state,at):
+				continue
+			var slope:=downhill(c.state,at)
+			var d:=f.pos.distance_squared_to(at)
+			if d<float(distance.get(slope,INF)):
+				distance[slope]=d
+				by_slope[slope]=at
+		return _nearest_slopes(by_slope,distance)
+	var grid := MoveGrid.new(c.state.board,f,c.state.figures)
+	var origin := MovePlanner.node_at(f.pos)
 	for x in range(-6,7):
 		for y in range(-6,7):
 			var n := origin+Vector2i(x,y)
@@ -83,6 +95,10 @@ static func seam_points(c: GameController,f: Figure) -> Array[Vector2]:
 			if d<float(distance.get(slope,INF)):
 				distance[slope]=d
 				by_slope[slope]=at
+	return _nearest_slopes(by_slope,distance)
+
+
+static func _nearest_slopes(by_slope: Dictionary,distance: Dictionary) -> Array[Vector2]:
 	var best := INF
 	for d: float in distance.values():
 		best=minf(best,d)
@@ -165,6 +181,13 @@ static func fall(c: GameController,f: Figure) -> void:
 	var s := c.state
 	var origin := f.pos
 	var direction := downhill(s,origin)
+	var original_support:=f.surface_id
+	if not s.board.floor_layout.is_empty():
+		var route:=FloorDisplacement.trace(c,f,direction,6.0)
+		if not route.is_empty() and route["path"].size()>1:
+			c._magic.movement.move_floor(f,route["node"],false,true,"",route["path"])
+		_drop_after_fall(c,f,origin,original_support)
+		return
 	var last := origin
 	for i in range(1,25):
 		var at := origin+direction*(0.25*i)
@@ -187,17 +210,31 @@ static func fall(c: GameController,f: Figure) -> void:
 	if not last.is_equal_approx(origin):
 		_place(c,f,last)
 		c._magic.terrain.trigger_landing(f)
+	_drop_after_fall(c,f,origin,original_support)
+
+
+static func _drop_after_fall(c: GameController,f: Figure,origin: Vector2,support: String) -> void:
 	if not f.in_play():
 		return
+	var s:=c.state
 	for id in f.carried_treasures():
 		var raw := c.dice.d20()
 		if not StatRoll.succeeds(raw,f.effective_will()+f.roll_penalty(),12):
 			var margin := Vector2.ONE*TreasureRules.TOKEN_RADIUS
 			var desired := (origin+RedKingDirection.direction(c)*3.0).clamp(margin,s.board.size-margin)
-			c._loot._drop(f,desired if s.board.can_stand(desired,TreasureRules.TOKEN_RADIUS) else origin,id)
+			if s.board.floor_layout.is_empty():
+				c._loot._drop(f,desired if s.board.can_stand(desired,TreasureRules.TOKEN_RADIUS) else origin,id)
+			else:
+				var n: Variant=BattlePlacement.token_on_support(s,support,desired)
+				c._loot._drop(f,s.board.floor_geometry().point(n) if n!=null else origin,id,support)
 
 
 static func _place(c: GameController,f: Figure,at: Vector2) -> void:
+	if not c.state.board.floor_layout.is_empty():
+		var n: Variant=ForcedRelocation.destination_floor(c.state,f,at,func(p: Vector2) -> bool: return p.is_equal_approx(at))
+		if n!=null:
+			ForcedRelocation.apply_floor(c,f,n)
+		return
 	var old := f.pos
 	f.pos=at
 	f.elevation=c.state.board.height_at(at)
@@ -215,7 +252,19 @@ static func play_herald(c: GameController,f: Figure) -> void:
 		c.fight(enemy.id)
 		return
 	var center := c.state.board.size*0.5
-	if not f.pos.is_equal_approx(center) and c.can_move():
+	if not f.pos.is_equal_approx(center) and c.can_move() and not c.state.board.floor_layout.is_empty():
+		var layout:=c.state.board.floor_geometry()
+		var reach:=c.layered_reach()
+		var best_floor: Variant=null
+		var value:=f.pos.distance_squared_to(center)
+		for n: Vector3i in reach.cost:
+			var score:=layout.point(n).distance_squared_to(center)
+			if score<value-0.001:
+				value=score
+				best_floor=n
+		if best_floor!=null:
+			c.move_on_floor(best_floor)
+	elif not f.pos.is_equal_approx(center) and c.can_move():
 		var r := c.reach()
 		var best: Variant=null
 		var score := f.pos.distance_squared_to(center)
@@ -235,4 +284,4 @@ static func play_herald(c: GameController,f: Figure) -> void:
 	var target := CreatureBot._blast_target(c,f)
 	if target!=null:
 		c._spend(f)
-		c._magic._shot(f,target,3,f.pos,true,true,"elemental_blast")
+		c._magic._shot(f,target,3,f.pos if c.state.board.floor_layout.is_empty() else Vector3(f.pos.x,f.elevation+1.5,f.pos.y),true,true,"elemental_blast")

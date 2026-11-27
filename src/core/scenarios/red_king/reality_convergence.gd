@@ -40,7 +40,7 @@ static func _continue(c: GameController) -> void:
 			c.emit("convergence_choice",{"id":best.id})
 			return
 		var at := _bot_position(s,best,options,side)
-		ForcedRelocation.relocate(c,best,at)
+		_place(c,best,at,queue["moved"])
 		queue["moved"].append(best.id)
 	s.scenario_data.erase("rk_convergence")
 	RealityCracks.clear(c)
@@ -69,6 +69,11 @@ static func _roll_off(c: GameController) -> int:
 
 static func placements(c: GameController,f: Figure,moved: Array) -> Array[Vector2]:
 	var s := c.state
+	if not s.board.floor_layout.is_empty():
+		var options: Array[Vector2]=[]
+		for at in RealityFloorEffects.convergence_nodes(s,f,moved):
+			options.append(at)
+		return options
 	var grid := MoveGrid.new(s.board,f,s.figures)
 	var out: Array[Vector2]=[]
 	for id: int in moved:
@@ -101,7 +106,7 @@ static func answer(c: GameController,at: Vector2) -> bool:
 	var s := c.state
 	var f := s.figure(int(s.scenario_data["rk_priority_choice"]["id"]))
 	s.scenario_data.erase("rk_priority_choice")
-	ForcedRelocation.relocate(c,f,at)
+	_place(c,f,at,s.scenario_data["rk_convergence"]["moved"])
 	s.scenario_data["rk_convergence"]["moved"].append(f.id)
 	_continue(c)
 	if not s.scenario_data.has("rk_priority_choice"):
@@ -124,3 +129,12 @@ static func _bot_position(s: GameState,f: Figure,options: Array[Vector2],side: i
 			best_score=score
 			best=at
 	return best
+
+
+static func _place(c: GameController,f: Figure,at: Vector2,moved: Array) -> void:
+	if c.state.board.floor_layout.is_empty():
+		ForcedRelocation.relocate(c,f,at)
+	else:
+		var n: Variant=RealityFloorEffects.convergence_nodes(c.state,f,moved).get(at)
+		if n!=null:
+			ForcedRelocation.apply_floor(c,f,n)

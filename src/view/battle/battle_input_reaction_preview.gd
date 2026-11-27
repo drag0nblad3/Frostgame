@@ -49,7 +49,11 @@ static func reactions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -
 			s.points.assign(RealityCrackTerrain.shift_points(bi.c,bi.spell_first))
 			s.hint="Choose a legal new centre for the selected terrain (up to 10″). Figures and treasure on it move too."
 		"worm_relocation":
-			s.points.assign(WormRider.relocation_points(bi.c))
+			if bi.is_layered():
+				for at in WormRider.relocation_points(bi.c):
+					s.world_points.append(WormRider.world_point(bi.c,at))
+			else:
+				s.points.assign(WormRider.relocation_points(bi.c))
 			s.hint="Rival worm summoning rolled 1. Select a new legal location for the token, or keep its original location."
 		"hill_seam":
 			var unit := bi.c.state.figure(int(bi.c.state.scenario_data["rk_priority_choice"]["id"]))

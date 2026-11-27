@@ -10,6 +10,9 @@ static func prepare(c: GameController,f: Figure) -> bool:
 			if t.in_play() and t.side!=f.side and t.ring_side==f.ring_side and (t.is_demon() or t.is_undead()) and Shooting.distance(f,t)<=5.0:
 				HolyLantern.toggle(c)
 				break
+	# Escape routes use their geometry provider; the lantern policy above is shared.
+	if not c.state.board.floor_layout.is_empty():
+		return false
 	if GearActions.cape_ready(c) and (f.treasure_id>=0 or f.health<=4 or f.def.role in ["wizard","apprentice"]):
 		var reach := GearActions.cape_reach(c)
 		var best: Variant=null
