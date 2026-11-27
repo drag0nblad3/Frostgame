@@ -22,11 +22,7 @@ func _ready() -> void:
 	_grid.add_theme_constant_override("v_separation",12)
 	col.add_child(_grid)
 	for group: Array in GROUPS:
-		var card := PanelContainer.new()
-		card.size_flags_horizontal=Control.SIZE_EXPAND_FILL
-		card.add_theme_stylebox_override("panel",BattleTheme.panel(Color("203441"),Color("60717b")))
-		_grid.add_child(card)
-		var section := WorkshopUI.column(card)
+		var section := WorkshopUI.section_card(_grid)
 		WorkshopUI.label(section,str(group[0]),22,WorkshopUI.GOLD)
 		for command: Array in group[1]:
 			var id := int(command[0])
