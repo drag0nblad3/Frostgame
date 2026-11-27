@@ -86,6 +86,7 @@ func _ready() -> void:
 		_atmosphere.set_effects(not _atmosphere.enabled)
 		hud.notify("Snow effects %s." % ("on" if _atmosphere.enabled else "off")))
 	hud.camera_requested.connect(_camera_preset)
+	hud.presentation_changed.connect(_presentation_changed)
 	hud.title_requested.connect(_confirm_title)
 	hud.training_requested.connect(_confirm_training)
 	hud.training_next.connect(_next_training)
@@ -194,6 +195,14 @@ func _leave_training() -> void:
 	BattleTraining._leave_training(self)
 
 
+func _presentation_changed(speed: float,cinematic: bool) -> void:
+	if player!=null:
+		player.speed=speed
+		player.camera_director.enabled=cinematic
+		if not cinematic:
+			player.camera_director.finish()
+
+
 func _camera_preset(mode: int) -> void:
 	if controller == null:
 		return
@@ -275,6 +284,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	if _move_preview_tween!=null and _move_preview_tween.is_valid():
 		_move_preview_tween.kill()
 	if player != null:
+		_rig.manual_camera()
 		remove_child(player)
 		player.queue_free()
 	_markers.clear()
@@ -295,6 +305,9 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	_rig.look_at_table(TableSpace.to_world(state.board.size * 0.5))
 	player = EventPlayer.new()
 	player.state = state
+	player.camera_director.rig=_rig
+	player.speed=BattleHud.PACE_SPEEDS[hud._pace]
+	player.camera_director.enabled=hud._cinematic
 	add_child(player)
 	var figures_started:=Time.get_ticks_usec()
 	for f in state.figures:
