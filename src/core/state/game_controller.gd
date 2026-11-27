@@ -9,6 +9,7 @@ var state: GameState
 var dice: Dice
 var history: Array[GameEvent] = []
 var command_history: Array[Dictionary] = []
+var recording_command := false
 var _flow: TurnFlow
 var _loot: TreasureActions
 var _displacement: CombatDisplacement
@@ -70,7 +71,7 @@ func activatable() -> Array[Figure]:
 
 
 func activate(id: int) -> bool:
-	return ControllerActivation.activate(self, id)
+	return BattleRecord.run(self,"activate",{"id":id},func() -> bool: return ControllerActivation.activate(self, id))
 
 
 func can_move() -> bool:
@@ -142,7 +143,7 @@ func movement_options(mode: String="move") -> BattleMovementOptions:
 
 
 func commit_movement(mode: String,node: Variant) -> bool:
-	return BattleMovementOptions.commit(self,mode,node)
+	return BattleRecord.run(self,"movement",{"mode":mode,"node":node},func() -> bool: return BattleMovementOptions.commit(self,mode,node))
 
 
 func reach() -> MoveReach:
@@ -150,7 +151,7 @@ func reach() -> MoveReach:
 
 
 func move_to(node: Vector2i,cape: bool=false) -> bool:
-	return ControllerMovement.move_to(self, node, cape)
+	return BattleRecord.run(self,"move_to",{"node":node,"cape":cape},func() -> bool: return ControllerMovement.move_to(self, node, cape))
 
 
 func _commit_move(f: Figure, path: PackedVector2Array, cost: float, ignored: Array[int],cape: bool=false) -> bool:
@@ -179,7 +180,7 @@ func can_fight(target_id: int) -> bool:
 
 
 func fight(target_id: int) -> bool:
-	return ControllerCombat.fight(self, target_id)
+	return BattleRecord.run(self,"fight",{"target":target_id},func() -> bool: return ControllerCombat.fight(self, target_id))
 
 
 func finish_fate_fight(f: Figure, t: Figure, res: Dictionary) -> void:
@@ -196,7 +197,7 @@ func can_shoot(target_id: int,wraith: bool=false,ammo: bool=false) -> bool:
 
 
 func shoot(target_id: int,wraith: bool=false,ammo: bool=false) -> bool:
-	return ControllerCombat.shoot(self, target_id, wraith, ammo)
+	return BattleRecord.run(self,"shoot",{"target":target_id,"wraith":wraith,"ammo":ammo},func() -> bool: return ControllerCombat.shoot(self, target_id, wraith, ammo))
 
 
 func _shoot_authorized(f: Figure,t: Figure,wraith: bool=false,ammo: bool=false) -> void:
@@ -214,7 +215,7 @@ func can_reload() -> bool:
 
 
 func reload() -> bool:
-	return ControllerCombat.reload_weapon(self)
+	return BattleRecord.run(self,"reload",{},func() -> bool: return ControllerCombat.reload_weapon(self))
 
 
 func can_end_activation() -> bool:
@@ -238,7 +239,7 @@ func can_pick_up(id: int) -> bool:
 
 
 func pick_up(id: int) -> bool:
-	return _loot.pick_up(id)
+	return BattleRecord.run(self,"pick_up",{"id":id},func() -> bool: return _loot.pick_up(id))
 
 
 func drop_treasure(at: Vector2) -> bool:
@@ -303,11 +304,11 @@ func can_cast(spell: String, target: int,ammo: bool=false) -> bool:
 
 
 func start_cast(spell: String, target: int,ammo: bool=false) -> bool:
-	return _magic.start(spell, target,ammo)
+	return BattleRecord.run(self,"start_cast",{"spell":spell,"target":target,"ammo":ammo},func() -> bool: return _magic.start(spell, target,ammo))
 
 
 func finish_cast(health: int) -> bool:
-	return _magic.finish(health)
+	return BattleRecord.run(self,"finish_cast",{"health":health},func() -> bool: return _magic.finish(health))
 
 
 func cast_max_empowerment() -> int:
@@ -342,7 +343,7 @@ func awaiting_reaction() -> bool:
 
 
 func answer_intercept(accept: bool) -> bool:
-	return ControllerMovement.answer_intercept(self, accept)
+	return BattleRecord.run(self,"answer_intercept",{"accept":accept},func() -> bool: return ControllerMovement.answer_intercept(self, accept))
 
 
 func poison(f: Figure) -> void:
