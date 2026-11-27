@@ -49,3 +49,28 @@ func test_second_turn_arrivals_and_snapshot() -> void:
 	if restored!=null:
 		check_eq(restored.state.scenario_data,s.scenario_data)
 		check_eq(restored.state.board.boundaries,s.board.boundaries)
+
+
+func test_veil_target_redirection() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	RedKingVeil.end_turn(c)
+	var choice: Dictionary=s.scenario_data.get("rk_end_choice",{})
+	check_eq(choice.get("kind",""),"veil")
+	if choice.is_empty():
+		return
+	var alternative := -1
+	for id: int in choice["options"]:
+		if id!=int(choice["target"]):
+			alternative=id
+			break
+	check(alternative>=0)
+	check(not RedKingVeil.answer_target(c,-1))
+	check(RedKingVeil.answer_target(c,alternative))
+	check(not s.scenario_data.has("rk_end_choice"))
+	var found := false
+	for event in c.history:
+		if event.type=="fractured_reality" and event.data.get("id",-1)==alternative:
+			found=bool(event.data.get("switched",false))
+	check(found)

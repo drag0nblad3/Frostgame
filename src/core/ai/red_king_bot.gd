@@ -48,7 +48,7 @@ static func prepare(c: GameController,f: Figure) -> bool:
 
 
 static func special_shot(c: GameController,f: Figure,normal: Figure) -> bool:
-	if not c.can_act() or f.ranged==null:
+	if not c.can_act() or f.ranged==null or (not MagicAmmo.ready(f) and not ActiveGear.ready(f,Shooting.WRAITH)):
 		return false
 	var best: Figure=null
 	var wraith := false

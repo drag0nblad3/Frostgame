@@ -53,6 +53,11 @@ func refresh() -> void:
 		mode="mind_token"
 		preview()
 		return
+	if end_choice.get("kind","")=="veil":
+		available.assign(["veil_keep"])
+		mode="veil_target"
+		preview()
+		return
 	if end_choice.get("kind","")=="exchange":
 		mode="secret_exchange"
 		preview()
@@ -403,6 +408,15 @@ func preview() -> void:
 		"mind_destination":
 			points.assign(RedKingMind.memory_points(c.state,spell_first))
 			hint="Choose the memory's destination (up to 4″)."
+		"veil_target":
+			var choice: Dictionary=c.state.scenario_data["rk_end_choice"]
+			var original := c.state.figure(int(choice["target"]))
+			for id: int in choice["options"]:
+				var target := c.state.figure(id)
+				if target!=null and target.in_play():
+					targets.append(target)
+			radius=0.65
+			hint="Fractured Reality targets %s. Keep this target or tap another ally (+1 to the enemy's roll)." % original.label()
 		"secret_exchange":
 			for id: int in c.state.scenario_data["rk_end_choice"]["options"]:
 				var target := c.state.figure(id)
@@ -511,6 +525,8 @@ func preview() -> void:
 func action(key: String) -> bool:
 	if not available.has(key):
 		return false
+	if key=="veil_keep":
+		return RedKingVeil.answer_target(c,int(c.state.scenario_data["rk_end_choice"]["target"]))
 	if key=="mind_skip":
 		return RedKingMind.answer_memory(c,-1)
 	if key=="mind_back":
@@ -805,6 +821,9 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
+	if mode=="veil_target":
+		var choice := _figure_at(screen)
+		return choice>=0 and RedKingVeil.answer_target(c,choice)
 	if mode=="secret_exchange":
 		var choice := _figure_at(screen)
 		return choice>=0 and RealityCracks.answer_exchange(c,choice)

@@ -151,9 +151,39 @@ static func end_turn(c: GameController) -> void:
 	if not targets.is_empty():
 		targets.sort_custom(func(a: Figure,b: Figure) -> bool: return a.pos.y>b.pos.y)
 		var target := targets[0]
-		var roll := mini(30,c.dice.d20()+3*extra)
-		c.emit("fractured_reality",{"id":target.id,"roll":roll,"extra":extra})
-		reality(c,target,roll)
+		if s.reaction_side==0 and targets.size()>1:
+			var options: Array[int]=[]
+			for figure in targets:
+				options.append(figure.id)
+			s.scenario_data["rk_end_choice"]={"kind":"veil","target":target.id,"extra":extra,"options":options}
+			c.emit("veil_target_choice",{"id":target.id})
+			return
+		_resolve_reality(c,target,extra,false)
+	_return_defeated(c)
+
+
+static func answer_target(c: GameController,id: int) -> bool:
+	var choice: Dictionary=c.state.scenario_data.get("rk_end_choice",{})
+	if choice.get("kind","")!="veil" or not choice.get("options",[]).has(id):
+		return false
+	var target := c.state.figure(id)
+	if target==null or not target.in_play() or target.side!=0:
+		return false
+	c.state.scenario_data.erase("rk_end_choice")
+	_resolve_reality(c,target,int(choice["extra"]),id!=int(choice["target"]))
+	_return_defeated(c)
+	c._flow.resume_end_turn()
+	return true
+
+
+static func _resolve_reality(c: GameController,target: Figure,extra: int,switched: bool) -> void:
+	var roll := mini(30,c.dice.d20()+3*extra+int(switched))
+	c.emit("fractured_reality",{"id":target.id,"roll":roll,"extra":extra,"switched":switched})
+	reality(c,target,roll)
+
+
+static func _return_defeated(c: GameController) -> void:
+	var s := c.state
 	for slot: Dictionary in s.scenario_data.get("veil_slots",[]):
 		if slot["entered"]:
 			var old := s.figure(slot["id"])

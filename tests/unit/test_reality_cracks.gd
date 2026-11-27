@@ -67,3 +67,24 @@ func test_sphere_cross_and_enneahedron() -> void:
 	check(BattleBoundary.blocks_end(b.boundaries,Vector2(12,6)))
 	check(not BattleBoundary.blocks_segment(b.boundaries,Vector2(10,6),Vector2(14,6),"movement"))
 	check(BattleBoundary.blocks_segment(b.boundaries,Vector2(10,6),Vector2(14,6),"sight"))
+
+
+func test_secret_exchange_player_selection() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	s.order.assign([0,1])
+	check(RealityCracks.apply(c,19))
+	RealityCracks.on_end_turn(c)
+	var choice: Dictionary=s.scenario_data.get("rk_end_choice",{})
+	check_eq(choice.get("kind",""),"exchange")
+	if choice.is_empty():
+		return
+	check(c.awaiting_reaction())
+	var id := int(choice["options"][0])
+	var rival := s.figure(int(choice["committed"][0]))
+	var previous := rival.pos
+	check(not RealityCracks.answer_exchange(c,-1))
+	check(RealityCracks.answer_exchange(c,id))
+	check_eq(s.figure(id).pos,previous)
+	check(not s.scenario_data.has("rk_end_choice"))

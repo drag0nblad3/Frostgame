@@ -26,6 +26,9 @@ func _setup() -> void:
 	_scene.watch_mode = true
 	if args.size() > 2:
 		_scenario = args[2]
+	if _scenario.begins_with("red_king_"):
+		_scene._figures=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,ContentProfile.new(["red_king"]))
+		_scene._roster={}
 	_scene._scenario_id = _scenario
 	_scene.new_game(17)
 	if _scene._active_scenario_id != _scenario or _scene.controller == null:

@@ -58,6 +58,14 @@ jobs:
           grep -F 'scenario=dreams_well board=dreams_well' well.log
           grep -F 'scenario=the_keep board=the_keep' keep.log
           for file in tower-upper tower-cutaway gatehouse-upper gatehouse-cutaway sunken-streets roster headquarters title miniatures bestiary schools apprentices soldiers beasts supernatural frozen-ruins complex-temple library well keep; do test -s "previews/$file.png"; done
+      - name: Capture Red King encounter art
+        run: |
+          set -euo pipefail
+          for scenario in red_king_back_into_fire red_king_sinkhole red_king_mind red_king_ringworld; do
+            timeout 120s xvfb-run -a godot --audio-driver Dummy --rendering-method gl_compatibility --resolution 1280x720 -s tools/capture.gd -- "previews/$scenario.png" 0 "$scenario" 2>&1 | tee "$scenario.log"
+            test -s "previews/$scenario.png"
+            if grep -E 'SCRIPT ERROR|Parse Error|Node not inside tree|Shader compilation failed' "$scenario.log"; then exit 1; fi
+          done
       - name: Capture scenario environment refinements
         run: |
           set -o pipefail
