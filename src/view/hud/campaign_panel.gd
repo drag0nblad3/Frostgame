@@ -378,7 +378,7 @@ func refresh(in_battle: bool) -> void:
 		roster_lines.append("Inn reserve: %s #%d" % [db.get_def(d["units"][reserve]["type"]).name, reserve + 1])
 	var blockers := campaign.deployment_blockers()
 	_depart_status.visible=not in_battle
-	_depart_status.text="Ready to depart" if blockers.is_empty() else "Before departure:\n• "+"\n• ".join(blockers)
+	_depart_status.text=ExpeditionStage.route(d,in_battle,blockers.is_empty())+("\nReady to depart" if blockers.is_empty() else "\nBefore departure:\n• "+"\n• ".join(blockers))
 	_depart_status.modulate=Color("a9ddbf") if blockers.is_empty() else Color("f2c392")
 	lines.append("Base: %s | Stored loot: %d" % [str(d.get("base", "")).capitalize(), d["loot"].size()])
 	roster_lines.append("Stat advances: %s" % str(d.get("advances", {})))
@@ -425,7 +425,7 @@ func refresh(in_battle: bool) -> void:
 	_history_summary.text="\n".join(history_lines)
 	if in_battle:
 		lines.append("Campaign battle in progress. Close to return.")
-	_campaign_header.text="%s  •  Level %d  •  %d XP  •  %d gc  •  %d battles"%[d["name"],d["level"],d["xp"],d["gold"],d["games"]]
+	_campaign_header.text="%s  •  Level %d  •  %d XP  •  %d gc  •  %d battles\n%s"%[d["name"],d["level"],d["xp"],d["gold"],d["games"],ExpeditionStage.current(d,in_battle,blockers.is_empty())]
 	summary.text = "\n".join(lines.slice(1))
 	summary.visible=not summary.text.is_empty()
 	spells.clear()
