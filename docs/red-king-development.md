@@ -279,3 +279,6 @@ Reality Crack 15 now uses a checkpoint-safe priority queue: each side selects a 
 
 ### Layered rival refinement
 Rivals can use the Cape to withdraw from melee on supported floor graphs, boosted runs to progress toward exits when their ordinary reach is shorter, and nine-inch bridge candidates when the Extended Scroll is available. Layered cast resolution now shares ordinary scroll insurance, Fate Stone, power-pool, and Golden Fang selection rather than ignoring those options. The AI does not sacrifice persistent allies for Vampire Staff automatically; this remains a conservative design choice until value and campaign cost are modeled.
+
+### Hunting party deployment
+The Demons and the Mad Man pauses at turn two for priority-ordered corner selection and individual legal Hrut placements. The stinger arrives first; reduced parties deploy one warrior rather than two. Rivals still choose automatically. Checkpoints retain the corner and remaining placements; the scenario's reality roll and turn transition wait until all parties are placed. Deployable points use the existing half-inch movement lattice.

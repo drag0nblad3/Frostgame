@@ -45,3 +45,37 @@ func test_hunting_parties_and_edge_exchange() -> void:
 	var old := wizard.pos
 	RedKingMadMan.reality_crack(c,true)
 	check(wizard.pos.y>old.y+20.0)
+
+
+func test_hunter_player_deployment() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.turn=2
+	s.order.assign([0,1])
+	s.reaction_side=0
+	s.scenario_data["reduced_hunters_0"]=true
+	RedKingMadMan.end_turn(c)
+	check_eq(s.scenario_data.get("rk_end_choice",{}).get("kind",""),"hunt_corner")
+	var options := RedKingHunt.points(c)
+	check(not options.is_empty())
+	if options.is_empty():
+		return
+	check(not RedKingHunt.answer(c,Vector2(-1,-1)))
+	check(RedKingHunt.answer(c,options[0]))
+	var saved := BattleSnapshot.capture(c)
+	var restored := BattleSnapshot.rebuild(saved,s.creature_db)
+	check(restored!=null)
+	if restored==null:
+		return
+	for i in 2:
+		var points := RedKingHunt.points(restored)
+		check(not points.is_empty())
+		if points.is_empty():
+			return
+		check(RedKingHunt.answer(restored,points[0]))
+	var counts := [0,0]
+	for f in restored.state.figures:
+		if RedKingMadMan.hunter(f):
+			counts[f.side]+=1
+	check_eq(counts,[2,3])
+	check(not restored.state.scenario_data.has("rk_end_choice"))

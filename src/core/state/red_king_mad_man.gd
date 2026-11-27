@@ -51,6 +51,13 @@ static func end_turn(c: GameController) -> void:
 		wander(c,npc,RedKingDirection.direction(c))
 	if s.turn==2 and not s.scenario_data.get("hunters_deployed",false):
 		deploy_hunters(c)
+		if s.scenario_data.has("rk_end_choice"):
+			return
+	_finish_turn(c)
+
+
+static func _finish_turn(c: GameController) -> void:
+	var s := c.state
 	var clock := int(s.scenario_data.get("crack_clock",1))
 	var table := OCCURRENCE_MULTI if s.side_count()>2 else OCCURRENCE
 	var threshold: int=table[mini(clock-1,table.size()-1)]
@@ -97,43 +104,7 @@ static func wander(c: GameController,npc: Figure,direction: Vector2) -> void:
 
 
 static func deploy_hunters(c: GameController) -> void:
-	var s := c.state
-	if s.creature_db==null or not s.creature_db.available("hrut_stinger") or not s.creature_db.available("hrut_warrior"):
-		return
-	s.scenario_data["hunters_deployed"]=true
-	var corners := [Vector2(0.5,0.5),Vector2(s.board.size.x-0.5,0.5),Vector2(0.5,s.board.size.y-0.5),s.board.size-Vector2.ONE*0.5]
-	var available := corners.duplicate()
-	var priority: Array[int]=s.order.duplicate()
-	if priority.is_empty():
-		for side in s.side_count():
-			priority.append(side)
-	for side: int in priority:
-		if available.is_empty():
-			break
-		var enemy_center := s.board.size*0.5
-		for f in s.figures:
-			if f.in_play() and f.side>=0 and f.side!=side and f.def.role=="wizard":
-				enemy_center=f.pos
-				break
-		available.sort_custom(func(a: Vector2,b: Vector2) -> bool:return a.distance_squared_to(enemy_center)<b.distance_squared_to(enemy_center))
-		var corner: Vector2=available.pop_front()
-		var count := 2 if s.scenario_data.get("reduced_hunters_%d"%side,false) else 3
-		for i in count:
-			var grid := MoveGrid.new(s.board,null,s.figures)
-			var origin := MovePlanner.node_at(corner)
-			var best: Variant=null
-			var distance := INF
-			for x in range(-12,13):
-				for y in range(-12,13):
-					var n := origin+Vector2i(x,y)
-					var d := MoveGrid.to_pos(n).distance_squared_to(corner)
-					if d<=36.0 and d<distance and grid.open(n):
-						best=n
-						distance=d
-			if best!=null:
-				var unit := c._encounters._spawn_at("hrut_stinger" if i==0 else "hrut_warrior",MoveGrid.to_pos(best),side)
-				unit.spell_effects["red_king_hunter"]=true
-	c.emit("hrut_hunt",{})
+	RedKingHunt.begin(c)
 
 
 static func reality_crack(c: GameController,horizontal: bool) -> void:

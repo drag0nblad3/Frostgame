@@ -52,6 +52,10 @@ func refresh() -> void:
 		preview()
 		return
 	var end_choice: Dictionary=c.state.scenario_data.get("rk_end_choice",{})
+	if end_choice.get("kind","") in ["hunt_corner","hunt_place"]:
+		mode=end_choice["kind"]
+		preview()
+		return
 	if end_choice.get("kind","")=="memory":
 		available.assign(["mind_skip"])
 		mode="mind_token"
@@ -410,6 +414,14 @@ func preview() -> void:
 		"ruins_destination":
 			points.assign(RealityCrackTerrain.shift_points(c,spell_first))
 			hint="Choose a legal new centre for the selected terrain (up to 10″). Figures and treasure on it move too."
+		"hunt_corner":
+			points.assign(RedKingHunt.points(c))
+			radius=0.9
+			hint="Hrut hunting party: select an unused corner in priority order."
+		"hunt_place":
+			points.assign(RedKingHunt.points(c))
+			var choice: Dictionary=c.state.scenario_data["rk_end_choice"]
+			hint="Deploy %s within 6″ of the chosen corner. %d remaining."%["Hrut Stinger" if choice["remaining"]==choice["total"] else "Hrut Warrior",choice["remaining"]]
 		"mind_token":
 			for token in c.state.treasures:
 				if token.on_ground():
@@ -892,6 +904,14 @@ func tap(screen: Vector2) -> bool:
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode in ["hunt_corner","hunt_place"]:
+		var best := Vector2(INF,INF)
+		var distance := 1.5 if mode=="hunt_corner" else 0.55
+		for candidate in RedKingHunt.points(c):
+			if candidate.distance_to(at)<distance:
+				best=candidate
+				distance=candidate.distance_to(at)
+		return is_finite(best.x) and RedKingHunt.answer(c,best)
 	if mode=="ruins_piece":
 		for index: int in c.state.scenario_data["rk_priority_choice"]["options"]:
 			if c.state.board.pieces[index].rect.has_point(at):
