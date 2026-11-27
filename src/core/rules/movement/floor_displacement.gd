@@ -34,8 +34,11 @@ static func trace(c: GameController,f: Figure,direction: Vector2,distance: float
 			# First try adjoining support at the same height, then a fall.
 			var best: Variant=null
 			var top:=-INF
-			for candidate in layout.nodes_at(at):
-				if layout.surface_id(candidate).begins_with("climb:") or layout.height(candidate)>from.y+0.001:
+			for surface in layout.surfaces:
+				if surface.id.begins_with("climb:"):
+					continue
+				var candidate:=layout.node(surface.id,at)
+				if not layout.contains(candidate) or layout.height(candidate)>from.y+0.001:
 					continue
 				if layout.height(candidate)>top:
 					best=candidate
@@ -54,7 +57,15 @@ static func trace(c: GameController,f: Figure,direction: Vector2,distance: float
 			if not layout.clearance(from.lerp(end,step/4.0),Figure.BASE_RADIUS,1.6):
 				clear=false
 				break
-		if not clear or (landing and not LayeredFall.clear_descent(layout,to,from.y)):
+		if not clear:
+			collision=true
+			break
+		if landing and not LayeredFall.clear_descent(layout,to,from.y):
+			# The figure's base can temporarily overhang the edge while
+			# still at deck height. Do not commit a landing through the
+			# slab; trace horizontally until the base clears the lip.
+			if layout.surfaces[node.z].rect.grow(Figure.BASE_RADIUS-0.001).has_point(at):
+				continue
 			collision=true
 			break
 		# A falling figure cannot pass through an occupied first landing.
