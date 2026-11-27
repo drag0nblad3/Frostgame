@@ -8,7 +8,8 @@ static func build(s: GameState,events: Array[GameEvent]) -> Array[Dictionary]:
 	var result: Array[Dictionary]=[]
 	var turn := 0
 	var phase := ""
-	for event in events:
+	for index in events.size():
+		var event := events[index]
 		if event.type=="turn_start":
 			turn=int(event.data.get("turn",turn))
 			phase=""
@@ -20,7 +21,7 @@ static func build(s: GameState,events: Array[GameEvent]) -> Array[Dictionary]:
 			line=Explainer.name_of(s,int(event.data["id"]))+(" begins activation." if event.type=="activate" else " ends activation.")
 		if line.is_empty() and roll.is_empty():
 			continue
-		result.append({"turn":turn,"phase":phase,"type":event.type,"line":line,"roll":roll})
+		result.append({"event_end":index+1,"turn":turn,"phase":phase,"type":event.type,"line":line,"roll":roll})
 	return result
 
 
