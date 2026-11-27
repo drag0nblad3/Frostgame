@@ -267,13 +267,14 @@ func can_finish_early_phase() -> bool:
 
 
 func finish_early_phase() -> bool:
-	if not can_finish_early_phase():
-		return false
-	var side := state.current_side()
-	state.early.closed[side] = true
-	emit("early_phase_finished", {"side": side})
-	_flow.after_activation()
-	return true
+	return BattleRecord.run(self,"finish_early_phase",{},func() -> bool:
+		if not can_finish_early_phase():
+			return false
+		var side := state.current_side()
+		state.early.closed[side] = true
+		emit("early_phase_finished", {"side": side})
+		_flow.after_activation()
+		return true)
 
 
 func can_begin_group() -> bool:
@@ -281,10 +282,11 @@ func can_begin_group() -> bool:
 
 
 func begin_group(ids: Array[int]) -> bool:
-	if not can_begin_group() or not state.group.begin(state, state.current_side(), ids):
-		return false
-	emit("group_begin", {"side": state.current_side(), "ids": ids.duplicate()})
-	return true
+	return BattleRecord.run(self,"begin_group",{"ids":ids.duplicate()},func() -> bool:
+		if not can_begin_group() or not state.group.begin(state, state.current_side(), ids):
+			return false
+		emit("group_begin", {"side": state.current_side(), "ids": ids.duplicate()})
+		return true)
 
 
 func can_push(own_figure: bool,distance: float=1.0) -> bool:
@@ -294,9 +296,10 @@ func can_push(own_figure: bool,distance: float=1.0) -> bool:
 
 
 func resolve_push(own_figure: bool,distance: float=1.0) -> bool:
-	if not state.board.floor_layout.is_empty():
-		return LayeredPush.apply(self,own_figure,distance)
-	return _displacement.push(own_figure,distance)
+	return BattleRecord.run(self,"resolve_push",{"own":own_figure,"distance":distance},func() -> bool:
+		if not state.board.floor_layout.is_empty():
+			return LayeredPush.apply(self,own_figure,distance)
+		return _displacement.push(own_figure,distance))
 
 
 func stay_in_combat() -> bool:
@@ -328,11 +331,12 @@ func answer_fate_combat(use: bool) -> bool:
 
 
 func answer_elemental_combat(use: bool) -> bool:
-	if state.scenario_data.has("rk_lightning_absorb"):
-		return RealityLightning.answer(self,use)
-	if state.scenario_data.has("rk_spell_absorption"):
-		return _magic.answer_absorption(use)
-	return _fate_combat.answer_absorption(use)
+	return BattleRecord.run(self,"answer_elemental_combat",{"use":use},func() -> bool:
+		if state.scenario_data.has("rk_lightning_absorb"):
+			return RealityLightning.answer(self,use)
+		if state.scenario_data.has("rk_spell_absorption"):
+			return _magic.answer_absorption(use)
+		return _fate_combat.answer_absorption(use))
 
 
 func awaiting_reaction() -> bool:
@@ -360,14 +364,15 @@ func can_use_stored_action() -> bool:
 
 
 func use_stored_action() -> bool:
-	if not can_use_stored_action():
-		return false
-	var f := state.active()
-	f.spell_effects.erase("time_store")
-	f.used_stored_action = true
-	f.actions_left += 1
-	emit("stored_action", {"id": f.id})
-	return true
+	return BattleRecord.run(self,"use_stored_action",{},func() -> bool:
+		if not can_use_stored_action():
+			return false
+		var f := state.active()
+		f.spell_effects.erase("time_store")
+		f.used_stored_action = true
+		f.actions_left += 1
+		emit("stored_action", {"id": f.id})
+		return true)
 
 
 func can_fight_hand(id: int) -> bool:
@@ -377,7 +382,8 @@ func can_fight_hand(id: int) -> bool:
 
 
 func fight_hand(id: int) -> bool:
-	return ControllerCombat.fight_hand(self, id)
+	return BattleRecord.run(self,"fight_hand",{"id":id},func() -> bool:
+		return ControllerCombat.fight_hand(self, id))
 
 
 func _weapon_damage(t: Figure, dmg: int, f: Figure, w: WeaponDef) -> void:
@@ -396,13 +402,14 @@ func selectable_melee() -> Array[WeaponDef]:
 
 
 func select_melee(id: String) -> bool:
-	for w in selectable_melee():
-		if w.id == id:
-			var f := state.active()
-			f.melee = w
-			emit("weapon_selected", {"id": f.id, "weapon": id})
-			return true
-	return false
+	return BattleRecord.run(self,"select_melee",{"id":id},func() -> bool:
+		for w in selectable_melee():
+			if w.id == id:
+				var f := state.active()
+				f.melee = w
+				emit("weapon_selected", {"id": f.id, "weapon": id})
+				return true
+		return false)
 
 
 func can_drink_well() -> bool:
@@ -410,7 +417,8 @@ func can_drink_well() -> bool:
 
 
 func drink_well() -> bool:
-	return ScenarioObjectives.drink(self)
+	return BattleRecord.run(self,"drink_well",{},func() -> bool:
+		return ScenarioObjectives.drink(self))
 
 
 func can_break_ice() -> bool:
@@ -418,4 +426,4 @@ func can_break_ice() -> bool:
 
 
 func break_ice() -> bool:
-	return ScenarioObjectives.break_ice(self)
+	return BattleRecord.run(self,"break_ice",{},func() -> bool: return ScenarioObjectives.break_ice(self))
