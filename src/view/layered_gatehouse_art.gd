@@ -24,6 +24,8 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 		elif s.id=="landing" or s.id.ends_with("_landing"):
 			_box(Vector3(s.rect.get_center().x,s.level-0.09,s.rect.get_center().y),Vector3(s.rect.size.x,0.18,s.rect.size.y),Color(0.51,0.60,0.67),true)
 	for solid in layout.solids:
+		if layout.magic_solids.has(solid):
+			continue
 		var roof := solid.position.y>=2.5
 		var color := Color(0.43,0.54,0.62) if roof else Color(0.35,0.43,0.49)
 		var slab := _box(solid.get_center(),solid.size,color,roof)
@@ -44,6 +46,8 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 				upper_nodes.append(relief)
 	# Wall volumes get narrow masonry courses (visual only).
 	for solid in layout.solids:
+		if layout.magic_solids.has(solid):
+			continue
 		if solid.position.y>0.1:
 			continue
 		for i in range(1,5):

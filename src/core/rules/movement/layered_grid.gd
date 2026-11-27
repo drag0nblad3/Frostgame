@@ -85,6 +85,16 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		var next: Vector3i = edge["to"]
 		if not open(next) or not segment_allowed(start,layout.world(next)) or (running and not run_segment_clear(start,layout.world(next))):
 			continue
+		if not layout.magic_solids.is_empty():
+			var finish:=layout.world(next)
+			var clear:=true
+			var steps:=maxi(1,ceili(start.distance_to(finish)*10.0))
+			for i in range(1,steps):
+				if not layout.clearance(start.lerp(finish,float(i)/steps),Figure.BASE_RADIUS,1.6):
+					clear=false
+					break
+			if not clear:
+				continue
 		var cost: float = edge["cost"]
 		if edge["kind"]=="climb" and mover!=null and (running or mover.def.traits.has("expert_climber") or mover.levitates()):
 			cost=layout.point(n).distance_to(layout.point(next))+ceilf(absf(layout.height(n)-layout.height(next)))

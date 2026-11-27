@@ -48,7 +48,7 @@ static func action(bi: BattleInput,key: String) -> bool:
 			bi.selected_spell=key.trim_prefix("spell_")
 			bi.spell_rotated=false
 	bi.available.assign(["potion_cancel"] if key.begins_with("gear_") or key.begins_with("potion_") else ["spell_cancel"])
-	if bi.selected_spell=="fog":
+	if bi.selected_spell in ["fog","wall"]:
 		bi.available.append("rotate_spell")
 	bi.preview()
 	return false

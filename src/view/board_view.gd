@@ -108,7 +108,7 @@ func show_floor(layout: FloorLayout,id: String) -> void:
 	_floor_art.cut_at(INF if index<0 else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level))
 	for p: TerrainPiece in _pieces:
 		if not p.surface_id.is_empty():
-			_pieces[p]["node"].visible=id.is_empty() or p.surface_id==id
+			_pieces[p]["node"].visible=id.is_empty() or p.surface_id==id or (not p.dynamic_surface.is_empty() and FloorSupportRemoval.removed(id,p.dynamic_surface))
 
 
 func scenery_ready() -> bool:

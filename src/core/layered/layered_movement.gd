@@ -113,12 +113,18 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 		chunk.append(point)
 		chunk_surfaces.append(surfaces[i])
 		var hits:=c._magic.terrain.triggered(f,f.pos,f.elevation)
-		if ScenarioNull.field_at(c.state.board,f.pos) or not hits.is_empty():
+		var walls:=c._magic.terrain.touching_walls(f.pos,f.elevation)
+		var previous:=path[i-1]
+		for wall in c._magic.terrain.touching_walls(Vector2(previous.x,previous.z),previous.y):
+			walls.erase(wall)
+		if ScenarioNull.field_at(c.state.board,f.pos) or not hits.is_empty() or not walls.is_empty():
 			c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
 			chunk=PackedVector3Array([point])
 			chunk_surfaces=[surfaces[i]]
 			ScenarioNull.enter(c,f)
 			if f.in_play():
+				for wall in walls:
+					c._magic.terrain.wall_damage(f,wall)
 				for p in hits:
 					c._magic.terrain.explode(p)
 			if not f.in_play():

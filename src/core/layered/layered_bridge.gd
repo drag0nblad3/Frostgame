@@ -27,7 +27,7 @@ static func proposal(c: GameController,a: Vector3i,b: Vector3i,layout: FloorLayo
 	var length := 9.0 if extended else 6.0
 	if a.z==b.z or not is_equal_approx(delta.length(),length) or (not is_zero_approx(delta.x) and not is_zero_approx(delta.y)):
 		return {}
-	if layout.surface_id(a).begins_with("climb:") or layout.surface_id(b).begins_with("climb:") or layout.surface_id(a).begins_with("bridge:") or layout.surface_id(b).begins_with("bridge:"):
+	if layout.surface_id(a).begins_with("climb:") or layout.surface_id(b).begins_with("climb:") or layout.surface_id(a).begins_with("bridge:") or layout.surface_id(b).begins_with("bridge:") or layout.surface_id(a).begins_with("wall:") or layout.surface_id(b).begins_with("wall:"):
 		return {}
 	var axis_y := is_zero_approx(delta.x)
 	if (q.y<p.y if axis_y else q.x<p.x):
@@ -110,30 +110,5 @@ static func remove(c: GameController,id: String) -> void:
 		if p.surface_id==id:
 			c._magic.terrain.remove(p)
 	s.board.floor_layout["bridges"]=entries
-	var layout := s.board.floor_geometry()
 	c.emit("terrain_changed",{"spell":"bridge","created":false})
-	for f in s.figures:
-		if not f.in_play() or f.surface_id!=id:
-			continue
-		var n: Variant = LayeredFall.landing(layout,LayeredGrid.new(layout,f,s.figures),f.pos,f.elevation+0.001)
-		if n==null:
-			# No valid unoccupied lower surface: resolve as out of action, not
-			# a figure stranded on a non-existent floor.
-			c._hurt(f,f.health,f,false)
-			continue
-		var old := f.elevation
-		f.surface_id=layout.surface_id(n)
-		f.elevation=layout.height(n)
-		c.emit("terrain_fall",{"id":f.id})
-		LayeredFall.apply(c,f,old-f.elevation,f)
-		ScenarioNull.enter(c,f)
-	for token in s.treasures:
-		if not token.on_ground() or token.surface_id!=id:
-			continue
-		var index := before.index_of(id)
-		var above := before.surfaces[index].height_at(token.pos)
-		var n: Variant = LayeredFall.landing(layout,LayeredGrid.new(layout),token.pos,above+0.001)
-		if n==null:
-			c._loot.lose(token)
-		else:
-			c._loot.relocate_ground(token,layout.point(n),layout.surface_id(n))
+	FloorSupportRemoval.resolve(c,before,id)

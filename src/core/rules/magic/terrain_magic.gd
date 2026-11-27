@@ -3,7 +3,7 @@ extends RefCounted
 ## Shared dynamic terrain lifecycle, with explicit floor support where needed.
 const EXTENDED := "gear_rk_extended_scroll"
 const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection", "bridge"]
-const FLOOR_SPELLS := ["fog","mud","explosive_rune","planar_tear","grenade","circle_of_protection"]
+const FLOOR_SPELLS := ["wall","fog","mud","explosive_rune","planar_tear","grenade","circle_of_protection"]
 var c: GameController
 
 
@@ -114,7 +114,7 @@ func can_place_floor(f: Figure,id: String,n: Vector3i,rotated: bool=false) -> bo
 	if not is_equal_approx(surface.level,surface.end_level) or not surface.contains(rect.position) or not surface.contains(rect.end):
 		return false
 	# Check that the entire effect is supported and not inside solid masonry.
-	var volume:=AABB(Vector3(rect.position.x,height+0.002,rect.position.y),Vector3(rect.size.x,2.998 if id=="fog" else 0.04,rect.size.y))
+	var volume:=AABB(Vector3(rect.position.x,height+0.002,rect.position.y),Vector3(rect.size.x,2.998 if id in ["fog","wall"] else 0.04,rect.size.y))
 	for solid in layout.solids:
 		if solid.intersects(volume):
 			return false
@@ -136,13 +136,16 @@ func can_place_floor(f: Figure,id: String,n: Vector3i,rotated: bool=false) -> bo
 		return count<3 and LineOfSight.floor_point_visible(b,layout,f,point,4.0)
 	if id=="mud":
 		return LineOfSight.floor_point_visible(b,layout,f,point)
+	if id=="wall" and not FloorWall.legal(s,layout,f,n,rect):
+		return false
 	var seen:=false
 	for i in range(-6,7):
 		var p:=at+(Vector2.DOWN if rotated else Vector2.RIGHT)*i*0.5
 		var world:=Vector3(p.x,height,p.y)
-		if Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(world)>24.0:
+		var distance:=Vector3(f.pos.x,f.elevation,f.pos.y).distance_to(world)
+		if id=="fog" and distance>24.0:
 			return false
-		seen=seen or LineOfSight.floor_point_visible(b,layout,f,world)
+		seen=seen or ((id=="fog" or distance<=10.0) and LineOfSight.floor_point_visible(b,layout,f,world))
 	return seen
 
 
@@ -225,6 +228,11 @@ func apply(f: Figure, id: String, at: Vector2, rotated: bool, roll: int = 14,ext
 		kind.stairs = true
 	p.cast_turn = c.state.turn
 	p.caster_id = f.id
+	if id=="wall" and not surface.is_empty():
+		p.dynamic_surface=FloorWall.id_for(f,c.state.turn,at,surface)
+		var walls: Array=c.state.board.floor_layout.get("walls",[])
+		walls.append({"id":p.dynamic_surface,"support":surface,"height":height,"rect":[p.rect.position.x,p.rect.position.y,p.rect.size.x,p.rect.size.y]})
+		c.state.board.floor_layout["walls"]=walls
 	c.state.board.pieces.append(p)
 	c.state.board.invalidate_terrain()
 	c.emit("terrain_changed", {"spell": id, "created": true,"at":at,"height":height if not surface.is_empty() else c.state.board.height_at(at),"radius":minf(3.0,p.rect.size.length()*0.5)})
@@ -256,11 +264,20 @@ func expire() -> void:
 func remove(p: TerrainPiece) -> void:
 	var s := c.state
 	var height:=effect_height(s.board,p)
+	var before:=s.board.floor_geometry() if not p.dynamic_surface.is_empty() else null
+	if not p.dynamic_surface.is_empty():
+		var walls: Array=s.board.floor_layout.get("walls",[])
+		for i in range(walls.size()-1,-1,-1):
+			if walls[i]["id"]==p.dynamic_surface:
+				walls.remove_at(i)
+		s.board.floor_layout["walls"]=walls
 	WizardEye.remove_attached(s.board, p)
 	s.board.pieces.erase(p)
 	s.board.invalidate_terrain()
 	c.emit("terrain_changed", {"spell": p.kind.id.trim_prefix("spell_"), "created": false,"at":p.rect.get_center(),"height":height if not p.surface_id.is_empty() else s.board.height_at(p.rect.get_center()),"radius":minf(3.0,p.rect.size.length()*0.5)})
 	if not s.board.floor_layout.is_empty():
+		if before!=null:
+			FloorSupportRemoval.resolve(c,before,p.dynamic_surface)
 		return
 	for t in s.figures:
 		if not t.in_play():
@@ -487,7 +504,7 @@ func cancel_bridge(f: Figure) -> bool:
 func touching_walls(at: Vector2,height: float) -> Array[TerrainPiece]:
 	var result: Array[TerrainPiece]=[]
 	for wall in c.state.board.pieces:
-		if not wall.elemental_wall or height>wall.kind.height+0.5:
+		if not wall.elemental_wall or height>wall.base_height+wall.kind.height+0.5 or (not wall.surface_id.is_empty() and height<wall.base_height-0.5):
 			continue
 		var nearest := at.clamp(wall.rect.position,wall.rect.end)
 		if at.distance_to(nearest)<=Figure.BASE_RADIUS+0.001:

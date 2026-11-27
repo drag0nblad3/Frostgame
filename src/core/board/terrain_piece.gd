@@ -19,6 +19,7 @@ var elemental_wall := false
 ## Explicit support for persistent magic on overlapping floors.
 var surface_id := ""
 var base_height := 0.0
+var dynamic_surface := ""
 
 
 func _init(k: TerrainKind = null, r: Rect2 = Rect2()) -> void:

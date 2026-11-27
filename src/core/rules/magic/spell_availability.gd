@@ -260,7 +260,7 @@ static func menu_options(sa: SpellActions,f: Figure) -> Array[String]:
 				if can_cast(sa,id,t.id,true):
 					out.append("enchant_ammo")
 					break
-		if not treasure_options(sa,id).is_empty() or not counter_options(sa,id).is_empty() or not floor_placement_points(sa,id,true).is_empty() or (id=="fog" and not floor_placement_points(sa,id,true,-1,true).is_empty()):
+		if not treasure_options(sa,id).is_empty() or not counter_options(sa,id).is_empty() or not floor_placement_points(sa,id,true).is_empty() or (id in ["fog","wall"] and not floor_placement_points(sa,id,true,-1,true).is_empty()):
 			out.append(id)
 			continue
 		if not placement_points(sa,id,true).is_empty() or (id in ["fog","wall","bridge"] and not placement_points(sa,id,true,true).is_empty()) or (id=="bridge" and ActiveGear.ready(f,TerrainMagic.EXTENDED) and (not placement_points(sa,id,true,false,true).is_empty() or not placement_points(sa,id,true,true,true).is_empty())):

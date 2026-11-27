@@ -3,6 +3,8 @@ extends RefCounted
 ## Opt-in layered geometry. Indices are ephemeral; authored IDs survive checkpoints.
 var surfaces: Array[FloorSurface] = []
 var solids: Array[AABB] = []
+## These volumes are rendered by their corresponding TerrainPiece.
+var magic_solids: Array[AABB]=[]
 var links: Dictionary = {}
 var errors: Array[String] = []
 
@@ -32,6 +34,10 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 		layout.surfaces.append(s)
 		for entry: Dictionary in bridge["links"]:
 			layout._add_link(entry)
+	for wall: Dictionary in d.get("walls",[]):
+		FloorWall.add_volume(layout,wall)
+	for wall: Dictionary in d.get("walls",[]):
+		FloorWall.add_climbs(layout,wall)
 	return layout
 
 
