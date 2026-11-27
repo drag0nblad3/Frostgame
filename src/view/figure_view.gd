@@ -101,8 +101,8 @@ static func _ward_material() -> StandardMaterial3D:
 	return _ward
 
 
-func refresh(f: Figure,health_override: int=-1) -> void:
-	var health := f.health if health_override<0 else health_override
+func refresh(f: Figure,health_override: Variant=null) -> void:
+	var health := f.health if health_override==null else int(health_override)
 	var color: Color = Color(0.65, 0.45, 0.75) if f.side < 0 else SIDE_COLORS[f.side % SIDE_COLORS.size()]
 	var base_color := color.darkened(0.12)
 	if f.ring_side==1:
