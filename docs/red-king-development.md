@@ -223,3 +223,6 @@ Roll the carried shield spell in campaign preparation; the roll is retained for 
 
 ### Quiver of the Hunter
 Enchant Weapon can create single-use enchanted ammunition; ordinary quivers carry one, Hunter quivers four. The player chooses a separate enchanted shot, replacing missile weapon bonuses with +1 Shoot and a magical attack. Caster quiver replaces the normal quiver slot. Ammunition is battle-local; additional expansion ammunition sources and campaign persistence are not implemented.
+
+### Mantle of the Bear (or Leopard)
+The item permanently binds to bear or snow leopard and can only be assigned to spellcasters. The supplement's specialist-to-standard companion benefit conflicts with the second-edition core Animal Companion rule, which already classifies animal companions as standard soldiers. A per-campaign opt-in compatibility option implements the supplement classification for bear/leopard; core remains the default. Roster checks prevent removal or transfer of a matching mantle if that makes a roster illegal; a loss can require roster correction before deployment.

@@ -67,7 +67,7 @@ static func choices(d: Dictionary,caster: int,id: String,shield: bool=false) -> 
 					companion = true
 			if id == "animal_companion" and not companion:
 				for type: String in ANIMALS:
-					if BaseResources.fits(d, db, type):
+					if BaseResources.fits(d,db,type,caster):
 						out.append(type)
 			elif id == "animate_construct":
 				for type: String in CONSTRUCTS:

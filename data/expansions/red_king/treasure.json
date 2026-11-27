@@ -365,7 +365,7 @@
       "buy": 350,
       "sell": 200,
       "bonus": {},
-      "live": false,
+      "live": true,
       "expansion": "red_king"
     },
     "gear_rk_construct_spikes": {

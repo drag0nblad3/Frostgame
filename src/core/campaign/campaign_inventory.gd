@@ -100,7 +100,7 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	if owner == -1:
 		var previous := int(item.get("owner",-1))
 		item["owner"] = -1
-		if item.get("gear","") in ["gear_rk_amulet_of_charisma","gear_rk_book_of_wisdom"] and not BaseResources.fits(d,db):
+		if item.get("gear","") in ["gear_rk_amulet_of_charisma","gear_rk_book_of_wisdom",CompanionMantle.ITEM] and not BaseResources.fits(d,db):
 			item["owner"]=previous
 			return false
 		return true
@@ -116,6 +116,8 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 	var used := 0
 	var info: Dictionary = catalog()[item_id(item)]
 	if info.get("expansion","")=="red_king" and (not info["live"] or not item.get("unlocked",true)):
+		return false
+	if item_id(item)==CompanionMantle.ITEM and (unit["type"] not in ["wizard","apprentice"] or not CompanionMantle.ANIMALS.has(item.get("mantle_animal",""))):
 		return false
 	if item_id(item)==CircletDefence.ITEM and not CircletDefence.SPELLS.has(item.get("casting_spell","")):
 		return false
@@ -161,7 +163,11 @@ static func assign_item(d: Dictionary, index: int, owner: int, db: FigureDb) -> 
 			return false
 	elif used >= slots(unit, db):
 		return false
+	var previous_owner := int(item.get("owner",-1))
 	item["owner"] = owner
+	if item_id(item)==CompanionMantle.ITEM and not BaseResources.fits(d,db):
+		item["owner"]=previous_owner
+		return false
 	return true
 
 

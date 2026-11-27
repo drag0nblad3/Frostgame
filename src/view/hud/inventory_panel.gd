@@ -16,6 +16,8 @@ var sell_button: Button
 var discard_button: Button
 var caster_equipment: OptionButton
 var caster_equipment_button: Button
+var mantle_animal: OptionButton
+var bind_mantle: Button
 var book_spell: OptionButton
 var bind_book: Button
 var split_fang: Button
@@ -57,6 +59,16 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 		if CampaignPotions.use(campaign.data, option["item"], option["unit"], db, campaign_dice):
 			changed.call())
 	add_child(use_button)
+	mantle_animal=OptionButton.new()
+	for animal: String in CompanionMantle.ANIMALS:
+		mantle_animal.add_item(animal.replace("_"," ").capitalize())
+		mantle_animal.set_item_metadata(mantle_animal.item_count-1,animal)
+	add_child(mantle_animal)
+	bind_mantle=_button("Permanently choose mantle animal",func() -> void:
+		if loot.item_count>0 and CompanionMantle.bind(campaign.data,int(loot.get_selected_metadata()),str(mantle_animal.get_selected_metadata())):
+			changed.call())
+	mantle_animal.hide()
+	bind_mantle.hide()
 	book_spell=OptionButton.new()
 	add_child(book_spell)
 	bind_book=_button("Permanently bind selected item to spell",func() -> void:
@@ -103,6 +115,8 @@ func setup(p: CampaignProgress, figures: FigureDb, callback: Callable) -> void:
 func refresh() -> void:
 	var d := campaign.data
 	loot.clear()
+	mantle_animal.hide()
+	bind_mantle.hide()
 	book_spell.clear()
 	book_spell.hide()
 	bind_book.hide()
@@ -137,6 +151,8 @@ func refresh() -> void:
 			suffix+=" · "+("Unlocked" if item.get("unlocked",false) else "Locked TN%d"%info["unlock_tn"])
 		if item["kind"] == "grimoire":
 			suffix = "Known spell; may sell" if d["spells"].has(item["spell"]) else "Unlearned; may learn in campaign"
+		if CampaignInventory.item_id(item)==CompanionMantle.ITEM:
+			suffix+=" · "+str(item.get("mantle_animal","Choose animal")).replace("_"," ").capitalize()
 		if CampaignInventory.item_id(item) in ["gear_rk_golden_incunabula",CircletDefence.ITEM]:
 			suffix+=" · "+str(item.get("casting_spell","Choose spell")).replace("_"," ").capitalize()
 		if CampaignInventory.item_id(item) == "gear_staff_casting":
@@ -200,6 +216,8 @@ func refresh() -> void:
 
 
 func _refresh_item_buttons() -> void:
+	mantle_animal.hide()
+	bind_mantle.hide()
 	mask_start.hide()
 	staff_potion.clear()
 	staff_potion.hide()
@@ -218,6 +236,9 @@ func _refresh_item_buttons() -> void:
 		return
 	var index := int(loot.get_selected_metadata())
 	var item: Dictionary = campaign.data["loot"][index]
+	if item.get("gear","")==CompanionMantle.ITEM and str(item.get("mantle_animal","")).is_empty() and not item.get("ragged_sealed",false):
+		mantle_animal.show()
+		bind_mantle.show()
 	if item.get("gear","")==DeathMask.ITEM and item.get("unlocked",false) and not item.get("ragged_sealed",false):
 		mask_start.text="Start with mask %s (toggle)" % ("on" if item.get("mask_start_worn",false) else "off")
 		mask_start.show()

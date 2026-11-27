@@ -50,7 +50,9 @@ static func soldier(unit: Dictionary, db: FigureDb) -> bool:
 	return db.get_def(unit["type"]).role == "soldier" or unit.get("permanent_summon", false)
 
 
-static func specialist(unit: Dictionary, db: FigureDb) -> bool:
+static func specialist(unit: Dictionary, db: FigureDb,d: Dictionary={}) -> bool:
+	if CompanionMantle.enabled(d) and unit.has("companion_of") and CompanionMantle.ANIMALS.has(unit["type"]):
+		return CompanionMantle.specialist(d,unit)
 	return db.get_def(unit["type"]).specialist or unit["type"] in ["large_construct","foulhorn"]
 
 
@@ -72,7 +74,7 @@ static func wisdom_eligible(unit: Dictionary,db: FigureDb) -> bool:
 	return unit["type"] in ["monk","mystic_warrior"] and specialist(unit,db)
 
 
-static func counts(d: Dictionary, db: FigureDb, extra_type: String = "") -> Vector2i:
+static func counts(d: Dictionary, db: FigureDb, extra_type: String = "",companion: int=-1) -> Vector2i:
 	var count := Vector2i.ZERO
 	var kennel := false
 	var wisdom := false
@@ -80,14 +82,17 @@ static func counts(d: Dictionary, db: FigureDb, extra_type: String = "") -> Vect
 		if not alive(unit) or not soldier(unit, db):
 			continue
 		count.x += 1
-		if specialist(unit, db):
+		if specialist(unit,db,d):
 			count.y += 1
 			wisdom=wisdom or wisdom_eligible(unit,db)
 		if unit["type"] in ["war_hound", "wolf"]:
 			kennel = true
 	if extra_type != "":
 		count.x += 1
-		if specialist({"type":extra_type},db):
+		var proposed := {"type":extra_type}
+		if companion>=0:
+			proposed["companion_of"]=companion
+		if specialist(proposed,db,d):
 			count.y += 1
 			wisdom=wisdom or wisdom_eligible({"type":extra_type},db)
 		if extra_type in ["war_hound", "wolf"]:
@@ -99,10 +104,10 @@ static func counts(d: Dictionary, db: FigureDb, extra_type: String = "") -> Vect
 	return count
 
 
-static func fits(d: Dictionary, db: FigureDb, extra_type: String = "") -> bool:
+static func fits(d: Dictionary, db: FigureDb, extra_type: String = "",companion: int=-1) -> bool:
 	if RaggedWarbands.active(d):
 		return RaggedWarbands.ready_count(d)+(0 if extra_type.is_empty() else 1)<=10
-	var count := counts(d, db, extra_type)
+	var count := counts(d,db,extra_type,companion)
 	var extra := 1 if d.get("base", "") == "inn" else 0
 	return count.x <= 8 + extra and count.y <= specialist_limit(d) + extra
 
@@ -121,7 +126,7 @@ static func reserve_candidates(d: Dictionary, db: FigureDb) -> Array[int]:
 			kennel_id = int(unit["id"])
 			continue
 		ready.append(unit)
-		if specialist(unit, db):
+		if specialist(unit,db,d):
 			specialists += 1
 	var limit := specialist_limit(d)
 	var wisdom_count := 0
@@ -133,7 +138,7 @@ static func reserve_candidates(d: Dictionary, db: FigureDb) -> Array[int]:
 	if ready.size() <= 8 and effective <= limit:
 		return candidates
 	for unit in ready:
-		var after := effective-int(specialist(unit,db))+int(wisdom_count==1 and wisdom_eligible(unit,db))
+		var after := effective-int(specialist(unit,db,d))+int(wisdom_count==1 and wisdom_eligible(unit,db))
 		if after<=limit:
 			candidates.append(int(unit["id"]))
 	return candidates

@@ -20,6 +20,7 @@ var story_veil: CheckBox
 var recruit_status: CheckBox
 var reality_option: CheckBox
 var wounded_option: CheckBox
+var mantle_option: CheckBox
 var secret_hrut: CheckBox
 var reconcile_button: Button
 var continue_skirmishes: Button
@@ -181,6 +182,13 @@ func setup(progress: CampaignProgress, figures: FigureDb) -> void:
 		campaign.data["wounded_rules"]=on
 		campaign.save())
 	col.add_child(wounded_option)
+	mantle_option=CheckBox.new()
+	mantle_option.text="Red King: bear/leopard companions are specialists unless matched by mantle"
+	mantle_option.tooltip_text="Optional supplement interpretation; core rules count all Animal Companions as standard soldiers."
+	mantle_option.toggled.connect(func(on: bool) -> void:
+		campaign.data[CompanionMantle.OPTION]=on
+		changed())
+	col.add_child(mantle_option)
 	recruit_status=CheckBox.new()
 	recruit_status.text="Roll optional status for random recruits"
 	recruit_status.toggled.connect(func(on: bool) -> void:
@@ -228,6 +236,8 @@ func refresh(in_battle: bool) -> void:
 	reality_option.set_pressed_no_signal(bool(d.get("reality_cracks",false)))
 	wounded_option.visible=not d.is_empty() and not in_battle
 	wounded_option.set_pressed_no_signal(bool(d.get("wounded_rules",false)))
+	mantle_option.visible=not d.is_empty() and not in_battle and db.content_profile.enabled.has("red_king")
+	mantle_option.set_pressed_no_signal(bool(d.get(CompanionMantle.OPTION,false)))
 	recruit_status.visible=RaggedWarbands.active(d) and not in_battle and not stage.is_empty()
 	recruit_status.set_pressed_no_signal(bool(d.get("red_king_recruit_status",false)))
 	secret_hrut.visible=bool(d.get("red_king_secret_hrut",false)) and not in_battle and not stage.is_empty() and stage.get("id","")!="red_king_mind"
