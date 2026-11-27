@@ -107,7 +107,7 @@ func action(key: String) -> bool:
 	if key=="attack_confirm" and available.has(key):
 		var target := attack_target
 		attack_target=-1
-		var ok := c.fight(target) if mode=="fight" else c.shoot(target,mode=="wraith_shot",mode=="ammo_shot")
+		var ok := BattleAction.execute(c,mode,target)
 		if not ok:
 			refresh()
 		return ok
@@ -121,14 +121,14 @@ func plan_attack(id: int) -> void:
 	var t := c.state.figure(id)
 	if f==null or t==null:
 		return
-	if not (c.can_fight(id) if mode=="fight" else c.can_shoot(id,mode=="wraith_shot",mode=="ammo_shot")):
+	if not BattleAction.legal(c,mode,id):
 		return
 	attack_target=id
 	available.assign(["attack_confirm","attack_cancel"])
 	var info := "%s · HP %d/%d · Fight %+d · Armour %d"%[t.label(),t.health,t.def.health,t.effective_fight(),t.effective_armour()]
 	if mode in ["shoot","ammo_shot","wraith_shot"]:
 		info+="\nRange %.1f″ / %.0f″ · %s"%[Shooting.distance(f,t),f.ranged.range_in,f.ranged.name]
-		var los := LineOfSight.check_figures(c.state.board,f,t)
+		var los := BattleSpace.sight(c.state.board,f,t)
 		info+=" · cover/intervening %+d"%Shooting.target_mod(los)
 	else:
 		info+="\nOpposed Fight rolls · weapon %s"%(f.melee.name if f.melee!=null else "Unarmed")
