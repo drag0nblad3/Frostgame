@@ -47,6 +47,16 @@ func refresh() -> void:
 	item_options.clear()
 	reach = null
 	var f := c.state.active()
+	var end_choice: Dictionary=c.state.scenario_data.get("rk_end_choice",{})
+	if end_choice.get("kind","")=="memory":
+		available.assign(["mind_skip"])
+		mode="mind_token"
+		preview()
+		return
+	if end_choice.get("kind","")=="exchange":
+		mode="secret_exchange"
+		preview()
+		return
 	if c.state.pending_initiative:
 		available.assign(["telescope_use", "telescope_save"])
 		mode = "initiative_choice"
@@ -383,6 +393,23 @@ func preview() -> void:
 			points.append(roller.pos)
 			radius = 0.65
 			hint = "%s rolled %d. Opposed totals: %d vs %d. Use Fate Stone? New roll is binding." % [roller.label(), p["roll"], p["own_total"], p["opposing_total"]]
+		"mind_token":
+			for token in c.state.treasures:
+				if token.on_ground():
+					tokens.append(token)
+					points.append(token.pos)
+			radius=0.65
+			hint="Mindscape: choose any remaining memory to move up to 4″, or skip."
+		"mind_destination":
+			points.assign(RedKingMind.memory_points(c.state,spell_first))
+			hint="Choose the memory's destination (up to 4″)."
+		"secret_exchange":
+			for id: int in c.state.scenario_data["rk_end_choice"]["options"]:
+				var target := c.state.figure(id)
+				if target!=null and target.in_play():
+					targets.append(target)
+			radius=0.65
+			hint="Secret exchange: choose a marked member of your warband. Rival choices are already committed."
 		"initiative_choice":
 			hint = "Before initiative is rolled: use the telescope for +5, or save it for a later turn?"
 		"intercept":
@@ -483,6 +510,13 @@ func preview() -> void:
 
 func action(key: String) -> bool:
 	if not available.has(key):
+		return false
+	if key=="mind_skip":
+		return RedKingMind.answer_memory(c,-1)
+	if key=="mind_back":
+		mode="mind_token"
+		available.assign(["mind_skip"])
+		preview()
 		return false
 	if key == "items":
 		available.assign(["items_back"])
@@ -771,6 +805,9 @@ func action(key: String) -> bool:
 
 
 func tap(screen: Vector2) -> bool:
+	if mode=="secret_exchange":
+		var choice := _figure_at(screen)
+		return choice>=0 and RealityCracks.answer_exchange(c,choice)
 	if mode in ["select", "fight", "shoot", "group_select", "spell_target", "cancel_control", "swap_second", "potion_target", "fight_hand", "breathe_fire", "gear_transfer_target","gutter_fight","wraith_shot","ammo_shot"]:
 		var id := _figure_at(screen)
 		if id < 0:
@@ -819,6 +856,16 @@ func tap(screen: Vector2) -> bool:
 	if hit == null:
 		return false
 	var at: Vector2 = hit
+	if mode=="mind_token":
+		for token in tokens:
+			if at.distance_to(token.pos)<=0.9:
+				spell_first=token.id
+				mode="mind_destination"
+				available.assign(["mind_back","mind_skip"])
+				preview()
+				return false
+	if mode=="mind_destination":
+		return RedKingMind.answer_memory(c,spell_first,MoveGrid.to_pos(MovePlanner.node_at(at)))
 	if mode == "treasure_spell":
 		for token in tokens:
 			if at.distance_to(c._magic.treasure_magic.origin(token)) <= 0.9:

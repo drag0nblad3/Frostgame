@@ -241,6 +241,7 @@ static func exit_center(c: GameController) -> bool:
 static func _exchange(c: GameController,secret: bool) -> void:
 	var s := c.state
 	var selected: Array[Figure]=[]
+	var human_options: Array[int]=[]
 	var order := s.order.duplicate()
 	if order.is_empty():
 		for side in s.side_count():
@@ -251,7 +252,21 @@ static func _exchange(c: GameController,secret: bool) -> void:
 			if not secret or (not f.is_undead() and not f.def.traits.has("construct")):
 				candidates.append(f)
 		if candidates.size()>1:
-			selected.append(candidates[c.dice.pick(candidates.size())])
+			if secret and side==s.reaction_side:
+				for candidate in candidates:
+					human_options.append(candidate.id)
+			else:
+				selected.append(candidates[c.dice.pick(candidates.size())])
+	if not human_options.is_empty() and not selected.is_empty():
+		var committed: Array[int]=[]
+		for f in selected:
+			committed.append(f.id)
+		s.scenario_data["rk_end_choice"]={"kind":"exchange","options":human_options,"committed":committed,"order":order}
+		c.emit("reality_choice",{})
+		return
+	if secret and selected.size()<2:
+		clear(c)
+		return
 	if selected.size()==1:
 		if secret:
 			clear(c)
@@ -262,6 +277,32 @@ static func _exchange(c: GameController,secret: bool) -> void:
 				break
 	if selected.size()<2:
 		return
+	_resolve_exchange(c,selected,secret)
+
+
+static func answer_exchange(c: GameController,id: int) -> bool:
+	var s := c.state
+	var choice: Dictionary=s.scenario_data.get("rk_end_choice",{})
+	if choice.get("kind","")!="exchange" or not choice.get("options",[]).has(id):
+		return false
+	var selected: Array[Figure]=[]
+	var ids: Array=choice["committed"].duplicate()
+	ids.append(id)
+	for side: int in choice["order"]:
+		for chosen: int in ids:
+			var f := s.figure(chosen)
+			if f!=null and f.in_play() and f.side==side:
+				selected.append(f)
+	s.scenario_data.erase("rk_end_choice")
+	_resolve_exchange(c,selected,true)
+	c._flow.resume_end_turn()
+	return true
+
+
+static func _resolve_exchange(c: GameController,selected: Array[Figure],secret: bool) -> void:
+	if selected.size()<2:
+		return
+	var s := c.state
 	var locations: Array[Vector2]=[]
 	for f in selected:
 		locations.append(f.pos)

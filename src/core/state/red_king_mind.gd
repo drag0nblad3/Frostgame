@@ -108,10 +108,13 @@ static func apply_card(c: GameController,card: String) -> void:
 		var first := c.dice.pick(4)
 		_spawn(c,corners[first])
 		_spawn(c,corners[(first+1+c.dice.pick(3))%4])
-		# Automated selection until the event-choice UI is implemented.
 		if not tokens.is_empty():
-			var t := tokens[0]
-			_move_token(c,t,t.pos+(f.pos-t.pos).normalized()*minf(4.0,f.pos.distance_to(t.pos)))
+			if f.side==s.reaction_side and f.in_play():
+				s.scenario_data["rk_end_choice"]={"kind":"memory"}
+				c.emit("mind_choice",{})
+			else:
+				var t := tokens[0]
+				_move_token(c,t,t.pos+(f.pos-t.pos).normalized()*minf(4.0,f.pos.distance_to(t.pos)))
 	elif card in ["6","5"]:
 		for i in range(1,4):
 			_spawn(c,corners[i])
@@ -131,3 +134,31 @@ static func finish(c: GameController) -> void:
 			rewards.append(str(card))
 	s.scenario_data["mind_rewards"]=rewards
 	c.emit("mind_rewards",{"cards":rewards.duplicate()})
+
+
+static func memory_points(s: GameState,token_id: int) -> Array[Vector2]:
+	var out: Array[Vector2]=[]
+	var token := s.treasure(token_id)
+	if s.scenario_data.get("rk_end_choice",{}).get("kind","")!="memory" or token==null or not token.on_ground():
+		return out
+	var center := MovePlanner.node_at(token.pos)
+	var margin := Vector2.ONE*TreasureRules.TOKEN_RADIUS
+	for dx in range(-8,9):
+		for dy in range(-8,9):
+			var at := MoveGrid.to_pos(center+Vector2i(dx,dy))
+			if at.distance_to(token.pos)<=4.001 and at==at.clamp(margin,s.board.size-margin):
+				out.append(at)
+	return out
+
+
+static func answer_memory(c: GameController,token_id: int,at: Vector2=Vector2.ZERO) -> bool:
+	var s := c.state
+	if s.scenario_data.get("rk_end_choice",{}).get("kind","")!="memory":
+		return false
+	if token_id>=0:
+		if not memory_points(s,token_id).has(at):
+			return false
+		_move_token(c,s.treasure(token_id),at)
+	s.scenario_data.erase("rk_end_choice")
+	c._flow.resume_end_turn()
+	return true

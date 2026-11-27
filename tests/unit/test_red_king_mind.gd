@@ -77,3 +77,26 @@ func test_bonus_round_no_injury_or_normal_rewards() -> void:
 	check_eq(data["loot"].size(),2)
 	check(RedKingRewards.catalog()[data["loot"][1]["gear"]]["artefact"])
 	check(not RedKingMindRewards.settle(data,c,0))
+
+
+func test_memory_player_choice_checkpoint() -> void:
+	var c := _fixture()
+	var s := c.state
+	s.reaction_side=0
+	RedKingMind.apply_card(c,"8")
+	check(c.awaiting_reaction())
+	check(c.activatable().is_empty())
+	var token := s.treasures[0]
+	var old := token.pos
+	check(not RedKingMind.answer_memory(c,token.id,old+Vector2(8,0)))
+	var saved := BattleSnapshot.capture(c)
+	var restored := BattleSnapshot.rebuild(saved,s.creature_db)
+	check(restored!=null)
+	if restored==null:
+		return
+	var points := RedKingMind.memory_points(restored.state,token.id)
+	check(not points.is_empty())
+	if not points.is_empty():
+		check(RedKingMind.answer_memory(restored,token.id,points[0]))
+		check_eq(restored.state.treasure(token.id).pos,points[0])
+		check(not restored.state.scenario_data.has("rk_end_choice"))

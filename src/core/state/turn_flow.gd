@@ -116,12 +116,9 @@ func _settle() -> void:
 			RedKingBridge.end_turn(_c)
 			RedKingRingworld.end_turn(_c)
 			RealityCracks.on_end_turn(_c)
-			if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
+			if s.scenario_data.has("rk_end_choice"):
 				return
-			HolyLantern.end_turn(_c)
-			WormRider.end_turn(_c)
-			_c._encounters.on_end_turn()
-			start_turn()
+			resume_end_turn()
 			return
 		s.order_index += 1
 		if s.order_index < s.order.size():
@@ -139,6 +136,19 @@ func _settle() -> void:
 			ScenarioObjectives.spawn_worm(_c)
 		if s.phase != Phase.CREATURE or not s.waiting(-1).is_empty():
 			_c.emit("phase", {"phase": s.phase})
+
+
+## A pending end-of-turn choice pauses before the remaining end-turn hooks.
+func resume_end_turn() -> void:
+	var s := _c.state
+	if s.over or s.scenario_data.has("rk_end_choice"):
+		return
+	if (RedKingMind.active(s) or RedKingHerded.active(s) or RedKingRingworld.active(s)) and _check_victory():
+		return
+	HolyLantern.end_turn(_c)
+	WormRider.end_turn(_c)
+	_c._encounters.on_end_turn()
+	start_turn()
 
 
 func _check_victory() -> bool:
