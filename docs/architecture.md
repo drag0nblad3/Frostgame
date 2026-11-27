@@ -141,3 +141,22 @@ recorded events only when no bot or animation is active; otherwise the
 recent journal remains accessible. It does not replay 3D positions, reroll
 dice, or change game state. Historical labels may reflect a figure's
 current name or allegiance; older healing events lack event-time Health.
+
+
+### Historical battlefield frames
+
+Interactive battles opt in to `BattleFrame`, a bounded presentation history
+of the latest 256 completed action boundaries, plus idle scene boundaries.
+Each frame preserves positions, surface IDs, heights, Health, active figure,
+ground treasure, terrain footprints and floor outlines. The data is plain
+and optional in existing version-one saves; older saves still load.
+Headless simulations and deterministic replay verification do not capture
+frames unless explicitly enabled. There is no second simulation or RNG use.
+
+Journal review associates an event with the latest frame at or before that
+event. A frame can be missing for old events, or represent the preceding
+completed action rather than a mid-action instant. The tactical map labels
+this distinction and permits floor filtering. It is a schematic, not a
+full historical 3D scene: solid volumes, boundary effects and moving props
+are not reconstructed in detail. Existing event text remains available
+when no frame exists.
