@@ -405,11 +405,8 @@ func _label(size: int) -> Label:
 
 
 func _button(text: String, on_press: Callable) -> Button:
-	var b := Button.new()
-	b.text = text
-	b.custom_minimum_size = Vector2(108, 62)
-	b.add_theme_font_size_override("font_size", 22)
-	b.pressed.connect(on_press)
+	var b := WorkshopUI.command_button(text,on_press,false,22,62.0)
+	b.custom_minimum_size.x=108
 	return b
 
 
