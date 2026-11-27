@@ -59,7 +59,8 @@ func test_restarting_same_map_reuses_city() -> void:
 	check(view.scenery_ready())
 	view.build(BoardLoader.load_id("underground_library",terrain))
 	check(view._scenery!=city)
-	check_eq(view._scenery.get_child_count(),0)
+	check_eq(view._scenery.get_child_count(),4)
+	check(view.scenery_ready())
 	view.free()
 
 

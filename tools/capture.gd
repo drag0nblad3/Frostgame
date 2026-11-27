@@ -11,6 +11,8 @@ var _ready_to_capture := false
 var _scenario := "treasure_skirmish"
 var _effects := false
 var _effect_frame := -1
+var _exterior := false
+var _exterior_frame := -1
 
 
 func _initialize() -> void:
@@ -44,6 +46,8 @@ func _setup() -> void:
 		return
 	if args.size()>3 and args[3]=="effects":
 		_effects=true
+	elif args.size()>3 and args[3]=="exterior":
+		_exterior=true
 	elif args.size()>3:
 		if not RealityCracks.apply(_scene.controller,int(args[3])):
 			printerr("Unable to apply preview reality crack: ",args[3])
@@ -67,6 +71,18 @@ func _process(_delta: float) -> bool:
 		_left -= 1
 		return false
 	if _frames < 40 or not _scene._board_view.scenery_ready():
+		return false
+	if _exterior and _exterior_frame<0:
+		_exterior_frame=_frames
+		var size: Vector2=_scene.controller.state.board.size
+		_scene._rig.frame_board(size)
+		_scene._rig.yaw=PI*0.82
+		_scene._rig.pitch=deg_to_rad(48.0)
+		_scene._rig.max_distance=maxf(100.0,_scene._rig.distance*1.42)
+		_scene._rig.distance*=1.42
+		_scene._rig._apply()
+		return false
+	if _exterior and _frames<_exterior_frame+5:
 		return false
 	if _effects and _effect_frame<0:
 		_effect_frame=_frames

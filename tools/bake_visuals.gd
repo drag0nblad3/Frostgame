@@ -28,8 +28,7 @@ func _run() -> void:
 			if sample and id!="treasure_skirmish":
 				continue
 			var state := ScenarioLoader.load_id(id,db,terrain)
-			if id not in ["underground_library","training_yard"]:
-				_bake_city(state.board,id,false)
+			_bake_city(state.board,id,false)
 			_bake_terrain(state.board,id)
 			# All standard scenario deployments at Balanced; default roster at
 			# the other settings. This avoids a huge cross-product of identities.
@@ -66,7 +65,13 @@ func _color(f: Figure) -> Color:
 func _bake_city(board: Board,id: String,cinematic: bool) -> void:
 	var path := CityScenery.baked_path(board,id,cinematic)
 	if not _written.has(path):
-		_save(path,CityScenery.build_procedural(board,id,cinematic))
+		var source:=CityScenery.build_procedural(board,id,cinematic)
+		if not _outside_board(source,Transform3D.IDENTITY,Rect2(Vector2.ZERO,board.size)):
+			printerr("Exterior art intersects playable rectangle: ",id)
+			source.free()
+			_failure=true
+			return
+		_save(path,source)
 
 
 func _bake_terrain(board: Board,scenario: String) -> void:
@@ -80,7 +85,7 @@ func _bake_terrain(board: Board,scenario: String) -> void:
 	var floor := StoneFinish.floor_surface(board,scenario)
 	floor.name="Floor"
 	source.add_child(floor)
-	var ground:=DistrictGround.build(board,floor.material_override)
+	var ground:=DistrictGround.build(board,floor.material_override,scenario)
 	ground.name="Ground"
 	source.add_child(ground)
 	for i in board.pieces.size():
@@ -175,3 +180,20 @@ func _save(path: String,source: Node3D) -> void:
 		if loaded!=null:
 			loaded.free()
 	source.free()
+
+
+## Check real baked mesh bounds, including nested landmark transforms,
+## with a renderer available. No scenic geometry may enter the board.
+func _outside_board(node: Node3D,parent: Transform3D,rect: Rect2) -> bool:
+	var world:=parent*node.transform
+	if node is MeshInstance3D and node.mesh!=null:
+		var mesh_node:=node as MeshInstance3D
+		var bounds: AABB=world*mesh_node.mesh.get_aabb()
+		var footprint:=Rect2(Vector2(bounds.position.x,bounds.position.z),Vector2(bounds.size.x,bounds.size.z))
+		if footprint.intersects(rect):
+			printerr("Exterior overlap at ",node.name,": ",footprint)
+			return false
+	for child in node.get_children():
+		if child is Node3D and not _outside_board(child,world,rect):
+			return false
+	return true

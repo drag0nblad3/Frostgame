@@ -19,5 +19,9 @@ func test_outskirts_do_not_reach_playing_surface() -> void:
 			check((child.transform*child.mesh.get_aabb()).end.y<0.0)
 	city.free()
 	var indoor := CityScenery.build(board,"underground_library")
-	check_eq(indoor.get_child_count(),0)
+	check_eq(indoor.get_child_count(),4)
+	for side in 4:
+		check(indoor.has_node("District%d"%side))
+		for entry in ExteriorProfile.plan(board.size,"underground_library",1,2,side):
+			check(entry["kind"] in ["shelf","pillar","archive","colonnade"])
 	indoor.free()

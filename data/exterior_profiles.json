@@ -1,0 +1,536 @@
+{
+  "default": {
+    "name": "Frozen city",
+    "ground": 0,
+    "near": [
+      "tree",
+      "debris",
+      "gate",
+      "crate",
+      "wall"
+    ],
+    "far": [
+      "city",
+      "city",
+      "hall",
+      "tower"
+    ],
+    "landmark": "gate"
+  },
+  "treasure_skirmish": {
+    "name": "Abandoned market",
+    "ground": 0,
+    "near": [
+      "stall",
+      "crate",
+      "gate",
+      "tree",
+      "wall"
+    ],
+    "far": [
+      "city",
+      "hall",
+      "city",
+      "tower"
+    ],
+    "landmark": "market"
+  },
+  "sunken_streets": {
+    "name": "Canal quarter",
+    "ground": 1,
+    "near": [
+      "quay",
+      "bridge",
+      "quay",
+      "crate",
+      "quay"
+    ],
+    "far": [
+      "city",
+      "warehouse",
+      "hall",
+      "city"
+    ],
+    "landmark": "bridge",
+    "sides": {
+      "0": [
+        "quay",
+        "bridge",
+        "quay"
+      ],
+      "2": [
+        "quay",
+        "bridge",
+        "quay"
+      ]
+    }
+  },
+  "mausoleum": {
+    "name": "Necropolis",
+    "ground": 2,
+    "near": [
+      "graveyard",
+      "crypt",
+      "tree",
+      "graveyard",
+      "obelisk"
+    ],
+    "far": [
+      "crypt",
+      "colonnade",
+      "mausoleum",
+      "obelisk"
+    ],
+    "landmark": "mausoleum"
+  },
+  "dreams_well": {
+    "name": "Sacred springs",
+    "ground": 2,
+    "near": [
+      "basin",
+      "colonnade",
+      "obelisk",
+      "tree"
+    ],
+    "far": [
+      "shrine",
+      "colonnade",
+      "hall",
+      "shrine"
+    ],
+    "landmark": "shrine"
+  },
+  "living_museum": {
+    "name": "Sculpture precinct",
+    "ground": 3,
+    "near": [
+      "statue",
+      "colonnade",
+      "statue",
+      "plinth",
+      "gate"
+    ],
+    "far": [
+      "colonnade",
+      "hall",
+      "gallery",
+      "obelisk"
+    ],
+    "landmark": "gallery"
+  },
+  "worm_hunts": {
+    "name": "Glacial wasteland",
+    "ground": 4,
+    "near": [
+      "ice",
+      "drift",
+      "ice",
+      "debris",
+      "ice"
+    ],
+    "far": [
+      "ice_ridge",
+      "ice_ridge",
+      "ruin",
+      "ice_ridge"
+    ],
+    "landmark": "ice_ridge",
+    "spacing": 8
+  },
+  "underground_library": {
+    "name": "Subterranean archives",
+    "ground": 5,
+    "near": [
+      "shelf",
+      "pillar",
+      "shelf",
+      "shelf",
+      "pillar"
+    ],
+    "far": [
+      "archive",
+      "shelf",
+      "archive",
+      "colonnade"
+    ],
+    "landmark": "archive",
+    "spacing": 7
+  },
+  "haunted_houses": {
+    "name": "Deserted hamlet",
+    "ground": 2,
+    "near": [
+      "cabin",
+      "tree",
+      "fence",
+      "cabin",
+      "crate"
+    ],
+    "far": [
+      "cabin",
+      "tree",
+      "cabin",
+      "windmill"
+    ],
+    "landmark": "windmill",
+    "spacing": 7
+  },
+  "the_keep": {
+    "name": "Fortified outskirts",
+    "ground": 0,
+    "near": [
+      "wall",
+      "tower",
+      "wall",
+      "gate",
+      "crate"
+    ],
+    "far": [
+      "fortress",
+      "wall",
+      "tower",
+      "fortress"
+    ],
+    "landmark": "fortress"
+  },
+  "genie_in_the_bottle": {
+    "name": "Merchant district",
+    "ground": 3,
+    "near": [
+      "stall",
+      "basin",
+      "crate",
+      "colonnade",
+      "stall"
+    ],
+    "far": [
+      "gallery",
+      "city",
+      "hall",
+      "shrine"
+    ],
+    "landmark": "market"
+  },
+  "silent_tower": {
+    "name": "Arcane academy",
+    "ground": 3,
+    "near": [
+      "obelisk",
+      "colonnade",
+      "gate",
+      "tree",
+      "plinth"
+    ],
+    "far": [
+      "tower",
+      "gallery",
+      "tower",
+      "shrine"
+    ],
+    "landmark": "tall_tower"
+  },
+  "complex_temple": {
+    "name": "Ancient sanctuary",
+    "ground": 3,
+    "near": [
+      "colonnade",
+      "statue",
+      "plinth",
+      "obelisk",
+      "basin"
+    ],
+    "far": [
+      "shrine",
+      "gallery",
+      "colonnade",
+      "shrine"
+    ],
+    "landmark": "shrine"
+  },
+  "training_yard": {
+    "name": "Practice grounds",
+    "ground": 2,
+    "near": [
+      "fence",
+      "crate",
+      "stall",
+      "fence"
+    ],
+    "far": [
+      "cabin",
+      "tree",
+      "wall",
+      "cabin"
+    ],
+    "landmark": "gate",
+    "spacing": 9
+  },
+  "red_king_squatter": {
+    "name": "Shattered residential quarter",
+    "ground": 2,
+    "near": [
+      "cabin",
+      "ruin",
+      "fence",
+      "tree",
+      "debris"
+    ],
+    "far": [
+      "ruin",
+      "cabin",
+      "city",
+      "ruin"
+    ],
+    "landmark": "ruin"
+  },
+  "red_king_investigations": {
+    "name": "Barbarian encampment",
+    "ground": 6,
+    "near": [
+      "tent",
+      "brazier",
+      "palisade",
+      "tent",
+      "crate"
+    ],
+    "far": [
+      "tent",
+      "palisade",
+      "tent",
+      "watchtower"
+    ],
+    "landmark": "watchtower"
+  },
+  "red_king_veil": {
+    "name": "City swallowed by unreality",
+    "ground": 7,
+    "near": [
+      "shard",
+      "ruin",
+      "memory",
+      "shard"
+    ],
+    "far": [
+      "floating",
+      "ruin",
+      "memory",
+      "floating"
+    ],
+    "landmark": "memory",
+    "sides": {
+      "0": [
+        "shard",
+        "memory",
+        "floating"
+      ],
+      "2": [
+        "ruin",
+        "city",
+        "gate",
+        "tree"
+      ]
+    },
+    "far_sides": {
+      "0": [
+        "floating",
+        "memory",
+        "shard"
+      ],
+      "2": [
+        "city",
+        "hall",
+        "tower"
+      ]
+    },
+    "landmark_sides": {
+      "0": "memory",
+      "2": "gate"
+    }
+  },
+  "red_king_back_into_fire": {
+    "name": "Burned temple precinct",
+    "ground": 6,
+    "near": [
+      "brazier",
+      "ruin",
+      "colonnade",
+      "brazier",
+      "obelisk"
+    ],
+    "far": [
+      "shrine",
+      "ruin",
+      "shrine",
+      "pillar"
+    ],
+    "landmark": "burned_shrine"
+  },
+  "red_king_demons_and_mad_man": {
+    "name": "Demon-ravaged streets",
+    "ground": 6,
+    "near": [
+      "ruin",
+      "debris",
+      "brazier",
+      "shard",
+      "ruin"
+    ],
+    "far": [
+      "ruin",
+      "tower",
+      "ruin",
+      "city"
+    ],
+    "landmark": "ruin"
+  },
+  "red_king_mind": {
+    "name": "Impossible memory",
+    "ground": 7,
+    "near": [
+      "memory",
+      "floating",
+      "shard",
+      "memory"
+    ],
+    "far": [
+      "floating",
+      "memory",
+      "floating",
+      "shard"
+    ],
+    "landmark": "memory",
+    "spacing": 9
+  },
+  "red_king_herded": {
+    "name": "Pursuit through fallen ruins",
+    "ground": 6,
+    "near": [
+      "ruin",
+      "debris",
+      "shard",
+      "wall"
+    ],
+    "far": [
+      "ruin",
+      "city",
+      "ruin",
+      "tower"
+    ],
+    "landmark": "ruin",
+    "sides": {
+      "0": [
+        "shard",
+        "floating",
+        "shard"
+      ],
+      "2": [
+        "gate",
+        "wall",
+        "tower"
+      ]
+    },
+    "far_sides": {
+      "0": [
+        "floating",
+        "shard",
+        "ruin"
+      ],
+      "2": [
+        "wall",
+        "fortress",
+        "tower"
+      ]
+    },
+    "landmark_sides": {
+      "0": "floating",
+      "2": "fortress"
+    }
+  },
+  "red_king_sinkhole": {
+    "name": "Collapsed planar district",
+    "ground": 7,
+    "near": [
+      "debris",
+      "shard",
+      "ruin",
+      "obelisk"
+    ],
+    "far": [
+      "floating",
+      "ruin",
+      "shard",
+      "floating"
+    ],
+    "landmark": "floating"
+  },
+  "red_king_hill": {
+    "name": "Folded highlands",
+    "ground": 4,
+    "near": [
+      "drift",
+      "obelisk",
+      "ice",
+      "ruin"
+    ],
+    "far": [
+      "pyramid",
+      "ice_ridge",
+      "pyramid",
+      "tower"
+    ],
+    "landmark": "pyramid",
+    "spacing": 8
+  },
+  "red_king_tethers": {
+    "name": "Fractured reality anchors",
+    "ground": 7,
+    "near": [
+      "obelisk",
+      "shard",
+      "floating",
+      "obelisk"
+    ],
+    "far": [
+      "tether",
+      "floating",
+      "tether",
+      "shard"
+    ],
+    "landmark": "tether"
+  },
+  "red_king_bridge": {
+    "name": "Floating archipelago",
+    "ground": 8,
+    "near": [
+      "floating",
+      "shard",
+      "floating"
+    ],
+    "far": [
+      "floating",
+      "broken_bridge",
+      "floating",
+      "shard"
+    ],
+    "landmark": "broken_bridge",
+    "spacing": 10
+  },
+  "red_king_ringworld": {
+    "name": "Scarlet ring horizon",
+    "ground": 8,
+    "near": [
+      "ring",
+      "shard",
+      "ring",
+      "obelisk"
+    ],
+    "far": [
+      "ring",
+      "floating",
+      "ring",
+      "ring"
+    ],
+    "landmark": "ring",
+    "spacing": 9
+  }
+}
