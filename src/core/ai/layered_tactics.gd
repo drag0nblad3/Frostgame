@@ -99,7 +99,7 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 				if not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side or RingworldBot.protected_key(s,f,enemy) or WormRider.ignored(f,enemy) or (RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(enemy)) or not IllusionRules.visible_to(s.figures,f,enemy) or not BotTargets.can_harm(f,enemy,f.melee):
 					continue
 				var at:=BattleSpace.center(enemy)
-				var score:=origin.distance_to(at)*BotPreference.threat_appeal(f,enemy)
+				var score:=origin.distance_to(at)/BotPreference.threat_appeal(f,enemy)
 				if score<nearest:
 					nearest=score
 					objective=at
