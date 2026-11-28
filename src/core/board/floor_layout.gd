@@ -253,8 +253,10 @@ func coarse_hops(goal_floor: int) -> Dictionary:
 ## not a rules validator or an admissible exact-search heuristic.
 func coarse_distance(from: Vector3i,to: Vector3i) -> float:
 	var direct:=point(from).distance_to(point(to))
-	if from.z==to.z or from.z<0 or to.z<0:
+	if from.z<0 or to.z<0:
 		return direct
+	if from.z==to.z:
+		return coarse_horizontal_distance(from,to)
 	var hops:=coarse_hops(to.z)
 	if not hops.has(from.z):
 		return direct+8.0
@@ -267,3 +269,93 @@ func coarse_distance(from: Vector3i,to: Vector3i) -> float:
 		var after:=point(b).distance_to(point(to)) if b.z==to.z else float(hops[b.z])*4.0
 		best=minf(best,point(from).distance_to(point(a))+1.0+after)
 	return best if is_finite(best) else direct+8.0
+
+
+## Static two-inch waypoint lattice, derived lazily per geometry revision.
+## A coarse edge must be supported and clear along the full fine lattice.
+## Dynamic figures, wards and scenario rules are still checked by LayeredGrid.
+const COARSE_STRIDE:=4
+const COARSE_FIELD_LIMIT:=500
+const COARSE_FIELD_COUNT:=12
+var _horizontal_edges: Dictionary={}
+var _horizontal_fields: Dictionary={}
+var _horizontal_order: Array[Vector3i]=[]
+
+func _coarse_anchor(n: Vector3i) -> Vector3i:
+	return Vector3i(roundi(float(n.x)/COARSE_STRIDE)*COARSE_STRIDE,roundi(float(n.y)/COARSE_STRIDE)*COARSE_STRIDE,n.z)
+
+
+func _coarse_neighbors(n: Vector3i) -> Array[Vector3i]:
+	if _horizontal_edges.has(n):
+		var cached: Array[Vector3i]=_horizontal_edges[n]
+		return cached
+	var out: Array[Vector3i]=[]
+	if standable(n):
+		for direction: Vector2i in MoveGrid.NEIGHBORS:
+			var delta:=Vector3i(direction.x,direction.y,0)
+			var previous:=n
+			var clear:=true
+			for i in range(1,COARSE_STRIDE+1):
+				var next:=n+delta*i
+				if not standable(next) or not neighbor_clear(previous,next):
+					clear=false
+					break
+				previous=next
+			if clear:
+				out.append(previous)
+	_horizontal_edges[n]=out
+	return out
+
+
+## Reverse distance field: all figures targeting the same coarse cell reuse
+## one geometry-only calculation. Bounded cache prevents moving enemies
+## from accumulating an unbounded number of fields.
+func _horizontal_field(goal: Vector3i) -> Dictionary:
+	if _horizontal_fields.has(goal):
+		return _horizontal_fields[goal]
+	if not standable(goal):
+		return {}
+	var distances: Dictionary={goal:0.0}
+	var heap:=MinHeap.new()
+	heap.push(0.0,goal)
+	var expanded:=0
+	while not heap.is_empty() and expanded<COARSE_FIELD_LIMIT:
+		var item:=heap.pop()
+		var n: Vector3i=item[1]
+		var distance: float=item[0]
+		if distance>float(distances[n])+0.0001:
+			continue
+		expanded+=1
+		for next in _coarse_neighbors(n):
+			var cost:=distance+point(n).distance_to(point(next))
+			if cost<float(distances.get(next,INF)):
+				distances[next]=cost
+				heap.push(cost,next)
+	if _horizontal_order.size()>=COARSE_FIELD_COUNT:
+		_horizontal_fields.erase(_horizontal_order.pop_front())
+	_horizontal_order.append(goal)
+	_horizontal_fields[goal]=distances
+	return distances
+
+
+func coarse_horizontal_distance(from: Vector3i,to: Vector3i) -> float:
+	var direct:=point(from).distance_to(point(to))
+	# Local decisions, empty terrain and narrow/climb supports retain the
+	# cheap direct estimate. Coarse failure is never proof of no route.
+	if direct<4.0 or from.z!=to.z or from.z<0 or from.z>=surfaces.size():
+		return direct
+	if solids.is_empty() and convex_solids.is_empty() and circular_solids.is_empty() and magic_solids.is_empty() and surfaces[from.z].profiles.is_empty():
+		return direct
+	if surfaces[from.z].id.begins_with("climb:"):
+		return direct
+	var a:=_coarse_anchor(from)
+	var b:=_coarse_anchor(to)
+	if not standable(a) or not standable(b):
+		return direct
+	var distances:=_horizontal_field(b)
+	if not distances.has(a):
+		return direct
+	# Reduce quantization error at either endpoint, preserving direct
+	# distance as the fallback. This estimate is for imperfect AI only.
+	var offset:=point(from).distance_to(point(a))+point(to).distance_to(point(b))
+	return maxf(direct,float(distances[a])-offset)
