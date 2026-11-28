@@ -4,9 +4,9 @@ extends RefCounted
 ## Run-up and jump are both paid from the same movement action.
 
 
-static func plans(c: GameController,generate: bool=false,continuation: bool=false,shared_grid: LayeredGrid=null) -> Dictionary:
+static func plans(c: GameController,generate: bool=false,continuation: bool=false,shared_grid: LayeredGrid=null,cape: bool=false) -> Dictionary:
 	var out := {}
-	if not LayeredMovement.eligible(c) or (not generate and c.state.board.floor_layout.get("jumps",[]).is_empty()):
+	if not LayeredMovement.eligible(c,cape) or (not generate and c.state.board.floor_layout.get("jumps",[]).is_empty()):
 		return out
 	var s := c.state
 	var f := s.active()
@@ -20,16 +20,16 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 	var start := layout.node(f.surface_id,f.pos)
 	if not grid.open(start):
 		return out
-	var direct:=from_position(c,layout,grid,start,MoveRules.allowance(f),generate)
+	var direct:=from_position(c,layout,grid,start,MoveRules.allowance(f),generate,cape)
 	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid),grid) if continuation else direct
 
 
 ## Query from a hypothetical landing without changing the live figure.
-static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,generate: bool=true) -> Dictionary:
+static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,generate: bool=true,leave_contact: bool=false) -> Dictionary:
 	var out: Dictionary={}
 	var s:=c.state
 	var f:=s.active()
-	if not grid.open(start) or grid.stops(start):
+	if not grid.open(start) or (grid.stops(start) and not leave_contact):
 		return out
 	var entries: Array=s.board.floor_layout.get("jumps",[]).duplicate()
 	if generate:
@@ -63,7 +63,7 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 				valid=false
 				break
 			for other in grid.others:
-				if absf(other.elevation-h)<0.5 and (other.pos.distance_to(p)<Contact.OVERLAP or (other.side!=f.side and Contact.touching(other.pos,p))):
+				if absf(other.elevation-h)<0.5 and (other.pos.distance_to(p)<Contact.OVERLAP or (other.side!=f.side and Contact.touching(other.pos,p) and not (leave_contact and i==0))):
 					valid=false
 					break
 			if not valid:
