@@ -32,18 +32,18 @@ static func finish_fate_fight(c: GameController, f: Figure, t: Figure, res: Dict
 	var b_gear := RedKingGear.before_fight(c.state.figures,t,f)
 	var before_a := f.health
 	var before_b := t.health
-	c._weapon_damage(t,RedKingElemental.weapon_damage(c,f,t,int(res["b_dmg"]),int(res["a_roll"]),false,int(res.get("elemental_choices",{}).get(t.id,-1))),f,a_weapon)
-	c._weapon_damage(f,RedKingElemental.weapon_damage(c,t,f,int(res["a_dmg"]),int(res["b_roll"]),false,int(res.get("elemental_choices",{}).get(f.id,-1))),t,b_weapon)
+	c._weapon_damage(t,RedKingElemental.weapon_damage(c,f,t,int(res["b_dmg"]),int(res["a_roll"]),false,int(res.get("elemental_choices",{}).get(t.id,-1)),int(res.get("b_hammer",0))),f,a_weapon)
+	c._weapon_damage(f,RedKingElemental.weapon_damage(c,t,f,int(res["a_dmg"]),int(res["b_roll"]),false,int(res.get("elemental_choices",{}).get(f.id,-1)),int(res.get("a_hammer",0))),t,b_weapon)
 	var actual := res.duplicate()
 	actual["a_dmg"]=maxi(0,before_a-f.health)
 	actual["b_dmg"]=maxi(0,before_b-t.health)
 	RedKingGear.after_fight(c,f,t,a_gear,int(res["a_roll"]),int(res["b_dmg"]),int(actual["b_dmg"]),int(res["winner"]))
 	RedKingGear.after_fight(c,t,f,b_gear,int(res["b_roll"]),int(res["a_dmg"]),int(actual["a_dmg"]),int(res["winner"]))
 	CreatureEffects.after_fight(c,f,t,actual,a_weapon,b_weapon)
-	if int(res["b_dmg"]) > 0:
-		f.spell_effects.erase("elemental_hammer")
-	if int(res["a_dmg"]) > 0:
-		t.spell_effects.erase("elemental_hammer")
+	if int(res.get("b_hammer",0))>0:
+		WeaponEnchantment.remove(f,a_weapon.id,WeaponEnchantment.HAMMER)
+	if int(res.get("a_hammer",0))>0:
+		WeaponEnchantment.remove(t,b_weapon.id,WeaponEnchantment.HAMMER)
 	if f.in_play() and t.in_play() and Contact.figures_touch(f,t) and int(res["winner"]) >= 0:
 		var winner := c.state.figure(res["winner"])
 		if not RedKingTethers.pylon(f) and not RedKingTethers.pylon(t) and (winner.side >= 0 or RedKingHill.is_herald(c.state,winner) or (RedKingRingworld.active(c.state) and RedKingRingworld.key_master(winner))):
@@ -107,11 +107,11 @@ static func finish_fate_shot(c: GameController, f: Figure, t: Figure, res: Dicti
 	res["target"] = t.id
 	res["weapon"]=f.ranged.id if f.ranged!=null else "bow"
 	c.emit("shoot", res)
-	c._weapon_damage(t,RedKingElemental.weapon_damage(c,f,t,int(res["dmg"]),int(res["s_roll"]),true,int(res.get("elemental_choices",{}).get(t.id,-1))),f,f.ranged)
+	c._weapon_damage(t,RedKingElemental.weapon_damage(c,f,t,int(res["dmg"]),int(res["s_roll"]),true,int(res.get("elemental_choices",{}).get(t.id,-1)),int(res.get("hammer",0))),f,f.ranged)
 	if f.spell_effects.get("potion_fairy_dust", "") == f.ranged.id:
 		f.spell_effects.erase("potion_fairy_dust")
 	if f.ranged != null:
-		f.spell_effects.erase("elemental_hammer")
+		WeaponEnchantment.remove(f,f.ranged.id,WeaponEnchantment.HAMMER)
 	if res.get("wraith",false) and f.in_play():
 		var raw := c.dice.d20()
 		var success := StatRoll.succeeds(raw,f.effective_will()+f.roll_penalty(),8)

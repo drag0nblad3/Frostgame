@@ -28,7 +28,7 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "not a target"
 	if ammo and (wraith or not MagicAmmo.ready(shooter)):
 		return "no enchanted ammunition"
-	if RuleHooks.any("objective_figure", [target]) and not ammo and not WeaponActions.magic_attack(shooter,shooter.ranged):
+	if RuleHooks.any("objective_figure", [target]) and not ammo and not WeaponActions.magic_attack(shooter,shooter.ranged) and not WeaponEnchantment.active(shooter,shooter.ranged,WeaponEnchantment.HAMMER):
 		return "pylon requires magical shooting"
 	if target.side == shooter.side and not Contact.in_combat(figures, target):
 		return "not an enemy"
@@ -102,10 +102,11 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	var st := sr + RuleHooks.total("shoot_modifier", [shooter]) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and not ammo and WeaponEnchantment.active(shooter,shooter.ranged) else 0) + (3 if HolyLantern.glow(target) else 0), 10) + shooter.roll_penalty()
 	var tt := tr + mini(target.effective_fight() + Melee.secret_hrut_bonus(target,shooter) + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
+	var hammer:=0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):
 		dmg = Damage.amount(st, shooter.ranged.damage_mod + magic_damage, target.effective_armour() + MagicEquipment.bonus(target, "arrow_armour"), sr, critical_hits and not target.def.traits.has("immune_critical"))
-		if dmg > 0 and not null_target and shooter.spell_effects.has("elemental_hammer"):
-			dmg += 5
+		if dmg>0 and not null_target and not target.def.traits.has("antithetical_magic") and WeaponEnchantment.active(shooter,shooter.ranged,WeaponEnchantment.HAMMER):
+			hammer=5
 	if (target.spell_effects.has("potion_invulnerability") or target.def.traits.has("immune_normal")) and not magical:
 		dmg = 0
 	if target.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(shooter,shooter.ranged) and shooter.ranged.id=="genie_bolt":
@@ -114,7 +115,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 		dmg=0
 	if target.def.traits.has("missile_resistant") and shooter.ranged.id in ["bow","crossbow","javelin"] and not magical:
 		dmg=mini(dmg,2)
-	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg}
+	return {"s_roll": sr, "t_roll": tr, "s_total": st, "t_total": tt, "mod": mod, "dmg": dmg+hammer,"hammer":hammer}
 
 
 static func wraith_line(board: Board,f: Figure,t: Figure) -> LineOfSight.Result:

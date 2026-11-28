@@ -41,20 +41,28 @@ static func resolve_rolls(figures: Array[Figure], a: Figure, b: Figure, ar: int,
 	var ac := critical_hits and ar == 20
 	var bc := critical_hits and br == 20
 	if ac or (not bc and at >= bt):
-		out["b_dmg"] = _damage(at, a, b, ar, critical_hits)
+		var parts:=_damage_parts(at,a,b,ar,critical_hits)
+		out["b_dmg"]=parts.x+parts.y
+		out["b_hammer"]=parts.y
 	if bc or (not ac and bt >= at):
-		out["a_dmg"] = _damage(bt, b, a, br, critical_hits)
+		var parts:=_damage_parts(bt,b,a,br,critical_hits)
+		out["a_dmg"]=parts.x+parts.y
+		out["a_hammer"]=parts.y
 	out["winner"] = a.id if (ac and not bc) or (not ac and not bc and at > bt) else (b.id if (bc and not ac) or (not ac and not bc and bt > at) else -1)
 	return out
 
 
-static func _damage(total: int, winner: Figure, loser: Figure, natural: int, critical_hits: bool) -> int:
+static func _damage(total: int,winner: Figure,loser: Figure,natural: int,critical_hits: bool) -> int:
+	var parts:=_damage_parts(total,winner,loser,natural,critical_hits)
+	return parts.x+parts.y
+
+
+static func _damage_parts(total: int, winner: Figure, loser: Figure, natural: int, critical_hits: bool) -> Vector2i:
 	if RuleHooks.any("objective_figure", [winner]):
-		return 0
+		return Vector2i.ZERO
 	if loser.def.traits.has("antithetical_magic") and WeaponActions.magic_attack(winner,winner.melee) and winner.melee.id=="natural":
-		return 0
-	if (loser.spell_effects.has("potion_invulnerability") or loser.def.traits.has("immune_normal")) and not WeaponActions.magic_attack(winner, winner.melee):
-		return 0
+		return Vector2i.ZERO
+	var immune: bool=(loser.spell_effects.has("potion_invulnerability") or loser.def.traits.has("immune_normal")) and not WeaponActions.magic_attack(winner,winner.melee)
 	var extra := (2 if winner.def.traits.has("strong") or winner.used_gear.get("rk_skull_strong",false) else 0) + (1 if winner.spell_effects.has("potion_fury") else 0)
 	if loser.is_undead():
 		extra += MagicEquipment.bonus(winner,"undead_damage")
@@ -63,11 +71,12 @@ static func _damage(total: int, winner: Figure, loser: Figure, natural: int, cri
 		dmg *= 2
 	if critical_hits and natural == 20 and not loser.def.traits.has("immune_critical"):
 		dmg += 5
-	if dmg > 0 and winner.ranged == null and winner.spell_effects.has("elemental_hammer"):
-		dmg += 5
+	var hammer:=5 if dmg>0 and WeaponEnchantment.active(winner,winner.melee,WeaponEnchantment.HAMMER) and not loser.def.traits.has("antithetical_magic") else 0
+	if immune:
+		return Vector2i(0,hammer)
 	if dmg > 0 and natural != 1:
 		dmg += RuleHooks.total("melee_damage_bonus", [winner, loser])
-	return dmg
+	return Vector2i(dmg,hammer)
 
 
 ## Expansion Fight bonuses against a particular enemy (rule hook "fight_bonus").

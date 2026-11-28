@@ -59,8 +59,8 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 			return false
 	if ammo:
 		return id=="enchant_weapon" and t.side==f.side and MagicAmmo.can_enchant(t)
-	if id=="enchant_weapon":
-		return not WeaponEnchantment.options(t).is_empty()
+	if id in ["enchant_weapon","elemental_hammer"]:
+		return not WeaponEnchantment.options(t,id).is_empty()
 	if kind == "shot":
 		return t != f
 	if kind == "area_shot":
@@ -115,16 +115,16 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 static func counter_options(sa: SpellActions, id: String) -> Array[Dictionary]:
 	var f := sa.c.state.active()
 	var empty: Array[Dictionary] = []
-	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye", "enchant_weapon"] or not sa.c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light"):
+	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye", "enchant_weapon", "elemental_hammer"] or not sa.c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
 	if not sa.available_spell(f, id):
 		return empty
-	if id=="enchant_weapon":
+	if id in ["enchant_weapon","elemental_hammer"]:
 		var choices: Array[Dictionary]=[]
 		for t in sa.c.state.figures:
 			if not can_cast(sa,id,t.id):
 				continue
-			for w in WeaponEnchantment.options(t):
+			for w in WeaponEnchantment.options(t,id):
 				choices.append({"kind":"weapon","target":t.id,"weapon":w.id,"label":"%s #%d — %s"%[t.label(),t.id,w.name]})
 		return choices
 	if id == "wizard_eye":

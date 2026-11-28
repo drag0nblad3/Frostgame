@@ -64,10 +64,10 @@ func advance() -> void:
 	var options: Dictionary=p.get("elemental_choices",{})
 	if p["kind"]=="fight":
 		if not RedKingMadMan.is_ryce(b):
-			if _offer_absorption(p,options,a,b,int(res["b_dmg"]),int(res["a_roll"]),false) or _offer_absorption(p,options,b,a,int(res["a_dmg"]),int(res["b_roll"]),false):
+			if _offer_absorption(p,options,a,b,int(res["b_dmg"]),int(res["a_roll"]),false,int(res.get("b_hammer",0))) or _offer_absorption(p,options,b,a,int(res["a_dmg"]),int(res["b_roll"]),false,int(res.get("a_hammer",0))):
 				return
 	else:
-		if _offer_absorption(p,options,a,b,int(res["dmg"]),int(res["s_roll"]),true):
+		if _offer_absorption(p,options,a,b,int(res["dmg"]),int(res["s_roll"]),true,int(res.get("hammer",0))):
 			return
 	res["elemental_choices"]=options
 	c.state.pending_combat = {}
@@ -102,10 +102,10 @@ func answer(use: bool) -> bool:
 
 ## Only after both Fate Stone opportunities have resolved is damage known.
 ## Store choices in the pending opposed roll, without changing either figure.
-func _offer_absorption(p: Dictionary,options: Dictionary,attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool) -> bool:
+func _offer_absorption(p: Dictionary,options: Dictionary,attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool,hammer: int=0) -> bool:
 	if options.has(target.id) or target.side!=c.state.reaction_side or not ActiveGear.ready(target,RedKingElemental.AMULET):
 		return false
-	var parts := RedKingElemental.weapon_parts(attacker,target,damage,raw,ranged)
+	var parts := RedKingElemental.weapon_parts(attacker,target,damage,raw,ranged,hammer)
 	if parts.y<=0:
 		return false
 	p["absorb_target"]=target.id

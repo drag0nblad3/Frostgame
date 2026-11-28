@@ -3,10 +3,11 @@ extends RefCounted
 ## Core p.121: a weapon is the target, not the figure. Keep the effect
 ## under the existing spell key so anti-magic and null-field cleanup work.
 const KEY := "enchant_weapon"
+const HAMMER := "elemental_hammer"
 
-static func ids(f: Figure) -> Array[String]:
+static func ids(f: Figure,key: String=KEY) -> Array[String]:
 	var out: Array[String]=[]
-	var data: Variant=f.spell_effects.get(KEY,false)
+	var data: Variant=f.spell_effects.get(key,false)
 	if data is Array:
 		for id in data:
 			if not f.destroyed_weapons.has(str(id)):
@@ -23,38 +24,38 @@ static func migrate(f: Figure) -> void:
 	if old is bool and old:
 		f.spell_effects[KEY]=ids(f)
 
-static func active(f: Figure,w: WeaponDef) -> bool:
-	return w!=null and not MagicEquipment.suppressed(f) and ids(f).has(w.id)
+static func active(f: Figure,w: WeaponDef,key: String=KEY) -> bool:
+	return w!=null and not MagicEquipment.suppressed(f) and ids(f,key).has(w.id)
 
-static func options(f: Figure) -> Array[WeaponDef]:
+static func options(f: Figure,key: String=KEY) -> Array[WeaponDef]:
 	var out: Array[WeaponDef]=[]
 	if f==null:
 		return out
-	var existing:=ids(f)
+	var existing:=ids(f,key)
 	for w in f.def.weapons:
 		if w.id not in ["unarmed","natural"] and not f.destroyed_weapons.has(w.id) and not existing.has(w.id) and not out.has(w):
 			out.append(w)
 	return out
 
-static func add(f: Figure,id: String) -> bool:
-	for w in options(f):
+static func add(f: Figure,id: String,key: String=KEY) -> bool:
+	for w in options(f,key):
 		if w.id==id:
-			var current:=ids(f)
+			var current:=ids(f,key)
 			current.append(id)
-			f.spell_effects[KEY]=current
+			f.spell_effects[key]=current
 			return true
 	return false
 
-static func remove(f: Figure,id: String) -> void:
-	var current:=ids(f)
+static func remove(f: Figure,id: String,key: String=KEY) -> void:
+	var current:=ids(f,key)
 	current.erase(id)
 	if current.is_empty():
-		f.spell_effects.erase(KEY)
+		f.spell_effects.erase(key)
 	else:
-		f.spell_effects[KEY]=current
+		f.spell_effects[key]=current
 
-static func preferred(f: Figure) -> String:
-	var choices:=options(f)
+static func preferred(f: Figure,key: String=KEY) -> String:
+	var choices:=options(f,key)
 	for w in [f.ranged,f.melee]:
 		if w!=null and choices.has(w):
 			return w.id

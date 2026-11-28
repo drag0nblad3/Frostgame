@@ -37,16 +37,16 @@ static func reduce(c: GameController,t: Figure,damage: int,choice: int=-1) -> in
 	return PotionActions.absorb(t,damage)
 
 
-static func weapon_parts(attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool) -> Vector2i:
+static func weapon_parts(attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool,hammer_amount: int=-1) -> Vector2i:
 	if damage<=0:
 		return Vector2i.ZERO
-	var hammer := 5 if attacker.spell_effects.has("elemental_hammer") and (ranged or attacker.ranged==null) and not target.def.traits.has("antithetical_magic") else 0
+	var hammer := hammer_amount if hammer_amount>=0 else (5 if WeaponEnchantment.active(attacker,attacker.ranged if ranged else attacker.melee,WeaponEnchantment.HAMMER) and not target.def.traits.has("antithetical_magic") else 0)
 	var sword := RedKingGear.fire_damage(attacker,target) if not ranged and raw!=1 else 0
 	var elemental := mini(damage,hammer+sword)
 	var normal := damage-elemental
 	return Vector2i(normal,maxi(0,elemental-mini(hammer,CreatureEffects.elemental_resistance(target))))
 
 
-static func weapon_damage(c: GameController,attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool,choice: int=-1) -> int:
-	var parts := weapon_parts(attacker,target,damage,raw,ranged)
+static func weapon_damage(c: GameController,attacker: Figure,target: Figure,damage: int,raw: int,ranged: bool,choice: int=-1,hammer_amount: int=-1) -> int:
+	var parts := weapon_parts(attacker,target,damage,raw,ranged,hammer_amount)
 	return parts.x+reduce(c,target,parts.y,choice)

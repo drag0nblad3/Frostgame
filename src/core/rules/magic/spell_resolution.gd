@@ -88,14 +88,14 @@ static func _finish_one(sa: SpellActions, health: int) -> bool:
 	if SummonActions.CONTROL.has(id):
 		sa.summons.apply_control(f, t, id, int(result["roll"]))
 		return true
-	if id=="enchant_weapon":
+	if id in ["enchant_weapon","elemental_hammer"]:
 		var effect: Dictionary=p.get("effect",{})
-		if effect.get("magic_ammo",false):
+		if id=="enchant_weapon" and effect.get("magic_ammo",false):
 			if MagicAmmo.add(t):
 				sa.c.emit("spell_effect",{"id":t.id,"spell":id,"ammunition":true})
 		else:
-			var weapon:=str(effect.get("weapon",WeaponEnchantment.preferred(t)))
-			if WeaponEnchantment.add(t,weapon):
+			var weapon:=str(effect.get("weapon",WeaponEnchantment.preferred(t,id)))
+			if WeaponEnchantment.add(t,weapon,id):
 				sa.c.emit("spell_effect",{"id":t.id,"spell":id,"weapon":weapon})
 		return true
 	var early: Variant = SpellEffects.apply(sa, s, p, f, t, id, result, power)
