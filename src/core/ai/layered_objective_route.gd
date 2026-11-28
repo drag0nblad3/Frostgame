@@ -15,7 +15,7 @@ static func eligible(c: GameController,f: Figure,extracting: bool) -> bool:
 	return true
 
 
-static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i) -> Dictionary:
+static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i,imperfect: bool=false) -> Dictionary:
 	if f.side<0 or f.def.traits.has("animal") or RuleHooks.any("cannot_carry_treasure",[s,f]):
 		return {}
 	var layout:=grid.layout
@@ -25,13 +25,16 @@ static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vect
 			tokens.append(t)
 	if tokens.is_empty():
 		return {}
+	var penalties: Dictionary={}
+	for t in tokens:
+		penalties[t.id]=2.0+2.0*BotPreference.variation(s,f,t.id,"treasure") if imperfect else 0.0
 	var heuristic:=func(n: Vector3i) -> float:
 		var at:=layout.point(n)
 		var best:=INF
 		for t in tokens:
 			# Guardians allow a slightly wider contact region than normal loot.
 			var radius:=1.5 if t.frozen and s.scenario_special=="complex_temple" else 0.8
-			best=minf(best,maxf(0.0,at.distance_to(t.pos)-radius))
+			best=minf(best,maxf(0.0,at.distance_to(t.pos)-radius)+float(penalties[t.id]))
 		return best
 	var evaluate:=func(n: Vector3i) -> float:
 		for t in tokens:
@@ -40,9 +43,9 @@ static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vect
 			if t.frozen and s.scenario_special=="complex_temple":
 				var guardian:=ScenarioColumns.contact(s.board,layout.point(n),layout.height(n))
 				if guardian!=null and guardian.rect.get_center().distance_to(t.pos)<0.01:
-					return 0.0
+					return float(penalties[t.id])
 			elif t.pos.distance_to(layout.point(n))<=0.8:
-				return 0.0
+				return float(penalties[t.id])
 		return INF
 	return LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,true)
 
@@ -57,7 +60,7 @@ static func exit_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i
 
 
 static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,grid: LayeredGrid,quarry: Figure,extracting: bool) -> bool:
-	var route:=exit_search(c.state,f,grid,reach.start) if extracting else treasure_search(c.state,f,grid,reach.start)
+	var route:=exit_search(c.state,f,grid,reach.start) if extracting else treasure_search(c.state,f,grid,reach.start,true)
 	if route.is_empty() or route["goal"]==reach.start:
 		return LayeredCombatRoute.move(c,f,layout,reach,grid,quarry)
 	var path: Array[Vector3i]=route["path"]

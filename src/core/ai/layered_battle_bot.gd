@@ -193,14 +193,14 @@ static func _shooting_spot(c: GameController,f: Figure,layout: FloorLayout,reach
 	for enemy in c.state.figures:
 		if enemy.in_play() and enemy.side!=f.side and enemy.ring_side==f.ring_side and (f.side>=0 or enemy.side>=0) and not RingworldBot.protected_key(c.state,f,enemy) and BotTargets.can_harm(f,enemy,f.ranged):
 			enemies.append(enemy)
-	for node: Vector3i in reach.cost:
+	for node: Vector3i in BotPreference.positions(c.state,f,reach.cost.keys()):
 		if node==reach.start or not MovementContact.enemies_at(c.state.figures,f,layout.point(node),layout.height(node),layout.surface_id(node)).is_empty():
 			continue
 		var point:=layout.world(node)
 		for enemy in enemies:
 			if not Shooting.possible_from_world(c.state.board,c.state.figures,f,point,enemy):
 				continue
-			var score:=BotTargets.shot_value_world(c.state,f,point,enemy)-float(reach.cost[node])*0.01
+			var score:=BotTargets.shot_value_world(c.state,f,point,enemy)*BotPreference.appeal(c.state,f,enemy.id,"shot")-float(reach.cost[node])*0.01
 			if score>value:
 				best=node
 				value=score

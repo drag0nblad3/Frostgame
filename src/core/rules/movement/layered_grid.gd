@@ -7,6 +7,9 @@ var others: Array[Figure] = []
 var null_boundary := false
 var null_board: Board
 var _open_cache := {}
+## Contact neighborhoods are fixed over a single movement query.
+var _nearby: Dictionary={}
+const NO_FIGURES: Array[Figure]=[]
 var running := false:
 	set(value):
 		if running!=value:
@@ -46,6 +49,16 @@ func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> 
 	for other in figures:
 		if other!=f and other.in_play() and (f==null or f.ring_side==other.ring_side):
 			others.append(other)
+			var origin:=MovePlanner.node_at(other.pos)
+			var radius:=ceili(Contact.CONTACT/MoveGrid.STEP)+1
+			for x in range(-radius,radius+1):
+				for y in range(-radius,radius+1):
+					var n:=origin+Vector2i(x,y)
+					if MoveGrid.to_pos(n).distance_to(other.pos)>Contact.CONTACT:
+						continue
+					if not _nearby.has(n):
+						_nearby[n]=[]
+					_nearby[n].append(other)
 
 
 func open(n: Vector3i) -> bool:
@@ -63,7 +76,7 @@ func _compute_open(n: Vector3i) -> bool:
 		return false
 	if board!=null and board.has_water and Swimming.avoids_deep(board,mover,point,at.y):
 		return false
-	for other in others:
+	for other: Figure in _nearby.get(Vector2i(n.x,n.y),NO_FIGURES):
 		if MovementContact.blocks(mover,other,others,point,at.y,running,layout.surface_id(n)):
 			return false
 	return true
@@ -76,7 +89,7 @@ func stops(n: Vector3i) -> bool:
 		return true
 	if mover.side>=0 and not IllusionRules.phantom(mover) and ScenarioColumns.contact(board,layout.point(n),layout.height(n))!=null:
 		return true
-	for other in others:
+	for other: Figure in _nearby.get(Vector2i(n.x,n.y),NO_FIGURES):
 		if other.side!=mover.side and Contact.touches_position(other,layout.point(n),layout.height(n),layout.surface_id(n)):
 			return true
 	return false
