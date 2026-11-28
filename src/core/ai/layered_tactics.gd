@@ -118,14 +118,16 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	var best_score:=initial-walking+0.65+0.6*caution
 	var best: Variant=null
 	var mode:=""
+	var grid:=LayeredGrid.new(layout,f,s.figures)
+	grid.memoize_edges=true
 	for kind: String in ["jump","drop_down"]:
 		if kind=="drop_down" and flat_street:
 			continue
-		var options:=c.movement_options(kind)
+		var plans:=LayeredJump.plans(c,true,true,grid) if kind=="jump" else LayeredDrop.plans(c,true,grid,reach)
 		# Rank cheap geometry first, then sample a bounded shortlist; do not
 		# lose every useful landing merely because a floor has many cells.
 		var shortlist: Array[Dictionary]=[]
-		for n: Vector3i in options.cost:
+		for n: Vector3i in plans:
 			var progress:=initial-float(distance.call(layout.world(n)))
 			if progress>0.25:
 				shortlist.append({"node":n,"progress":progress})
@@ -134,7 +136,7 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 		for i in mini(shortlist.size(),48):
 			top.append(shortlist[i]["node"])
 		for n: Vector3i in BotPreference.positions(s,f,top):
-			var plan: Dictionary=options.jumps[n]
+			var plan: Dictionary=plans[n]
 			var damage:=aerial_damage(s,f,plan)
 			if damage>=f.health or (damage>0 and f.treasure_id>=0):
 				continue
