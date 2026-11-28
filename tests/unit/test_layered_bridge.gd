@@ -90,3 +90,35 @@ func test_extended_bridge_span_and_expiry() -> void:
 	check(not LayeredBridge.owned(c.state,f.id).is_empty())
 	LayeredBridge.expire(c)
 	check(LayeredBridge.owned(c.state,f.id).is_empty())
+
+
+func test_hypothetical_bridge_goal_search_matches_exhaustive() -> void:
+	var c:=_fixture()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var bridge:=LayeredBridge.proposal(c,layout.node("west",Vector2(5.5,5)),layout.node("east",Vector2(11.5,5)),layout)
+	check(not bridge.is_empty())
+	if bridge.is_empty():
+		return
+	var data:=c.state.board.floor_layout.duplicate(true)
+	data["bridges"]=[bridge]
+	var hypothetical:=FloorLayout.from_dict(data)
+	var start:=hypothetical.node("west",f.pos)
+	var goals: Array[Vector3i]=[hypothetical.node("east",Vector2(13,5)),hypothetical.node("east",Vector2(13.5,5))]
+	var before:=LayeredGrid.edge_evaluations
+	var all:=LayeredReach.search(LayeredGrid.new(hypothetical,f,c.state.figures),start,100.0)
+	var exhaustive_edges:=LayeredGrid.edge_evaluations-before
+	var expected:=INF
+	for goal in goals:
+		expected=minf(expected,float(all.cost.get(goal,INF)))
+	check(is_finite(expected))
+	if not is_finite(expected):
+		return
+	before=LayeredGrid.edge_evaluations
+	var actual:=LayeredBridgeTactics.objective_cost(LayeredGrid.new(hypothetical,f,c.state.figures),start,goals,100.0)
+	var targeted_edges:=LayeredGrid.edge_evaluations-before
+	check(is_equal_approx(actual,expected))
+	check(targeted_edges<exhaustive_edges)
+	check(not is_finite(LayeredBridgeTactics.objective_cost(LayeredGrid.new(hypothetical,f,c.state.figures),start,goals,expected-0.5)))
+	check(c.state.board.floor_layout.get("bridges",[]).is_empty())
+	print("bridge goal search edges: ",exhaustive_edges," -> ",targeted_edges)
