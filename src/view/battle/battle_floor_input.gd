@@ -9,10 +9,6 @@ static func append_spells(bi: BattleInput,f: Figure) -> void:
 	var c:=bi.c
 	if not c.can_act() or not CasterLoadout.is_caster(f.def.role) or ScenarioNull.muted(f) or Contact.in_combat(c.state.figures,f) or f.spell_effects.has("blinding_light"):
 		return
-	for target in c.state.figures:
-		if LayeredLeap.eligible(c,target):
-			bi.cast_options.append("leap")
-			break
 	if LayeredBridge.eligible(c):
 		bi.cast_options.append("bridge")
 
@@ -67,7 +63,7 @@ static func _index(bi: BattleInput,f: Figure) -> int:
 static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 	if bi.mode=="floor_leap_target":
 		for t in bi.c.state.figures:
-			if LayeredLeap.eligible(bi.c,t):
+			if bi.c._magic.can_cast("leap",t.id):
 				bi.targets.append(t)
 		s.radius=0.65
 		s.hint="Select an ally, then select a landing floor."
@@ -114,16 +110,10 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 	elif bi.mode in ["floor_bridge","floor_bridge_end"]:
 		candidates=LayeredBridgePicker.points(bi.c,layout,index,bi.bridge_start if bi.mode=="floor_bridge_end" else null)
 		s.hint="Select first bridge endpoint." if bi.mode=="floor_bridge" else "Select a different floor and the second endpoint."
-	else:
-		var grid:=LayeredGrid.new(layout,t,bi.c.state.figures)
-		var surface:=layout.surfaces[index]
-		for x in range(ceili(surface.rect.position.x/MoveGrid.STEP),floori(surface.rect.end.x/MoveGrid.STEP)+1):
-			for y in range(ceili(surface.rect.position.y/MoveGrid.STEP),floori(surface.rect.end.y/MoveGrid.STEP)+1):
-				var n:=Vector3i(x,y,index)
-				var valid:=LayeredMagic.can_teleport_with(bi.c,n,layout,grid) if bi.mode=="floor_teleport" else not LayeredLeap.path(bi.c,t,n,layout,grid).is_empty()
-				if valid:
-					candidates[n]=true
-		s.hint="Choose a visible legal destination." if bi.mode=="floor_teleport" else "Choose a legal Leap landing for "+t.label()+"."
+	elif bi.mode=="floor_leap":
+		for n in LayeredLeap.points(bi.c,t,false,index):
+			candidates[n]=true
+		s.hint="Choose a legal Leap landing for "+t.label()+"."
 	for n: Vector3i in candidates:
 		bi.floor_points[n]=layout.world(n)
 	s.hint+=" Change floor to see other destinations."
@@ -225,7 +215,7 @@ static func surface_point(bi: BattleInput,screen: Vector2) -> Variant:
 static func tap(bi: BattleInput,screen: Vector2) -> bool:
 	if bi.mode=="floor_leap_target":
 		var id:=bi._figure_at(screen)
-		if id<0:
+		if id<0 or not bi.c._magic.can_cast("leap",id):
 			return false
 		bi.spell_first=id
 		bi.mode="floor_leap"
