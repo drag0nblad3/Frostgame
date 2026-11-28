@@ -684,3 +684,26 @@ func test_creature_does_not_choose_damaging_drop() -> void:
 	check(not LayeredTactics.aerial_progress(c,f,b.floor_geometry(),c.layered_reach(),false,target))
 	check_eq(f.surface_id,"deck")
 	check_eq(f.moves_taken,0)
+
+
+func test_ground_and_aerial_search_share_edges_without_changing_routes() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var before:=LayeredGrid.edge_evaluations
+	var normal:=c.layered_reach()
+	var independent:=LayeredDrop.plans(c,true,null,normal)
+	var separate_edges:=LayeredGrid.edge_evaluations-before
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	before=LayeredGrid.edge_evaluations
+	var shared:=LayeredMovement.reach(c,false,false,false,grid)
+	var drops:=LayeredDrop.plans(c,true,grid,shared)
+	var shared_edges:=LayeredGrid.edge_evaluations-before
+	check_eq(shared.cost,normal.cost)
+	check_eq(shared.prev,normal.prev)
+	check_eq(drops,independent)
+	check(shared_edges<separate_edges,"reusing walking edges should reduce total search work")
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
+	print("ground/aerial shared edges: ",separate_edges," -> ",shared_edges)
