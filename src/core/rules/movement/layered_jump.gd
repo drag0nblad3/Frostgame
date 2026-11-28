@@ -16,11 +16,12 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 	if not layout.errors.is_empty():
 		return out
 	var grid := LayeredGrid.new(layout,f,s.figures)
+	grid.memoize_edges=continuation
 	var start := layout.node(f.surface_id,f.pos)
 	if not grid.open(start):
 		return out
 	var direct:=from_position(c,layout,grid,start,MoveRules.allowance(f),generate)
-	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct)) if continuation else direct
+	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid),grid) if continuation else direct
 
 
 ## Query from a hypothetical landing without changing the live figure.
