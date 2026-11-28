@@ -4,7 +4,7 @@ extends RefCounted
 ## Run-up and jump are both paid from the same movement action.
 
 
-static func plans(c: GameController,generate: bool=false) -> Dictionary:
+static func plans(c: GameController,generate: bool=false,continuation: bool=false) -> Dictionary:
 	var out := {}
 	if not LayeredMovement.eligible(c) or (not generate and c.state.board.floor_layout.get("jumps",[]).is_empty()):
 		return out
@@ -90,11 +90,11 @@ static func plans(c: GameController,generate: bool=false) -> Dictionary:
 				if layout.point(node).is_equal_approx(p):
 					grounded.append(layout.world(node))
 			out[target]={"path":path,"cost":cost,"fall":a.y-b.y,"grounded":grounded,"surface":layout.surface_id(target),"jump":true}
-	return out
+	return LayeredMovement.extend_aerial(c,out) if continuation else out
 
 
 static func move(c: GameController,n: Vector3i) -> bool:
-	var options := plans(c,true)
+	var options := plans(c,true,true)
 	if not options.has(n):
 		return false
 	var f := c.state.active()
