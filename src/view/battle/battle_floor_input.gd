@@ -14,11 +14,15 @@ static func append_spells(bi: BattleInput,f: Figure) -> void:
 
 
 static func handles_action(bi: BattleInput,key: String) -> bool:
-	return bi.available.has(key) and (key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation","potion_explosive_cocktail"] or (key.begins_with("spell_") and (SummonActions.PLACEMENT.has(key.trim_prefix("spell_")) or TerrainMagic.FLOOR_SPELLS.has(key.trim_prefix("spell_")))))
+	return bi.available.has(key) and (key in ["leap_raise","leap_lower","spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation","potion_explosive_cocktail"] or (key.begins_with("spell_") and (SummonActions.PLACEMENT.has(key.trim_prefix("spell_")) or TerrainMagic.FLOOR_SPELLS.has(key.trim_prefix("spell_")))))
 
 
 static func action(bi: BattleInput,key: String) -> bool:
 	match key:
+		"leap_raise","leap_lower":
+			bi.leap_air_offset=clampf(bi.leap_air_offset+(1.0 if key=="leap_raise" else -1.0),0.0,10.0)
+			bi.preview()
+			return false
 		"cancel_bridge": return BattleSpellAction.execute(bi.c,"cancel_bridge")
 		"spell_teleport":
 			bi.mode="floor_teleport"
@@ -26,6 +30,7 @@ static func action(bi: BattleInput,key: String) -> bool:
 		"spell_leap":
 			bi.mode="floor_leap_target"
 			bi.selected_spell="leap"
+			bi.leap_air_offset=0.0
 		"spell_bridge":
 			bi.mode="floor_bridge"
 			bi.selected_spell="bridge"
@@ -111,11 +116,20 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 		candidates=LayeredBridgePicker.points(bi.c,layout,index,bi.bridge_start if bi.mode=="floor_bridge_end" else null)
 		s.hint="Select first bridge endpoint." if bi.mode=="floor_bridge" else "Select a different floor and the second endpoint."
 	elif bi.mode=="floor_leap":
-		for n in LayeredLeap.points(bi.c,t,false,index):
-			candidates[n]=true
-		s.hint="Choose a legal Leap landing for "+t.label()+"."
+		if bi.leap_air_offset>0.0:
+			for n in LayeredLeap.air_points(bi.c,t,index,bi.leap_air_offset):
+				candidates[n]=true
+			s.hint="Leap ends %.0f inches above this floor, then falls. Damage: %d."%[bi.leap_air_offset,LayeredFall.damage(bi.c.state,t,bi.leap_air_offset)]
+		else:
+			for n in LayeredLeap.points(bi.c,t,false,index):
+				candidates[n]=true
+			s.hint="Choose a legal Leap landing for "+t.label()+"."
+		if not bi.available.has("leap_raise"):
+			bi.available.append("leap_raise")
+		if not bi.available.has("leap_lower"):
+			bi.available.append("leap_lower")
 	for n: Vector3i in candidates:
-		bi.floor_points[n]=layout.world(n)
+		bi.floor_points[n]=layout.world(n)+Vector3.UP*(bi.leap_air_offset if bi.mode=="floor_leap" else 0.0)
 	s.hint+=" Change floor to see other destinations."
 	return true
 
@@ -234,7 +248,10 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		"floor_cocktail": return BattleEquipmentAction.execute(bi.c,"potion_explosive_cocktail",{"at":node})
 		"floor_suggestion": return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"suggestion","target":bi.spell_first,"at":node}))
 		"floor_treasure_destination": return bi._declared(BattleSpellAction.execute(bi.c,"treasure",{"spell":bi.selected_spell,"target":bi.spell_first,"at":node}))
-		"floor_leap": return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"leap","target":bi.spell_first,"at":node}))
+		"floor_leap":
+			if bi.leap_air_offset>0.0:
+				return bi._declared(BattleSpellAction.execute(bi.c,"leap_air",{"spell":"leap","target":bi.spell_first,"at":bi.floor_points[node]}))
+			return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"leap","target":bi.spell_first,"at":node}))
 		"floor_bottle": return BattleEquipmentAction.execute(bi.c,"bottle_imp",{"at":node})
 		"floor_bridge":
 			bi.bridge_start=node
