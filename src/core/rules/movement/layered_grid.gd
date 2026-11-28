@@ -30,6 +30,16 @@ var reverse_links: Dictionary={}
 var reversed:=false
 ## AI avoids lethal scenario paths without preventing player declarations.
 var avoid_lethal:=false
+## Shared only by explicitly budgeted AI searches, never exact local reach.
+var ai_work: Dictionary={}
+
+func spend_ai_work(units: int=1) -> bool:
+	if ai_work.is_empty():
+		return true
+	if int(ai_work["remaining"])<units:
+		return false
+	ai_work["remaining"]=int(ai_work["remaining"])-units
+	return true
 
 
 func reverse_connections() -> void:
