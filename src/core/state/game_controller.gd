@@ -36,6 +36,13 @@ func _init(s: GameState, d: Dice) -> void:
 	_fate_combat = FateCombat.new(self)
 
 
+## Terminal lifecycle operation, only for a battle that is being discarded.
+## A pending Will/Beauty continuation can bind the controller back into its
+## own helper, so dropping the scene reference alone may not release it.
+func abandon_pending_callbacks() -> void:
+	_magic.resistance.continuation=Callable()
+
+
 func emit(type: String, data: Dictionary = {}) -> void:
 	var e := GameEvent.new(type, data)
 	history.append(e)
