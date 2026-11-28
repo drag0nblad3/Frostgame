@@ -1,12 +1,16 @@
 class_name ResistanceActions
 extends RefCounted
 ## Immediate Will tests. The continuation runs exactly once, after any empowerment.
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 var continuation: Callable
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func attempt(t: Figure, tn: int, done: Callable, bonus: int = 0, anyone: bool = false,spell: String="") -> void:

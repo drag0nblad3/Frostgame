@@ -2,7 +2,11 @@ class_name SpellActions
 extends RefCounted
 ## Two-stage spellcasting: announce target, roll, choose Health, then resolve.
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 var shatter := Shatterstar.new()
 var summons: SummonActions
 var terrain: TerrainMagic
@@ -18,7 +22,7 @@ var eye: WizardEye
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 	summons = SummonActions.new(c)
 	terrain = TerrainMagic.new(c)
 	movement = MagicMovement.new(c)

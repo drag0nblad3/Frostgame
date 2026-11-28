@@ -4,11 +4,15 @@ extends RefCounted
 const EXTENDED := "gear_rk_extended_scroll"
 const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection", "bridge"]
 const FLOOR_SPELLS := ["wall","fog","mud","explosive_rune","planar_tear","grenade","circle_of_protection"]
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func footprint(id: String, at: Vector2, rotated: bool,extended: bool=false) -> Rect2:

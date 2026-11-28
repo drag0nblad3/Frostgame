@@ -3,7 +3,11 @@ extends RefCounted
 ## Controller-owned setup transaction. A side finishes before the next deploys;
 ## undeployed opponents neither occupy candidate points nor influence AI choices.
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 var human:=0
 var order: Array[int]=[]
 var rolls: Array[int]=[]
@@ -18,7 +22,7 @@ var treasure_candidates: Array[Dictionary]=[]
 
 
 func _init(controller: GameController,human_side: int) -> void:
-	c=controller
+	_controller_ref=weakref(controller)
 	human=human_side
 
 

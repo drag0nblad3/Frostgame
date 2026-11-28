@@ -2,11 +2,15 @@ class_name CombatDisplacement
 extends RefCounted
 ## Post-fight withdrawal and deterministic optional interception (pp. 47, 53).
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func clear() -> void:

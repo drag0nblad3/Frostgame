@@ -2,11 +2,15 @@ class_name TreasureActions
 extends RefCounted
 ## GameController helper: the only writer of live treasure state.
 
-var _c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var _c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(c: GameController) -> void:
-	_c = c
+	_controller_ref=weakref(c)
 
 
 func can_pick_up(id: int) -> bool:

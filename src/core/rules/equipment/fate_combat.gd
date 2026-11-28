@@ -4,11 +4,15 @@ extends RefCounted
 ## one binding reroll of their own die if they have an unused Fate Stone.
 
 const ITEM := "gear_fate_stone"
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func start(a: Figure, b: Figure, kind: String, declared: int = -1,wraith: bool=false,ammo: bool=false) -> void:
