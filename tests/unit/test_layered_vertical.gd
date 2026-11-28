@@ -264,3 +264,68 @@ func test_drop_and_walk_uses_remaining_budget() -> void:
 	check_eq(f.health,hp-4)
 	check_eq(f.moves_taken,1)
 	check_eq(f.actions_left,1)
+
+
+func _approach_drop_game(with_guard: bool=false) -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(11,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var figures: Array[Figure]=[f]
+	if with_guard:
+		var g:=fig("thug",1,Vector2(11.5,12),2)
+		g.surface_id="deck"
+		g.elevation=3.0
+		figures.append(g)
+	var c:=make_game(b,figures,Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=with_guard
+	c.state.reaction_side=1
+	return c
+
+
+func test_approach_drop_and_walk_share_one_allowance() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var dest:=layout.node("street",Vector2(14,10))
+	var too_far:=layout.node("street",Vector2(14.5,10))
+	var hp:=f.health
+	check(not LayeredDrop.plans(c).has(dest))
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(dest))
+	check(not options.cost.has(too_far))
+	check_eq(f.pos,Vector2(11,10))
+	check_eq(f.health,hp)
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-6.0)<0.001)
+	var preview:=options.path(dest)
+	check_eq(preview[0],Vector3(11,3,10))
+	check_eq(preview[-1],layout.world(dest))
+	check(c.commit_movement("drop_down",dest))
+	check_eq(f.pos,Vector2(14,10))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp-4)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_interception_on_drop_approach_prevents_fall() -> void:
+	var c:=_approach_drop_game(true)
+	var f:=c.state.active()
+	var dest:=c.state.board.floor_geometry().node("street",Vector2(13.5,10))
+	var hp:=f.health
+	check(c.commit_movement("drop_down",dest))
+	check(not c.state.pending_intercept.is_empty())
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"deck")
+	check_eq(f.elevation,3.0)
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
