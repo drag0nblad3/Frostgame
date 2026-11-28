@@ -80,7 +80,18 @@ static func clear_descent(layout: FloorLayout,to: Vector3,above: float) -> bool:
 	return true
 
 
+## Calculate actual landing damage before offering voluntary movement.
+static func damage(s: GameState,f: Figure,distance: float) -> int:
+	if MagicEquipment.bonus(f,"slow_fall")>0 or f.def.traits.has("flying"):
+		return 0
+	return ElevationRules.fall_damage(distance-(3.0 if s.board.low_gravity else 0.0))
+
+
+static func voluntary_allowed(s: GameState,f: Figure,distance: float) -> bool:
+	return f.control_spell!="mind_control" or damage(s,f,distance)==0
+
+
 static func apply(c: GameController,f: Figure,distance: float,by: Figure) -> void:
-	var damage := ElevationRules.fall_damage(distance-(3.0 if c.state.board.low_gravity else 0.0))
-	if damage>0 and MagicEquipment.bonus(f,"slow_fall")==0 and not f.def.traits.has("flying"):
-		c._hurt(f,damage,by,false)
+	var amount:=damage(c.state,f,distance)
+	if amount>0:
+		c._hurt(f,amount,by,false)
