@@ -32,6 +32,7 @@ func _init() -> void:
 			tc._current = "%s.%s" % [f.get_basename(), name]
 			print("TEST_START|",tc._current)
 			tc.call(name)
+			tc.report_retained_battles()
 			total += 1
 			failed.append_array(tc.failures)
 			for failure in tc.failures:
