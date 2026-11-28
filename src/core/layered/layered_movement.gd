@@ -97,6 +97,16 @@ static func answer_intercept(c: GameController,p: Dictionary,accept: bool) -> bo
 	surfaces.assign(p["surfaces"])
 	var path: PackedVector3Array=p["path"]
 	var choice: Dictionary=p["choice"]
+	if p.has("aerial_plan"):
+		var plan: Dictionary=p["aerial_plan"]
+		if accept:
+			_apply_aerial(c,f,plan,choice)
+		else:
+			var rejected: Array[int]=[]
+			rejected.assign(p["ignored"])
+			rejected.append(choice["guard"].id)
+			offer_aerial(c,f,plan,rejected)
+		return true
 	if accept:
 		_apply(c,f,path,surfaces,float(p["cost"]),choice,false,false,bool(p["exiting"]),p.get("air_path",PackedVector3Array()))
 	else:
@@ -107,10 +117,10 @@ static func answer_intercept(c: GameController,p: Dictionary,accept: bool) -> bo
 	return true
 
 
-static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,run: bool,boost: bool,exiting: bool,air_path: PackedVector3Array=PackedVector3Array()) -> void:
+static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,run: bool,boost: bool,exiting: bool,air_path: PackedVector3Array=PackedVector3Array(),finalize: bool=true) -> bool:
 	if not air_path.is_empty():
 		_apply_flight(c,f,air_path,surfaces,cost,choice,exiting)
-		return
+		return false
 	var engaged:=Contact.in_combat(c.state.figures,f)
 	if not choice.is_empty():
 		path.resize(int(choice["index"])+1)
@@ -138,18 +148,18 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 			c._magic.terrain.trigger_landing(f)
 			if not f.in_play():
 				_stop(c,f,engaged,run,boost)
-				return
+				return false
 			continue
 		if RedKingHerded.active(c.state) or RedKingVeil.active(c.state):
 			if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
 				f.actions_left=0
 				_stop(c,f,engaged,run,boost)
-				return
+				return false
 		if not RedKingSquatter.permit_step(c,f,at,point.y):
 			if chunk.size()>1:
 				c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
 			_stop(c,f,engaged,run,boost)
-			return
+			return false
 		var occupied:=false
 		if c.state.scenario_special=="haunted_houses" and not c.state.discovered_huts.is_empty():
 			for other in c.state.figures:
@@ -159,7 +169,7 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 					if chunk.size()>1:
 						c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
 					_stop(c,f,engaged,run,boost)
-					return
+					return false
 				if other.side!=f.side and Contact.touches_position(other,at,point.y,surfaces[i]):
 					occupied=true
 		f.pos=at
@@ -198,25 +208,31 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 					c._magic.terrain.explode(p)
 			if not f.in_play():
 				_stop(c,f,engaged,run,boost)
-				return
+				return false
 			if column and i<path.size()-1 and ScenarioColumns.challenge(c,f):
 				_stop(c,f,engaged,run,boost)
-				return
+				return false
 			if undiscovered and ScenarioSites.enter(c,f) and Contact.in_combat(c.state.figures,f):
 				_stop(c,f,engaged,run,boost)
-				return
+				return false
 			if occupied and i<path.size()-1:
 				_stop(c,f,engaged,run,boost)
-				return
+				return false
 	if chunk.size()>1:
 		c.emit("layered_move",{"id":f.id,"path":chunk,"surfaces":chunk_surfaces,"cost":cost})
 	if not choice.is_empty():
 		c._displacement.force_contact(choice)
+	if not finalize:
+		if not f.in_play() or Contact.in_combat(c.state.figures,f) or ScenarioNull.field_at(c.state.board,f.pos):
+			c.finish_movement(f,engaged,f.in_play())
+			return false
+		return true
 	c.finish_movement(f,engaged)
 	if run:
 		RunForIt.finish(c,f,boost)
 	elif exiting and choice.is_empty() and f.in_play() and not Contact.in_combat(c.state.figures,f):
 		LayeredLoot.complete(c,f)
+	return true
 
 
 static func _stop(c: GameController,f: Figure,engaged: bool,run: bool,boost: bool) -> void:
@@ -248,3 +264,76 @@ static func _apply_flight(c: GameController,f: Figure,path: PackedVector3Array,s
 	c.finish_movement(f,engaged,f.in_play())
 	if exiting and choice.is_empty() and f.in_play() and not Contact.in_combat(c.state.figures,f):
 		LayeredLoot.complete(c,f)
+
+
+## Interception samples only the grounded run-up and actual landing; the arc
+## is visual and never a standing position. Use the normal optional reaction.
+static func offer_aerial(c: GameController,f: Figure,plan: Dictionary,ignored: Array[int]=[]) -> void:
+	if not f.in_play() or c.state.active()!=f:
+		return
+	var grounded: PackedVector3Array=plan["grounded"]
+	var path:=grounded.duplicate()
+	var surfaces: Array[String]=[]
+	for i in path.size():
+		surfaces.append(f.surface_id)
+	var target: Vector3=plan["path"][-1]
+	path.append(target)
+	surfaces.append(str(plan["surface"]))
+	var choice:=c._displacement.intercept_floor(f,path,surfaces,ignored) if c.state.forced_combat else {}
+	if not choice.is_empty() and choice["guard"].side==c.state.reaction_side:
+		c.state.pending_intercept={"floor_route":true,"mover":f.id,"path":path,"surfaces":surfaces,"cost":plan["cost"],"ignored":ignored,"choice":choice,"exiting":false,"aerial_plan":plan}
+		c.emit("intercept_offer",{"id":choice["guard"].id,"target":f.id})
+		return
+	_apply_aerial(c,f,plan,choice)
+
+
+static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: Dictionary) -> void:
+	if not f.in_play() or c.state.active()!=f:
+		return
+	var grounded: PackedVector3Array=plan["grounded"]
+	var surfaces: Array[String]=[]
+	for i in grounded.size():
+		surfaces.append(f.surface_id)
+	var cost:=float(plan["cost"])
+	var engaged:=Contact.in_combat(c.state.figures,f)
+	# An interception during the run-up prevents takeoff and any fall damage.
+	if not choice.is_empty() and int(choice["index"])<grounded.size():
+		_apply(c,f,grounded,surfaces,cost,choice,false,false,false)
+		return
+	if grounded.size()>1:
+		if not _apply(c,f,grounded,surfaces,cost,{},false,false,false,PackedVector3Array(),false):
+			return
+	else:
+		c.spend_move(f)
+	var dest: Vector3=plan["path"][-1]
+	var at:=Vector2(dest.x,dest.z)
+	if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
+		f.actions_left=0
+		return
+	if not RedKingSquatter.permit_step(c,f,at,dest.y):
+		c.finish_movement(f,engaged,false)
+		return
+	var old:=f.surface_id
+	f.pos=at
+	f.elevation=dest.y
+	f.surface_id=str(plan["surface"])
+	var arc: PackedVector3Array=plan["path"]
+	if grounded.size()>1:
+		arc.remove_at(0)
+	var event: Dictionary={"id":f.id,"path":arc,"surfaces":[old,f.surface_id],"cost":cost}
+	event["jump" if plan.get("jump",false) else "fall"]=true
+	c.emit("layered_move",event)
+	LayeredFall.apply(c,f,float(plan["fall"]),f)
+	if f.in_play():
+		RedKingFire.portal_contact(c,f,at,at,{},dest.y,dest.y)
+		RedKingMind.collect(c,f,at,at,dest.y,dest.y)
+		ScenarioNull.enter(c,f)
+	if f.in_play():
+		c._magic.terrain.trigger_landing(f)
+	if f.in_play() and not choice.is_empty():
+		c._displacement.force_contact(choice)
+	c.finish_movement(f,engaged,f.in_play())
+	if bool(plan.get("end_activation",false)) and f.in_play():
+		f.actions_left=0
+		if c.can_end_activation():
+			c.end_activation()
