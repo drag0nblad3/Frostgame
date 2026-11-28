@@ -712,3 +712,25 @@ func test_ground_and_aerial_search_share_edges_without_changing_routes() -> void
 	check_eq(f.moves_taken,0)
 	check_eq(f.actions_left,2)
 	print("ground/aerial shared edges: ",separate_edges," -> ",shared_edges,"; open checks: ",separate_open," -> ",shared_open)
+
+
+func test_ai_aerial_shortlist_does_not_prune_player_previews() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var target:=Vector3(15,0,10)
+	var rank:=func(at: Vector3) -> float:return at.distance_to(target)
+	var full:=c.movement_options("drop_down")
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	var walking:=LayeredMovement.reach(c,false,false,false,grid)
+	var limited:=LayeredDrop.plans(c,true,grid,walking,false,rank,1)
+	check(not limited.is_empty())
+	for n: Vector3i in limited:
+		check(full.jumps.has(n))
+	var after:=c.movement_options("drop_down")
+	check_eq(after.cost,full.cost)
+	check_eq(after.jumps,full.jumps)
+	check_eq(f.pos,Vector2(11,10))
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
