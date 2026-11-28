@@ -33,6 +33,8 @@ jobs:
           head -c 24000 unit-tests.log
           printf '\n--- final diagnostics ---\n'
           tail -c 24000 unit-tests.log
+          printf '\n--- retained battle diagnostics ---\n'
+          grep -E 'TEST_RETAINED_BATTLE|ObjectDB instances leaked|resources still in use' unit-tests.log || true
           test "$result" -eq 0
           ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script" unit-tests.log
       - name: Player interaction smoke test
