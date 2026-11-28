@@ -519,7 +519,7 @@ static func _grounded_surfaces(f: Figure,plan: Dictionary,grounded: PackedVector
 
 ## Bounded second aerial leg. The live figure is not relocated to preview
 ## hypothetical routes. Prefer the direct route on a tie.
-static func chain_aerial(c: GameController,base: Dictionary,shared_grid: LayeredGrid=null) -> Dictionary:
+static func chain_aerial(c: GameController,base: Dictionary,shared_grid: LayeredGrid=null,rank: Callable=Callable(),budget: int=0) -> Dictionary:
 	var out:=base.duplicate()
 	if base.is_empty():
 		return out
@@ -529,14 +529,18 @@ static func chain_aerial(c: GameController,base: Dictionary,shared_grid: Layered
 	grid.memoize_edges=true
 	var origin:=layout.node(f.surface_id,f.pos)
 	var allowance:=MoveRules.allowance(f)
-	for landing: Vector3i in base:
+	var seeds: Array=base.keys()
+	if rank.is_valid() and budget>0 and seeds.size()>budget:
+		seeds.sort_custom(func(a: Vector3i,b: Vector3i) -> bool:return float(rank.call(layout.world(a)))+float(base[a]["cost"])*0.2<float(rank.call(layout.world(b)))+float(base[b]["cost"])*0.2)
+		seeds=seeds.slice(0,budget)
+	for landing: Vector3i in seeds:
 		var first: Dictionary=base[landing]
 		var paid:=float(first["cost"])
 		var remaining:=allowance-paid
 		if remaining<0.501 or bool(first.get("end_activation",false)) or grid.stops(landing) or fall_interrupts(c,f,first):
 			continue
 		var second:=LayeredJump.from_position(c,layout,grid,landing,remaining)
-		var drops:=LayeredDrop.from_position(c,layout,grid,landing,remaining,true)
+		var drops:=LayeredDrop.from_position(c,layout,grid,landing,remaining,true,false,null,false,rank,budget)
 		for target: Vector3i in drops:
 			if not second.has(target) or float(drops[target]["cost"])<float(second[target]["cost"]):
 				second[target]=drops[target]
