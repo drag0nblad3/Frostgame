@@ -17,8 +17,15 @@ static func plan(c: GameController, f: Figure) -> Dictionary:
 				continue
 			if id in MagicTactics.BUFFS and t.side==f.side and not threats.has(t.id):
 				threats[t.id]=MagicTactics.near_enemy(c.state,t)
+			var start:=c.ai_begin()
 			var score := MagicTactics.value(c,f,t,id,float(threats.get(t.id,-1.0)),probability)*appeal
-			if score > best_value and BattleAction.legal(c,"cast",t.id,id):
+			c.ai_end("magic_score",start)
+			if score<=best_value:
+				continue
+			start=c.ai_begin()
+			var legal:=BattleAction.legal(c,"cast",t.id,id)
+			c.ai_end("magic_legality",start)
+			if legal:
 				best_value = score
 				best = {"spell": id, "target": t.id, "score": score}
 	for id: String in ["raise_zombie", "summon_demon", "animate_skull"]:
@@ -38,7 +45,9 @@ static func plan(c: GameController, f: Figure) -> Dictionary:
 				best_value=score
 				best={"spell":id,"node":points[0],"score":score}
 	if not c.state.board.floor_layout.is_empty() and c._magic.available_spell(f,"leap"):
+		var start:=c.ai_begin()
 		var leap:=leap_plan(c,f,best_value)
+		c.ai_end("magic_leap",start)
 		if not leap.is_empty():
 			best=leap
 	return best
