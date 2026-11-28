@@ -95,15 +95,7 @@ static func play(c: GameController, f: Figure) -> void:
 			if treasure!=null:
 				node=RedKingSquatter.approach_treasure(c.state,f,r,treasure)
 		elif i == 0 and f.moves_taken == 0:
-			var direction := PackRules.heading(c, f)
-			var grid := MoveGrid.new(c.state.board, f, c.state.figures)
-			for step in range(1, int(MoveRules.allowance(f) / MoveGrid.STEP) + 1):
-				var n := MovePlanner.node_at(f.pos + direction * step * MoveGrid.STEP)
-				if not r.can_reach(n) or not grid.open(n):
-					break
-				node = n
-				if grid.stops(n):
-					break
+			node=wander_destination(c,f,r,PackRules.heading(c,f))
 		if node == null or MoveGrid.to_pos(node).distance_to(f.pos) < 0.01:
 			return
 		c.move_to(node)
@@ -111,6 +103,45 @@ static func play(c: GameController, f: Figure) -> void:
 		# A blind wander may instead discover a target and proceed to step 2.
 		if target!=null and weakest(c.state,f)==null:
 			return
+
+
+## Match the layered board's straight-heading restriction on legacy flat
+## boards. Reachability alone does not prove the straight route is clear.
+static func wander_destination(c: GameController,f: Figure,r: MoveReach,heading: Vector2) -> Variant:
+	if heading.is_zero_approx():
+		return null
+	var grid:=MoveGrid.new(c.state.board,f,c.state.figures)
+	var previous:=MovePlanner.node_at(f.pos)
+	var direction:=heading.normalized()
+	var allowance:=MoveRules.allowance(f)
+	var best: Variant=null
+	var spent:=0.0
+	for i in range(1,ceili(allowance/0.25)+1):
+		var n:=MovePlanner.node_at(f.pos+direction*minf(allowance,i*0.25))
+		if n==previous:
+			continue
+		if not r.can_reach(n) or not grid.open(n) or MoveGrid.to_pos(n).distance_to(f.pos)>allowance+0.001:
+			break
+		var cost:=grid.step_cost(previous,n)
+		if spent+cost>allowance+0.001:
+			break
+		var progress:=0.0
+		var straight:=true
+		for at in r.path_to(n):
+			var offset:=at-f.pos
+			var next:=offset.dot(direction)
+			if next<progress-0.001 or absf(offset.cross(direction))>MoveGrid.STEP*0.708+0.001:
+				straight=false
+				break
+			progress=next
+		if not straight:
+			break
+		spent+=cost
+		best=n
+		previous=n
+		if grid.stops(n):
+			break
+	return best
 
 
 static func _blast_target(c: GameController,f: Figure) -> Figure:
