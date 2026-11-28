@@ -7,10 +7,20 @@ extends RefCounted
 ## Activates the next figure for the side to play and plays it out.
 ## Returns false if there was nothing to do.
 static func play_activation(c: GameController) -> bool:
+	var started:=c.ai_begin()
 	var f := _pick(c)
-	if f == null or not c.activate(f.id):
+	c.ai_end("activation_pick",started)
+	if f==null:
 		return false
-	return resume_activation(c)
+	started=c.ai_begin()
+	var accepted:=c.activate(f.id)
+	c.ai_end("activation_setup",started)
+	if not accepted:
+		return false
+	started=c.ai_begin()
+	var result:=resume_activation(c)
+	c.ai_end("activation_resume",started)
+	return result
 
 
 static func resume_activation(c: GameController) -> bool:
@@ -23,8 +33,12 @@ static func _budgeted_resume(c: GameController) -> bool:
 		return false
 	# A resumed reaction starts a new deterministic decision session. Do
 	# not persist transient work counters in checkpoints or replay data.
-	c.ai_work={"remaining":roundi(lerpf(1400.0,2600.0,BotPreference.trait_value(f,"deliberation")))}
+	var allowance:=roundi(lerpf(1400.0,2600.0,BotPreference.trait_value(f,"deliberation")))
+	c.ai_work={"remaining":allowance,"initial":allowance}
 	var result:=_resume(c)
+	if c.ai_profile_enabled:
+		c.ai_profile["planning_units_used"]=int(c.ai_work.get("initial",0))-int(c.ai_work["remaining"])
+		c.ai_profile["planning_units_remaining"]=int(c.ai_work["remaining"])
 	c.ai_work={}
 	return result
 
@@ -34,15 +48,22 @@ static func _resume(c: GameController) -> bool:
 	if f == null or c.awaiting_reaction():
 		return false
 	if not c.state.pending_cast.is_empty():
+		var started:=c.ai_begin()
 		MagicBot.resolve(c)
+		c.ai_end("pending_cast",started)
 		if c.awaiting_reaction():
 			return true
 	if f.side>=0:
+		var started:=c.ai_begin()
 		_use_healing(c,f)
+		c.ai_end("healing",started)
 		if c.awaiting_reaction():
 			return true
 	if f.side >= 0:
-		if RedKingBot.prepare(c,f):
+		var started:=c.ai_begin()
+		var prepared:=RedKingBot.prepare(c,f)
+		c.ai_end("gear_prepare",started)
+		if prepared:
 			if c.awaiting_reaction() or c.state.active()!=f:
 				return true
 	if not c.state.board.floor_layout.is_empty():
@@ -79,6 +100,13 @@ static func _resume(c: GameController) -> bool:
 
 ## The same reaction and withdrawal policy applies after either route provider.
 static func _finish(c: GameController,f: Figure) -> bool:
+	var started:=c.ai_begin()
+	var result:=_finish_inner(c,f)
+	c.ai_end("activation_finish",started)
+	return result
+
+
+static func _finish_inner(c: GameController,f: Figure) -> bool:
 	if c.awaiting_reaction() or c.state.active()!=f:
 		return true
 	if c.state.push_winner == f.id and f.side >= 0:
