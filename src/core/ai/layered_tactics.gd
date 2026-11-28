@@ -154,7 +154,17 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 				best_score=score
 				best=n
 				mode=kind
-	return best!=null and c.commit_movement(mode,best)
+	if best==null:
+		return false
+	# The full validator can find a cheaper route omitted by the shortlist.
+	# Inspect that actual route before committing, particularly for carriers.
+	var validated:=c.movement_options(mode)
+	if not validated.jumps.has(best):
+		return false
+	var damage:=aerial_damage(s,f,validated.jumps[best])
+	if damage>=f.health or (damage>0 and (f.treasure_id>=0 or f.side<0)):
+		return false
+	return c.commit_movement(mode,best)
 
 
 static func aerial_damage(s: GameState,f: Figure,plan: Dictionary) -> int:
