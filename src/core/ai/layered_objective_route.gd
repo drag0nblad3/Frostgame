@@ -81,5 +81,5 @@ static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredR
 				return true
 	for i in range(path.size()-1,0,-1):
 		if reach.can_reach(path[i]):
-			return c.move_on_floor(path[i])
+			return c.move_from_fresh_reach(path[i],reach)
 	return false
