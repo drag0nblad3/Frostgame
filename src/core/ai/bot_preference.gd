@@ -85,3 +85,31 @@ static func objective_indices(f: Figure,scores: Array[float]) -> Array[int]:
 		return indices
 	indices.sort_custom(func(a: int,b: int) -> bool:return scores[a]<scores[b] or (is_equal_approx(scores[a],scores[b]) and a<b))
 	return indices.slice(0,budget)
+
+
+## Loyalty can draw a figure toward a threatened companion, particularly
+## a vulnerable treasure carrier. This is a small preference, not a forced
+## behavior or a role-based personality. Creatures retain core targeting.
+static func ally_pressure(s: GameState,f: Figure,enemy: Figure) -> float:
+	if f.side<0 or f.treasure_id>=0 or enemy==null or not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side:
+		return 0.0
+	if not IllusionRules.visible_to(s.figures,f,enemy):
+		return 0.0
+	var pressure:=0.0
+	for ally in s.figures:
+		if ally==f or not ally.in_play() or ally.side!=f.side or ally.ring_side!=f.ring_side or Shooting.distance(f,ally)>7.0:
+			continue
+		if Shooting.distance(enemy,ally)>2.5:
+			continue
+		var value:=1.0+float(ally.treasure_id>=0)+0.5*float(ally.health*2<=ally.def.health)
+		pressure=maxf(pressure,value)
+	return pressure*trait_value(f,"loyalty")*(1.0-0.45*trait_value(f,"caution"))
+
+
+static func charge_penalty(s: GameState,f: Figure,enemy: Figure) -> float:
+	var base:=maxf(0.0,float(enemy.health)*0.25+2.0*variation(s,f,enemy.id,"charge"))
+	if f.side<0:
+		return base
+	var rescue:=ally_pressure(s,f,enemy)
+	var risk:=maxf(0.0,float(enemy.effective_fight()-f.effective_fight()))*trait_value(f,"caution")*(1.0 if f.health*2<=f.def.health else 0.35)
+	return maxf(0.0,base+risk-rescue)

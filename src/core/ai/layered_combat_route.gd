@@ -17,7 +17,7 @@ static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredR
 		if (quarry!=null and enemy!=quarry) or (quarry==null and not IllusionRules.visible_to(c.state.figures,f,enemy)):
 			continue
 		enemies.append(enemy)
-		weights.append(maxf(0.0,float(enemy.health)*0.25+2.0*BotPreference.variation(c.state,f,enemy.id,"charge"))+(0.0 if BotTargets.can_harm(f,enemy,f.melee) else 20.0))
+		weights.append(BotPreference.charge_penalty(c.state,f,enemy)+(0.0 if BotTargets.can_harm(f,enemy,f.melee) else 20.0))
 	var scores: Array[float]=[]
 	for i in enemies.size():
 		var target:=enemies[i]

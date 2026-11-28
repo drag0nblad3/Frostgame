@@ -63,3 +63,29 @@ func test_individual_tendencies_are_independent_of_type_and_turn() -> void:
 	f.campaign_id=24
 	other.campaign_id=24
 	check_eq(BotPreference.profile(f),BotPreference.profile(other))
+
+
+func test_loyalty_responds_to_threatened_companions_without_role_lock() -> void:
+	var f:=fig("thug",0,Vector2(4,4))
+	var ally:=fig("archer",0,Vector2(8,4),2)
+	var enemy:=fig("knight",1,Vector2(9,4),3)
+	var c:=make_game(make_board(),[f,ally,enemy],Dice.new(19))
+	# Use a nonzero loyalty identity without prescribing a soldier type.
+	for id in range(10,100):
+		f.campaign_id=id
+		if BotPreference.trait_value(f,"loyalty")>0.25:
+			break
+	var ordinary:=BotPreference.ally_pressure(c.state,f,enemy)
+	check(ordinary>0.0)
+	ally.treasure_id=0
+	var carrier:=BotPreference.ally_pressure(c.state,f,enemy)
+	check(carrier>ordinary)
+	var original:=f.def
+	f.def=ally.def
+	check_eq(BotPreference.ally_pressure(c.state,f,enemy),carrier)
+	f.def=original
+	enemy.pos=Vector2(20,20)
+	check_eq(BotPreference.ally_pressure(c.state,f,enemy),0.0)
+	f.side=-1
+	enemy.pos=Vector2(9,4)
+	check_eq(BotPreference.ally_pressure(c.state,f,enemy),0.0)
