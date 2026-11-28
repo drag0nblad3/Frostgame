@@ -4,7 +4,7 @@ extends RefCounted
 ## Run-up and jump are both paid from the same movement action.
 
 
-static func plans(c: GameController,generate: bool=false,continuation: bool=false) -> Dictionary:
+static func plans(c: GameController,generate: bool=false,continuation: bool=false,shared_grid: LayeredGrid=null) -> Dictionary:
 	var out := {}
 	if not LayeredMovement.eligible(c) or (not generate and c.state.board.floor_layout.get("jumps",[]).is_empty()):
 		return out
@@ -15,7 +15,7 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 	var layout := s.board.floor_geometry()
 	if not layout.errors.is_empty():
 		return out
-	var grid := LayeredGrid.new(layout,f,s.figures)
+	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,s.figures)
 	grid.memoize_edges=continuation
 	var start := layout.node(f.surface_id,f.pos)
 	if not grid.open(start):
