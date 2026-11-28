@@ -122,7 +122,18 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 		if kind=="drop_down" and flat_street:
 			continue
 		var options:=c.movement_options(kind)
-		for n: Vector3i in BotPreference.positions(s,f,options.cost.keys()):
+		# Rank cheap geometry first, then sample a bounded shortlist; do not
+		# lose every useful landing merely because a floor has many cells.
+		var shortlist: Array[Dictionary]=[]
+		for n: Vector3i in options.cost:
+			var progress:=initial-float(distance.call(layout.world(n)))
+			if progress>0.25:
+				shortlist.append({"node":n,"progress":progress})
+		shortlist.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["progress"]>b["progress"])
+		var top: Array=[]
+		for i in mini(shortlist.size(),48):
+			top.append(shortlist[i]["node"])
+		for n: Vector3i in BotPreference.positions(s,f,top):
 			var plan: Dictionary=options.jumps[n]
 			var damage:=aerial_damage(s,f,plan)
 			if damage>=f.health or (damage>0 and f.treasure_id>=0):
