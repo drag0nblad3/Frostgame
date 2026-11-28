@@ -121,3 +121,35 @@ func test_coarse_floor_navigation_tracks_directed_portals_and_invalidation() -> 
 	var revised:=b.floor_geometry()
 	check(revised!=l)
 	check(not revised.coarse_hops(goal.z).has(a.z))
+
+
+func test_shared_planning_budget_is_not_player_movement_limit() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("knight",0,Vector2(5,5))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(2))
+	var layout:=b.floor_geometry()
+	var start:=layout.node("street",f.pos)
+	var target:=layout.node("street",Vector2(30,5))
+	var budget: Dictionary={"remaining":17}
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.ai_work=budget
+	var heuristic:=func(n: Vector3i) -> float:return layout.point(n).distance_to(layout.point(target))
+	var evaluate:=func(n: Vector3i) -> float:return 0.0 if n==target else INF
+	var first:=LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,false,100.0,12)
+	check_eq(first.get("expanded"),12)
+	check_eq(budget["remaining"],5)
+	var next_grid:=LayeredGrid.new(layout,f,c.state.figures)
+	next_grid.ai_work=budget
+	var partial:=LayeredReach.search(next_grid,start,100.0,false,50)
+	check(partial.truncated)
+	check_eq(budget["remaining"],0)
+	check(LayeredCombatRoute.search_goal(next_grid,start,heuristic,evaluate,false,100.0,12).is_empty())
+	var local:=LayeredReach.search(next_grid,start,6.0)
+	var independent:=LayeredReach.search(LayeredGrid.new(layout,f,c.state.figures),start,6.0)
+	check_eq(local.cost,independent.cost)
+	check_eq(local.prev,independent.prev)
+	check(not local.truncated)
+	check_eq(budget["remaining"],0)
+	check_eq(f.pos,Vector2(5,5))
