@@ -34,6 +34,7 @@ func floor_geometry() -> FloorLayout:
 	if _floor_geometry==null or revision!=_floor_geometry_hash:
 		floor_step_costs.clear()
 		_floor_geometry=FloorLayout.from_dict(floor_layout)
+		_floor_geometry.prepare_coarse_navigation()
 		_floor_geometry_hash=revision
 	return _floor_geometry
 
