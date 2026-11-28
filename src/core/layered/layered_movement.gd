@@ -117,7 +117,7 @@ static func answer_intercept(c: GameController,p: Dictionary,accept: bool) -> bo
 	return true
 
 
-static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,run: bool,boost: bool,exiting: bool,air_path: PackedVector3Array=PackedVector3Array(),finalize: bool=true) -> bool:
+static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,run: bool,boost: bool,exiting: bool,air_path: PackedVector3Array=PackedVector3Array(),finalize: bool=true,spend: bool=true) -> bool:
 	if not air_path.is_empty():
 		_apply_flight(c,f,air_path,surfaces,cost,choice,exiting)
 		return false
@@ -125,7 +125,8 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 	if not choice.is_empty():
 		path.resize(int(choice["index"])+1)
 		surfaces.resize(path.size())
-	c.spend_move(f)
+	if spend:
+		c.spend_move(f)
 	# Maintain authoritative floor, elevation and position at every site
 	# crossing; publish the movement chunk before its consequence.
 	var chunk:=PackedVector3Array([path[0]])
@@ -279,6 +280,11 @@ static func offer_aerial(c: GameController,f: Figure,plan: Dictionary,ignored: A
 	var target: Vector3=plan["path"][-1]
 	path.append(target)
 	surfaces.append(str(plan["surface"]))
+	var tail: PackedVector3Array=plan.get("tail",PackedVector3Array())
+	var tail_surfaces: Array=plan.get("tail_surfaces",[])
+	for i in range(1,tail.size()):
+		path.append(tail[i])
+		surfaces.append(str(tail_surfaces[i]))
 	var choice:=c._displacement.intercept_floor(f,path,surfaces,ignored) if c.state.forced_combat else {}
 	if not choice.is_empty() and choice["guard"].side==c.state.reaction_side:
 		c.state.pending_intercept={"floor_route":true,"mover":f.id,"path":path,"surfaces":surfaces,"cost":plan["cost"],"ignored":ignored,"choice":choice,"exiting":false,"aerial_plan":plan}
@@ -296,6 +302,7 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 		surfaces.append(f.surface_id)
 	var cost:=float(plan["cost"])
 	var engaged:=Contact.in_combat(c.state.figures,f)
+	var was_wounded:=f.wounded()
 	# An interception during the run-up prevents takeoff and any fall damage.
 	if not choice.is_empty() and int(choice["index"])<grounded.size():
 		_apply(c,f,grounded,surfaces,cost,choice,false,false,false)
@@ -338,10 +345,98 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 		ScenarioNull.enter(c,f)
 	if f.in_play():
 		c._magic.terrain.trigger_landing(f)
-	if f.in_play() and not choice.is_empty():
+	var landing_intercept:=not choice.is_empty() and int(choice["index"])==grounded.size()
+	if f.in_play() and landing_intercept:
 		c._displacement.force_contact(choice)
+	if f.in_play() and not landing_intercept and not Contact.in_combat(c.state.figures,f) and not (not was_wounded and f.wounded()) and not bool(plan.get("end_activation",false)) and plan.has("tail"):
+		if _continue_aerial(c,f,plan,choice,grounded.size()):
+			return
 	c.finish_movement(f,engaged,f.in_play())
 	if bool(plan.get("end_activation",false)) and f.in_play():
 		f.actions_left=0
 		if c.can_end_activation():
 			c.end_activation()
+
+
+## Expand only explicit jump/drop choices, never the ordinary move or AI
+## distance search. Each candidate keeps the full route and one action cost.
+static func extend_aerial(c: GameController,base: Dictionary) -> Dictionary:
+	var out:=base.duplicate()
+	if base.is_empty():
+		return out
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var allowance:=MoveRules.allowance(f)
+	for landing: Vector3i in base:
+		var plan: Dictionary=base[landing]
+		var remaining:=allowance-float(plan["cost"])
+		if remaining<MoveGrid.STEP-0.001 or bool(plan.get("end_activation",false)) or grid.stops(landing):
+			continue
+		var reach:=LayeredReach.search(grid,landing,remaining)
+		for n: Vector3i in reach.cost:
+			if n==landing or n==layout.node(f.surface_id,f.pos):
+				continue
+			var total:=float(plan["cost"])+float(reach.cost[n])
+			if out.has(n) and total>=float(out[n]["cost"])-0.001:
+				continue
+			var tail:=PackedVector3Array()
+			var surfaces: Array[String]=[]
+			for step in reach.path_to(n):
+				tail.append(layout.world(step))
+				surfaces.append(layout.surface_id(step))
+			var extended:=plan.duplicate()
+			extended["cost"]=total
+			extended["aerial_cost"]=plan["cost"]
+			extended["remaining"]=remaining
+			extended["tail"]=tail
+			extended["tail_surfaces"]=surfaces
+			var preview: PackedVector3Array=plan["path"].duplicate()
+			for i in range(1,tail.size()):
+				preview.append(tail[i])
+			extended["preview"]=preview
+			out[n]=extended
+	return out
+
+
+## Recheck the declared suffix against the actual geometry and budget after
+## landing. Never spend a second action or silently substitute a new route.
+static func _continue_aerial(c: GameController,f: Figure,plan: Dictionary,choice: Dictionary,landing_index: int) -> bool:
+	var declared: PackedVector3Array=plan["tail"]
+	var declared_surfaces: Array=plan["tail_surfaces"]
+	var layout:=c.state.board.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var start:=layout.node(f.surface_id,f.pos)
+	if not grid.open(start) or grid.stops(start) or ScenarioNull.field_at(c.state.board,f.pos):
+		return false
+	var path:=PackedVector3Array([layout.world(start)])
+	var surfaces: Array[String]=[f.surface_id]
+	var budget:=float(plan["remaining"])
+	var spent:=0.0
+	var previous:=start
+	var intercept: Dictionary={}
+	for i in range(1,declared.size()):
+		var point:=declared[i]
+		var n:=layout.node(str(declared_surfaces[i]),Vector2(point.x,point.z))
+		if not grid.open(n) or not layout.world(n).is_equal_approx(point):
+			break
+		var step_cost:=INF
+		for edge in grid.neighbors(previous):
+			if edge["to"]==n:
+				step_cost=minf(step_cost,float(edge["cost"]))
+		if spent+step_cost>budget+0.001:
+			break
+		spent+=step_cost
+		path.append(point)
+		surfaces.append(str(declared_surfaces[i]))
+		previous=n
+		if not choice.is_empty() and int(choice["index"])==landing_index+i:
+			intercept=choice.duplicate()
+			intercept["index"]=i
+			break
+		if grid.stops(n):
+			break
+	if path.size()<2:
+		return false
+	_apply(c,f,path,surfaces,spent,intercept,false,false,false,PackedVector3Array(),true,false)
+	return true
