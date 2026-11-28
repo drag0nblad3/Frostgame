@@ -47,7 +47,7 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 	if t != f:
 		if not s.board.floor_layout.is_empty():
 			var direct:=LineOfSight.within_centres(s.board,f,t,limit)
-			var remote:=kind not in ["touch","area_shot"] and LineOfSight.spell_visible(s.board,f,t,limit)
+			var remote:=not direct and kind not in ["touch","area_shot"] and WizardEye.floor_origin(s.board,f,BattleSpace.center(t),limit)!=null
 			if not direct and not remote and (kind=="touch" or TigerEye.floor_witness(s.board,f,BattleSpace.center(t),limit)==null):
 				return false
 		elif kind == "area_shot":
