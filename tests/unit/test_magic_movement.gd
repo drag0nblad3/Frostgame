@@ -91,3 +91,63 @@ func test_blink_direction_decision() -> void:
 	check(not c.awaiting_reaction())
 	check(target.pos!=before)
 	check_eq(caster.shooting_defence_penalty(),-1)
+
+
+func _vertical_push_game(ceiling: bool=false) -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,8,8],"level":3}]}
+	if ceiling:
+		b.floor_layout["solids"]=[[8,6,8,8,0.3,8]]
+	var f:=fig("wizard",0,Vector2(10,10))
+	f.surface_id="street"
+	var t:=fig("thug",1,Vector2(10,10),2)
+	t.surface_id="deck"
+	t.elevation=3.0
+	var c:=make_game(b,[f,t],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	return c
+
+
+func test_vertical_push_lifts_and_falls_on_original_support() -> void:
+	var c:=_vertical_push_game()
+	var t:=c.state.figure(2)
+	var hp:=t.health
+	var route:=FloorDisplacement.trace_vertical(c,t,Vector3.UP,3.0)
+	check(not route.is_empty())
+	if route.is_empty():
+		return
+	check_eq(route["node"],c.state.board.floor_geometry().node("deck",t.pos))
+	check(absf(float(route["fall_distance"])-3.0)<0.001)
+	c._magic.movement._apply_force_route(t,route)
+	check_eq(t.pos,Vector2(10,10))
+	check_eq(t.surface_id,"deck")
+	check_eq(t.elevation,3.0)
+	check_eq(t.health,hp-4)
+
+
+func test_vertical_push_ceiling_limits_lift() -> void:
+	var c:=_vertical_push_game(true)
+	var t:=c.state.figure(2)
+	var hp:=t.health
+	var route:=FloorDisplacement.trace_vertical(c,t,Vector3.UP,6.0)
+	check(not route.is_empty())
+	if route.is_empty():
+		return
+	check(route["collision"])
+	check(float(route["fall_distance"])<3.0)
+	c._magic.movement._apply_force_route(t,route)
+	check_eq(t.health,hp)
+	check_eq(t.elevation,3.0)
+
+
+func test_push_from_below_uses_vertical_direction() -> void:
+	var c:=_vertical_push_game()
+	var t:=c.state.figure(2)
+	t.health=20
+	c.dice=LoadedDice.new([12,1])
+	var hp:=t.health
+	c._magic.movement.push(c.state.active(),t)
+	check(t.health<hp)
+	check_eq(t.pos,Vector2(10,10))
+	check_eq(t.surface_id,"deck")
