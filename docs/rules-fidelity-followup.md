@@ -20,3 +20,5 @@ Remaining: all-edge reachability/concealment across seeds, broader climbing/jump
 - Test runner logs individual test starts/failures to identify slow or hanging tests. Full suite not yet verified.
 
 - Core pp.33,68,97,121: ordinary opposed melee offers a human combatant a weapon choice before dice, including defenders; AI compares eligible weapon effects. Encumbrance checks all surviving carried weapons. Enchanted bows/crossbows retain accuracy bonuses but ordinary ammunition is not a magical attack; enchanted ammunition is a separate option. Full weapon-specific Enchant Weapon targeting and magic-item exceptions remain to audit.
+
+- Core pp.97,121: Enchant Weapon now declares one carried weapon before the casting roll. Separate weapon enchantments can coexist, switching weapons does not transfer effects, and Dispel/Spell Eater remove a chosen enchantment. Embed Enchantment records the actual weapon. Legacy boolean effects migrate to the previously selected weapon. AI/default API chooses a legal weapon automatically. Individual magical weapon bonus combinations still require review.

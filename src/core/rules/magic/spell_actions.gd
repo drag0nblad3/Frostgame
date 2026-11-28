@@ -39,7 +39,18 @@ func can_cast(id: String, target_id: int,ammo: bool=false) -> bool:
 func start(id: String, target_id: int,ammo: bool=false) -> bool:
 	if not can_cast(id, target_id,ammo) or id in ["leap", "transpose", "suggestion"]:
 		return false
+	if id=="enchant_weapon" and not ammo:
+		return start_enchant(target_id,WeaponEnchantment.preferred(c.state.figure(target_id)))
 	return _roll(id,target_id,null,false,-1,{"magic_ammo":true} if ammo else {})
+
+
+func start_enchant(target_id: int,weapon: String) -> bool:
+	if not can_cast("enchant_weapon",target_id):
+		return false
+	for w in WeaponEnchantment.options(c.state.figure(target_id)):
+		if w.id==weapon:
+			return _roll("enchant_weapon",target_id,null,false,-1,{"weapon":weapon})
+	return false
 
 
 func counter_options(id: String) -> Array[Dictionary]:

@@ -7,8 +7,9 @@ static func capture(d: Dictionary, c: GameController, side: int) -> void:
 	for t in c.state.figures:
 		if t.original_side != side or t.campaign_id < 0 or t.out_of_action or d["units"][t.campaign_id]["dead"]:
 			continue
-		if t.spell_effects.has("enchant_weapon"):
-			var w := t.ranged if t.ranged != null else t.melee
+		for w in t.def.weapons:
+			if not WeaponEnchantment.ids(t).has(w.id):
+				continue
 			var id := "gear_" + w.id + ("_shoot" if w.is_ranged() else "_fight")
 			if CampaignInventory.catalog().has(id):
 				options.append({"gear": id, "unit": t.campaign_id})

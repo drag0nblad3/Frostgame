@@ -15,6 +15,10 @@ func options(f: Figure) -> Array[Dictionary]:
 		if not t.in_play() or ScenarioNull.muted(t) or t.spell_effects.has("plane_walk") or Shooting.distance(f, t) > 24.0 or (t != f and not LineOfSight.spell_visible(s.board,f,t)):
 			continue
 		for id: String in t.spell_effects:
+			if id=="enchant_weapon":
+				for weapon in WeaponEnchantment.ids(t):
+					result.append({"kind":"weapon_enchantment","target":t.id,"spell":id,"weapon":weapon,"label":"%s #%d — Enchanted %s"%[t.label(),t.id,weapon.replace("_"," ")]})
+				continue
 			if s.spell_catalog.has(id) or id.begins_with("potion_"):
 				result.append({"kind": "effect", "target": t.id, "spell": id, "label": "%s #%d — %s" % [t.label(), t.id, s.spell_catalog.get(id, {"name": id.trim_prefix("potion_").capitalize()})["name"]]})
 		if t.elemental_shield > 0:
@@ -72,6 +76,9 @@ func apply(option: Dictionary) -> void:
 	var t := s.figure(option["target"])
 	var id: String = option["spell"]
 	match str(option["kind"]):
+		"weapon_enchantment":
+			if t!=null:
+				WeaponEnchantment.remove(t,str(option["weapon"]))
 		"effect":
 			if t == null:
 				return

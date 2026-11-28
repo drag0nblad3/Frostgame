@@ -99,7 +99,7 @@ static func resolve_rolls(board: Board, shooter: Figure, target: Figure, sr: int
 	var magic_shoot := 0 if null_target else (1 if ammo else MagicEquipment.bonus(shooter, "shoot", shooter.ranged.id))
 	var magic_damage := 0 if null_target or ammo else MagicEquipment.bonus(shooter, "damage", shooter.ranged.id)
 	var magical := not null_target and (ammo or WeaponActions.magic_attack(shooter,shooter.ranged))
-	var st := sr + RuleHooks.total("shoot_modifier", [shooter]) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and not ammo and shooter.spell_effects.has("enchant_weapon") else 0) + (3 if HolyLantern.glow(target) else 0), 10) + shooter.roll_penalty()
+	var st := sr + RuleHooks.total("shoot_modifier", [shooter]) + mini(shooter.effective_shoot() + magic_shoot - (0 if null_target else storm_penalty) + (1 if not null_target and not ammo and WeaponEnchantment.active(shooter,shooter.ranged) else 0) + (3 if HolyLantern.glow(target) else 0), 10) + shooter.roll_penalty()
 	var tt := tr + mini(target.effective_fight() + Melee.secret_hrut_bonus(target,shooter) + mod, 10) + target.roll_penalty() + target.shooting_defence_penalty()
 	var dmg := 0
 	if (not critical_hits and st > tt) or (critical_hits and tr != 20 and (sr == 20 or st > tt)):

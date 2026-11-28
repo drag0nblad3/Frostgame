@@ -44,6 +44,7 @@ static func choose(c: GameController,id: String) -> bool:
 		if w.id!=id:
 			continue
 		c.state.scenario_data.erase(KEY)
+		WeaponEnchantment.migrate(f)
 		if f.melee!=w:
 			f.melee=w
 			c.emit("weapon_selected",{"id":f.id,"weapon":id})
@@ -60,12 +61,13 @@ static func auto_select(c: GameController,f: Figure,enemy: Figure) -> void:
 	var available:=options(f)
 	if available.size()<2:
 		return
+	WeaponEnchantment.migrate(f)
 	var original:=f.melee
 	var best:=original
 	var value:=-INF
 	for w in available:
 		f.melee=w
-		var score:=float(w.fight_mod+MagicEquipment.bonus(f,"fight",w.id))*2.0+float(w.damage_mod+MagicEquipment.bonus(f,"damage",w.id)-w.enemy_damage_mod)
+		var score:=float(w.fight_mod+MagicEquipment.bonus(f,"fight",w.id)+(1 if WeaponEnchantment.active(f,w) else 0))*2.0+float(w.damage_mod+MagicEquipment.bonus(f,"damage",w.id)-w.enemy_damage_mod)
 		if (enemy.def.traits.has("immune_normal") or enemy.spell_effects.has("potion_invulnerability")) and not WeaponActions.magic_attack(f,w):
 			score-=20.0
 		if score>value or (is_equal_approx(score,value) and w==original):

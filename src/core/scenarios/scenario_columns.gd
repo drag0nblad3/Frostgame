@@ -31,7 +31,7 @@ static func challenge(c: GameController, f: Figure) -> bool:
 		return false
 	var raw := c.dice.d20()
 	var defence := c.dice.d20()
-	var total := raw + mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + (1 if f.ranged == null and f.spell_effects.has("enchant_weapon") else 0), 10) + f.roll_penalty()
+	var total := raw + mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + (1 if WeaponEnchantment.active(f,f.melee) else 0), 10) + f.roll_penalty()
 	var win := total > defence
 	var lose := total < defence
 	if s.critical_hits:

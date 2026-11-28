@@ -13,7 +13,7 @@ static func magical(t: Figure, w: WeaponDef) -> bool:
 		return false
 	if not w.is_ranged() and t.spell_effects.get("potion_fairy_dust", "") == w.id:
 		return true
-	if t.spell_effects.has("enchant_weapon") and (w == t.ranged or (t.ranged == null and w == t.melee)):
+	if WeaponEnchantment.active(t,w):
 		return true
 	for item in t.items:
 		if item.get("gear_info", {}).get("type", "") == w.id:
@@ -36,6 +36,8 @@ func options(f: Figure) -> Array[Dictionary]:
 func destroy(t: Figure, id: String) -> void:
 	if t.destroyed_weapons.has(id):
 		return
+	WeaponEnchantment.migrate(t)
+	WeaponEnchantment.remove(t,id)
 	t.destroyed_weapons.append(id)
 	if t.melee.id == id:
 		t.melee = t.unarmed_weapon

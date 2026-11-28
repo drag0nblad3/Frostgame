@@ -405,6 +405,7 @@ func select_melee(id: String) -> bool:
 		for w in selectable_melee():
 			if w.id == id:
 				var f := state.active()
+				WeaponEnchantment.migrate(f)
 				f.melee = w
 				emit("weapon_selected", {"id": f.id, "weapon": id})
 				return true
