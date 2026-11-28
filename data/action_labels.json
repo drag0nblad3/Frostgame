@@ -157,6 +157,8 @@
   "spell_wall": "Wall",
   "rotate_spell": "Rotate spell",
   "spell_leap": "Leap",
+  "leap_raise": "Raise Leap",
+  "leap_lower": "Lower Leap",
   "spell_teleport": "Teleport",
   "spell_blink": "Blink",
   "spell_transpose": "Transpose",
