@@ -63,6 +63,8 @@ func path(node: Variant) -> PackedVector3Array:
 		return routes[node]
 	var result:=PackedVector3Array()
 	if node is Vector3i:
+		if floors.air_paths.has(node):
+			return floors.air_paths[node]
 		for n in floors.path_to(node):
 			result.append(layout.world(n))
 	else:

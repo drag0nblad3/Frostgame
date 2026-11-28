@@ -30,7 +30,10 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 	var grid := LayeredGrid.new(layout,f,s.figures)
 	grid.running=run
 	var leave_site:=ScenarioColumns.contact(s.board,f.pos,f.elevation)!=null
-	return FuryRules.restrict_floor(s,f,LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape or leave_site))
+	var result:=LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape or leave_site)
+	if not run and not cape and FuryRules.target(s,f)==null:
+		LayeredFlight.add(s,f,grid,result,MoveRules.allowance(f))
+	return FuryRules.restrict_floor(s,f,result)
 
 
 static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=false,boost: bool=false,exiting: bool=false) -> bool:
@@ -47,6 +50,7 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 		path.append(layout.world(step))
 		surfaces.append(layout.surface_id(step))
 	var cost:=float(reachable.cost[node])
+	var air_path: PackedVector3Array=reachable.air_paths.get(node,PackedVector3Array())
 	if f.spell_effects.has("plane_walk"):
 		c.spend_move(f)
 		for i in range(1,path.size()):
@@ -66,23 +70,23 @@ static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=fal
 	if cape:
 		for enemy in Contact.enemies_of(c.state.figures,f):
 			ignored.append(enemy.id)
-	c._magic.beauty.authorize(f,targets,_authorized.bind(c,f,path,surfaces,cost,ignored,cape,run,boost,exiting))
+	c._magic.beauty.authorize(f,targets,_authorized.bind(c,f,path,surfaces,cost,ignored,cape,run,boost,exiting,air_path))
 	return true
 
 
-static func _authorized(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,ignored: Array[int],cape: bool,run: bool,boost: bool,exiting: bool) -> void:
+static func _authorized(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,ignored: Array[int],cape: bool,run: bool,boost: bool,exiting: bool,air_path: PackedVector3Array=PackedVector3Array()) -> void:
 	if not f.in_play() or (run and boost and not ActiveGear.spend(f,RunForIt.TALISMAN)) or (cape and not GearActions.use_cape(c,f)):
 		return
-	_offer_or_apply(c,f,path,surfaces,cost,ignored,run,boost,exiting)
+	_offer_or_apply(c,f,path,surfaces,cost,ignored,run,boost,exiting,air_path)
 
 
-static func _offer_or_apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,ignored: Array[int],run: bool,boost: bool,exiting: bool) -> void:
+static func _offer_or_apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,ignored: Array[int],run: bool,boost: bool,exiting: bool,air_path: PackedVector3Array=PackedVector3Array()) -> void:
 	var choice:=c._displacement.intercept_floor(f,path,surfaces,ignored) if c.state.forced_combat and not run else {}
 	if not choice.is_empty() and choice["guard"].side==c.state.reaction_side:
-		c.state.pending_intercept={"floor_route":true,"mover":f.id,"path":path,"surfaces":surfaces,"cost":cost,"ignored":ignored,"choice":choice,"exiting":exiting}
+		c.state.pending_intercept={"floor_route":true,"mover":f.id,"path":path,"surfaces":surfaces,"cost":cost,"ignored":ignored,"choice":choice,"exiting":exiting,"air_path":air_path}
 		c.emit("intercept_offer",{"id":choice["guard"].id,"target":f.id})
 		return
-	_apply(c,f,path,surfaces,cost,choice,run,boost,exiting)
+	_apply(c,f,path,surfaces,cost,choice,run,boost,exiting,air_path)
 
 
 static func answer_intercept(c: GameController,p: Dictionary,accept: bool) -> bool:
@@ -94,16 +98,19 @@ static func answer_intercept(c: GameController,p: Dictionary,accept: bool) -> bo
 	var path: PackedVector3Array=p["path"]
 	var choice: Dictionary=p["choice"]
 	if accept:
-		_apply(c,f,path,surfaces,float(p["cost"]),choice,false,false,bool(p["exiting"]))
+		_apply(c,f,path,surfaces,float(p["cost"]),choice,false,false,bool(p["exiting"]),p.get("air_path",PackedVector3Array()))
 	else:
 		var ignored: Array[int]=[]
 		ignored.assign(p["ignored"])
 		ignored.append(choice["guard"].id)
-		_offer_or_apply(c,f,path,surfaces,float(p["cost"]),ignored,false,false,bool(p["exiting"]))
+		_offer_or_apply(c,f,path,surfaces,float(p["cost"]),ignored,false,false,bool(p["exiting"]),p.get("air_path",PackedVector3Array()))
 	return true
 
 
-static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,run: bool,boost: bool,exiting: bool) -> void:
+static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,run: bool,boost: bool,exiting: bool,air_path: PackedVector3Array=PackedVector3Array()) -> void:
+	if not air_path.is_empty():
+		_apply_flight(c,f,air_path,surfaces,cost,choice,exiting)
+		return
 	var engaged:=Contact.in_combat(c.state.figures,f)
 	if not choice.is_empty():
 		path.resize(int(choice["index"])+1)
@@ -216,3 +223,28 @@ static func _stop(c: GameController,f: Figure,engaged: bool,run: bool,boost: boo
 	c.finish_movement(f,engaged,false)
 	if run:
 		RunForIt.finish(c,f,boost)
+
+
+## Airborne route points are not standing positions. Landing interception
+## uses the ordinary offer, while ground effects only trigger at landing.
+static func _apply_flight(c: GameController,f: Figure,path: PackedVector3Array,surfaces: Array[String],cost: float,choice: Dictionary,exiting: bool) -> void:
+	var engaged:=Contact.in_combat(c.state.figures,f)
+	c.spend_move(f)
+	var dest:=path[-1]
+	var at:=Vector2(dest.x,dest.z)
+	if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
+		f.actions_left=0
+		return
+	f.pos=at
+	f.elevation=dest.y
+	f.surface_id=surfaces[-1]
+	c.emit("layered_move",{"id":f.id,"path":path,"surfaces":surfaces,"cost":cost,"flight":true})
+	RedKingFire.portal_contact(c,f,at,at,{},dest.y,dest.y)
+	RedKingMind.collect(c,f,at,at,dest.y,dest.y)
+	if f.in_play():
+		c._magic.terrain.trigger_landing(f)
+	if f.in_play() and not choice.is_empty():
+		c._displacement.force_contact(choice)
+	c.finish_movement(f,engaged,f.in_play())
+	if exiting and choice.is_empty() and f.in_play() and not Contact.in_combat(c.state.figures,f):
+		LayeredLoot.complete(c,f)

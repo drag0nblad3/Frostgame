@@ -130,7 +130,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 			if not clear:
 				continue
 		var cost: float = edge["cost"]
-		if edge["kind"]=="climb" and mover!=null and (running or mover.def.traits.has("expert_climber") or mover.levitates()):
+		if edge["kind"]=="climb" and mover!=null and (running or mover.def.traits.has("expert_climber") or (mover.levitates() or mover.def.traits.has("flying"))):
 			cost=layout.point(n).distance_to(layout.point(next))+ceilf(absf(layout.height(n)-layout.height(next)))
 		if board!=null and board.low_gravity:
 			cost=maxf(MoveGrid.STEP,layout.point(n).distance_to(layout.point(next)))
@@ -145,7 +145,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 ## Cache only terrain costs. Dynamic occupation and scenario restrictions
 ## remain in open(), stops(), segment_allowed() and run_segment_clear().
 func _terrain_cost(n: Vector3i,next: Vector3i,start: Vector3,finish: Vector3) -> float:
-	var mode:=int(running or (mover!=null and mover.levitates()))+2*int(mover!=null and mover.def.traits.has("expert_climber"))+4*int(Swimming.immune(mover))+8*int(board!=null and board.low_gravity)
+	var mode:=int(running or (mover!=null and (mover.levitates() or mover.def.traits.has("flying"))))+2*int(mover!=null and mover.def.traits.has("expert_climber"))+4*int(Swimming.immune(mover))+8*int(board!=null and board.low_gravity)
 	var key:=Vector4i(n.x,n.y,n.z,MoveGrid.NEIGHBORS.find(Vector2i(next.x-n.x,next.y-n.y)))
 	var cache: Dictionary={}
 	if _shared_costs:
@@ -164,7 +164,7 @@ func _terrain_cost(n: Vector3i,next: Vector3i,start: Vector3,finish: Vector3) ->
 		mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y,mover))
 	if board!=null and board.has_water and not Swimming.immune(mover) and Swimming.depth(board,Vector2(middle_point.x,middle_point.z),middle_point.y)>0:
 		mult=maxf(mult,2.0)
-	if running or (mover!=null and mover.levitates()):
+	if running or (mover!=null and (mover.levitates() or mover.def.traits.has("flying"))):
 		mult=1.0
 	var cost:=start.distance_to(finish)*mult
 	if not support.profiles.is_empty():

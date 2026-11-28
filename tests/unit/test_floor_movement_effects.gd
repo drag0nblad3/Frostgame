@@ -55,3 +55,43 @@ func test_suggestion_cannot_cross_masonry_or_ceiling() -> void:
 	check(options.has(layout.node("street",Vector2(4,5))))
 	check(not options.has(layout.node("street",Vector2(9,5))))
 	check(not options.has(layout.node("roof",Vector2(6,5))))
+
+
+func test_flight_ignores_wall_but_not_ceiling_or_void() -> void:
+	var b:=make_board([],Vector2(20,16))
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,20,16],"level":0}],"solids":[[7,0,0,1,3,16]]}
+	var f:=fig("wizard",0,Vector2(5,5))
+	f.def=f.def.with_bonuses({})
+	f.def.traits.append("flying")
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(17))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var l:=b.floor_geometry()
+	var dest:=l.node("street",Vector2(9,5))
+	check(c.layered_reach().air_paths.has(dest))
+	check_eq(c.layered_reach().cost.get(dest),4.0)
+	b.void_regions.append(Rect2(7,0,1,16))
+	check(not c.layered_reach().can_reach(dest))
+	b.void_regions.clear()
+	b.floor_layout["solids"].append([0,3.8,0,20,0.2,16])
+	check(not c.layered_reach().can_reach(dest))
+	b.floor_layout["solids"].pop_back()
+	check(c.move_on_floor(dest))
+	check_eq(f.pos,Vector2(9,5))
+	check_eq(f.actions_left,1)
+	var hp:=f.health
+	LayeredFall.apply(c,f,6.0,f)
+	check_eq(f.health,hp)
+
+
+func test_immobilized_guard_cannot_intercept() -> void:
+	var c:=_game()
+	var f:=c.state.active()
+	var guard:=fig("thug",1,Vector2(5,7),99)
+	guard.surface_id="street"
+	c.state.figures.append(guard)
+	guard.spell_effects["bones_of_the_earth"]=true
+	check(not c._displacement.guard_can_intercept(f,guard,[]))
+	guard.spell_effects.erase("bones_of_the_earth")
+	check(c._displacement.guard_can_intercept(f,guard,[]))

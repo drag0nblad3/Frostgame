@@ -4,6 +4,7 @@ extends RefCounted
 var start: Vector3i
 var cost := {}
 var prev := {}
+var air_paths: Dictionary={}
 
 
 static func search(grid: LayeredGrid,from: Vector3i,allowance: float,leave_contact: bool=false) -> LayeredReach:
@@ -30,6 +31,8 @@ func path_to(n: Vector3i) -> Array[Vector3i]:
 	var path: Array[Vector3i] = []
 	if not can_reach(n):
 		return path
+	if air_paths.has(n):
+		return [start,n]
 	var current := n
 	while current!=start:
 		path.append(current)

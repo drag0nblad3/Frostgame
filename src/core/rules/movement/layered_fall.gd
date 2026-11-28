@@ -82,5 +82,5 @@ static func clear_descent(layout: FloorLayout,to: Vector3,above: float) -> bool:
 
 static func apply(c: GameController,f: Figure,distance: float,by: Figure) -> void:
 	var damage := ElevationRules.fall_damage(distance-(3.0 if c.state.board.low_gravity else 0.0))
-	if damage>0 and MagicEquipment.bonus(f,"slow_fall")==0 and not f.def.traits.has("levitate"):
+	if damage>0 and MagicEquipment.bonus(f,"slow_fall")==0 and not f.def.traits.has("flying"):
 		c._hurt(f,damage,by,false)

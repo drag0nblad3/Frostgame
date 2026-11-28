@@ -106,6 +106,20 @@ static func _move(c: GameController,f: Figure) -> bool:
 		PackRules.remember(c.state,f,quarry)
 		if quarry==null:
 			return _wander(c,f,layout,reach)
+	# Flyers evaluate actual reachable landings instead of a walking-only
+	# long-range route; the creature's normal pursuit target is unchanged.
+	if quarry!=null and not reach.air_paths.is_empty() and not safe_route:
+		var best_air: Variant=null
+		var best_distance:=BattleSpace.center(f).distance_to(BattleSpace.center(quarry))
+		for n: Vector3i in reach.cost:
+			if n==reach.start:
+				continue
+			var d:=layout.world(n).distance_to(BattleSpace.center(quarry))
+			if d<best_distance-0.01:
+				best_distance=d
+				best_air=n
+		if best_air!=null:
+			return c.move_on_floor(best_air)
 	var grid := LayeredGrid.new(layout,f,c.state.figures)
 	grid.avoid_lethal=safe_route
 	var column:=ScenarioColumns.contact(c.state.board,f.pos,f.elevation)
