@@ -35,7 +35,7 @@ func pick_up(id: int) -> bool:
 	return _claim(f, token)
 
 
-func claim_free(f: Figure, token: TreasureToken) -> bool:
+func can_claim_free(f: Figure, token: TreasureToken) -> bool:
 	if RedKingHill.guarded(_c.state,token):
 		return false
 	# Column contact is with its edge, rather than the newly revealed centre.
@@ -45,7 +45,11 @@ func claim_free(f: Figure, token: TreasureToken) -> bool:
 		return false
 	if TreasureRules.enemy_interferes(_c.state,f,token):
 		return false
-	return _claim(f, token)
+	return true
+
+
+func claim_free(f: Figure,token: TreasureToken) -> bool:
+	return can_claim_free(f,token) and _claim(f,token)
 
 
 func _claim(f: Figure, token: TreasureToken) -> bool:

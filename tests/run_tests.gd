@@ -30,9 +30,12 @@ func _init() -> void:
 				continue
 			var tc: TestCase = script.new()
 			tc._current = "%s.%s" % [f.get_basename(), name]
+			print("TEST_START|",tc._current)
 			tc.call(name)
 			total += 1
 			failed.append_array(tc.failures)
+			for failure in tc.failures:
+				printerr("TEST_FAILURE|",failure)
 		if total == before:
 			failed.append("No executable tests in " + f)
 		timings.append({"file": f, "ms": Time.get_ticks_msec() - started})

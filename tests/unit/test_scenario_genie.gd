@@ -84,3 +84,27 @@ func test_player_selects_genie_spawn() -> void:
 		if genie!=null:
 			check_eq(Vector3(genie.pos.x,genie.elevation,genie.pos.y),chosen)
 		check(not c.awaiting_reaction())
+
+
+func test_pending_genie_choice_survives_checkpoint() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20]))
+	s.reaction_side=0
+	var f:=s.figure(1)
+	f.pos=Vector2(18,18)
+	f.elevation=s.board.height_at(f.pos)
+	s.treasure(0).ever_collected=true
+	ScenarioGenie.first_pickup(c,f,s.treasure(0))
+	var before:=CoreScenarioChoice.pending(c)
+	check(not before.is_empty())
+	if before.is_empty():
+		return
+	var restored:=BattleSnapshot.rebuild(BattleSnapshot.capture(c),db())
+	check(restored!=null)
+	if restored==null:
+		return
+	check_eq(CoreScenarioChoice.pending(restored),before)
+	check(restored.awaiting_reaction())
+	check(BattleScenarioAction.execute(restored,"core_choice",{"index":0}))
+	check(restored.state.genie_id>=0)
+	check(not restored.awaiting_reaction())

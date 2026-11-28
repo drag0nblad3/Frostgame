@@ -10,9 +10,11 @@ static func preview(bi: BattleInput) -> void:
 	if bi.mode=="core_choice":
 		var choice:=CoreScenarioChoice.pending(bi.c)
 		var world:=PackedVector3Array()
+		bi.floor_points.clear()
+		bi.movement=null
 		var hints: Dictionary={"genie":"Choose where the genie appears, within 2″ and closest to the finder.","worm":"Choose the worm’s emergence point adjacent to the selected treasure.","disc":"Choose a landing point entirely on the destination disc.","column":"Collect the revealed treasure for free, or leave it here?"}
 		for p: Dictionary in choice.get("options",[]):
-			if p.has("world"):
+			if p.has("world") and BattleFloorInput.visible(bi,str(p.get("surface",""))):
 				world.append(p["world"])
 		bi.markers.show_world_points(world,Color(0.28,0.9,0.8),0.25)
 		bi.hud.set_actions(bi.available,bi.mode,str(hints.get(choice.get("kind",""),"Choose a legal option.")))

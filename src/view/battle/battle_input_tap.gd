@@ -9,7 +9,7 @@ static func tap(bi: BattleInput, screen: Vector2) -> bool:
 		var best:=-1
 		var distance:=30.0
 		for i in options.size():
-			if not options[i].has("world"):
+			if not options[i].has("world") or not BattleFloorInput.visible(bi,str(options[i].get("surface",""))):
 				continue
 			var world: Vector3=options[i]["world"]
 			if bi.camera.is_position_behind(world):

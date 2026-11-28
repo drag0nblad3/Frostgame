@@ -28,6 +28,11 @@ static func ray(board: Board,a: Vector3,b: Vector3,observer: Figure) -> bool:
 			if board.ground_height_at(from.lerp(to,t))>lerpf(a.y,b.y,t)+0.001:
 				return false
 	for p in board.pieces:
+		if p.kind.id in ["red_king_portal","red_king_sinkhole_orb","reality_portal","reality_hoof"]:
+			var center:=p.rect.get_center()
+			if center.distance_to(Geometry2D.get_closest_point_to_segment(center,from,to))<=p.rect.size.x*0.5:
+				return false
+			continue
 		if p.kind.ground_surface or not p.kind.blocks_los:
 			continue
 		var base:=board.ground_height_at(p.rect.get_center())

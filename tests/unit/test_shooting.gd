@@ -160,3 +160,8 @@ func test_contact_cover_is_not_one_inch_proximity() -> void:
 	check_eq(Shooting.defence_modifier(c.state.board,c.state.figure(1),c.state.figure(2)),1)
 	c.state.figure(2).pos=Vector2(19.5,10)
 	check_eq(Shooting.defence_modifier(c.state.board,c.state.figure(1),c.state.figure(2)),2)
+
+
+func test_partial_visibility_does_not_bypass_portal() -> void:
+	var c:=_shot(make_board([["red_king_portal",14,8,4,4]]),"archer",Vector2(20,10),[])
+	check(not LineOfSight.check_figures(c.state.board,c.state.figure(1),c.state.figure(2)).clear)

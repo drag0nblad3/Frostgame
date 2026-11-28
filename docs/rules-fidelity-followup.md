@@ -11,3 +11,10 @@ This is a continuation of the November 27 audit, not certification of complete r
 - Core 85, 106: primary treasure table checked and all twenty rows tested; reserve selection already exists in BaseUpgradePanel and is used in campaign deployment. Individual magic-item subtables, injury tables, spell timings, and Red King conditional rules are not certified by this check.
 
 Remaining: all-edge reachability/concealment across seeds, broader climbing/jump/swim validation, smaller-table/multiplayer deployment, reactive weapon choices, spell-by-spell and item-by-item comparisons, campaign subtables, and Red King scenario/Reality Crack exceptions. Keep pending CI results distinct from completed tests.
+
+## Follow-up
+
+- Sunken Streets (custom map): two shallow/deep pools, matching visual footprints, water status and swimming roll log, no water movement surcharge on elevated platforms. Other named maps unchanged.
+- Core scenario choice records can be saved and restored when no suspended combat/cast/interception callback is pending; free collection eligibility shared by offer and execution. Floor-filtered markers prevent selecting a hidden floor.
+- Partial sight fallback respects solid special portal/orb obstruction. Further expansion geometry and body cover cases remain open.
+- Test runner logs individual test starts/failures to identify slow or hanging tests. Full suite not yet verified.

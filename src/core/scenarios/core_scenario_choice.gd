@@ -31,6 +31,10 @@ static func choose(c: GameController,index: int) -> bool:
 	var kind:=str(d["kind"])
 	var f:=c.state.figure(int(d["actor"]))
 	var token:=c.state.treasure(int(d["token"]))
+	if kind not in ["genie","worm","disc","column"]:
+		return false
+	if kind=="column" and bool(p.get("collect",false)) and not c._loot.can_claim_free(f,token):
+		return false
 	if kind!="column" and not _open(c,p,f if kind=="disc" else null):
 		return false
 	if kind=="genie" and (f==null or not f.in_play() or not ScenarioGenie.legal_spawn(c.state,f,p["world"])):

@@ -13,7 +13,7 @@ static func can_save(c: GameController) -> bool:
 	if c == null or c.state.over or (c.deployment!=null and not c.deployment.done):
 		return false
 	var s := c.state
-	return CoreScenarioChoice.pending(c).is_empty() and s.pending_intercept.is_empty() and s.pending_cast.is_empty() and s.pending_resistance.is_empty() and s.pending_combat.is_empty() and c._magic.shatter.first.is_empty() and c._magic.shatter.next.is_empty() and not c._magic.shatter.resolving
+	return s.pending_intercept.is_empty() and s.pending_cast.is_empty() and s.pending_resistance.is_empty() and s.pending_combat.is_empty() and c._magic.shatter.first.is_empty() and c._magic.shatter.next.is_empty() and not c._magic.shatter.resolving
 
 
 static func pack(obj: Object, fields: Array) -> Dictionary:
