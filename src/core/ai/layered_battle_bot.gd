@@ -62,7 +62,7 @@ static func _act(c: GameController,f: Figure) -> bool:
 		return BattleAction.execute(c,"drink_well")
 	if f.side>=0 and BattleAction.execute(c,"break_ice"):
 		return true
-	if f.side>=0 and not f.def.traits.has("animal"):
+	if f.side>=0 and not RedKingMind.is_wizard(c.state,f) and not f.def.traits.has("animal"):
 		for token in c.state.treasures:
 			if BattleAction.legal(c,"collect",token.id):
 				return BattleAction.execute(c,"collect",token.id)

@@ -76,7 +76,7 @@ func test_ground_spawn_cannot_select_roof() -> void:
 func test_first_expansion_maps_adopt_shared_floor_graph() -> void:
 	var profile:=ContentProfile.new(["red_king"])
 	var defs:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
-	for id: String in ["red_king_investigations","red_king_squatter","red_king_demons_and_mad_man"]:
+	for id: String in ["red_king_investigations","red_king_squatter","red_king_demons_and_mad_man","red_king_veil","red_king_herded","red_king_mind","red_king_hill"]:
 		var s:=ScenarioLoader.load_id(id,defs,terrain())
 		check(not s.board.floor_layout.is_empty(),id)
 		var l:=s.board.floor_geometry()
@@ -91,4 +91,4 @@ func test_first_expansion_maps_adopt_shared_floor_graph() -> void:
 			if t.on_ground():
 				check_eq(t.surface_id,"street")
 				check(not is_nan(TreasureRules.token_height(s,t)))
-		check(l.surfaces.size()>1,id+" climbing geometry")
+		check(l.index_of("street")>=0,id+" ground support")

@@ -100,3 +100,20 @@ func test_memory_player_choice_checkpoint() -> void:
 		check(RedKingMind.answer_memory(restored,token.id,points[0]))
 		check_eq(restored.state.treasure(token.id).pos,points[0])
 		check(not restored.state.scenario_data.has("rk_end_choice"))
+
+
+func test_shared_mind_movement_collects_memory_without_pickup_action() -> void:
+	var c:=_fixture()
+	var f:=RedKingMind.wizard(c.state)
+	f.pos=Vector2(6,10)
+	c.state.active_id=f.id
+	f.actions_left=3
+	var token:=c.state.treasures[0]
+	check_eq(token.pos,Vector2(6,12))
+	var n:=c.state.board.floor_geometry().node("street",Vector2(6,13))
+	check(c.layered_reach().can_reach(n))
+	check(c.move_on_floor(n))
+	check_eq(token.secured_by,0)
+	check_eq(f.actions_left,2)
+	check_eq(f.moves_taken,1)
+	check(not c.can_move())

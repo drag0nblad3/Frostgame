@@ -67,6 +67,11 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if RedKingHerded.active(s):
 				var x := 1.0+1.2*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.2*floori(deploy_index/4.0)]
+			# Generated scenario formations must be legal movement nodes.
+			# Keep the authored region and nearest half-inch position.
+			if not s.board.floor_layout.is_empty() and (RedKingVeil.active(s) or RedKingHerded.active(s) or RedKingFire.active(s)):
+				var snapped:=MoveGrid.to_pos(MovePlanner.node_at(Vector2(at[0],at[1])))
+				at=[snapped.x,snapped.y]
 			deploy_index += 1
 			if wb.get("campaign_roster",false) and (s.scenario_special.begins_with("red_king_") or not s.board.floor_layout.is_empty()) and not RedKingMind.active(s):
 				var repaired: Variant=CampaignDeployment.find(s,Vector2(at[0],at[1]),side,d)
