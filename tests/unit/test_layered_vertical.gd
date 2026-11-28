@@ -439,3 +439,29 @@ func test_second_jump_landing_interception() -> void:
 	check_eq(f.moves_taken,1)
 	check_eq(f.actions_left,1)
 	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_two_short_descents_share_allowance() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"upper","rect":[0,0,4,6],"level":2},{"id":"middle","rect":[4,0,2,6],"level":1},{"id":"lower","rect":[6,0,5,6],"level":0}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="upper"
+	f.elevation=2.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var layout:=b.floor_geometry()
+	var dest:=layout.node("lower",Vector2(6.5,3))
+	var hp:=f.health
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(dest))
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-5.0)<0.001)
+	check(options.jumps[dest].has("next"))
+	check(c.commit_movement("drop_down",dest))
+	check_eq(f.surface_id,"lower")
+	check_eq(f.pos,Vector2(6.5,3))
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
