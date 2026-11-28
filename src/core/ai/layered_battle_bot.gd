@@ -113,10 +113,10 @@ static func _move(c: GameController,f: Figure) -> bool:
 		for n: Vector3i in reach.cost:
 			if n!=reach.start and ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))==column:
 				return c.move_on_floor(n)
-	# With no loot objectives, route directly to legal contact goals rather
-	# than expanding the entire board for every fighter activation.
-	if not extracting and not center_escape and column==null and not c.state.treasures.any(func(t: TreasureToken) -> bool:return t.on_ground()) and not BoardTopology.linked(c.state.board):
-		return LayeredCombatRoute.move(c,f,layout,reach,grid,quarry)
+	# Ordinary combat, treasure and extraction all use bounded, goal-directed
+	# search. Preserve full exploration for special topology and spell tactics.
+	if not safe_route and not center_escape and column==null and LayeredObjectiveRoute.eligible(c,f,extracting):
+		return LayeredObjectiveRoute.move(c,f,layout,reach,grid,quarry,extracting)
 	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null)
 	var goal: Variant = null
 	var best := INF

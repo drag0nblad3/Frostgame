@@ -41,12 +41,28 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 	if enemies.is_empty() or not grid.open(start):
 		return {}
 	var layout:=grid.layout
+	var heuristic:=func(n: Vector3i) -> float:
+		return lower_bound(layout,n,enemies,weights)
+	var evaluate:=func(n: Vector3i) -> float:
+		var weight:=INF
+		for i in enemies.size():
+			if Contact.touches_position(enemies[i],layout.point(n),layout.height(n),layout.surface_id(n)):
+				weight=minf(weight,weights[i])
+		return weight
+	return search_goal(grid,start,heuristic,evaluate)
+
+
+## Shared A* engine. The heuristic must be a lower bound on the remaining
+## movement plus goal penalty. Infinite evaluation means not a goal.
+static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,allow_start: bool=false) -> Dictionary:
+	if not grid.open(start):
+		return {}
 	var heap:=MinHeap.new()
 	var distances: Dictionary={start:0.0}
 	var prev: Dictionary={}
 	var best:=INF
 	var goal: Variant=null
-	heap.push(lower_bound(layout,start,enemies,weights),start)
+	heap.push(float(heuristic.call(start)),start)
 	while not heap.is_empty():
 		var item:=heap.pop()
 		var priority: float=item[0]
@@ -54,13 +70,12 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 		if priority>=best:
 			break
 		var distance: float=distances[n]
-		if priority>distance+lower_bound(layout,n,enemies,weights)+0.0001:
+		if priority>distance+float(heuristic.call(n))+0.0001:
 			continue
-		if n!=start:
-			for i in enemies.size():
-				if Contact.touches_position(enemies[i],layout.point(n),layout.height(n),layout.surface_id(n)) and distance+weights[i]<best:
-					best=distance+weights[i]
-					goal=n
+		var weight:=float(evaluate.call(n))
+		if (allow_start or n!=start) and distance+weight<best:
+			best=distance+weight
+			goal=n
 		if grid.stops(n):
 			continue
 		for edge in grid.neighbors(n):
@@ -68,7 +83,7 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 			var total:=distance+float(edge["cost"])
 			if total>100.001 or total>=float(distances.get(next,INF)):
 				continue
-			var estimate:=total+lower_bound(layout,next,enemies,weights)
+			var estimate:=total+float(heuristic.call(next))
 			if estimate>=best:
 				continue
 			distances[next]=total

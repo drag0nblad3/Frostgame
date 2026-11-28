@@ -53,7 +53,17 @@ static func advance_to_exit(c: GameController,f: Figure) -> bool:
 	var reach:=c.layered_reach()
 	if reach.cost.is_empty():
 		return false
-	var long_route:=LayeredReach.search(LayeredGrid.new(layout,f,c.state.figures),reach.start,100.0)
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	if not BoardTopology.linked(c.state.board):
+		var route:=LayeredObjectiveRoute.exit_search(c.state,f,grid,reach.start)
+		if route.is_empty():
+			return false
+		var targeted: Array[Vector3i]=route["path"]
+		for i in range(targeted.size()-1,0,-1):
+			if reach.can_reach(targeted[i]):
+				return c.move_on_floor(targeted[i])
+		return false
+	var long_route:=LayeredReach.search(grid,reach.start,100.0)
 	var best: Variant=null
 	var value:=INF
 	for node: Vector3i in long_route.cost:
