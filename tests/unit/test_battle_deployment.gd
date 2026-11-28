@@ -66,3 +66,31 @@ func test_treasure_choices_precede_edge_roll() -> void:
 	check_eq(s.treasures[1].pos,first)
 	check_eq(s.treasures[2].pos,second)
 	check_eq(d.rolls,[17,4])
+
+
+func test_mausoleum_player_treasure_and_guard_setup() -> void:
+	var s:=ScenarioLoader.load_id("mausoleum",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([17,4]))
+	var fixed: Array[Vector2]=[]
+	for i in 4:
+		fixed.append(s.treasures[i].pos)
+	var d:=c.begin_deployment(0,true)
+	check_eq(d.treasure_stage,4)
+	check(d.rolls.is_empty())
+	var options:=d.treasure_options()
+	check(not options.is_empty())
+	if options.is_empty():
+		return
+	var chosen:=options[0]
+	check(d.place_treasure(chosen))
+	check_eq(d.treasure_stage,0)
+	check_eq(s.treasures[4].pos,chosen["at"])
+	check_eq(s.side_figures(-1)[4].pos,chosen["guard"])
+	for i in 4:
+		check_eq(s.treasures[i].pos,fixed[i])
+	for i in [4,5]:
+		var t:=s.treasures[i]
+		var guard:=s.side_figures(-1)[i]
+		check(Geom.point_rect_distance(t.pos,MausoleumSetup.building(s))<=9.0)
+		check(guard.pos.distance_to(t.pos)<=1.0)
+		check(s.board.floor_geometry().standable(s.board.floor_geometry().node(guard.surface_id,guard.pos)))

@@ -64,7 +64,7 @@ static func trace(c: GameController,f: Figure,direction: Vector2,distance: float
 			break
 		var to:=layout.world(next)
 		var edge:=Vector3(to.x,from.y,to.z)
-		var landing:=from.y-to.y>0.5 and not (next==same and continuous)
+		var landing: bool=from.y-to.y>0.5 and not (next==same and continuous)
 		var end:=edge if landing else to
 		var clear:=true
 		for step in range(1,5):
@@ -88,6 +88,8 @@ static func trace(c: GameController,f: Figure,direction: Vector2,distance: float
 		if landing:
 			path.append(edge)
 		path.append(to)
+		else:
+			path.append(to)
 		blocked_at=null
 		node=next
 		if BattlePlacement.floor_open(s,node,f):

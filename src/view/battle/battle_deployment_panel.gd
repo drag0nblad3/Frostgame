@@ -76,6 +76,9 @@ func _refresh() -> void:
 	if setup.treasure_stage>0:
 		_heading.text="Treasure setup · Place your "+("inner" if setup.treasure_stage==1 else "outer")+" treasure"
 		_hint.text="Choose a highlighted legal position. The rival places one next. Starting edges are rolled only after treasure placement."
+		if setup.treasure_stage==4:
+			_heading.text="Mausoleum · Place your treasure"
+			_hint.text="Choose a highlighted position within 9 inches of the building. A skeleton guards each additional treasure."
 		if not setup.error.is_empty():
 			_hint.text=setup.error
 		_edges.hide()

@@ -26,6 +26,14 @@ func begin(manual_treasure: bool=false) -> void:
 	if c.state.turn!=0 or DeploymentRules.kind(c.state)=="fixed":
 		done=true
 		return
+	if MausoleumSetup.enabled(c.state):
+		if manual_treasure and human>=0 and not c.state.scenario_data.get("mausoleum_treasures_ready",false):
+			treasure_stage=4
+			treasure_candidates=MausoleumSetup.options(c.state,4)
+			return
+		if not MausoleumSetup.prepare(c.state,c.dice):
+			error="Unable to place the Mausoleum's additional treasures and guards."
+			return
 	if not StandardTreasurePlacement.prepare(c.state,c.dice):
 		error="Unable to place five legal treasures on this battlefield."
 		return
@@ -49,10 +57,19 @@ func _begin_edges() -> void:
 
 
 func treasure_options() -> Array[Dictionary]:
+	if treasure_stage==4:
+		return treasure_candidates
 	return StandardTreasurePlacement.options(c.state,treasure_candidates,treasure_stage) if treasure_stage>0 else []
 
 
 func place_treasure(p: Dictionary) -> bool:
+	if treasure_stage==4:
+		if not MausoleumSetup.choose(c.state,c.dice,p):
+			error="Choose a legal treasure and adjacent guard position."
+			return false
+		error=""
+		finish_treasure_setup()
+		return true
 	if treasure_stage==0 or not StandardTreasurePlacement.choose(c.state,c.dice,treasure_candidates,treasure_stage,p):
 		error="That placement leaves no legal completion. Choose another point."
 		return false
@@ -66,6 +83,9 @@ func place_treasure(p: Dictionary) -> bool:
 
 func finish_treasure_setup() -> void:
 	if treasure_stage==0:
+		return
+	if treasure_stage==4 and not MausoleumSetup.prepare(c.state,c.dice):
+		error="Unable to place the additional treasures."
 		return
 	treasure_stage=0
 	treasure_candidates.clear()
@@ -187,6 +207,8 @@ func confirm() -> bool:
 
 
 func visible(f: Figure) -> bool:
+	if treasure_stage==4 and f.side<0:
+		return c.state.side_figures(-1).find(f)<4
 	return f.side<0 or placed.has(f.id)
 
 
