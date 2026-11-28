@@ -99,8 +99,10 @@ static func refresh_activation(bi: BattleInput, f: Figure) -> void:
 				bi.available.append("move")
 				if not bi.c.floor_exit_nodes().is_empty():
 					bi.available.append("exit")
-				if not LayeredJump.plans(bi.c).is_empty():
+				if not LayeredJump.plans(bi.c,true).is_empty():
 					bi.available.append("jump")
+				if not LayeredDrop.plans(bi.c).is_empty():
+					bi.available.append("drop_down")
 		else:
 			bi.reach=bi.c.reach()
 			bi.available.append("move")

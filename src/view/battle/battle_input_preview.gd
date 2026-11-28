@@ -38,6 +38,8 @@ static func preview(bi: BattleInput) -> void:
 			s.hint="Choose an exit, then confirm to retreat."
 		elif bi.mode=="jump":
 			s.hint="Choose a jump destination. Landing can cause falling damage."
+		elif bi.mode=="drop_down":
+			s.hint="Choose a lower landing from this ledge. Preview the damage before confirming."
 		elif bi.mode in ["run_for_it","run_talisman"]:
 			s.hint="Plan a run up to %d inches. Confirm to end activation."%(6 if bi.mode=="run_talisman" else 3)
 		elif bi.mode=="gear_cape_move":

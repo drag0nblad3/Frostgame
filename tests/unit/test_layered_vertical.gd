@@ -71,3 +71,53 @@ func test_jump_needs_runup_and_consumes_movement() -> void:
 	check_eq(f.surface_id,"east")
 	check_eq(f.actions_left,1)
 	check_eq(f.moves_taken,1)
+
+
+func test_geometry_gap_jump_without_authored_link() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,6,6],"level":3},{"id":"east","rect":[7,0,6,6],"level":3}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=1
+	f.actions_left=2
+	var target:=b.floor_geometry().node("east",Vector2(7.5,3))
+	check(LayeredJump.plans(c,true).has(target))
+	check(c.commit_movement("jump",target))
+	check_eq(f.surface_id,"east")
+
+func test_short_jump_requires_no_runup() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,6,6],"level":3},{"id":"east","rect":[6,0,6,6],"level":3}],"jumps":[{"from":["west",5.5,3],"to":["east",6.5,3]}]}
+	var f:=fig("thug",0,Vector2(5.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=1
+	f.actions_left=2
+	check(LayeredJump.plans(c).has(b.floor_geometry().node("east",Vector2(6.5,3))))
+
+func test_voluntary_fall_has_cost_damage_and_no_preview_mutation() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=1
+	f.actions_left=2
+	var target:=b.floor_geometry().node("street",Vector2(13.5,10))
+	var hp:=f.health
+	var options:=LayeredDrop.plans(c)
+	check(options.has(target))
+	check_eq(f.health,hp)
+	check_eq(f.surface_id,"deck")
+	check_eq(f.actions_left,2)
+	if options.has(target):
+		check_eq(options[target]["cost"],4.0)
+		check(c.commit_movement("drop_down",target))
+		check_eq(f.surface_id,"street")
+		check_eq(f.health,hp-4)
+		check_eq(f.moves_taken,1)
+		check_eq(f.actions_left,1)

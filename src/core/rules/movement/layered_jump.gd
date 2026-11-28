@@ -4,9 +4,9 @@ extends RefCounted
 ## Run-up and jump are both paid from the same movement action.
 
 
-static func plans(c: GameController) -> Dictionary:
+static func plans(c: GameController,generate: bool=false) -> Dictionary:
 	var out := {}
-	if not LayeredMovement.eligible(c) or c.state.board.floor_layout.get("jumps",[]).is_empty():
+	if not LayeredMovement.eligible(c) or (not generate and c.state.board.floor_layout.get("jumps",[]).is_empty()):
 		return out
 	var s := c.state
 	var f := s.active()
@@ -19,7 +19,10 @@ static func plans(c: GameController) -> Dictionary:
 	var start := layout.node(f.surface_id,f.pos)
 	if not grid.open(start):
 		return out
-	for entry: Dictionary in s.board.floor_layout.get("jumps",[]):
+	var entries: Array=s.board.floor_layout.get("jumps",[]).duplicate()
+	if generate:
+		entries.append_array(_generated(c,layout,grid,start))
+	for entry: Dictionary in entries:
 		var from: Array = entry.get("from",[])
 		var to: Array = entry.get("to",[])
 		if from.size()!=3 or to.size()!=3:
@@ -35,7 +38,7 @@ static func plans(c: GameController) -> Dictionary:
 		if distance<=0.001 or distance>(7.0 if s.board.low_gravity else 4.0):
 			continue
 		var run := layout.point(takeoff)-layout.point(start)
-		if run.length()+0.001<distance or run.normalized().dot(delta.normalized())<0.999:
+		if (distance>1.001 and run.length()+0.001<distance) or (run.length()>0.001 and run.normalized().dot(delta.normalized())<0.999):
 			continue
 		var path := PackedVector3Array()
 		var cost := 0.0
@@ -69,16 +72,17 @@ static func plans(c: GameController) -> Dictionary:
 				valid=false
 				break
 			path.append(p)
-		if not valid or not LayeredFall.clear_descent(layout,b,a.y):
+		if not valid or not grid.segment_allowed(a,b) or not LayeredFall.clear_descent(layout,b,a.y):
 			continue
 		path.append(Vector3(b.x,a.y,b.z))
 		path.append(b)
-		out[target]={"path":path,"cost":cost,"fall":a.y-b.y}
+		if not out.has(target) or cost<float(out[target]["cost"]):
+			out[target]={"path":path,"cost":cost,"fall":a.y-b.y}
 	return out
 
 
 static func move(c: GameController,n: Vector3i) -> bool:
-	var options := plans(c)
+	var options := plans(c,true)
 	if not options.has(n):
 		return false
 	var f := c.state.active()
@@ -94,3 +98,52 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	LayeredFall.apply(c,f,float(plan["fall"]),f)
 	c.finish_movement(f,engaged,f.in_play())
 	return true
+
+
+## Only real interruptions in support generate jump candidates. Eight lattice
+## directions, bounded by the movement allowance; no full-map pair scan.
+static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i) -> Array[Dictionary]:
+	var out: Array[Dictionary]=[]
+	var f:=c.state.active()
+	var support:=layout.surfaces[start.z]
+	if support.id.begins_with("climb:"):
+		return out
+	if support.id=="street" and support.profiles.is_empty() and c.state.board.void_regions.is_empty():
+		return out
+	var max_jump:=7.0 if c.state.board.low_gravity else 4.0
+	var allowance:=MoveRules.allowance(f)
+	var height:=layout.height(start)
+	var decks: Array[int]=[]
+	for i in layout.surfaces.size():
+		if not layout.surfaces[i].id.begins_with("climb:"):
+			decks.append(i)
+	for direction: Vector2i in MoveGrid.NEIGHBORS:
+		var delta:=Vector3i(direction.x,direction.y,0)
+		var step:=Vector2(direction).length()*MoveGrid.STEP
+		var takeoff:=start
+		for run_steps in range(floori(allowance/step)+1):
+			takeoff=start+delta*run_steps
+			if not grid.open(takeoff) or not is_equal_approx(layout.height(takeoff),height):
+				break
+			var next:=takeoff+delta
+			var next_at:=layout.point(next)
+			if layout.standable(next) and is_equal_approx(layout.height(next),height) and not c.state.board.over_void(next_at,Figure.BASE_RADIUS):
+				continue
+			if layout.clearance(Vector3(next_at.x,height,next_at.y),Figure.BASE_RADIUS,1.6)==false:
+				continue
+			var run:=step*run_steps
+			var limit:=minf(max_jump,minf(maxf(1.0,run),allowance-run))
+			for jump_steps in range(1,floori((limit+0.001)/step)+1):
+				var xy:=takeoff+delta*jump_steps
+				var at:=layout.point(xy)
+				for deck in decks:
+					var target:=Vector3i(xy.x,xy.y,deck)
+					if not layout.contains(target) or not grid.open(target) or layout.height(target)>height+0.001 or (deck==start.z and layout.height(target)<height-0.5):
+						continue
+					# Prefer same-level gap crossings. Ordinary downward
+					# ledge movement belongs to explicit voluntary falls.
+					if layout.height(target)<height-0.5:
+						continue
+					out.append({"from":[support.id,layout.point(takeoff).x,layout.point(takeoff).y],"to":[layout.surface_id(target),at.x,at.y]})
+			break
+	return out

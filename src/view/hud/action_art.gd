@@ -40,7 +40,7 @@ static func command(key: String, catalog: Dictionary) -> Texture2D:
 		return MenuSymbols.ICONS["back"]
 	if key.begins_with("cancel_") or key.ends_with("_cancel"):
 		return ICONS["cancel"]
-	if key in ["jump","run_for_it","run_talisman","push_self","push_enemy","ring_switch","stay"] or key.begins_with("push_self_"):
+	if key in ["jump","drop_down","run_for_it","run_talisman","push_self","push_enemy","ring_switch","stay"] or key.begins_with("push_self_"):
 		return ICONS["move"]
 	if key=="fight_hand":
 		return ICONS["fight"]

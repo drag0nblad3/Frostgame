@@ -375,7 +375,7 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 		if key.begins_with("spell_") and _spell_catalog.has(key.trim_prefix("spell_")):
 			b.tooltip_text=SpellReference.text(key.trim_prefix("spell_"))
 		if key=="move_confirm":
-			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else ("Confirm jump" if mode=="jump" else "Confirm move"))
+			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else ("Confirm jump" if mode=="jump" else ("Confirm fall" if mode=="drop_down" else "Confirm move")))
 			b.tooltip_text=b.text
 	if changed:
 		for i in available.size():

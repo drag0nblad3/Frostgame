@@ -2,7 +2,7 @@ class_name BattleMovePlan
 extends RefCounted
 ## UI-only tentative movement. A destination may identify a distinct floor.
 ## No rule actions, dice or events are executed before explicit commitment.
-const MODES := ["move","exit","run_for_it","run_talisman","gear_cape_move","jump"]
+const MODES := ["move","exit","run_for_it","run_talisman","gear_cape_move","jump","drop_down"]
 var destination: Variant=null
 var actor := -1
 
@@ -42,6 +42,14 @@ func choose_node(bi: BattleInput,n: Variant) -> bool:
 		hint+="\nConfirm to extract this figure."
 	elif bi.mode=="jump":
 		hint+="\nLanding may cause falling damage."
+	elif bi.mode=="drop_down":
+		var plan: Dictionary=bi.movement.jumps[n]
+		var damage:=ElevationRules.fall_damage(float(plan["fall"])-(3.0 if bi.c.state.board.low_gravity else 0.0))
+		if MagicEquipment.bonus(f,"slow_fall")>0 or f.def.traits.has("levitate"):
+			damage=0
+		hint+="\nFall %.1f inches · %d damage"%[plan["fall"],damage]
+		if plan["end_activation"]:
+			hint+=" · Ends activation"
 	if first:
 		bi.available.assign(["move_confirm","move_undo"])
 		bi.hud.set_actions(bi.available,bi.mode,hint)

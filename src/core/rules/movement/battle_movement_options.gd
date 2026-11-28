@@ -29,8 +29,8 @@ static func query(c: GameController,mode: String,existing: MoveReach=null) -> Ba
 	else:
 		o.layout=o.board.floor_geometry()
 		match mode:
-			"jump":
-				o.jumps=LayeredJump.plans(c)
+			"jump","drop_down":
+				o.jumps=LayeredDrop.plans(c) if mode=="drop_down" else LayeredJump.plans(c,true)
 				for n: Vector3i in o.jumps:
 					o.cost[n]=o.jumps[n]["cost"]
 				return o
@@ -83,6 +83,7 @@ static func commit(c: GameController,mode: String,node: Variant) -> bool:
 			"run_for_it","run_talisman": return LayeredMovement.move(c,node,false,true,mode=="run_talisman")
 			"gear_cape_move": return LayeredMovement.move(c,node,true)
 			"jump": return c.jump_on_floor(node)
+			"drop_down": return LayeredDrop.move(c,node)
 			"move": return c.move_on_floor(node)
 	elif node is Vector2i and c.state.board.floor_layout.is_empty():
 		match mode:
