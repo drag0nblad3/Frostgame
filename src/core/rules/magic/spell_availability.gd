@@ -6,9 +6,7 @@ extends RefCounted
 static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := sa.c.state
 	if not s.board.floor_layout.is_empty() and id=="leap":
-		# These effects still require an explicit floor placement/origin.
-		# All other figure-targeted effects use the standard rules below.
-		return false
+		return not LayeredLeap.points(sa.c,s.figure(target_id),true).is_empty()
 	var f := s.active()
 	var t := s.figure(target_id)
 	if not sa.c.can_act() or f == null or t == null or f.ring_side!=t.ring_side or not t.in_play() or RedKingMadMan.is_ryce(t) or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
