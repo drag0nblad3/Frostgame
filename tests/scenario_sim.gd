@@ -42,6 +42,7 @@ func _init() -> void:
 	var start := Time.get_ticks_msec()
 	c.ai_profile_enabled=true
 	var profile_totals: Dictionary={}
+	var count_totals: Dictionary={}
 	var samples: Array[float]=[]
 	var slowest: Dictionary={}
 	var peak:=0.0
@@ -58,15 +59,23 @@ func _init() -> void:
 		var ok:=Bot.play_activation(c)
 		var ms:=float(Time.get_ticks_usec()-started)/1000.0
 		samples.append(ms)
-		for stage in c.ai_profile:
-			profile_totals[stage]=int(profile_totals.get(stage,0))+int(c.ai_profile[stage])
+		var timings: Dictionary={}
+		var counts_now: Dictionary={}
+		for stage: String in c.ai_profile:
+			if stage.begins_with("count_"):
+				var key:=stage.trim_prefix("count_")
+				counts_now[key]=c.ai_profile[stage]
+				count_totals[key]=int(count_totals.get(key,0))+int(c.ai_profile[stage])
+			else:
+				timings[stage]=c.ai_profile[stage]
+				profile_totals[stage]=int(profile_totals.get(stage,0))+int(c.ai_profile[stage])
 		if ms>peak:
 			peak=ms
 			var types: Dictionary={}
 			for index in range(event_start,c.history.size()):
 				var event:=c.history[index]
 				types[event.type]=int(types.get(event.type,0))+1
-			slowest={"turn":turn_before,"phase":phase_before,"activation":activations+1,"events":types,"stage_usec":c.ai_profile.duplicate(),"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_before,"edge_checks":LayeredGrid.edge_evaluations-edges_before}
+			slowest={"turn":turn_before,"phase":phase_before,"activation":activations+1,"events":types,"stage_usec":timings,"planning_counts":counts_now,"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_before,"edge_checks":LayeredGrid.edge_evaluations-edges_before}
 		if not ok:
 			errors.append("No legal bot activation at turn %d phase %s" % [s.turn, str(s.phase)])
 			break
@@ -87,7 +96,7 @@ func _init() -> void:
 	for ms in samples:
 		total+=ms
 	samples.sort()
-	var performance: Dictionary={"mean_ms":total/maxf(1.0,samples.size()),"p95_ms":samples[mini(samples.size()-1,ceili(samples.size()*0.95)-1)] if not samples.is_empty() else 0.0,"max_ms":peak,"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_start,"edge_checks":LayeredGrid.edge_evaluations-edge_start,"slowest":slowest,"stage_total_usec":profile_totals}
+	var performance: Dictionary={"mean_ms":total/maxf(1.0,samples.size()),"p95_ms":samples[mini(samples.size()-1,ceili(samples.size()*0.95)-1)] if not samples.is_empty() else 0.0,"max_ms":peak,"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_start,"edge_checks":LayeredGrid.edge_evaluations-edge_start,"slowest":slowest,"stage_total_usec":profile_totals,"planning_counts":count_totals}
 	print("SCENARIO_PERFORMANCE|",JSON.stringify({"id":id,"seed":seed_value,"activations":activations,"performance":performance}))
 	print("SCENARIO_RESULT|", JSON.stringify({"id": id, "seed": seed_value, "turn": s.turn, "activations": activations, "winner": s.winner, "scores": scores, "events": counts, "elapsed_ms": elapsed, "performance":performance, "errors": errors}))
 	for msg in errors:
