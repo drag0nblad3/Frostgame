@@ -11,7 +11,7 @@ static func ids(f: Figure) -> Array[String]:
 		for id in data:
 			if not f.destroyed_weapons.has(str(id)):
 				out.append(str(id))
-	elif data==true:
+	elif data is bool and data:
 		# Compatibility with checkpoints from before individual enchantments.
 		var w:=f.ranged if f.ranged!=null else f.melee
 		if w!=null and not f.destroyed_weapons.has(w.id):
@@ -19,7 +19,8 @@ static func ids(f: Figure) -> Array[String]:
 	return out
 
 static func migrate(f: Figure) -> void:
-	if f.spell_effects.get(KEY,false)==true:
+	var old: Variant=f.spell_effects.get(KEY,false)
+	if old is bool and old:
 		f.spell_effects[KEY]=ids(f)
 
 static func active(f: Figure,w: WeaponDef) -> bool:
