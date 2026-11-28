@@ -149,3 +149,31 @@ func test_airborne_leap_ai_rescues_slow_fall_carrier_from_high_platform() -> voi
 	check_eq(f.surface_id,"street")
 	check_eq(f.health,hp)
 	check(f.magic_exhausted)
+
+
+func test_cached_magic_tactical_inputs_preserve_scores() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(10,10))
+	var ally:=fig("thug",0,Vector2(12,10))
+	var enemy:=fig("thug",1,Vector2(16,10))
+	for figure in [f,ally,enemy]:
+		figure.surface_id="street"
+	var c:=make_game(b,[f,ally,enemy],Dice.new(19))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"heal":8,"bone_dart":10,"slow":10,"fleet_feet":8,"shield":10}
+	c.state.active_id=f.id
+	f.actions_left=2
+	ally.health=2
+	ally.treasure_id=0
+	var rng:=c.dice._rng.state
+	for id: String in c.state.spellbooks[0]:
+		var chance:=MagicTactics.probability(c,f,id)
+		for t in c.state.figures:
+			var threat:=MagicTactics.near_enemy(c.state,t)
+			check_eq(MagicTactics.value(c,f,t,id,threat,chance),MagicTactics.value(c,f,t,id))
+	var chosen:=MagicBot.plan(c,f)
+	check(not chosen.is_empty())
+	check_eq(chosen,MagicBot.plan(c,f))
+	check_eq(c.dice._rng.state,rng)
+	check_eq(f.actions_left,2)
