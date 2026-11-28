@@ -121,3 +121,82 @@ func test_voluntary_fall_has_cost_damage_and_no_preview_mutation() -> void:
 		check_eq(f.health,hp-4)
 		check_eq(f.moves_taken,1)
 		check_eq(f.actions_left,1)
+
+
+func _jump_reaction(guard_on_landing: bool) -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,6,6],"level":3},{"id":"east","rect":[7,0,6,6],"level":3}],"jumps":[{"from":["west",5.5,3],"to":["east",7.5,3]}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var g:=fig("thug",1,Vector2(9.5,3) if guard_on_landing else Vector2(4.5,5),2)
+	g.surface_id="east" if guard_on_landing else "west"
+	g.elevation=3.0
+	var c:=make_game(b,[f,g],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=true
+	c.state.reaction_side=1
+	return c
+
+
+func test_runup_interception_stops_before_jump() -> void:
+	var c:=_jump_reaction(false)
+	var f:=c.state.active()
+	var target:=c.state.board.floor_geometry().node("east",Vector2(7.5,3))
+	check(c.jump_on_floor(target))
+	check(not c.state.pending_intercept.is_empty())
+	check_eq(f.pos,Vector2(3.5,3))
+	check_eq(f.actions_left,2)
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"west")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_landing_interception_may_be_declined() -> void:
+	for accept in [false,true]:
+		var c:=_jump_reaction(true)
+		var f:=c.state.active()
+		var target:=c.state.board.floor_geometry().node("east",Vector2(7.5,3))
+		check(c.jump_on_floor(target))
+		check(not c.state.pending_intercept.is_empty())
+		check_eq(f.moves_taken,0)
+		if c.state.pending_intercept.is_empty():
+			continue
+		check(c.answer_intercept(accept))
+		check_eq(f.surface_id,"east")
+		check_eq(f.pos,Vector2(7.5,3))
+		check_eq(f.moves_taken,1)
+		check_eq(f.actions_left,1)
+		check_eq(Contact.in_combat(c.state.figures,f),accept)
+
+
+func test_drop_landing_interception_retains_fall_damage() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var g:=fig("thug",1,Vector2(15.5,10),2)
+	g.surface_id="street"
+	var c:=make_game(b,[f,g],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=true
+	c.state.reaction_side=1
+	var hp:=f.health
+	var dest:=b.floor_geometry().node("street",Vector2(13.5,10))
+	check(c.commit_movement("drop_down",dest))
+	check(not c.state.pending_intercept.is_empty())
+	check_eq(f.health,hp)
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp-4)
+	check_eq(f.moves_taken,1)
+	check(Contact.in_combat(c.state.figures,f))
