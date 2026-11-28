@@ -141,7 +141,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 				best_distance=d
 				best_air=n
 		if best_air!=null:
-			return c.move_on_floor(best_air)
+			return c.move_from_fresh_reach(best_air,reach)
 	if safe_route:
 		# The ordinary reach did not exclude lethal routes. Do not reuse
 		# cached edges for the stricter search.
@@ -152,7 +152,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 	if column!=null and f.side>=0 and f.treasure_id<0:
 		for n: Vector3i in reach.cost:
 			if n!=reach.start and ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))==column:
-				return c.move_on_floor(n)
+				return c.move_from_fresh_reach(n,reach)
 	if not safe_route and not center_escape and column==null:
 		started=c.ai_begin()
 		var aerial:=LayeredTactics.aerial_progress(c,f,layout,reach,extracting,quarry,grid)
@@ -213,7 +213,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 	if f.treasure_id<0 and (goal==null or goal==reach.start) and f.ranged!=null and f.actions_left>=2 and c.can_act() and (not f.ranged.needs_reload or f.loaded):
 		var spot: Variant=_shooting_spot(c,f,layout,reach)
 		if spot!=null:
-			return c.move_on_floor(spot)
+			return c.move_from_fresh_reach(spot,reach)
 	if goal==null or goal==reach.start:
 		best=INF
 		var enemies: Array[Figure]=[]
@@ -279,7 +279,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 	var path := long_route.path_to(goal)
 	for i in range(path.size()-1,0,-1):
 		if reach.can_reach(path[i]) and (not safe_route or _safe_path(c,layout,reach.path_to(path[i]))):
-			return c.move_on_floor(path[i])
+			return c.move_from_fresh_reach(path[i],reach)
 	return false
 
 
@@ -316,7 +316,7 @@ static func _wander(c: GameController,f: Figure,layout: FloorLayout,reach: Layer
 	if f.moves_taken>0:
 		return false
 	var best: Variant=wander_destination(c,f,layout,reach,PackRules.heading(c,f))
-	return best!=null and c.move_on_floor(best)
+	return best!=null and c.move_from_fresh_reach(best,reach)
 
 
 ## A blind creature follows its rolled heading until the first obstacle.
