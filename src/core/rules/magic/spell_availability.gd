@@ -53,9 +53,9 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 			if not direct and not remote and (kind=="touch" or TigerEye.floor_witness(s.board,f,BattleSpace.center(t),limit)==null):
 				return false
 		elif kind == "area_shot":
-			if BattleSpace.edge_distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
+			if BattleSpace.edge_distance(f,t)>limit or (not LineOfSight.check_figures(s.board,f,t).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
 				return false
-		elif not WizardEye.visible(s.board,f,t.pos,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
+		elif not LineOfSight.spell_visible(s.board,f,t,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
 			return false
 	if ammo:
 		return id=="enchant_weapon" and t.side==f.side and MagicAmmo.can_enchant(t)

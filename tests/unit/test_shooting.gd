@@ -148,3 +148,15 @@ func test_figures_contribute_intervening_or_contact_cover() -> void:
 	obstacle.pos=Vector2(15,10)
 	obstacle.elevation=4.0
 	check_eq(Shooting.resolve_rolls(c.state.board,a,b,10,10)["mod"],0)
+
+
+func test_head_or_torso_visible_around_ruin_edge() -> void:
+	var c:=_shot(make_board([["ruin",14,9.8,2,0.4]]),"archer",Vector2(20,10),[])
+	check(not LineOfSight.check(c.state.board,Vector2(10,10),Vector2(20,10)).clear)
+	check(c.can_shoot(2),"exposed shoulder is legal")
+
+func test_contact_cover_is_not_one_inch_proximity() -> void:
+	var c:=_shot(make_board([["wall",18.5,8,0.5,4]]),"archer",Vector2(20,10),[])
+	check_eq(Shooting.defence_modifier(c.state.board,c.state.figure(1),c.state.figure(2)),1)
+	c.state.figure(2).pos=Vector2(19.5,10)
+	check_eq(Shooting.defence_modifier(c.state.board,c.state.figure(1),c.state.figure(2)),2)

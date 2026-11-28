@@ -80,6 +80,8 @@ static func defence_modifier(board: Board,shooter: Figure,target: Figure,wraith:
 			los=special
 		else:
 			los.intervening+=1
+	if not wraith and not board.reality_sphere and not board.ringworld and RuleHooks.first("sight",[board,shooter.pos,target.pos,shooter])==null:
+		BodySight.cover(board,shooter,BattleSpace.center(shooter),target,los)
 	FigureCover.apply(board,shooter,target,BattleSpace.center(shooter)+Vector3.UP*1.5,los)
 	return target_mod(los)+(1 if shooter.moves_taken>0 else 0)-(2 if target.def.traits.has("large") else 0)
 

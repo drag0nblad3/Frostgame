@@ -119,11 +119,13 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 	# projected x/z point reinterpreted as the uppermost floor.
 	var from: Vector2=WizardEye.origin(s.board,f,t.pos) if origin==null else (Vector2(origin.x,origin.z) if origin is Vector3 else origin)
 	var los:=LineOfSight.check(s.board,from,t.pos,f) if s.board.floor_layout.is_empty() else LineOfSight.check_figures(s.board,f,t)
+	if origin==null and from==f.pos:
+		los=LineOfSight.check_figures(s.board,f,t)
 	if not s.board.floor_layout.is_empty() and origin==null and not spell.is_empty() and spell!="elemental_ball":
 		var remote: Variant=WizardEye.floor_origin(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),float(s.spell_catalog.get(spell,{}).get("range",24.0)))
 		if remote!=null:
 			origin=remote
-	if origin is Vector3 and not s.board.floor_layout.is_empty():
+	if origin is Vector3 and not s.board.floor_layout.is_empty() and not origin.is_equal_approx(BattleSpace.center(f)+Vector3.UP*1.5):
 		los=LineOfSight.Result.new()
 		los.clear=LineOfSight.floor_ray(s.board,s.board.floor_geometry(),origin,Vector3(t.pos.x,t.elevation+1.0,t.pos.y),f,false)
 		if los.clear:
@@ -139,6 +141,8 @@ static func _shot(sa: SpellActions, f: Figure, t: Figure, power: int, origin: Va
 	var ray_origin: Vector3=origin if origin is Vector3 else Vector3(from.x,s.board.height_at(from)+1.5,from.y)
 	if from==f.pos and not origin is Vector3:
 		ray_origin.y=f.elevation+1.5
+	if from==f.pos and (not origin is Vector3 or origin.is_equal_approx(BattleSpace.center(f)+Vector3.UP*1.5)) and not s.board.reality_sphere and not s.board.ringworld and RuleHooks.first("sight",[s.board,f.pos,t.pos,f])==null:
+		BodySight.cover(s.board,f,BattleSpace.center(f),t,los)
 	FigureCover.apply(s.board,f,t,ray_origin,los)
 	var mod := Shooting.target_mod(los) + (1 if f.moves_taken > 0 else 0)
 	if t.def.traits.has("large"):
