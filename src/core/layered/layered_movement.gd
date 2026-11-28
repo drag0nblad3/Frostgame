@@ -269,6 +269,26 @@ static func _apply_flight(c: GameController,f: Figure,path: PackedVector3Array,s
 
 ## Interception samples only the grounded run-up and actual landing; the arc
 ## is visual and never a standing position. Use the normal optional reaction.
+static func cape_aerial(c: GameController,n: Vector3i,plan: Dictionary) -> bool:
+	if not GearActions.cape_ready(c):
+		return false
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var targets:=MovementContact.enemies_at(c.state.figures,f,layout.point(n),layout.height(n),layout.surface_id(n))
+	c._magic.beauty.authorize(f,targets,_cape_aerial_authorized.bind(c,f,plan))
+	return true
+
+
+static func _cape_aerial_authorized(c: GameController,f: Figure,plan: Dictionary) -> void:
+	if c.state.active()!=f or not GearActions.cape_ready(c) or not RedKingHill.before_move(c,f):
+		return
+	var ignored: Array[int]=[]
+	for enemy in Contact.enemies_of(c.state.figures,f):
+		ignored.append(enemy.id)
+	if GearActions.use_cape(c,f):
+		offer_aerial(c,f,plan,ignored)
+
+
 static func offer_aerial(c: GameController,f: Figure,plan: Dictionary,ignored: Array[int]=[]) -> void:
 	if not f.in_play() or c.state.active()!=f:
 		return
