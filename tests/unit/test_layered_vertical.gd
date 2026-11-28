@@ -200,3 +200,67 @@ func test_drop_landing_interception_retains_fall_damage() -> void:
 	check_eq(f.health,hp-4)
 	check_eq(f.moves_taken,1)
 	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_jump_with_followthrough_uses_one_move() -> void:
+	var c:=_jump_reaction(true)
+	var f:=c.state.active()
+	c.state.figure(2).pos=Vector2(12.5,5)
+	var layout:=c.state.board.floor_geometry()
+	var dest:=layout.node("east",Vector2(9,3))
+	var too_far:=layout.node("east",Vector2(10,3))
+	var options:=c.movement_options("jump")
+	check(options.cost.has(dest))
+	check(not options.cost.has(too_far))
+	check_eq(f.pos,Vector2(3.5,3))
+	check_eq(f.actions_left,2)
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-5.5)<0.001)
+	check_eq(options.path(dest)[-1],layout.world(dest))
+	check(c.commit_movement("jump",dest))
+	check_eq(f.pos,Vector2(9,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_interception_after_jump_stops_remaining_walk() -> void:
+	var c:=_jump_reaction(true)
+	var f:=c.state.active()
+	c.state.figure(2).pos=Vector2(10,3)
+	var target:=c.state.board.floor_geometry().node("east",Vector2(8.5,3))
+	check(c.commit_movement("jump",target))
+	check(not c.state.pending_intercept.is_empty())
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.pos,Vector2(8,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_drop_and_walk_uses_remaining_budget() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var target:=b.floor_geometry().node("street",Vector2(15,10))
+	var hp:=f.health
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(target))
+	if not options.cost.has(target):
+		return
+	check(absf(float(options.cost[target])-5.5)<0.001)
+	check(c.commit_movement("drop_down",target))
+	check_eq(f.pos,Vector2(15,10))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp-4)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
