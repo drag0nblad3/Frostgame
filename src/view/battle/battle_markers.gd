@@ -109,7 +109,6 @@ func show_world_plan(path: PackedVector3Array,risky: bool=false) -> void:
 	ribbon.vertex_color_use_as_albedo=true
 	ribbon.cull_mode=BaseMaterial3D.CULL_DISABLED
 	var segments:=0
-	shape.surface_begin(Mesh.PRIMITIVE_TRIANGLES,ribbon)
 	for i in range(1,path.size()):
 		var a:=path[i-1]+Vector3.UP*0.12
 		var b:=path[i]+Vector3.UP*0.12
@@ -125,6 +124,8 @@ func show_world_plan(path: PackedVector3Array,risky: bool=false) -> void:
 		var across:=Vector3(-delta.z,0,delta.x).normalized()*0.055
 		if across.length_squared()<0.00001:
 			across=Vector3.RIGHT*0.055
+		if segments==0:
+			shape.surface_begin(Mesh.PRIMITIVE_TRIANGLES,ribbon)
 		for vertex in [a-across,a+across,b+across,a-across,b+across,b-across]:
 			shape.surface_set_color(color)
 			shape.surface_add_vertex(vertex)

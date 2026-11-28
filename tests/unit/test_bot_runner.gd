@@ -57,6 +57,7 @@ func test_finished_runner_releases_battle() -> void:
 		while runner.busy() and not runner.done():
 			OS.delay_usec(200)
 		check(runner._controller==null)
+		check(runner.last_ms>=0.0)
 		c=null
 		check(reference.get_ref()==null,"finished runner must not retain its battle")
 		runner.finish()

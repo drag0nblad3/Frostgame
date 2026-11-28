@@ -83,6 +83,10 @@ static func preview(bi: BattleInput) -> void:
 		var info: Dictionary=bi.c.state.spell_catalog[bi.selected_spell]
 		var tn:=int(bi.c.state.spellbooks.get(f.side,{}).get(bi.selected_spell,info["number"])) if f!=null else int(info["number"])
 		s.hint="%s · TN %d — %s"%[info["name"],tn,s.hint]
+	if f!=null and bi.mode in ["","move","fight","fight_hand","shoot","cast","collect","end","reload","exit","jump","drop_down"]:
+		var restriction:=CombatHudInfo.restrictions(bi.c,f,bi.available)
+		if not restriction.is_empty():
+			s.hint+="\n"+restriction
 	bi.hud.set_actions(bi.available,bi.mode,s.hint)
 
 

@@ -756,3 +756,21 @@ func test_shortlisted_aerial_bot_resume_replays_exact_route() -> void:
 		var result:=BattleReplay.verify(checkpoint,db(),c.command_history,BattleRecord.pack(c.history))
 		check(result.get("ok",false),str(result))
 	check(c.ai_work.is_empty())
+
+
+func test_chained_fall_preview_matches_rule_damage_without_mutation() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var plan: Dictionary={"fall":3.0,"end_activation":false,"next":{"fall":4.0,"end_activation":true}}
+	var hp:=f.health
+	var rng:=c.dice._rng.state
+	var risk:=BattleMovePlan.aerial_risk(c.state,f,plan)
+	check_eq(risk["damage"],LayeredFall.damage(c.state,f,3.0)+LayeredFall.damage(c.state,f,4.0))
+	check_eq(risk["descent"],7.0)
+	check_eq(risk["legs"],2)
+	check(risk["end"])
+	c.state.board.low_gravity=true
+	check_eq(BattleMovePlan.aerial_risk(c.state,f,plan)["damage"],0)
+	check_eq(f.health,hp)
+	check_eq(c.dice._rng.state,rng)
+	check_eq(f.actions_left,2)

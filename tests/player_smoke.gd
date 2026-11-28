@@ -20,6 +20,14 @@ func _process(_delta: float) -> bool:
 			return _fail("Battle scene script did not load")
 		_scene.new_game(1)
 		_scene.player.speed = 30.0
+		# Display can be exercised without persisting a user's setting.
+		var hud: BattleHud=_scene.hud
+		hud.set_performance("Test diagnostics")
+		if not hud._performance.visible:
+			return _fail("Performance label did not open")
+		hud.set_performance("")
+		if hud._performance.visible:
+			return _fail("Performance label did not close")
 		return false
 	if Time.get_ticks_msec() - _started > 30000:
 		printerr("Player smoke timed out")

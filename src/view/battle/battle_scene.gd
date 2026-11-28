@@ -50,6 +50,7 @@ var _visible_floor := ""
 var _floor_revision := 0
 var _deployment_panel: BattleDeploymentPanel
 var _frame_sample_time:=0.0
+var _last_frame_tick:=0
 var _frame_peak:=0.0
 var _frame_count:=0
 var _map_ms:=0.0
@@ -740,6 +741,9 @@ func _sync_terrain() -> void:
 
 
 func _open_graphics() -> void:
+	if _bots.busy():
+		hud.notify("Finish the current AI activation before changing graphics.")
+		return
 	if _graphics==null:
 		_graphics=GraphicsDialog.new()
 		add_child(_graphics)
@@ -768,6 +772,9 @@ func _commit_survival(plant_target: int,choice: int) -> void:
 ## Main-thread monitors only. Never inspect the controller or worker-owned
 ## objects while a bot activation is running.
 func _sample_performance(delta: float) -> void:
+	var tick:=Time.get_ticks_usec()
+	var wall_delta:=float(tick-_last_frame_tick)/1000000.0 if _last_frame_tick>0 else delta
+	_last_frame_tick=tick
 	if not GraphicsQuality.diagnostics():
 		if hud._performance.visible:
 			hud.set_performance("")
@@ -775,8 +782,8 @@ func _sample_performance(delta: float) -> void:
 		_frame_peak=0.0
 		_frame_count=0
 		return
-	_frame_sample_time+=delta
-	_frame_peak=maxf(_frame_peak,delta*1000.0)
+	_frame_sample_time+=wall_delta
+	_frame_peak=maxf(_frame_peak,wall_delta*1000.0)
 	_frame_count+=1
 	if _frame_sample_time<0.5:
 		return
