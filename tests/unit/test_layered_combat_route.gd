@@ -74,3 +74,50 @@ func test_treasure_and_library_exit_search_match_exhaustive() -> void:
 		check(is_equal_approx(float(exit["cost"]),best_e))
 		check(int(exit["visited"])<all.cost.size())
 		check(LayeredLoot.is_exit(c.state,l,exit["goal"],f.side))
+
+
+func test_bounded_search_returns_legal_prefix_without_limiting_player_reach() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("knight",0,Vector2(5,5))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(2))
+	var l:=b.floor_geometry()
+	var start:=l.node("street",f.pos)
+	var goal:=l.node("street",Vector2(30,5))
+	var grid:=LayeredGrid.new(l,f,c.state.figures)
+	var heuristic:=func(n: Vector3i) -> float:return l.point(n).distance_to(l.point(goal))
+	var evaluate:=func(n: Vector3i) -> float:return 0.0 if n==goal else INF
+	var result:=LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,false,100.0,12)
+	check(not result.is_empty())
+	if not result.is_empty():
+		check(result["partial"])
+		check(int(result["expanded"])<=12)
+		var path: Array[Vector3i]=result["path"]
+		check_eq(path[0],start)
+		for i in range(1,path.size()):
+			var next:=path[i]
+			check(grid.neighbors(path[i-1]).any(func(edge: Dictionary) -> bool:return edge["to"]==next))
+	var limited:=LayeredReach.search(grid,start,100.0,false,12)
+	var full:=LayeredReach.search(grid,start,100.0)
+	check(limited.truncated)
+	check(not full.truncated)
+	check(limited.cost.size()<full.cost.size())
+	check(full.can_reach(goal))
+	check_eq(f.pos,Vector2(5,5))
+
+
+func test_coarse_floor_navigation_tracks_directed_portals_and_invalidation() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"upper","rect":[8,8,8,8],"level":3}],"links":[{"from":["street",7,10],"to":["upper",9,10],"kind":"stairs","one_way":true}]}
+	var l:=b.floor_geometry()
+	var a:=l.node("street",Vector2(7,10))
+	var goal:=l.node("upper",Vector2(10,10))
+	check(l.coarse_hops(goal.z).has(a.z))
+	check(not l.coarse_hops(a.z).has(goal.z))
+	var distant:=l.node("street",Vector2(3,10))
+	check(l.coarse_distance(a,goal)<l.coarse_distance(distant,goal))
+	b.floor_layout["links"]=[]
+	var revised:=b.floor_geometry()
+	check(revised!=l)
+	check(not revised.coarse_hops(goal.z).has(a.z))
