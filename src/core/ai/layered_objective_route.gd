@@ -54,7 +54,27 @@ static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vect
 			var distance:=layout.coarse_distance(n,goals[t.id]) if imperfect else at.distance_to(t.pos)
 			best=minf(best,maxf(0.0,distance-radius)+float(penalties[t.id]))
 		return best
+	# Normal treasure contacts occupy just a few half-inch cells. Keep
+	# special column guardians on their original exact scenario evaluator.
+	var contacts: Dictionary={}
+	var guardians: Array[TreasureToken]=[]
+	for t in tokens:
+		if t.frozen and s.scenario_special=="complex_temple":
+			guardians.append(t)
+			continue
+		var center: Vector3i=goals[t.id]
+		if center.z<0:
+			continue
+		for dx in range(-3,4):
+			for dy in range(-3,4):
+				var n:=center+Vector3i(dx,dy,0)
+				if t.pos.distance_to(layout.point(n))<=0.8 and not contacts.has(n):
+					contacts[n]=float(penalties[t.id])
 	var evaluate:=func(n: Vector3i) -> float:
+		if guardians.is_empty():
+			return float(contacts.get(n,INF))
+		# Preserve authored token ordering when guardian and normal
+		# objectives coexist, including the original guardian contact rule.
 		for t in tokens:
 			if t.surface_id!=layout.surface_id(n):
 				continue
