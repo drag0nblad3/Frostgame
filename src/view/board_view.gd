@@ -203,6 +203,8 @@ static func _piece_key(p: TerrainPiece) -> String:
 
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 	match piece.kind.id:
+		"architecture_prism_target":
+			return
 		"rubble":
 			BattlefieldDetail.rubble(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 		"museum_statue":

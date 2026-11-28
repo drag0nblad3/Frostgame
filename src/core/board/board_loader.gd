@@ -41,6 +41,12 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 				entries.append({"id":piece.dynamic_surface,"support":piece.surface_id,"height":piece.base_height,"thickness":piece.kind.height,"walkable":piece.kind.walkable_top,"rect":r.duplicate(),"architectural":true})
 				b.floor_layout["walls"]=entries
 		b.pieces.append(piece)
+	# Destructible convex wall handles are ordinary serialized TerrainPieces,
+	# but have no collision or artwork of their own.
+	for entry: Dictionary in b.floor_layout.get("convex_solids",[]):
+		var target:=ConvexCrumble.target(entry)
+		if target!=null:
+			b.pieces.append(target)
 	var boundaries: Array[Dictionary]=[]
 	for entry: Dictionary in d.get("boundaries",[]):
 		var a: Array=entry.get("a",[])

@@ -72,7 +72,10 @@ static func expand(source: Dictionary) -> Dictionary:
 				errors.append("Malformed convex vertex in "+key)
 				continue
 			var ex:=Vector2(extrusion[0],extrusion[2]).rotated(float(turns)*PI*0.5)
-			append(result,"convex_solids",{"profile":transformed,"extrusion":[ex.x,extrusion[1],ex.y]})
+			var volume: Dictionary={"profile":transformed,"extrusion":[ex.x,extrusion[1],ex.y]}
+			if entry.has("crumble_id"):
+				volume["crumble_id"]=prefix+str(entry["crumble_id"])
+			append(result,"convex_solids",volume)
 		for field in ["links","climbs"]:
 			for entry: Dictionary in kit.get(field,[]):
 				if entry.get("from",[]).size()!=3 or entry.get("to",[]).size()!=3:
