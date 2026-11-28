@@ -18,7 +18,16 @@ static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredR
 			continue
 		enemies.append(enemy)
 		weights.append(maxf(0.0,float(enemy.health)*0.25+2.0*BotPreference.variation(c.state,f,enemy.id,"charge"))+(0.0 if BotTargets.can_harm(f,enemy,f.melee) else 20.0))
-	var route:=search(grid,reach.start,enemies,weights,BotPreference.route_budget(f))
+	var scores: Array[float]=[]
+	for i in enemies.size():
+		var target:=enemies[i]
+		scores.append(BattleSpace.center(f).distance_to(BattleSpace.center(target))+weights[i])
+	var selected: Array[Figure]=[]
+	var selected_weights: Array[float]=[]
+	for i in BotPreference.objective_indices(f,scores):
+		selected.append(enemies[i])
+		selected_weights.append(weights[i])
+	var route:=search(grid,reach.start,selected,selected_weights,BotPreference.route_budget(f))
 	var goal: Variant=route.get("goal")
 	if goal==null:
 		return false
