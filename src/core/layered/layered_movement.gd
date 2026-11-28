@@ -300,7 +300,7 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 	var surfaces: Array[String]=[]
 	for i in grounded.size():
 		surfaces.append(f.surface_id)
-	var cost:=float(plan["cost"])
+	var cost:=float(plan.get("aerial_cost",plan["cost"]))
 	var engaged:=Contact.in_combat(c.state.figures,f)
 	var was_wounded:=f.wounded()
 	# An interception during the run-up prevents takeoff and any fall damage.
@@ -348,7 +348,7 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 	var landing_intercept:=not choice.is_empty() and int(choice["index"])==grounded.size()
 	if f.in_play() and landing_intercept:
 		c._displacement.force_contact(choice)
-	if f.in_play() and not landing_intercept and not Contact.in_combat(c.state.figures,f) and not (not was_wounded and f.wounded()) and not bool(plan.get("end_activation",false)) and plan.has("tail"):
+	if f.in_play() and not c.awaiting_reaction() and not landing_intercept and not Contact.in_combat(c.state.figures,f) and not (not was_wounded and f.wounded()) and not bool(plan.get("end_activation",false)) and plan.has("tail"):
 		if _continue_aerial(c,f,plan,choice,grounded.size()):
 			return
 	c.finish_movement(f,engaged,f.in_play())
