@@ -18,7 +18,7 @@ func test_ruin_interior_and_breach_are_real() -> void:
 
 
 func test_rotated_kits_stay_in_footprint() -> void:
-	var catalog:=JsonFile.read(TerrainAssembly.RUIN_KITS)
+	var catalog: Dictionary=JsonFile.read(TerrainAssembly.RUIN_KITS)
 	for key in catalog:
 		for turns in 4:
 			var bounds:=Rect2(3,5,6,5)
