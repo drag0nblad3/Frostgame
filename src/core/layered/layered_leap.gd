@@ -7,9 +7,9 @@ extends RefCounted
 static func eligible(c: GameController,t: Figure) -> bool:
 	var s := c.state
 	var f := s.active()
-	if s.board.floor_layout.is_empty() or f==null or t==null or not t.in_play() or t.side!=f.side:
+	if s.board.floor_layout.is_empty() or f==null or t==null or not t.in_play() or t.side!=f.side or t.ring_side!=f.ring_side:
 		return false
-	if ScenarioNull.muted(f) or ScenarioNull.muted(t):
+	if ScenarioNull.muted(f) or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic") or t.spell_effects.has("plane_walk") or RedKingMadMan.is_ryce(t) or RedKingTethers.pylon(t):
 		return false
 	if not c.can_act() or not CasterLoadout.is_caster(f.def.role) or not c._magic.available_spell(f,"leap"):
 		return false
@@ -17,7 +17,12 @@ static func eligible(c: GameController,t: Figure) -> bool:
 		return false
 	if t.spell_effects.has("bones_of_the_earth") or t.spell_effects.has("petrify") or t.surface_id.begins_with("climb:"):
 		return false
-	return f==t or (IllusionRules.visible_to(s.figures,f,t) and LineOfSight.spell_visible(s.board,f,t,float(s.spell_catalog["leap"].get("range",24.0))))
+	if f==t:
+		return true
+	if not IllusionRules.visible_to(s.figures,f,t):
+		return false
+	var limit:=float(s.spell_catalog["leap"].get("range",24.0))
+	return LineOfSight.spell_visible(s.board,f,t,limit) or TigerEye.floor_witness(s.board,f,Vector3(t.pos.x,t.elevation,t.pos.y),limit)!=null
 
 
 static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,grid: LayeredGrid) -> PackedVector3Array:
@@ -31,7 +36,7 @@ static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,gri
 		return empty
 	if not MovementContact.enemies_at(c.state.figures,t,layout.point(n),b.y,layout.surface_id(n)).is_empty():
 		return empty
-	if BattleBoundary.blocks_segment(c.state.board.boundaries,t.pos,layout.point(n),"movement",t):
+	if RedKingBridge.crosses_void(c.state.board,t.pos,layout.point(n)) or BattleBoundary.blocks_segment(c.state.board.boundaries,t.pos,layout.point(n),"movement",t):
 		return empty
 	# A straight trajectory is preferred. Test several bounded vertical arcs
 	# without allowing horizontal curves around obstacles.
@@ -43,7 +48,7 @@ static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,gri
 		for i in range(1,steps+1):
 			var ratio := float(i)/steps
 			var p := a.lerp(b,ratio)+Vector3.UP*(4.0*rise*ratio*(1.0-ratio))
-			if ScenarioNull.field_at(c.state.board,Vector2(p.x,p.z)) or not layout.clearance(p,Figure.BASE_RADIUS,1.6):
+			if ScenarioNull.field_at(c.state.board,Vector2(p.x,p.z)) or TerrainMagic.ward_blocks(c.state.board,t,Vector2(p.x,p.z),p.y) or not layout.clearance(p,Figure.BASE_RADIUS,1.6):
 				clear=false
 				break
 			length+=points[points.size()-1].distance_to(p)
@@ -51,6 +56,22 @@ static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,gri
 		if clear and length<=limit+0.001:
 			return points
 	return empty
+
+
+## Shared bounded destination provider for menus, floor selection and bots.
+static func points(c: GameController,t: Figure,first_only: bool=false,index: int=-1) -> Array[Vector3i]:
+	var out: Array[Vector3i]=[]
+	if not eligible(c,t):
+		return out
+	var layout:=c.state.board.floor_geometry()
+	var grid:=LayeredGrid.new(layout,t,c.state.figures)
+	var limit:=5.0 if t.treasure_id>=0 else 10.0
+	for n in BattlePlacement.nodes(c.state.board,t.pos,limit,index):
+		if not path(c,t,n,layout,grid).is_empty():
+			out.append(n)
+			if first_only:
+				break
+	return out
 
 
 static func start(c: GameController,t: Figure,n: Vector3i) -> bool:
