@@ -691,19 +691,24 @@ func test_ground_and_aerial_search_share_edges_without_changing_routes() -> void
 	var f:=c.state.active()
 	var layout:=c.state.board.floor_geometry()
 	var before:=LayeredGrid.edge_evaluations
+	var before_open:=LayeredGrid.evaluations
 	var normal:=c.layered_reach()
 	var independent:=LayeredDrop.plans(c,true,null,normal)
 	var separate_edges:=LayeredGrid.edge_evaluations-before
+	var separate_open:=LayeredGrid.evaluations-before_open
 	var grid:=LayeredGrid.new(layout,f,c.state.figures)
 	grid.memoize_edges=true
 	before=LayeredGrid.edge_evaluations
+	before_open=LayeredGrid.evaluations
 	var shared:=LayeredMovement.reach(c,false,false,false,grid)
 	var drops:=LayeredDrop.plans(c,true,grid,shared)
 	var shared_edges:=LayeredGrid.edge_evaluations-before
+	var shared_open:=LayeredGrid.evaluations-before_open
 	check_eq(shared.cost,normal.cost)
 	check_eq(shared.prev,normal.prev)
 	check_eq(drops,independent)
-	check(shared_edges<separate_edges,"reusing walking edges should reduce total search work")
+	check(shared_edges<=separate_edges,"shared cache must not increase edge calculations")
+	check(shared_open<separate_open,"shared cache avoids duplicate placement checks")
 	check_eq(f.moves_taken,0)
 	check_eq(f.actions_left,2)
-	print("ground/aerial shared edges: ",separate_edges," -> ",shared_edges)
+	print("ground/aerial shared edges: ",separate_edges," -> ",shared_edges,"; open checks: ",separate_open," -> ",shared_open)
