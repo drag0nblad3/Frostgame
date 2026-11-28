@@ -99,7 +99,7 @@ static func _from_ledge(s: GameState,f: Figure,layout: FloorLayout,grid: Layered
 			continue
 		var b:=layout.world(n)
 		var drop:=a.y-b.y
-		if drop<=0.5:
+		if drop<=0.5 or not LayeredFall.voluntary_allowed(s,f,drop):
 			continue
 		# A continuous ramp is movement, not a voluntary fall.
 		if n.z==start.z:
