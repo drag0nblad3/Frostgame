@@ -82,7 +82,7 @@ func test_slow_fall_ring_protects_against_actual_falls() -> void:
 	c.state.active_id=f.id
 	f.actions_left=2
 	var hp:=f.health
-	var gear:=JsonFile.read("res://data/magic_equipment.json")
+	var gear: Variant=JsonFile.read("res://data/magic_equipment.json")
 	f.items.append({"gear":"gear_ring_slow_fall","gear_info":gear["gear_ring_slow_fall"]})
 	check_eq(LayeredFall.damage(c.state,f,20.0),0)
 	var landing:=b.floor_geometry().node("street",Vector2(13.5,10))
