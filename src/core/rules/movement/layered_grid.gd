@@ -6,6 +6,7 @@ var mover: Figure
 var others: Array[Figure] = []
 var null_boundary := false
 var null_board: Board
+static var evaluations:=0
 var _open_cache := {}
 ## Contact neighborhoods are fixed over a single movement query.
 var _nearby: Dictionary={}
@@ -68,6 +69,7 @@ func open(n: Vector3i) -> bool:
 
 
 func _compute_open(n: Vector3i) -> bool:
+	evaluations+=1
 	if not layout.standable(n):
 		return false
 	var at := layout.world(n)

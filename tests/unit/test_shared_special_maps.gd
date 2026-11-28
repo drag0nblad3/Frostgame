@@ -64,6 +64,8 @@ func test_mausoleum_corner_tokens_and_reinforcements_use_street() -> void:
 		check_eq(TreasureRules.token_height(s,t),0.0)
 	for f in s.figures:
 		check(l.standable(l.node(f.surface_id,f.pos)))
+		check_eq(l.point(l.node(f.surface_id,f.pos)),f.pos)
+	check_eq(s.side_figures(-1).size(),6)
 	var c:=GameController.new(s,LoadedDice.new([1]))
 	var count:=s.figures.size()
 	c._encounters.on_end_turn()
