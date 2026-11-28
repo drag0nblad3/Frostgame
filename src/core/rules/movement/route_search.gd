@@ -14,7 +14,7 @@ static func expand(flat: MoveGrid,floors: LayeredGrid,heap: MinHeap,cost: Dictio
 		var node: Variant=item[1]
 		if distance>cost.get(node,INF):
 			continue
-		if max_expansions>0 and expanded>=max_expansions:
+		if max_expansions>0 and (expanded>=max_expansions or (floors!=null and not floors.spend_ai_work())):
 			return true
 		expanded+=1
 		if floors!=null:
