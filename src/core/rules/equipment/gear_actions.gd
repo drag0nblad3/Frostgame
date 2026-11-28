@@ -120,6 +120,9 @@ static func bottle_legal(c: GameController,at: Vector2) -> bool:
 	var height := c.state.board.height_at(at)
 	if Vector2(f.pos.distance_to(at),height-f.elevation).length()>1.001 or not c.state.board.can_stand(at,Figure.BASE_RADIUS) or ScenarioNull.field_at(c.state.board,at):
 		return false
+	var board:=c.state.board
+	if board.over_void(at,Figure.BASE_RADIUS) or BattleBoundary.blocks_position(board.boundaries,at,null) or BattleBoundary.blocks_end(board.boundaries,at) or BattleBoundary.blocks_segment(board.boundaries,f.pos,at,"movement",f) or TerrainMagic.ward_blocks(board,null,at,height):
+		return false
 	for t in c.state.figures:
 		if t.in_play() and t.ring_side==f.ring_side and Vector2(t.pos.distance_to(at),t.elevation-height).length()<Contact.OVERLAP:
 			return false
