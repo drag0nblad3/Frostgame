@@ -6,6 +6,18 @@ static func removed(surface: String,id: String) -> bool:
 	return surface==id or surface.begins_with("climb:"+id+":")
 
 
+## Derived climb IDs may disappear when architecture changes. Reconcile
+## only occupied missing routes, without touching surviving hanging figures.
+static func reconcile(c: GameController,before: FloorLayout) -> void:
+	var after:=c.state.board.floor_geometry()
+	var lost: Array[String]=[]
+	for f in c.state.figures:
+		if f.in_play() and f.surface_id.begins_with("climb:auto:") and before.index_of(f.surface_id)>=0 and after.index_of(f.surface_id)<0 and not lost.has(f.surface_id):
+			lost.append(f.surface_id)
+	for id in lost:
+		resolve(c,before,id)
+
+
 static func resolve(c: GameController,before: FloorLayout,id: String) -> void:
 	var s:=c.state
 	for p in s.board.pieces.duplicate():

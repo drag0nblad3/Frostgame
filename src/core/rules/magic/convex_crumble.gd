@@ -102,6 +102,7 @@ static func apply(c: GameController,p: TerrainPiece) -> void:
 	if bool(entry.get("load_bearing",false)):
 		ArchitectureCollapse.apply(c,p)
 		return
+	var before:=board.floor_geometry()
 	var entries: Array=board.floor_layout.get("convex_solids",[])
 	var parts:=breach(entry)
 	entries.erase(entry)
@@ -115,3 +116,4 @@ static func apply(c: GameController,p: TerrainPiece) -> void:
 	board.floor_layout["convex_solids"]=entries
 	board.invalidate_terrain()
 	c.emit("terrain_changed",{"spell":"crumble","created":false})
+	FloorSupportRemoval.reconcile(c,before)

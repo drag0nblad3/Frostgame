@@ -29,7 +29,10 @@ func choose_node(bi: BattleInput,n: Variant) -> bool:
 	var budget:=3.0 if bi.mode=="run_for_it" else (6.0 if bi.mode=="run_talisman" else MoveRules.allowance(f))
 	var hint:="PREVIEW · %.1f″ of %.1f″ movement · %.1f″ remaining"%[cost,budget,maxf(0.0,budget-cost)]
 	if n is Vector3i:
-		hint+=" · %s · %.1f″ elevation"%[bi.movement.layout.surface_id(n).replace("_"," ").capitalize(),point.y]
+		var support:=bi.movement.layout.surface_id(n)
+		hint+=" · %s · %.1f″ elevation"%["Hanging on wall" if support.begins_with("climb:") else support.replace("_"," ").capitalize(),point.y]
+		if support.begins_with("climb:"):
+			hint+="\nFinish the climb on a later movement action."
 	hint+="\nDrag or tap another marked position. Confirm to resolve movement and any reactions; Undo returns to your starting position."
 	if bi.mode in ["run_for_it","run_talisman"]:
 		hint+="\nRunning ends this activation."

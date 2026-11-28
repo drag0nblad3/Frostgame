@@ -91,3 +91,4 @@ static func apply(c: GameController,p: TerrainPiece) -> void:
 	c.emit("terrain_changed",{"spell":"crumble","created":false,"at":p.rect.get_center(),"height":p.base_height,"radius":2.0,"collapse":true})
 	for id in lost:
 		FloorSupportRemoval.resolve(c,before,id)
+	FloorSupportRemoval.reconcile(c,before)

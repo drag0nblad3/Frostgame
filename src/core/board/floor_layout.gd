@@ -53,6 +53,8 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 		FloorWall.add_volume(layout,wall)
 	for wall: Dictionary in d.get("walls",[]):
 		FloorWall.add_climbs(layout,wall)
+	if d.get("auto_architecture_climbs",false):
+		ArchitectureClimbs.add(layout)
 	return layout
 
 
