@@ -78,6 +78,8 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 			continue
 		var a := layout.world(takeoff)
 		var b := layout.world(target)
+		if not LayeredFall.voluntary_allowed(s,f,a.y-b.y):
+			continue
 		path.append(layout.world(start))
 		path.append(a)
 		steps=maxi(2,ceili(distance/0.1))
