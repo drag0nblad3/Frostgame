@@ -39,12 +39,20 @@ static func choose(c: GameController,index: int) -> bool:
 	match kind:
 		"genie":
 			ScenarioGenie._released(c,f,token,_spawn(c,"genie",p))
+		"worm":
+			var worm:=_spawn(c,"giant_worm",p)
+			c.state.worm_spawned=true
+			c.emit("worm_emerges",{"id":worm.id,"treasure":token.id})
+		"disc":
+			ScenarioSites.land_disc(c,f,p,int(d["roll"]))
 		"column":
 			if bool(p.get("collect",false)) and f!=null and token!=null:
 				c._loot.claim_free(f,token)
 		_:
 			return false
 	c.emit("core_scenario_resolved",{"kind":kind,"choice":index})
+	if c.state.phase==Phase.CREATURE and c.state.active()==null and not c.awaiting_reaction():
+		c._flow._settle()
 	return true
 
 static func _open(c: GameController,p: Dictionary,mover: Figure) -> bool:

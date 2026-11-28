@@ -50,40 +50,47 @@ static func spawn_worm(c: GameController) -> void:
 	var token := candidates[c.dice.pick(candidates.size())]
 	var carrier := s.figure(token.carrier_id)
 	var origin := carrier.pos if carrier != null else token.pos
+	var options: Array[Dictionary]=[]
+	var height:=carrier.elevation if carrier!=null else TreasureRules.token_height(s,token)
+	if is_nan(height):
+		return
+	var limit:=2.0*Figure.BASE_RADIUS if carrier!=null else Figure.BASE_RADIUS+TreasureRules.TOKEN_RADIUS
+	var closest:=INF
 	if not s.board.floor_layout.is_empty():
-		var height:=carrier.elevation if carrier!=null else TreasureRules.token_height(s,token)
 		var support:=carrier.surface_id if carrier!=null else token.surface_id
-		if is_nan(height):
-			return
 		var layout:=s.board.floor_geometry()
-		var candidates_on_floor:=BattlePlacement.nearby_floor(s,origin,height,1.5,support)
-		var best: Variant=null
-		var distance:=INF
-		for n in candidates_on_floor:
-			var d:=layout.point(n).distance_to(origin)
-			if d>=0.75 and d<distance:
-				best=n
-				distance=d
-		if best!=null:
-			var creature:=c._encounters._spawn_on_floor("giant_worm",best)
-			s.worm_spawned=true
-			c.emit("worm_emerges",{"id":creature.id,"treasure":token.id})
+		for n in BattlePlacement.nearby_floor(s,origin,height,1.5,support):
+			var distance:=layout.point(n).distance_to(origin)
+			if distance<limit-0.001:
+				continue
+			closest=minf(closest,distance)
+			options.append(CoreScenarioChoice.point(s,layout.point(n),layout.surface_id(n)))
+	else:
+		var grid:=MoveGrid.new(s.board,null,s.figures)
+		var center:=MovePlanner.node_at(origin)
+		for x in range(-3,4):
+			for y in range(-3,4):
+				var n:=center+Vector2i(x,y)
+				var at:=MoveGrid.to_pos(n)
+				var distance:=at.distance_to(origin)
+				if distance<limit-0.001 or distance>1.5 or not grid.open(n) or absf(s.board.height_at(at)-height)>=0.5:
+					continue
+				closest=minf(closest,distance)
+				options.append(CoreScenarioChoice.point(s,at))
+	if options.is_empty():
 		return
-	var grid := MoveGrid.new(s.board, null, s.figures)
-	var center := MovePlanner.node_at(origin)
-	var points: Array[Vector2i] = []
-	for x in range(-3, 4):
-		for y in range(-3, 4):
-			var node := center + Vector2i(x, y)
-			var dist := MoveGrid.to_pos(node).distance_to(origin)
-			if dist >= 0.75 and dist <= 1.5 and grid.open(node) and absf(s.board.height_at(MoveGrid.to_pos(node)) - s.board.height_at(origin)) < 0.5:
-				points.append(node)
-	if points.is_empty():
+	var near: Array[Dictionary]=[]
+	for p in options:
+		var at: Vector2=p["at"]
+		if at.distance_to(origin)<=closest+0.25:
+			near.append(p)
+	var owner:=s.order[0] if not s.order.is_empty() else -1
+	if CoreScenarioChoice.offer(c,"worm",owner,-1,token.id,0,near):
 		return
-	points.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return MoveGrid.to_pos(a).distance_to(origin) < MoveGrid.to_pos(b).distance_to(origin))
-	var worm := c._encounters._spawn_at("giant_worm", MoveGrid.to_pos(points[0]))
-	s.worm_spawned = true
-	c.emit("worm_emerges", {"id": worm.id, "treasure": token.id})
+	var p:=CoreScenarioChoice.tactical(c,owner,near)
+	var worm:=CoreScenarioChoice._spawn(c,"giant_worm",p)
+	s.worm_spawned=true
+	c.emit("worm_emerges",{"id":worm.id,"treasure":token.id})
 
 
 
