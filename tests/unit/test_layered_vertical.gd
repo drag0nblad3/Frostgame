@@ -510,3 +510,54 @@ func test_preview_edge_cache_reduces_repeated_search_work() -> void:
 	check(not options.cost.is_empty())
 	check_eq(f.pos,Vector2(11,10))
 	check_eq(f.actions_left,2)
+
+
+func test_mind_control_rejects_damaging_voluntary_descent() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	f.pos=Vector2(12.5,10)
+	var layout:=c.state.board.floor_geometry()
+	var target:=layout.node("street",Vector2(13.5,10))
+	check(LayeredDrop.plans(c).has(target))
+	f.control_spell="mind_control"
+	check_eq(LayeredFall.damage(c.state,f,3.0),4)
+	check(not LayeredDrop.plans(c).has(target))
+	check(not c.movement_options("drop_down").cost.has(target))
+	check(not c.commit_movement("drop_down",target))
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
+	f.control_spell=""
+	check(LayeredDrop.plans(c).has(target))
+
+
+func test_mind_control_allows_harmless_short_descent() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":2}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=2.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.control_spell="mind_control"
+	var target:=b.floor_geometry().node("street",Vector2(13.5,10))
+	check_eq(LayeredFall.damage(c.state,f,2.0),0)
+	check(LayeredDrop.plans(c).has(target))
+	check(c.commit_movement("drop_down",target))
+	check_eq(f.surface_id,"street")
+	check_eq(f.moves_taken,1)
+
+
+func test_suggestion_rejects_damaging_vertical_descent() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(10,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var target:=b.floor_geometry().node("street",f.pos)
+	check(not SpellAvailability.floor_suggestion_points(c._magic,f).has(target))
+	check_eq(f.surface_id,"deck")
+	check_eq(f.moves_taken,0)
