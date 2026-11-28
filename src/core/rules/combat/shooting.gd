@@ -20,6 +20,8 @@ static func blocked_reason(board: Board, figures: Array[Figure], shooter: Figure
 		return "blinded"
 	if shooter.ranged == null:
 		return "no missile weapon"
+	if Swimming.prevents_bow(shooter):
+		return "cannot fire bow or crossbow in deep water"
 	if shooter.ranged.needs_reload and not shooter.loaded:
 		return "needs to reload"
 	if not target.in_play() or target == shooter or not IllusionRules.visible_to(figures, shooter, target):

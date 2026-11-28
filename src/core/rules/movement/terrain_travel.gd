@@ -40,7 +40,7 @@ static func cost(board: Board,a: Vector2,b: Vector2,mover: Figure = null,running
 		var h0 := surface.surface_height(start) if surface != null else 0.0
 		var h1 := surface.surface_height(end) if surface != null else 0.0
 		total += _climb(h0-previous,levitate or expert or _legacy_stair(previous_surface) or _legacy_stair(surface))
-		total += Vector2(start.distance_to(end),h1-h0).length()*(1.0 if levitate else board.move_mult_at(mid))
+		total += Vector2(start.distance_to(end),h1-h0).length()*(1.0 if levitate else board.move_mult_at(mid,mover))
 		previous = h1
 		previous_surface = surface
 	total += _climb(board.height_at(b)-previous,levitate or expert or _legacy_stair(previous_surface) or _legacy_stair(board.surface_at(b)))

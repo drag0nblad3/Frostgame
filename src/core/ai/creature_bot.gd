@@ -33,6 +33,8 @@ static func closest(c: GameController, f: Figure, shot: bool = false) -> Figure:
 	for t in c.state.figures:
 		if t.ring_side!=f.ring_side or t.side<0 or not t.in_play() or WormRider.ignored(f,t):
 			continue
+		if not shot and not Swimming.immune(f) and Swimming.figure_depth(t)==2:
+			continue
 		var normal := IllusionRules.visible_to(c.state.figures,f,t) and LineOfSight.check_figures(c.state.board,f,t).clear
 		if not normal and (shot or (not CreatureSenses.detects(f,t) and not RedKingSquatter.scent(c.state,f,t))):
 			continue

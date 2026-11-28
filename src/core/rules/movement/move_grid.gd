@@ -65,6 +65,8 @@ func _open(n: Vector2i) -> bool:
 	if not board.can_stand(p, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, p) or BattleBoundary.blocks_position(board.boundaries,p,mover):
 		return false
 	var height := board.height_at(p)
+	if board.has_water and Swimming.avoids_deep(board,mover,p,height):
+		return false
 	for o in others:
 		if MovementContact.blocks(mover,o,others,p,height,running):
 			return false
@@ -114,6 +116,8 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	var mid := (pa + pb) * 0.5
 	if not board.can_stand(mid, Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(board, mover, mid):
 		return INF
+	if board.has_water and Swimming.avoids_deep(board,mover,mid,board.height_at(mid)):
+		return INF
 	if running:
 		if not MovementContact.run_clear(mover,others,pa,pb,board.height_at(mid)):
 			return INF
@@ -127,5 +131,5 @@ func segment_cost(pa: Vector2, pb: Vector2) -> float:
 	if board.has_ground_profiles or board.has_ramps:
 		return TerrainTravel.cost(board,pa,pb,mover)
 	# Ramps are handled by TerrainTravel above (has_ramps), so none can be here.
-	var multiplier := 1.0 if mover != null and mover.levitates() else board.move_mult_at(mid)
+	var multiplier := 1.0 if mover != null and mover.levitates() else board.move_mult_at(mid,mover)
 	return pa.distance_to(pb) * multiplier + board.climb_cost(pa, pb, mover)

@@ -56,7 +56,13 @@ func pieces_at(p: Vector2) -> Array[TerrainPiece]:
 
 
 ## Movement cost multiplier at a point (the worst piece there).
-func move_mult_at(p: Vector2) -> float:
+func move_mult_at(p: Vector2,mover: Figure=null) -> float:
+	if has_water and Swimming.immune(mover):
+		var result:=1.0
+		for piece in pieces_at(p):
+			if piece.kind.id not in ["deep_water","shallow_water"]:
+				result=maxf(result,piece.kind.move_mult)
+		return result
 	var i := _lattice(p)
 	if i >= 0 and _mult_cache[i] >= 0.0:
 		return _mult_cache[i]
@@ -94,6 +100,7 @@ var static_step_cache := PackedFloat64Array()
 var field_cache := {}
 ## Shared terrain-only open-node answers for repeated AI distance fields.
 var static_open_cache := {}
+var has_water := false
 var has_ground_profiles := false
 var has_ramps := false
 var _ground_profiles: Array[TerrainPiece]=[]
@@ -210,11 +217,13 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 
 
 func invalidate_terrain() -> void:
+	has_water=false
 	has_ground_profiles = false
 	has_ramps = false
 	_ground_profiles.clear()
 	ground_max=0.0
 	for piece in pieces:
+		has_water=has_water or piece.kind.id in ["deep_water","shallow_water"]
 		has_ground_profiles = has_ground_profiles or piece.kind.ground_surface
 		has_ramps = has_ramps or piece.ramp
 		if piece.kind.ground_surface:

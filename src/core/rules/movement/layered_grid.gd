@@ -59,6 +59,8 @@ func _compute_open(n: Vector3i) -> bool:
 	var point:=layout.point(n)
 	if board!=null and (board.over_void(point,Figure.BASE_RADIUS) or BattleBoundary.blocks_position(board.boundaries,point,mover) or TerrainMagic.ward_blocks(board,mover,point,at.y)):
 		return false
+	if board!=null and board.has_water and Swimming.avoids_deep(board,mover,point,at.y):
+		return false
 	for other in others:
 		if MovementContact.blocks(mover,other,others,point,at.y,running,layout.surface_id(n)):
 			return false
@@ -97,6 +99,8 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if board!=null:
 			var middle:=start.lerp(finish,0.5)
 			mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y))
+		if board!=null and board.has_water and not Swimming.immune(mover) and Swimming.depth(board,Vector2(middle_point.x,middle_point.z),middle_point.y)>0:
+			mult=maxf(mult,2.0)
 		if running or (mover!=null and mover.levitates()):
 			mult=1.0
 		var cost:=start.distance_to(finish)*mult
@@ -139,6 +143,9 @@ func segment_allowed(a: Vector3,b: Vector3) -> bool:
 		var s: GameState=mover.battle_ref.get_ref()
 		if s!=null and (RedKingVeil.lethal(s,from,to) or (RedKingHerded.active(s) and minf(from.y,to.y)<=float(s.scenario_data.get("herd_veil",0.0))+Figure.BASE_RADIUS)):
 			return false
+	var mid:=a.lerp(b,0.5)
+	if board.has_water and Swimming.avoids_deep(board,mover,Vector2(mid.x,mid.z),mid.y):
+		return false
 	return not BattleBoundary.blocks_segment(board.boundaries,from,to,"movement",mover)
 
 
