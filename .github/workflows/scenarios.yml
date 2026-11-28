@@ -19,32 +19,27 @@ jobs:
       max-parallel: 4
       matrix:
         seed: [17, 42]
-        scenario: [treasure_skirmish, mausoleum, living_museum, dreams_well, worm_hunts, underground_library, haunted_houses, the_keep, genie_in_the_bottle, silent_tower, complex_temple, sunken_streets, stacked_gatehouse, layered_silent_tower]
+        roster: [authored]
+        scenario: [treasure_skirmish, mausoleum, living_museum, dreams_well, worm_hunts, underground_library, haunted_houses, the_keep, genie_in_the_bottle, silent_tower, complex_temple, sunken_streets, stacked_gatehouse, layered_silent_tower, red_king_squatter, red_king_investigations, red_king_veil, red_king_back_into_fire, red_king_demons_and_mad_man, red_king_mind, red_king_herded, red_king_sinkhole, red_king_hill, red_king_tethers, red_king_bridge, red_king_ringworld]
         include:
-          - seed: 17
-            scenario: red_king_squatter
-          - seed: 17
-            scenario: red_king_investigations
-          - seed: 17
-            scenario: red_king_veil
-          - seed: 17
-            scenario: red_king_back_into_fire
-          - seed: 17
-            scenario: red_king_demons_and_mad_man
-          - seed: 17
-            scenario: red_king_mind
-          - seed: 17
-            scenario: red_king_herded
-          - seed: 17
-            scenario: red_king_sinkhole
-          - seed: 17
-            scenario: red_king_hill
-          - seed: 17
-            scenario: red_king_tethers
-          - seed: 17
+          - seed: 71
+            roster: mobility
+            scenario: treasure_skirmish
+          - seed: 71
+            roster: control
+            scenario: living_museum
+          - seed: 71
+            roster: mobility
+            scenario: worm_hunts
+          - seed: 71
+            roster: control
+            scenario: underground_library
+          - seed: 99
+            roster: mobility
             scenario: red_king_bridge
-          - seed: 17
-            scenario: red_king_ringworld
+          - seed: 99
+            roster: control
+            scenario: red_king_squatter
     steps:
       - uses: actions/checkout@v4
       - name: Install Godot
@@ -60,7 +55,7 @@ jobs:
       - name: Full scenario battle
         run: |
           set -o pipefail
-          timeout 600s godot --headless -s tests/scenario_sim.gd -- ${{ matrix.scenario }} ${{ matrix.seed }} 2>&1 | tee simulation.log
+          timeout 600s godot --headless -s tests/scenario_sim.gd -- ${{ matrix.scenario }} ${{ matrix.seed }} ${{ matrix.roster }} 2>&1 | tee simulation.log
           ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script" simulation.log
           grep -q '^SCENARIO_RESULT|' simulation.log
           grep -q '^SCENARIO_PERFORMANCE|' simulation.log
@@ -82,6 +77,7 @@ jobs:
               print("|---:|---:|---:|---:|---:|")
               print(f'| {p["mean_ms"]:.1f} ms | {p["p95_ms"]:.1f} ms | {p["max_ms"]:.1f} ms | {p["open_checks"]} | {p["edge_checks"]} |')
               print(f'Slowest activation: {p["slowest"]}')
+              print(f'Behavior: {row.get("behavior", {})}')
               if p["mean_ms"] > 250 or p["p95_ms"] > 500:
                   print("**Performance review recommended** (diagnostic threshold, not a rules failure).")
           PY
@@ -90,6 +86,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: scenario-${{ matrix.scenario }}-${{ matrix.seed }}
+          name: scenario-${{ matrix.scenario }}-${{ matrix.seed }}-${{ matrix.roster }}
           path: simulation.log
           if-no-files-found: ignore
