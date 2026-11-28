@@ -34,6 +34,7 @@ var selected_drop := -1
 var spell_rotated := false
 var spell_extended := false
 var spell_first := -1
+var leap_air_offset:=0.0
 var counter_index := 0
 var counter_choices: Array[Dictionary] = []
 var empower := 0
