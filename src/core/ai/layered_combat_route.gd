@@ -27,7 +27,7 @@ static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredR
 	for i in BotPreference.objective_indices(f,scores):
 		selected.append(enemies[i])
 		selected_weights.append(weights[i])
-	var route:=search(grid,reach.start,selected,selected_weights,BotPreference.route_budget(f))
+	var route:=search(grid,reach.start,selected,selected_weights,BotPreference.route_budget(f),reach)
 	var goal: Variant=route.get("goal")
 	if goal==null:
 		return false
@@ -46,7 +46,7 @@ static func lower_bound(layout: FloorLayout,n: Vector3i,enemies: Array[Figure],w
 	return best
 
 
-static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weights: Array[float],budget: int=0) -> Dictionary:
+static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weights: Array[float],budget: int=0,local: LayeredReach=null) -> Dictionary:
 	if enemies.is_empty() or not grid.open(start):
 		return {}
 	var layout:=grid.layout
@@ -66,6 +66,10 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 			if Contact.touches_position(enemies[i],layout.point(n),layout.height(n),layout.surface_id(n)):
 				weight=minf(weight,weights[i])
 		return weight
+	if local!=null:
+		var nearby:=local_goal(local,evaluate,false)
+		if not nearby.is_empty():
+			return nearby
 	return search_goal(grid,start,heuristic,evaluate,false,100.0,budget)
 
 
@@ -134,3 +138,25 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 	path.append(start)
 	path.reverse()
 	return {"goal":goal,"path":path,"cost":distances[goal],"score":best,"visited":distances.size(),"expanded":expanded,"partial":truncated and not is_finite(best)}
+
+
+## A useful objective already within the exact movement field does not
+## require a second graph search. This intentionally favors attainable
+## objectives over potentially more attractive distant ones. No budget or
+## geometry check is bypassed: the same legal reach supplies the route.
+static func local_goal(reach: LayeredReach,evaluate: Callable,allow_start: bool=false) -> Dictionary:
+	var goal: Variant=null
+	var best:=INF
+	for n: Vector3i in reach.cost:
+		if not allow_start and n==reach.start:
+			continue
+		var cost:=float(reach.cost[n])
+		if cost>=best:
+			continue
+		var score:=cost+float(evaluate.call(n))
+		if score<best:
+			best=score
+			goal=n
+	if goal==null:
+		return {}
+	return {"goal":goal,"path":reach.path_to(goal),"cost":reach.cost[goal],"score":best,"visited":reach.cost.size(),"expanded":0,"partial":false,"local":true}
