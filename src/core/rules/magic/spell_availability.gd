@@ -151,10 +151,10 @@ static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=
 	var out: Array[Vector3i]=[]
 	var s:=sa.c.state
 	var layout:=s.board.floor_geometry()
-	var origin:=BattleSpace.center(t)
 	var start:=layout.node(t.surface_id,t.pos)
 	if not layout.standable(start):
 		return out
+	var origin:=layout.world(start)
 	# The common route graph supplies safe inclines, stairs and short climbs.
 	# Allow leaving existing contact as the ordinary Suggestion rule does.
 	var grid:=LayeredGrid.new(layout,t,s.figures)
@@ -168,12 +168,12 @@ static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=
 			out.append(n)
 		if first_only and not out.is_empty():
 			return out
-	# Safe downward displacements can fall up to three inches without harm.
+	# Downward displacement is legal only when it causes no actual fall damage.
 	for n in BattlePlacement.nodes(s.board,t.pos,3.0,index):
 		if out.has(n) or not BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) or ScenarioNull.field_at(s.board,layout.point(n)):
 			continue
 		var dest:=layout.world(n)
-		if dest.y>=origin.y or origin.distance_to(dest)>3.001:
+		if dest.y>=origin.y or origin.distance_to(dest)>3.001 or LayeredFall.damage(s,t,origin.y-dest.y)>0:
 			continue
 		if not LayeredFall.clear_descent(layout,dest,origin.y):
 			continue
