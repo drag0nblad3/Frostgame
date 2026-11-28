@@ -18,7 +18,7 @@ static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredR
 			continue
 		enemies.append(enemy)
 		weights.append(maxf(0.0,float(enemy.health)*0.25+2.0*BotPreference.variation(c.state,f,enemy.id,"charge"))+(0.0 if BotTargets.can_harm(f,enemy,f.melee) else 20.0))
-	var route:=search(grid,reach.start,enemies,weights)
+	var route:=search(grid,reach.start,enemies,weights,BotPreference.route_budget(f))
 	var goal: Variant=route.get("goal")
 	if goal==null:
 		return false
@@ -37,7 +37,7 @@ static func lower_bound(layout: FloorLayout,n: Vector3i,enemies: Array[Figure],w
 	return best
 
 
-static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weights: Array[float]) -> Dictionary:
+static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weights: Array[float],budget: int=0) -> Dictionary:
 	if enemies.is_empty() or not grid.open(start):
 		return {}
 	var layout:=grid.layout
@@ -49,12 +49,12 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 			if Contact.touches_position(enemies[i],layout.point(n),layout.height(n),layout.surface_id(n)):
 				weight=minf(weight,weights[i])
 		return weight
-	return search_goal(grid,start,heuristic,evaluate)
+	return search_goal(grid,start,heuristic,evaluate,false,100.0,budget)
 
 
 ## Shared A* engine. The heuristic must be a lower bound on the remaining
 ## movement plus goal penalty. Infinite evaluation means not a goal.
-static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,allow_start: bool=false,limit: float=100.0) -> Dictionary:
+static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,allow_start: bool=false,limit: float=100.0,budget: int=0) -> Dictionary:
 	if not grid.open(start):
 		return {}
 	var heap:=MinHeap.new()
@@ -62,6 +62,10 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 	var prev: Dictionary={}
 	var best:=INF
 	var goal: Variant=null
+	var partial: Variant=null
+	var remaining:=float(heuristic.call(start))
+	var expanded:=0
+	var truncated:=false
 	heap.push(float(heuristic.call(start)),start)
 	while not heap.is_empty():
 		var item:=heap.pop()
@@ -72,6 +76,14 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 		var distance: float=distances[n]
 		if priority>distance+float(heuristic.call(n))+0.0001:
 			continue
+		if budget>0 and expanded>=budget:
+			truncated=true
+			break
+		expanded+=1
+		var estimate_remaining:=float(heuristic.call(n))
+		if n!=start and estimate_remaining<remaining-0.001:
+			remaining=estimate_remaining
+			partial=n
 		var weight:=float(evaluate.call(n))
 		if (allow_start or n!=start) and distance+weight<best:
 			best=distance+weight
@@ -90,7 +102,9 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 			prev[next]=n
 			heap.push(estimate,next)
 	if goal==null:
-		return {}
+		if not truncated or partial==null:
+			return {}
+		goal=partial
 	var path: Array[Vector3i]=[]
 	var current: Vector3i=goal
 	while current!=start:
@@ -98,4 +112,4 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 		current=prev[current]
 	path.append(start)
 	path.reverse()
-	return {"goal":goal,"path":path,"cost":distances[goal],"score":best,"visited":distances.size()}
+	return {"goal":goal,"path":path,"cost":distances[goal],"score":best,"visited":distances.size(),"expanded":expanded,"partial":truncated and not is_finite(best)}
