@@ -62,6 +62,7 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 		targets.append({"figure":t,"enemies":enemies,"urgency":urgency*BotPreference.appeal(s,f,t.id,"leap_target")})
 	targets.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["urgency"]>b["urgency"])
 	var probability:=MagicTactics.probability(c,f,"leap")
+	var exits:=_leap_exit_segments(s,layout,f.side)
 	for i in mini(3,targets.size()):
 		var t: Figure=targets[i]["figure"]
 		if not LayeredLeap.eligible(c,t):
@@ -70,7 +71,7 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 		var limit:=5.0 if t.treasure_id>=0 else 10.0
 		var enemies: PackedVector3Array=targets[i]["enemies"]
 		var threat:=_leap_threat(enemies,origin)
-		var edge:=TreasureRules.edge_distance(s.board,t.pos)
+		var edge:=_leap_exit_distance(exits,origin)
 		var candidates: Array[Dictionary]=[]
 		# Sample a coarse one-inch lattice before scoring, rather than
 		# solving every half-inch trajectory.
@@ -82,8 +83,8 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 			if distance>limit+0.001 or distance<2.0:
 				continue
 			var score:=maxf(0.0,minf(8.0,_leap_threat(enemies,at))-minf(8.0,threat))*(0.65+0.55*BotPreference.trait_value(f,"caution"))
-			if t.treasure_id>=0 and t.control_spell!="mind_control":
-				score+=maxf(0.0,edge-TreasureRules.edge_distance(s.board,layout.point(n)))*(0.9+0.6*BotPreference.trait_value(f,"greed"))
+			if t.treasure_id>=0 and t.control_spell!="mind_control" and is_finite(edge):
+				score+=maxf(0.0,edge-_leap_exit_distance(exits,at))*(0.9+0.6*BotPreference.trait_value(f,"greed"))
 			if t!=f and not t.activated:
 				score-=1.5
 			score*=probability*BotPreference.appeal(s,f,hash(n),"leap_landing")
@@ -101,6 +102,57 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 			best_value=float(choice["score"])
 			best={"spell":"leap","target":t.id,"node":n,"score":best_value}
 			break
+	return best
+
+
+## Compress contiguous legal edge nodes into short 3D segments. This uses
+## the scenario's actual exit predicate and extraction floors rather than
+## rewarding movement towards a sealed wall or a forbidden side.
+static func _leap_exit_segments(s: GameState,layout: FloorLayout,side: int) -> Array[PackedVector3Array]:
+	var out: Array[PackedVector3Array]=[]
+	if RealityCracks.id(s)==12:
+		var center:=s.board.size*0.5
+		for n: Vector3i in layout.nodes_at(center):
+			if layout.standable(n):
+				var point:=layout.world(n)
+				out.append(PackedVector3Array([point,point]))
+		return out
+	if RealityCracks.blocks_exit(s) or RedKingRingworld.active(s) or RedKingMind.active(s):
+		return out
+	var allowed: Array=s.board.floor_layout.get("exit_surfaces",["street"])
+	var margin:=Figure.BASE_RADIUS
+	var low:=ceili(margin/MoveGrid.STEP)
+	var high:=Vector2i(floori((s.board.size.x-margin)/MoveGrid.STEP),floori((s.board.size.y-margin)/MoveGrid.STEP))
+	for index in layout.surfaces.size():
+		if not allowed.has(layout.surfaces[index].id):
+			continue
+		for edge in 4:
+			var horizontal:=edge<2
+			var fixed:=low if edge%2==0 else (high.y if horizontal else high.x)
+			var run:=PackedVector3Array()
+			for step in range(low,(high.x if horizontal else high.y)+1):
+				var n:=Vector3i(step,fixed,index) if horizontal else Vector3i(fixed,step,index)
+				if not LayeredLoot.is_exit(s,layout,n,side) or s.board.over_void(layout.point(n),Figure.BASE_RADIUS):
+					if not run.is_empty():
+						out.append(PackedVector3Array([run[0],run[-1]]))
+						run.clear()
+					continue
+				var at:=layout.world(n)
+				if not run.is_empty() and not is_equal_approx(at.y,run[-1].y):
+					out.append(PackedVector3Array([run[0],run[-1]]))
+					run.clear()
+				run.append(at)
+			if not run.is_empty():
+				out.append(PackedVector3Array([run[0],run[-1]]))
+	return out
+
+
+static func _leap_exit_distance(exits: Array[PackedVector3Array],at: Vector3) -> float:
+	var best:=INF
+	for segment in exits:
+		var delta:=segment[1]-segment[0]
+		var ratio:=clampf((at-segment[0]).dot(delta)/delta.length_squared(),0.0,1.0) if not delta.is_zero_approx() else 0.0
+		best=minf(best,at.distance_to(segment[0]+delta*ratio))
 	return best
 
 
