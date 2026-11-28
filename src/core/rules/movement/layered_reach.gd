@@ -5,9 +5,10 @@ var start: Vector3i
 var cost := {}
 var prev := {}
 var air_paths: Dictionary={}
+var truncated:=false
 
 
-static func search(grid: LayeredGrid,from: Vector3i,allowance: float,leave_contact: bool=false) -> LayeredReach:
+static func search(grid: LayeredGrid,from: Vector3i,allowance: float,leave_contact: bool=false,max_expansions: int=0) -> LayeredReach:
 	var r := LayeredReach.new()
 	r.start=from
 	if not grid.open(from):
@@ -15,7 +16,7 @@ static func search(grid: LayeredGrid,from: Vector3i,allowance: float,leave_conta
 	r.cost[from]=0.0
 	var heap := MinHeap.new()
 	heap.push(0.0,from)
-	RouteSearch.expand(null,grid,heap,r.cost,r.prev,allowance,true,from if leave_contact else null,true)
+	r.truncated=RouteSearch.expand(null,grid,heap,r.cost,r.prev,allowance,true,from if leave_contact else null,true,0,false,max_expansions)
 	if grid.board!=null and not grid.board.boundaries.is_empty():
 		for n: Vector3i in r.cost.keys():
 			if n!=from and BattleBoundary.blocks_end(grid.board.boundaries,grid.layout.point(n)):
