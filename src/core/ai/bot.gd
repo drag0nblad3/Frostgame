@@ -37,8 +37,10 @@ static func _budgeted_resume(c: GameController) -> bool:
 	c.ai_work={"remaining":allowance,"initial":allowance}
 	var result:=_resume(c)
 	if c.ai_profile_enabled:
-		c.ai_profile["planning_units_used"]=int(c.ai_work.get("initial",0))-int(c.ai_work["remaining"])
-		c.ai_profile["planning_units_remaining"]=int(c.ai_work["remaining"])
+		c.ai_profile["count_planning_units_used"]=int(c.ai_work.get("initial",0))-int(c.ai_work["remaining"])
+		c.ai_profile["count_planning_units_remaining"]=int(c.ai_work["remaining"])
+		for key: String in ["local_goals","route_reuses"]:
+			c.ai_profile["count_"+key]=int(c.ai_work.get(key,0))
 	c.ai_work={}
 	return result
 
