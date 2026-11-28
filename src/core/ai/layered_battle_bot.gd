@@ -116,10 +116,10 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 	var center_escape:=f.side>=0 and RealityCracks.id(c.state)==12
 	var safe_route:=RedKingVeil.active(c.state) or RedKingHerded.active(c.state)
 	if extracting:
-		var exits := c.floor_exit_nodes()
+		var exits := LayeredLoot.exit_nodes(c,reach)
 		for n in exits:
 			if not safe_route or _safe_path(c,layout,reach.path_to(n)):
-				return c.exit_on_floor(n)
+				return BattleRecord.run(c,"exit_on_floor",{"node":n},func() -> bool:return LayeredLoot.exit(c,n,reach))
 	var quarry: Figure=null
 	if f.side<0:
 		quarry=PackRules.pursuit(c.state,f)
