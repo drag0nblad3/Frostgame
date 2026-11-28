@@ -301,6 +301,9 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 			return
 	elif spend:
 		c.spend_move(f)
+	if not f.in_play() or c.awaiting_reaction() or (not was_wounded and f.wounded()):
+		c.finish_movement(f,engaged,f.in_play())
+		return
 	var dest: Vector3=plan["path"][-1]
 	var at:=Vector2(dest.x,dest.z)
 	# A run-up can reveal a creature or alter terrain. Recheck the landing
@@ -308,7 +311,13 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 	var layout:=c.state.board.floor_geometry()
 	var landing:=layout.node(str(plan["surface"]),at)
 	var grid:=LayeredGrid.new(layout,f,c.state.figures)
-	if not grid.open(landing) or not is_equal_approx(layout.height(landing),dest.y):
+	var arc_check: PackedVector3Array=plan.get("arc",plan["path"])
+	var clear:=true
+	for point in arc_check:
+		if not layout.clearance(point,Figure.BASE_RADIUS,1.6):
+			clear=false
+			break
+	if not clear or not grid.open(landing) or not is_equal_approx(layout.height(landing),dest.y):
 		c.finish_movement(f,engaged,f.in_play())
 		return
 	if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
