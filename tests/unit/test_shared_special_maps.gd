@@ -51,3 +51,31 @@ func test_museum_statue_replaced_by_construct_on_real_support() -> void:
 	for p in s.board.pieces:
 		if p.kind.id=="museum_statue":
 			check(p.rect.get_center().distance_to(construct.pos)>1.0)
+
+
+func test_mausoleum_corner_tokens_and_reinforcements_use_street() -> void:
+	var s:=ScenarioLoader.load_id("mausoleum",db(),terrain())
+	check(not s.scenario_data.has("support_errors"),str(s.scenario_data.get("support_errors",[])))
+	var l:=s.board.floor_geometry()
+	check(l.errors.is_empty(),str(l.errors))
+	for t in s.treasures:
+		check(not t.central)
+		check_eq(t.surface_id,"street")
+		check_eq(TreasureRules.token_height(s,t),0.0)
+	for f in s.figures:
+		check(l.standable(l.node(f.surface_id,f.pos)))
+	var c:=GameController.new(s,LoadedDice.new([1]))
+	var count:=s.figures.size()
+	c._encounters.on_end_turn()
+	check_eq(s.figures.size(),count+1)
+	if s.figures.size()>count:
+		check_eq(s.figures[-1].surface_id,"street")
+
+func test_remaining_named_scenarios_have_shared_geometry() -> void:
+	for id in ["haunted_houses","the_keep","mausoleum"]:
+		var s:=ScenarioLoader.load_id(id,db(),terrain())
+		check(not s.board.floor_layout.is_empty(),id)
+		check(s.board.floor_geometry().errors.is_empty(),id)
+		check(not s.scenario_data.has("support_errors"),id+":"+str(s.scenario_data.get("support_errors",[])))
+		for t in s.treasures:
+			check_eq(t.surface_id,"street")

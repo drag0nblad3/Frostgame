@@ -182,6 +182,16 @@ static func assign_token_support(s: GameState,t: TreasureToken,id: String="") ->
 		return
 	var support:=BattlePlacement.authored_token_surface(s,t.pos,id)
 	if support.is_empty():
+		# Mausoleum corner tokens intentionally touch the masonry (core p.142).
+		# Their circular footprint may overlap our conservative square proxy.
+		if s.board.id=="mausoleum" and t.id<4 and (id.is_empty() or id=="street"):
+			for p in s.board.pieces:
+				if p.kind.id!="ruin" or not p.rect.has_point(s.board.size*0.5) or p.rect.has_point(t.pos):
+					continue
+				for corner: Vector2 in [p.rect.position,p.rect.end,Vector2(p.rect.position.x,p.rect.end.y),Vector2(p.rect.end.x,p.rect.position.y)]:
+					if corner.distance_to(t.pos)<=TreasureRules.TOKEN_RADIUS+0.001:
+						t.surface_id="street"
+						return
 		# Frozen temple treasures are intentionally inside their guardian column.
 		if t.frozen and s.scenario_special=="complex_temple":
 			for p in s.board.pieces:
