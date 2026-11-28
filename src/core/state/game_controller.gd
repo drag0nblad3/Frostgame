@@ -13,6 +13,9 @@ var recording_command := false
 ## Optional diagnostic timers; never used to choose game actions.
 var ai_profile_enabled:=false
 var ai_profile: Dictionary={}
+## Shared optional-search work allowance for a bot decision session.
+## Empty outside bot play; never affects player legality or exact reach.
+var ai_work: Dictionary={}
 
 func ai_begin() -> int:
 	return Time.get_ticks_usec() if ai_profile_enabled else 0
