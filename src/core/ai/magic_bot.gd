@@ -62,7 +62,9 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 		targets.append({"figure":t,"enemies":enemies,"urgency":urgency*BotPreference.appeal(s,f,t.id,"leap_target")})
 	targets.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["urgency"]>b["urgency"])
 	var probability:=MagicTactics.probability(c,f,"leap")
-	var exits:=_leap_exit_segments(s,layout,f.side)
+	var exits: Array[PackedVector3Array]=[]
+	if targets.any(func(entry: Dictionary) -> bool:return entry["figure"].treasure_id>=0 and entry["figure"].control_spell!="mind_control"):
+		exits=_leap_exit_segments(s,layout,f.side)
 	for i in mini(3,targets.size()):
 		var t: Figure=targets[i]["figure"]
 		if not LayeredLeap.eligible(c,t):
