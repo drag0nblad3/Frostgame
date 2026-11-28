@@ -124,11 +124,16 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	var mode:=""
 	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,s.figures)
 	grid.memoize_edges=true
+	grid.ai_work=c.ai_work
 	for kind: String in ["jump","drop_down"]:
 		if kind=="drop_down" and flat_street:
 			continue
 		var budget:=BotPreference.aerial_budget(f)
+		if not grid.spend_ai_work(100+budget*20):
+			break
+		var started:=c.ai_begin()
 		var plans:=LayeredJump.plans(c,true,true,grid,false,distance,budget) if kind=="jump" else LayeredDrop.plans(c,true,grid,reach,false,distance,budget)
+		c.ai_end("aerial_"+kind,started)
 		# Rank cheap geometry first, then sample a bounded shortlist; do not
 		# lose every useful landing merely because a floor has many cells.
 		var shortlist: Array[Dictionary]=[]
@@ -158,13 +163,15 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 		return false
 	# The full validator can find a cheaper route omitted by the shortlist.
 	# Inspect that actual route before committing, particularly for carriers.
-	var validated:=c.movement_options(mode)
-	if not validated.jumps.has(best):
+	var started:=c.ai_begin()
+	var validated:=LayeredJump.plans(c,true,true,grid) if mode=="jump" else LayeredDrop.plans(c,true,grid,reach)
+	c.ai_end("aerial_canonical",started)
+	if not validated.has(best):
 		return false
-	var damage:=aerial_damage(s,f,validated.jumps[best])
+	var damage:=aerial_damage(s,f,validated[best])
 	if damage>=f.health or (damage>0 and (f.treasure_id>=0 or f.side<0)):
 		return false
-	return BattleRecord.run(c,"movement",{"mode":mode,"node":best},func() -> bool:return LayeredMovement.declare_aerial(c,best,validated.jumps[best]))
+	return BattleRecord.run(c,"movement",{"mode":mode,"node":best},func() -> bool:return LayeredMovement.declare_aerial(c,best,validated[best]))
 
 
 static func aerial_damage(s: GameState,f: Figure,plan: Dictionary) -> int:
