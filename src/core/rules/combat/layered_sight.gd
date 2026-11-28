@@ -8,6 +8,9 @@ static func clear(layout: FloorLayout,a: Vector3,b: Vector3) -> bool:
 	for solid in layout.solids:
 		if intersects(a,b,solid):
 			return false
+	for prism in layout.convex_solids:
+		if prism.intersects_ray(a,b):
+			return false
 	return true
 
 

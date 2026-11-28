@@ -55,6 +55,24 @@ static func expand(source: Dictionary) -> Dictionary:
 			TerrainAssembly.rotate_piece(rect_piece,turns)
 			var rect := translate_rect(rect_piece["rect"],offset)
 			append(result,"solids",[rect[0],float(solid[1])+lift,rect[1],rect[2],solid[4],rect[3]])
+		# Convex profiles are transformed directly, without rectangular approximation.
+		for entry: Dictionary in kit.get("convex_solids",[]):
+			var profile: Array=entry.get("profile",[])
+			var extrusion: Array=entry.get("extrusion",[])
+			if profile.size()<3 or extrusion.size()!=3:
+				errors.append("Malformed convex profile in "+key)
+				continue
+			var transformed: Array=[]
+			for vertex in profile:
+				if not vertex is Array or vertex.size()!=3:
+					break
+				var p:=Vector2(vertex[0],vertex[2]).rotated(float(turns)*PI*0.5)
+				transformed.append([p.x+offset.x,float(vertex[1])+lift,p.y+offset.y])
+			if transformed.size()!=profile.size():
+				errors.append("Malformed convex vertex in "+key)
+				continue
+			var ex:=Vector2(extrusion[0],extrusion[2]).rotated(float(turns)*PI*0.5)
+			append(result,"convex_solids",{"profile":transformed,"extrusion":[ex.x,extrusion[1],ex.y]})
 		for field in ["links","climbs"]:
 			for entry: Dictionary in kit.get(field,[]):
 				if entry.get("from",[]).size()!=3 or entry.get("to",[]).size()!=3:

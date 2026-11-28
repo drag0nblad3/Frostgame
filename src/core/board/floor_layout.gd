@@ -3,6 +3,7 @@ extends RefCounted
 ## Opt-in layered geometry. Indices are ephemeral; authored IDs survive checkpoints.
 var surfaces: Array[FloorSurface] = []
 var solids: Array[AABB] = []
+var convex_solids: Array[ArchitecturePrism] = []
 ## These volumes are rendered by their corresponding TerrainPiece.
 var magic_solids: Array[AABB]=[]
 var links: Dictionary = {}
@@ -24,6 +25,12 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 			layout.errors.append("Invalid solid volume")
 			continue
 		layout.solids.append(AABB(Vector3(entry[0],entry[1],entry[2]),Vector3(entry[3],entry[4],entry[5])))
+	for entry: Dictionary in d.get("convex_solids",[]):
+		var prism:=ArchitecturePrism.from_dict(entry)
+		if not prism.valid:
+			layout.errors.append("Invalid convex architecture profile")
+			continue
+		layout.convex_solids.append(prism)
 	for entry: Dictionary in d.get("links",[]):
 		layout._add_link(entry)
 	for entry: Dictionary in d.get("climbs",[]):
@@ -85,6 +92,9 @@ func clearance(at: Vector3,radius: float,body: float) -> bool:
 	var box := AABB(at+Vector3(-radius,0.002,-radius),Vector3(radius*2.0,body,radius*2.0))
 	for solid in solids:
 		if solid.intersects(box):
+			return false
+	for prism in convex_solids:
+		if prism.overlaps(box):
 			return false
 	return true
 

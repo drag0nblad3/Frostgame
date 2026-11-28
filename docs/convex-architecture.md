@@ -1,0 +1,5 @@
+# Convex architecture
+
+Floor kits and direct floor layouts accept `convex_solids` entries with an ordered convex planar `profile` (3D [x,y,z] vertices) and an `extrusion` vector. Each prism computes exact convex-plane segment clipping and separating-axis overlap with the existing figure clearance box. The same faces build its rendered mesh. Quarter-turn assembly transforms and height offsets are supported. Arbitrary angles are authored directly in profile coordinates; mixed kits still use quarter-turn placement to preserve lattice-linked floors.
+
+Silent Tower demonstrates an open octagonal ruin with varying wall heights, a twelve-segment masonry arch, diagonal wall remnants and sloping roof fragments over broken galleries. Rectangular walkable floor surfaces and ordinary wall/terrain spells are unchanged. Convex static volumes are not independently spell-targetable yet; curved playable surfaces, dynamic support destruction and arbitrary rotations of linked floor assemblies require further work.

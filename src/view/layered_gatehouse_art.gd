@@ -45,6 +45,18 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 			BattlefieldDetail.wall_relief(relief,Rect2(solid.position.x,solid.position.z,solid.size.x,solid.size.z),solid.size.y,scenario)
 			if roof:
 				upper_nodes.append(relief)
+	for prism in layout.convex_solids:
+		var node:=MeshInstance3D.new()
+		node.mesh=prism.mesh()
+		var stone:=StoneFinish.material(Color("75858d"),false,false,Vector2(prism.bounds.position.x,prism.bounds.position.z))
+		stone.set_shader_parameter("building_height",prism.bounds.end.y)
+		stone.set_shader_parameter("footprint_size",Vector2(prism.bounds.size.x,prism.bounds.size.z))
+		stone.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
+		node.material_override=stone
+		add_child(node)
+		node.set_meta("cut_height",prism.bounds.position.y+0.12)
+		if prism.bounds.position.y>=2.5:
+			upper_nodes.append(node)
 	# Wall volumes get narrow masonry courses (visual only).
 	for solid in layout.solids:
 		if layout.magic_solids.has(solid):
