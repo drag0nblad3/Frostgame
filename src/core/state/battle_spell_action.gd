@@ -23,6 +23,8 @@ static func _apply(c: GameController,key: String,args: Dictionary) -> bool:
 		elif not at is Vector2:
 			return false
 	match key:
+		"leap_air":
+			return layered and at is Vector3 and LayeredLeap.start_air(c,c.state.figure(target),at)
 		"place":
 			return c._magic.start_floor_at(id,at,rotated) if layered else c._magic.start_at(id,at,rotated,bool(args.get("extended",false)))
 		"move":
