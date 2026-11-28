@@ -539,7 +539,7 @@ static func chain_aerial(c: GameController,base: Dictionary,shared_grid: Layered
 		var remaining:=allowance-paid
 		if remaining<0.501 or bool(first.get("end_activation",false)) or grid.stops(landing) or fall_interrupts(c,f,first):
 			continue
-		var second:=LayeredJump.from_position(c,layout,grid,landing,remaining)
+		var second:=LayeredJump.from_position(c,layout,grid,landing,remaining,true,false,rank,budget)
 		var drops:=LayeredDrop.from_position(c,layout,grid,landing,remaining,true,false,null,false,rank,budget)
 		for target: Vector3i in drops:
 			if not second.has(target) or float(drops[target]["cost"])<float(second[target]["cost"]):
