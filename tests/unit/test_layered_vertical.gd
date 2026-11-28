@@ -329,3 +329,56 @@ func test_interception_on_drop_approach_prevents_fall() -> void:
 	check_eq(f.moves_taken,1)
 	check_eq(f.actions_left,1)
 	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_generated_oblique_jump() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,4,6],"level":3},{"id":"east","rect":[5,0,6,6],"level":3}]}
+	var f:=fig("thug",0,Vector2(1.5,1))
+	f.surface_id="west"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var layout:=b.floor_geometry()
+	var target:=layout.node("east",Vector2(5.5,3))
+	var options:=LayeredJump.plans(c,true)
+	check(options.has(target))
+	if not options.has(target):
+		return
+	check(absf(float(options[target]["cost"])-sqrt(20.0))<0.001)
+	check(c.jump_on_floor(target))
+	check_eq(f.pos,Vector2(5.5,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+
+
+func test_weighted_landing_search_matches_independent_reach() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	f.pos=Vector2(12.5,10)
+	var layout:=c.state.board.floor_geometry()
+	var base:=LayeredDrop.plans(c)
+	check(base.size()>1)
+	var allowance:=MoveRules.allowance(f)
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var expected: Dictionary={}
+	var origin:=layout.node(f.surface_id,f.pos)
+	for landing: Vector3i in base:
+		var paid:=float(base[landing]["cost"])
+		expected[landing]=minf(paid,float(expected.get(landing,INF)))
+		var remaining:=allowance-paid
+		if remaining<MoveGrid.STEP-0.001 or bool(base[landing]["end_activation"]) or grid.stops(landing):
+			continue
+		var reach:=LayeredReach.search(grid,landing,remaining)
+		for n: Vector3i in reach.cost:
+			if n!=origin:
+				expected[n]=minf(paid+float(reach.cost[n]),float(expected.get(n,INF)))
+	var actual:=LayeredMovement.extend_aerial(c,base)
+	check_eq(actual.size(),expected.size())
+	for n: Vector3i in expected:
+		check(actual.has(n))
+		if actual.has(n):
+			check(absf(float(actual[n]["cost"])-float(expected[n]))<0.001)
+			var preview: PackedVector3Array=actual[n].get("preview",actual[n]["path"])
+			check_eq(preview[-1],layout.world(n))
