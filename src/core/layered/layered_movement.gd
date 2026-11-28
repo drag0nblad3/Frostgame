@@ -370,6 +370,21 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 			c.end_activation()
 
 
+## A known fall that kills or newly wounds a figure ends its movement.
+## Do not preview a follow-through that execution will necessarily stop.
+static func fall_interrupts(c: GameController,f: Figure,plan: Dictionary) -> bool:
+	var health:=f.health
+	var leg:=plan
+	var can_wound:=c.state.wounded_rules and not f.wounded() and not f.is_undead() and not f.def.traits.has("construct")
+	var threshold:=2 if MagicEquipment.bonus(f,"vigour")>0 else 4
+	while not leg.is_empty():
+		health-=LayeredFall.damage(c.state,f,float(leg.get("fall",0.0)))
+		if health<=0 or (can_wound and health<f.def.health and health<=threshold):
+			return true
+		leg=leg.get("next",{})
+	return false
+
+
 ## Expand only explicit jump/drop choices, never the ordinary move or AI
 ## distance search. Each candidate keeps the full route and one action cost.
 static func extend_aerial(c: GameController,base: Dictionary,shared_grid: LayeredGrid=null) -> Dictionary:
@@ -389,7 +404,7 @@ static func extend_aerial(c: GameController,base: Dictionary,shared_grid: Layere
 	for landing: Vector3i in base:
 		var plan: Dictionary=base[landing]
 		var paid:=float(plan["cost"])
-		if allowance-paid<MoveGrid.STEP-0.001 or bool(plan.get("end_activation",false)) or grid.stops(landing):
+		if allowance-paid<MoveGrid.STEP-0.001 or bool(plan.get("end_activation",false)) or grid.stops(landing) or fall_interrupts(c,f,plan):
 			continue
 		cost[landing]=paid
 		heap.push(paid,landing)
@@ -498,7 +513,7 @@ static func chain_aerial(c: GameController,base: Dictionary,shared_grid: Layered
 		var first: Dictionary=base[landing]
 		var paid:=float(first["cost"])
 		var remaining:=allowance-paid
-		if remaining<0.501 or bool(first.get("end_activation",false)) or grid.stops(landing):
+		if remaining<0.501 or bool(first.get("end_activation",false)) or grid.stops(landing) or fall_interrupts(c,f,first):
 			continue
 		var second:=LayeredJump.from_position(c,layout,grid,landing,remaining)
 		var drops:=LayeredDrop.from_position(c,layout,grid,landing,remaining,true)
