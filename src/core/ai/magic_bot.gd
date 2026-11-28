@@ -75,24 +75,46 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 		var threat:=_leap_threat(enemies,origin)
 		var edge:=_leap_exit_distance(exits,origin)
 		var candidates: Array[Dictionary]=[]
-		# Sample a coarse one-inch lattice before scoring, rather than
-		# solving every half-inch trajectory.
+		var air_candidates: Array[Dictionary]=[]
+		var caution:=BotPreference.trait_value(f,"caution")
+		var greed:=BotPreference.trait_value(f,"greed")
+		# Rank the eventual landing; airborne options can reach lower floors
+		# beyond the direct 3D spell range. The fall itself is not spell travel.
 		for n in BattlePlacement.nodes(s.board,t.pos,limit):
 			if posmod(n.x,2)!=0 or posmod(n.y,2)!=0 or layout.surface_id(n).begins_with("climb:"):
 				continue
 			var at:=layout.world(n)
-			var distance:=origin.distance_to(at)
-			if distance>limit+0.001 or distance<2.0:
+			var horizontal:=t.pos.distance_to(layout.point(n))
+			if horizontal>limit+0.001 or origin.distance_to(at)<2.0:
 				continue
-			var score:=maxf(0.0,minf(8.0,_leap_threat(enemies,at))-minf(8.0,threat))*(0.65+0.55*BotPreference.trait_value(f,"caution"))
+			var score:=maxf(0.0,minf(8.0,_leap_threat(enemies,at))-minf(8.0,threat))*(0.65+0.55*caution)
 			if t.treasure_id>=0 and t.control_spell!="mind_control" and is_finite(edge):
-				score+=maxf(0.0,edge-_leap_exit_distance(exits,at))*(0.9+0.6*BotPreference.trait_value(f,"greed"))
+				score+=maxf(0.0,edge-_leap_exit_distance(exits,at))*(0.9+0.6*greed)
 			if t!=f and not t.activated:
 				score-=1.5
-			score*=probability*BotPreference.appeal(s,f,hash(n),"leap_landing")
-			if score>best_value:
-				candidates.append({"node":n,"score":score})
+			var appeal:=BotPreference.appeal(s,f,hash(n),"leap_landing")
+			var direct_score:=score*probability*appeal
+			if direct_score<=best_value:
+				continue
+			if origin.distance_to(at)<=limit+0.001:
+				candidates.append({"node":n,"score":direct_score})
+			if at.y>=origin.y-0.5:
+				continue
+			# A minimal lift above the destination keeps fall damage low;
+			# one higher endpoint can clear a ledge if the shallow arc cannot.
+			var minimum:=maxf(0.5,ceilf((origin.y-at.y-sqrt(maxf(0.0,limit*limit-horizontal*horizontal)))*2.0)*0.5)
+			for offset: float in [minimum,maxf(minimum,origin.y-at.y)]:
+				var endpoint:=at+Vector3.UP*offset
+				if origin.distance_to(endpoint)>limit+0.001:
+					continue
+				var damage:=LayeredFall.damage(s,t,offset)
+				if damage>=t.health or (damage>0 and t.treasure_id>=0):
+					continue
+				var value: float=(score-0.35-float(damage)*(1.25+1.75*caution))*probability*appeal
+				if value>best_value and (air_candidates.is_empty() or air_candidates[-1].get("endpoint")!=endpoint):
+					air_candidates.append({"node":n,"endpoint":endpoint,"score":value})
 		candidates.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["score"]>b["score"])
+		air_candidates.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["score"]>b["score"])
 		var grid:=LayeredGrid.new(layout,t,s.figures)
 		for j in mini(12,candidates.size()):
 			var choice:=candidates[j]
@@ -104,6 +126,22 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 			best_value=float(choice["score"])
 			best={"spell":"leap","target":t.id,"node":n,"score":best_value}
 			break
+		# Independently bound airborne checks. A safe direct landing wins a
+		# tie, and the actual first support must match the scored destination.
+		for j in mini(8,air_candidates.size()):
+			var choice:=air_candidates[j]
+			if float(choice["score"])<=best_value:
+				break
+			var n: Vector3i=choice["node"]
+			if RedKingVeil.lethal(s,t.pos,layout.point(n)) or (RedKingHerded.active(s) and minf(t.pos.y,layout.point(n).y)<=float(s.scenario_data.get("herd_veil",0.0))+Figure.BASE_RADIUS):
+				continue
+			var air:=LayeredLeap.air_plan(c,t,choice["endpoint"],layout,grid)
+			if air.is_empty() or air["node"]!=n:
+				continue
+			best_value=float(choice["score"])
+			best={"spell":"leap","target":t.id,"node":n,"air_endpoint":choice["endpoint"],"score":best_value}
+			break
+
 	return best
 
 
@@ -183,7 +221,7 @@ static func play(c: GameController, f: Figure) -> bool:
 	if c.state.spellbooks.get(f.side, {}).has(id) and int(c.state.spellbooks[f.side][id]) >= 10 and f.next_cast_gear == "":
 		if not BattleEquipmentAction.execute(c,"arm",{"id":"gear_gloves_casting"}):
 			BattleEquipmentAction.execute(c,"arm",{"id":"gear_wand_light"})
-	var declared := BattleSpellAction.execute(c,"move",{"spell":id,"target":chosen["target"],"at":chosen["node"]}) if id=="leap" else BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["node"]}) if chosen.has("node") else (BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["at"]}) if chosen.has("at") else BattleAction.execute(c,"cast",chosen["target"],id))
+	var declared := BattleSpellAction.execute(c,"leap_air",{"spell":id,"target":chosen["target"],"at":chosen["air_endpoint"]}) if chosen.has("air_endpoint") else BattleSpellAction.execute(c,"move",{"spell":id,"target":chosen["target"],"at":chosen["node"]}) if id=="leap" else BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["node"]}) if chosen.has("node") else (BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["at"]}) if chosen.has("at") else BattleAction.execute(c,"cast",chosen["target"],id))
 	if not declared:
 		return false
 	if not c.awaiting_reaction():
