@@ -63,7 +63,7 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 				valid=false
 				break
 			for other in grid.others:
-				if absf(other.elevation-h)<0.5 and (other.pos.distance_to(p)<Contact.OVERLAP or (other.side!=f.side and Contact.touching(other.pos,p) and not (leave_contact and i==0))):
+				if absf(other.elevation-h)<0.5 and (other.pos.distance_to(p)<Contact.OVERLAP or (other.side!=f.side and Contact.touching(other.pos,p) and not (leave_contact and Contact.touches_position(other,layout.point(start),layout.height(start),layout.surface_id(start)) and other.pos.distance_to(p)>=other.pos.distance_to(layout.point(start))-0.001))):
 					valid=false
 					break
 			if not valid:
