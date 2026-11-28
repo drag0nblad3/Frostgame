@@ -126,8 +126,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for entry: Dictionary in d.get("creatures", []):
 		var at: Array = entry["at"]
 		var creature := Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed())
-		assign_support(s,creature,str(entry.get("surface",at[2] if at.size()>2 else "")))
 		creature.ring_side=int(entry.get("ring_side",0))
+		assign_support(s,creature,str(entry.get("surface",at[2] if at.size()>2 else "")))
 		s.figures.append(creature)
 		next_id += 1
 	for at: Array in d.get("treasures", []):
@@ -173,7 +173,7 @@ static func assign_support(s: GameState,f: Figure,id: String="") -> void:
 	if s.board.floor_layout.is_empty():
 		f.elevation=s.board.height_at(f.pos)
 		return
-	var n: Variant=BattlePlacement.support(s,f.pos,id)
+	var n: Variant=BattlePlacement.support(s,f.pos,id,Figure.BASE_RADIUS,1.6,true,f.ring_side)
 	if n==null:
 		_report_support_error(s,f.label(),f.pos,id)
 		return

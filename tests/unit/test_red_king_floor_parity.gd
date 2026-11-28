@@ -76,7 +76,7 @@ func test_ground_spawn_cannot_select_roof() -> void:
 func test_first_expansion_maps_adopt_shared_floor_graph() -> void:
 	var profile:=ContentProfile.new(["red_king"])
 	var defs:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
-	for id: String in ["red_king_investigations","red_king_squatter","red_king_demons_and_mad_man","red_king_veil","red_king_herded","red_king_mind","red_king_hill"]:
+	for id: String in ["red_king_investigations","red_king_squatter","red_king_demons_and_mad_man","red_king_veil","red_king_herded","red_king_mind","red_king_hill","red_king_back_into_fire","red_king_sinkhole","red_king_tethers","red_king_bridge","red_king_ringworld"]:
 		var s:=ScenarioLoader.load_id(id,defs,terrain())
 		check(not s.board.floor_layout.is_empty(),id)
 		var l:=s.board.floor_geometry()
@@ -104,3 +104,18 @@ func test_round_obstacle_clearance_and_sight() -> void:
 	check(not LayeredSight.clear(l,Vector3(15,1,18),Vector3(21,1,18)))
 	check(LayeredSight.clear(l,Vector3(15,4,18),Vector3(21,4,18)))
 	check(LayeredSight.clear(l,Vector3(19.4,1,19.4),Vector3(21,1,21)))
+
+
+func test_bridge_and_ringworld_shared_routes() -> void:
+	var profile:=ContentProfile.new(["red_king"])
+	var defs:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	var s:=ScenarioLoader.load_id("red_king_bridge",defs,terrain())
+	var c:=GameController.new(s,Dice.new(17))
+	var f:=s.figures[0]
+	var l:=s.board.floor_geometry()
+	var g:=LayeredGrid.new(l,f,s.figures)
+	check(not g.open(l.node("street",Vector2(5,33))))
+	check(g.open(l.node("street",Vector2(15,35))))
+	s=ScenarioLoader.load_id("red_king_ringworld",defs,terrain())
+	l=s.board.floor_geometry()
+	check(BoardTopology.floor_destinations(s.board,l,l.node("street",Vector2(10,0.5))).has(l.node("street",Vector2(10,35.5))))

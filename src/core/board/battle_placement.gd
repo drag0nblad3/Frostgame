@@ -62,7 +62,7 @@ static func teleports(s: GameState,f: Figure,limit: float=24.0,index: int=-1,fir
 
 ## Authored and edge-spawn positions default to their lowest legal support.
 ## Explicit surface IDs must resolve without silently selecting another deck.
-static func support(s: GameState,at: Vector2,id: String="",radius: float=Figure.BASE_RADIUS,body: float=1.6,check_figures: bool=true) -> Variant:
+static func support(s: GameState,at: Vector2,id: String="",radius: float=Figure.BASE_RADIUS,body: float=1.6,check_figures: bool=true,ring_side: int=-1) -> Variant:
 	var layout:=s.board.floor_geometry()
 	# Deployment and scenario placement most often request a known floor.
 	# Resolve its index directly instead of scanning all hanging positions.
@@ -70,7 +70,7 @@ static func support(s: GameState,at: Vector2,id: String="",radius: float=Figure.
 		var n:=layout.node(id,at)
 		if n.z<0 or id.begins_with("climb:") or not layout.point(n).is_equal_approx(at) or not layout.standable(n,radius,body) or s.board.over_void(at,radius):
 			return null
-		if check_figures and not floor_open(s,n,null,radius,body):
+		if check_figures and not floor_open(s,n,null,radius,body,true,null,ring_side):
 			return null
 		return n
 	var best: Variant=null
@@ -81,7 +81,7 @@ static func support(s: GameState,at: Vector2,id: String="",radius: float=Figure.
 		var n:=layout.node(surface.id,at)
 		if not layout.point(n).is_equal_approx(at) or not layout.standable(n,radius,body) or s.board.over_void(at,radius):
 			continue
-		if check_figures and not floor_open(s,n,null,radius,body):
+		if check_figures and not floor_open(s,n,null,radius,body,true,null,ring_side):
 			continue
 		var h:=layout.height(n)
 		if h<lowest:

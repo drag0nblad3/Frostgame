@@ -1,6 +1,7 @@
 {
   "id": "red_king_sinkhole",
   "name": "Planar Sinkhole",
+  "shared_climbing": true,
   "size": [
     36,
     36

@@ -1,6 +1,7 @@
 {
   "id": "red_king_tethers",
   "name": "Ethereal Tethers",
+  "shared_climbing": true,
   "size": [
     36,
     36
