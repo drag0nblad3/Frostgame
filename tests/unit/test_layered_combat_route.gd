@@ -225,3 +225,66 @@ func test_reused_exit_reach_matches_standard_exit_and_avoids_repeated_searches()
 		check_eq(f.moves_taken,1)
 		if reuse:
 			check_eq(LayeredGrid.evaluations,before)
+
+
+func test_local_goal_uses_exact_field_without_spending_search_budget() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("knight",0,Vector2(5,5))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(2))
+	var layout:=b.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.ai_work={"remaining":25}
+	var start:=layout.node("street",f.pos)
+	var target:=layout.node("street",Vector2(7,5))
+	var local:=LayeredReach.search(grid,start,6.0)
+	var estimate:=func(n: Vector3i) -> float:return layout.point(n).distance_to(layout.point(target))
+	var evaluate:=func(n: Vector3i) -> float:return 0.0 if n==target else INF
+	var before:=LayeredGrid.edge_evaluations
+	var result:=LayeredCombatRoute.search_or_reuse(grid,start,estimate,evaluate,local,"test",false,25)
+	check(result.get("local",false))
+	check_eq(result.get("goal"),target)
+	check_eq(result.get("path"),local.path_to(target))
+	check_eq(grid.ai_work["remaining"],25)
+	check_eq(LayeredGrid.edge_evaluations,before)
+
+
+func test_second_move_route_reuse_checks_target_and_fresh_reach() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("knight",0,Vector2(5,5))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(2))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var layout:=b.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var work: Dictionary={"remaining":1800}
+	grid.ai_work=work
+	var start:=layout.node("street",f.pos)
+	var target:=layout.node("street",Vector2(20,5))
+	var estimate:=func(n: Vector3i) -> float:return layout.point(n).distance_to(layout.point(target))
+	var evaluate:=func(n: Vector3i) -> float:return 0.0 if n==target else INF
+	var reach:=c.layered_reach()
+	var first:=LayeredCombatRoute.search_or_reuse(grid,start,estimate,evaluate,reach,"test",false,1800)
+	check_eq(first.get("goal"),target)
+	if first.is_empty():
+		return
+	var path: Array[Vector3i]=first["path"]
+	var step:=path[4]
+	check(c.move_from_fresh_reach(step,reach))
+	var next_grid:=LayeredGrid.new(layout,f,c.state.figures)
+	next_grid.ai_work=work
+	var next_reach:=c.layered_reach()
+	var remaining:=int(work["remaining"])
+	var second:=LayeredCombatRoute.search_or_reuse(next_grid,step,estimate,evaluate,next_reach,"test",false,1800)
+	check(second.get("reused",false))
+	check_eq(work["remaining"],remaining)
+	check_eq(second.get("goal"),target)
+	var invalid:=func(_n: Vector3i) -> float:return INF
+	check(LayeredCombatRoute.reuse_route(next_grid,next_reach,invalid,"test").is_empty())
+	b.floor_layout["solids"]=[[24,0,24,2,3,2]]
+	var revised_grid:=LayeredGrid.new(b.floor_geometry(),f,c.state.figures)
+	revised_grid.ai_work=work
+	check(LayeredCombatRoute.reuse_route(revised_grid,next_reach,evaluate,"test").is_empty())
