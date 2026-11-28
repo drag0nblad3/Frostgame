@@ -20,6 +20,13 @@ static func expand(source: Dictionary) -> Dictionary:
 		var turns := posmod(int(instance.get("quarter_turns",0)),4)
 		var offset := Vector2(origin[0],origin[1])
 		var lift := float(instance.get("elevation",0.0))
+		var angle:=float(turns)*PI*0.5
+		if instance.has("angle_degrees"):
+			# Free rotations of unlinked convex scenery need no snapped graph edges.
+			if not kit.get("surfaces",[]).is_empty() or not kit.get("solids",[]).is_empty() or not kit.get("aperture_walls",[]).is_empty() or not kit.get("links",[]).is_empty() or not kit.get("climbs",[]).is_empty() or not kit.get("null_regions",[]).is_empty() or kit.has("walls"):
+				errors.append("Free rotation requires a convex-only unlinked kit: "+key)
+				continue
+			angle=deg_to_rad(float(instance["angle_degrees"]))
 		var ids: Dictionary={}
 		for entry: Dictionary in kit.get("surfaces",[]):
 			var id := str(entry.get("id",""))
@@ -43,6 +50,17 @@ static func expand(source: Dictionary) -> Dictionary:
 				surface["end_level"]=float(ramp["end"])+lift
 			if entry.has("axis") or entry.has("end_level"):
 				surface["axis"]=ramp["axis"]
+			if entry.has("polygon"):
+				var polygon: Array=[]
+				for vertex in entry["polygon"]:
+					if not vertex is Array or vertex.size()!=2:
+						break
+					var p:=Vector2(vertex[0],vertex[1]).rotated(float(turns)*PI*0.5)+offset
+					polygon.append([p.x,p.y])
+				if polygon.size()!=entry["polygon"].size():
+					errors.append("Malformed deck outline in "+key)
+					continue
+				surface["polygon"]=polygon
 			append(result,"surfaces",surface)
 		var volumes: Array=kit.get("solids",[]).duplicate(true)
 		for wall: Dictionary in kit.get("aperture_walls",[]):
@@ -66,12 +84,12 @@ static func expand(source: Dictionary) -> Dictionary:
 			for vertex in profile:
 				if not vertex is Array or vertex.size()!=3:
 					break
-				var p:=Vector2(vertex[0],vertex[2]).rotated(float(turns)*PI*0.5)
+				var p:=Vector2(vertex[0],vertex[2]).rotated(angle)
 				transformed.append([p.x+offset.x,float(vertex[1])+lift,p.y+offset.y])
 			if transformed.size()!=profile.size():
 				errors.append("Malformed convex vertex in "+key)
 				continue
-			var ex:=Vector2(extrusion[0],extrusion[2]).rotated(float(turns)*PI*0.5)
+			var ex:=Vector2(extrusion[0],extrusion[2]).rotated(angle)
 			var volume: Dictionary={"profile":transformed,"extrusion":[ex.x,extrusion[1],ex.y]}
 			if entry.has("crumble_id"):
 				volume["crumble_id"]=prefix+str(entry["crumble_id"])

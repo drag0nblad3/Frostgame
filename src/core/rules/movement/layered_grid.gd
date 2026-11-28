@@ -90,7 +90,8 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		var finish := layout.world(next)
 		if not segment_allowed(start,finish) or (running and not run_segment_clear(start,finish)):
 			continue
-		if not layout.clearance(start.lerp(finish,0.5),Figure.BASE_RADIUS,1.6):
+		var middle_point:=start.lerp(finish,0.5)
+		if not layout.surfaces[n.z].contains(Vector2(middle_point.x,middle_point.z),Figure.BASE_RADIUS) or not layout.clearance(middle_point,Figure.BASE_RADIUS,1.6):
 			continue
 		var mult := layout.surfaces[n.z].rough
 		if board!=null:

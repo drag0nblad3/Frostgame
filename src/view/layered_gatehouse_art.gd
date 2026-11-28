@@ -54,7 +54,13 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 		stone.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
 		node.material_override=stone
 		add_child(node)
-		node.set_meta("cut_height",prism.bounds.position.y+0.12)
+		var cut:=prism.bounds.position.y+0.12
+		for s in layout.surfaces:
+			if not s.polygon.is_empty() and is_equal_approx(s.level,prism.bounds.end.y) and s.rect.is_equal_approx(Rect2(prism.bounds.position.x,prism.bounds.position.z,prism.bounds.size.x,prism.bounds.size.z)):
+				cut=s.level
+				stone.set_shader_parameter("walkable_roof",true)
+				break
+		node.set_meta("cut_height",cut)
 		if prism.bounds.position.y>=2.5:
 			upper_nodes.append(node)
 	# Wall volumes get narrow masonry courses (visual only).

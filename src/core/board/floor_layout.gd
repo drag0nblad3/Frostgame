@@ -16,9 +16,15 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 		layout.errors.append(str(error))
 	for entry: Dictionary in d.get("surfaces",[]):
 		var s := FloorSurface.from_dict(entry)
-		if s.id.is_empty() or layout.index_of(s.id)>=0 or s.rect.size.x<=0.0 or s.rect.size.y<=0.0:
+		if s.id.is_empty() or layout.index_of(s.id)>=0 or s.rect.size.x<=0.0 or s.rect.size.y<=0.0 or not s.polygon_valid:
 			layout.errors.append("Invalid or duplicate surface: "+s.id)
 			continue
+		if not s.polygon.is_empty():
+			var slab:=s.deck_volume()
+			if not slab.valid:
+				layout.errors.append("Invalid polygon deck: "+s.id)
+				continue
+			layout.convex_solids.append(slab)
 		layout.surfaces.append(s)
 	for entry: Array in d.get("solids",[]):
 		if entry.size()!=6 or float(entry[3])<=0.0 or float(entry[4])<=0.0 or float(entry[5])<=0.0:
