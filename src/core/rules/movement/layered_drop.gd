@@ -3,7 +3,7 @@ extends RefCounted
 ## Explicit voluntary fall (core p.50), from a current ledge or hanging
 ## position. Never add damaging descents to normal safe movement previews.
 
-static func plans(c: GameController) -> Dictionary:
+static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 	var out: Dictionary={}
 	if not LayeredMovement.eligible(c):
 		return out
@@ -62,11 +62,11 @@ static func plans(c: GameController) -> Dictionary:
 		if cost>MoveRules.allowance(f)+0.001 and not (long_fall and f.moves_taken==0):
 			continue
 		out[n]={"path":PackedVector3Array([a,edge,b]),"cost":cost,"fall":drop,"end_activation":long_fall,"grounded":PackedVector3Array([a]),"surface":layout.surface_id(n)}
-	return out
+	return LayeredMovement.extend_aerial(c,out) if continuation else out
 
 
 static func move(c: GameController,n: Vector3i) -> bool:
-	var options:=plans(c)
+	var options:=plans(c,true)
 	if not options.has(n):
 		return false
 	var f:=c.state.active()
