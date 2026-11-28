@@ -5,3 +5,5 @@ A `pieces` entry can specify `ruin_kit`, `rect: [x,y,w,h]`, and optional `quarte
 Initial conversions: Frozen Ruins (five main buildings), Sunken Streets (four corner buildings), The Keep (six peripheral buildings). All stay within original obstacle rectangles. Other scenario landmarks and ground profiles are unchanged. This is an initial structural conversion, not full polygonal or arbitrary-angle architecture. Multi-story openings and overhead arches require separately authored floor solids and are future work. Existing saved battles retain their serialized terrain.
 
 Validation: deterministic footprint/rotation, traversable interior and sight through a real breach, blocking wall, and map integration tests. Also run existing deployment and objective checks and review visual previews before merging.
+
+Second conversion: four outer ruins each in Dreams Well, Genie in the Bottle, Worm Hunts, Living Museum, Mausoleum and the Red King Squatter. Keep special central structures, exits, hazards, objective locations and authored terrain extent unchanged. 39 converted buildings across nine boards in total.

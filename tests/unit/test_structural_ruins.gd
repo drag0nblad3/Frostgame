@@ -31,8 +31,8 @@ func test_rotated_kits_stay_in_footprint() -> void:
 				check(rect.get_area()>0.0)
 
 
-func test_three_maps_have_structural_ruins() -> void:
-	for id in ["frozen_ruins","sunken_streets","the_keep"]:
+func test_nine_maps_have_structural_ruins() -> void:
+	for id in ["frozen_ruins","sunken_streets","the_keep","dreams_well","genie_in_the_bottle","worm_hunts","living_museum","mausoleum","red_king_squatter"]:
 		var board:=BoardLoader.load_id(id,terrain())
 		var remnants:=0
 		for p in board.pieces:
