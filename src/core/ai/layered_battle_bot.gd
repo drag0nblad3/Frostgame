@@ -51,6 +51,13 @@ static func _perform_creature(c: GameController,f: Figure) -> void:
 
 
 static func _act(c: GameController,f: Figure) -> bool:
+	var started:=c.ai_begin()
+	var result:=_act_inner(c,f)
+	c.ai_end("action_total",started)
+	return result
+
+
+static func _act_inner(c: GameController,f: Figure) -> bool:
 	var enemy := CreatureBot.weakest(c.state,f) if f.side<0 else BotTargets.weakest_contact(c.state,f)
 	if enemy!=null and BattleAction.legal(c,"fight",enemy.id):
 		if f.side<0:
@@ -72,7 +79,10 @@ static func _act(c: GameController,f: Figure) -> bool:
 			c._spend(f)
 			c._magic._shot(f,shot,3,Vector3(f.pos.x,f.elevation+1.5,f.pos.y),true,true,"elemental_blast")
 			return true
-	if MagicBot.play(c,f):
+	var magic_start:=c.ai_begin()
+	var cast:=MagicBot.play(c,f)
+	c.ai_end("magic",magic_start)
+	if cast:
 		return true
 	if f.treasure_id<0 and f.ranged!=null:
 		if BattleAction.legal(c,"reload"):
@@ -86,10 +96,19 @@ static func _act(c: GameController,f: Figure) -> bool:
 
 
 static func _move(c: GameController,f: Figure) -> bool:
+	var started:=c.ai_begin()
+	var result:=_move_inner(c,f)
+	c.ai_end("movement_total",started)
+	return result
+
+
+static func _move_inner(c: GameController,f: Figure) -> bool:
+	var started:=c.ai_begin()
 	var layout := c.state.board.floor_geometry()
 	var grid:=LayeredGrid.new(layout,f,c.state.figures)
 	grid.memoize_edges=true
 	var reach:=LayeredMovement.reach(c,false,false,false,grid)
+	c.ai_end("local_reach",started)
 	if reach.cost.is_empty():
 		return false
 	var extracting:=f.treasure_id>=0 or (f.side>=0 and RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state)) or (f.side==0 and RedKingVeil.active(c.state)) or (f.side>=0 and RedKingHerded.active(c.state) and f.pos.y-float(c.state.scenario_data.get("herd_veil",0.0))<8.0)
@@ -132,13 +151,22 @@ static func _move(c: GameController,f: Figure) -> bool:
 		for n: Vector3i in reach.cost:
 			if n!=reach.start and ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))==column:
 				return c.move_on_floor(n)
-	if not safe_route and not center_escape and column==null and LayeredTactics.aerial_progress(c,f,layout,reach,extracting,quarry,grid):
-		return true
+	if not safe_route and not center_escape and column==null:
+		started=c.ai_begin()
+		var aerial:=LayeredTactics.aerial_progress(c,f,layout,reach,extracting,quarry,grid)
+		c.ai_end("aerial",started)
+		if aerial:
+			return true
 	# Ordinary combat, treasure and extraction all use bounded, goal-directed
 	# search. Preserve full exploration for special topology and spell tactics.
 	if not safe_route and not center_escape and column==null and LayeredObjectiveRoute.eligible(c,f,extracting):
-		return LayeredObjectiveRoute.move(c,f,layout,reach,grid,quarry,extracting)
+		started=c.ai_begin()
+		var moved:=LayeredObjectiveRoute.move(c,f,layout,reach,grid,quarry,extracting)
+		c.ai_end("objective_route",started)
+		return moved
+	started=c.ai_begin()
 	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null)
+	c.ai_end("long_route",started)
 	var goal: Variant = null
 	var best := INF
 	var tokens: Array[TreasureToken]=[]
@@ -205,8 +233,12 @@ static func _move(c: GameController,f: Figure) -> bool:
 				break
 			if run.can_reach(route[i]) and c.commit_movement("run_talisman",route[i]):
 				return true
-	if not safe_route and LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal):
-		return true
+	if not safe_route:
+		started=c.ai_begin()
+		var shortcut:=LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal)
+		c.ai_end("spell_shortcut",started)
+		if shortcut:
+			return true
 	if goal==null or goal==reach.start:
 		return false
 	var path := long_route.path_to(goal)
@@ -218,6 +250,13 @@ static func _move(c: GameController,f: Figure) -> bool:
 
 ## Reuse the same range, physical sight and damageability score as flat AI.
 static func _shooting_spot(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach) -> Variant:
+	var started:=c.ai_begin()
+	var result: Variant=_shooting_spot_inner(c,f,layout,reach)
+	c.ai_end("firing_positions",started)
+	return result
+
+
+static func _shooting_spot_inner(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach) -> Variant:
 	var best: Variant=null
 	var value:=0.0
 	var enemies: Array[Figure]=[]
