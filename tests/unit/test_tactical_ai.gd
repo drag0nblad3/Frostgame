@@ -43,7 +43,7 @@ func test_distance_field_does_not_shortcut_a_wall() -> void:
 func test_leap_ai_repositions_carrier_and_exhausts_it() -> void:
 	var b:=make_board()
 	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
-	var f:=fig("wizard",0,Vector2(9,10))
+	var f:=fig("wizard",0,Vector2(8,16))
 	var t:=fig("thug",0,Vector2(8,10),2)
 	var enemy:=fig("thug",1,Vector2(11,10),3)
 	for figure in [f,t,enemy]:
