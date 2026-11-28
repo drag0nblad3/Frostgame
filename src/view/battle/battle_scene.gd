@@ -49,6 +49,13 @@ var _move_preview_tween: Tween
 var _visible_floor := ""
 var _floor_revision := 0
 var _deployment_panel: BattleDeploymentPanel
+var _frame_sample_time:=0.0
+var _last_frame_tick:=0
+var _frame_peak:=0.0
+var _frame_count:=0
+var _map_ms:=0.0
+var _terrain_ms:=0.0
+var _last_bot_ms:=0.0
 
 
 func _ready() -> void:
@@ -279,7 +286,7 @@ func new_game(seed_value: int,prepared: GameState=null,deploy: bool=false) -> vo
 	if deploy:
 		# Headless smoke runs use the same automatic placement, never a blocking UI.
 		var interactive:=not watch_mode and DisplayServer.get_name()!="headless"
-		var setup:=game.begin_deployment(player_side if interactive else -1)
+		var setup:=game.begin_deployment(player_side if interactive else -1,interactive)
 		_attach_battle(game,setup.done)
 		if not setup.done:
 			_rig.frame_board(state.board.size)
@@ -291,7 +298,21 @@ func new_game(seed_value: int,prepared: GameState=null,deploy: bool=false) -> vo
 	_attach_battle(game,true)
 
 
+## Join the worker before removing the old player or replacing its controller.
+func _detach_controller() -> void:
+	_bots.finish()
+	if controller!=null:
+		if controller.event_emitted.is_connected(_relay):
+			controller.event_emitted.disconnect(_relay)
+		controller.abandon_pending_callbacks()
+
+
+func _exit_tree() -> void:
+	_detach_controller()
+
+
 func _attach_battle(c: GameController, start: bool) -> void:
+	_detach_controller()
 	if is_instance_valid(_deployment_panel):
 		_deployment_panel.queue_free()
 		_deployment_panel=null
@@ -305,7 +326,6 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	auto_play = false
 	hud.set_auto(false)
 	_wait = 0.0
-	_bots.finish()
 	controller = c
 	controller.capture_frames=true
 	if controller.deployment==null or controller.deployment.done:
@@ -351,7 +371,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player_input.move_preview_changed.connect(_move_preview)
 	_visible_floor=""
 	_floor_revision=state.board.floor_layout.hash()
-	hud.set_floors(FloorLayout.from_dict(state.board.floor_layout) if not state.board.floor_layout.is_empty() else null)
+	hud.set_floors(state.board.floor_geometry() if not state.board.floor_layout.is_empty() else null)
 	if not state.board.floor_layout.is_empty():
 		_rig.frame_board(state.board.size)
 	if start:
@@ -365,7 +385,9 @@ func _attach_battle(c: GameController, start: bool) -> void:
 			BattleJournal.record(hud._history,roll)
 	_update_status()
 	_dirty = true
-	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,float(Time.get_ticks_usec()-began)/1000.0])
+	_map_ms=float(Time.get_ticks_usec()-began)/1000.0
+	_last_bot_ms=0.0
+	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,_map_ms])
 
 
 func _deployment_complete() -> void:
@@ -398,6 +420,7 @@ func step() -> void:
 		player.thinking = true
 		player_input.lock("Rival warband is thinking…")
 	else:
+		_last_bot_ms=_bots.last_ms
 		_update_status()
 
 
@@ -410,6 +433,7 @@ func _relay(event: GameEvent) -> void:
 
 
 func _collect_bot_turn() -> void:
+	_last_bot_ms=_bots.last_ms
 	player.thinking = false
 	for event in _bots.take_events():
 		player.push(event)
@@ -418,6 +442,7 @@ func _collect_bot_turn() -> void:
 
 
 func _process(delta: float) -> void:
+	_sample_performance(delta)
 	if _bots.busy():
 		if not _bots.done():
 			return
@@ -564,7 +589,7 @@ func _update_floor_view() -> void:
 	var focus: Variant=null
 	if active!=null and active.in_play() and player.views.has(active.id):
 		var v: FigureView=player.views[active.id]
-		if _visible_floor.is_empty() or active.surface_id==_visible_floor:
+		if FloorViewFilter.matches(_visible_floor,active.surface_id):
 			focus=v.global_position+Vector3.UP*0.75
 	_board_view.set_cutaway_focus(focus)
 	if controller.state.board.floor_layout.is_empty():
@@ -573,7 +598,7 @@ func _update_floor_view() -> void:
 	var revision:=controller.state.board.floor_layout.hash()
 	if revision!=_floor_revision:
 		_floor_revision=revision
-		if layout.index_of(_visible_floor)<0:
+		if not FloorViewFilter.valid(layout,_visible_floor):
 			_visible_floor=""
 			player_input.floor_id=""
 		hud.set_floors(layout,_visible_floor)
@@ -584,13 +609,13 @@ func _update_floor_view() -> void:
 		var surface:=f.surface_id
 		if player_input.move_plan.actor==f.id and player_input.move_plan.destination is Vector3i and layout.contains(player_input.move_plan.destination,0.0):
 			surface=layout.surface_id(player_input.move_plan.destination)
-		player.views[f.id].visible=f.in_play() and (_visible_floor.is_empty() or _visible_floor==surface)
+		player.views[f.id].visible=f.in_play() and FloorViewFilter.matches(_visible_floor,surface)
 	for t in controller.state.treasures:
 		if not player.treasure_views.has(t.id):
 			continue
 		var carrier:=controller.state.figure(t.carrier_id)
 		var surface:=carrier.surface_id if carrier!=null else t.surface_id
-		player.treasure_views[t.id].visible=t.unresolved() and (_visible_floor.is_empty() or _visible_floor==surface)
+		player.treasure_views[t.id].visible=t.unresolved() and FloorViewFilter.matches(_visible_floor,surface)
 
 
 func _move_preview(id: int,at: Vector3,active: bool) -> void:
@@ -710,10 +735,15 @@ func _notification(what: int) -> void:
 func _sync_terrain() -> void:
 	_terrain_pending=false
 	if is_inside_tree() and controller!=null:
+		var started:=Time.get_ticks_usec()
 		_board_view.sync_terrain(controller.state.board)
+		_terrain_ms=float(Time.get_ticks_usec()-started)/1000.0
 
 
 func _open_graphics() -> void:
+	if _bots.busy():
+		hud.notify("Finish the current AI activation before changing graphics.")
+		return
 	if _graphics==null:
 		_graphics=GraphicsDialog.new()
 		add_child(_graphics)
@@ -737,3 +767,31 @@ func _choose_survival(plant_target: int,offer: Dictionary,rolled: bool) -> void:
 
 func _commit_survival(plant_target: int,choice: int) -> void:
 	BattleCampaignFlow._commit_survival(self, plant_target, choice)
+
+
+## Main-thread monitors only. Never inspect the controller or worker-owned
+## objects while a bot activation is running.
+func _sample_performance(delta: float) -> void:
+	var tick:=Time.get_ticks_usec()
+	var wall_delta:=float(tick-_last_frame_tick)/1000000.0 if _last_frame_tick>0 else delta
+	_last_frame_tick=tick
+	if not GraphicsQuality.diagnostics():
+		if hud._performance.visible:
+			hud.set_performance("")
+		_frame_sample_time=0.0
+		_frame_peak=0.0
+		_frame_count=0
+		return
+	_frame_sample_time+=wall_delta
+	_frame_peak=maxf(_frame_peak,wall_delta*1000.0)
+	_frame_count+=1
+	if _frame_sample_time<0.5:
+		return
+	var mean:=_frame_sample_time*1000.0/maxi(1,_frame_count)
+	var draw_calls:=int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var triangles:=int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var memory:=Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0
+	hud.set_performance("%d FPS · frame %.1f / peak %.1f ms · %d draws · %dk primitives · %.0f MB\nScene %.0f ms · terrain refresh %.0f ms · %s"%[Engine.get_frames_per_second(),mean,_frame_peak,draw_calls,roundi(triangles/1000.0),memory,_map_ms,_terrain_ms,"AI thinking" if _bots.busy() else "AI %.0f ms"%_last_bot_ms])
+	_frame_sample_time=0.0
+	_frame_peak=0.0
+	_frame_count=0

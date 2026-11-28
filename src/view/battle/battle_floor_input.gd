@@ -9,20 +9,20 @@ static func append_spells(bi: BattleInput,f: Figure) -> void:
 	var c:=bi.c
 	if not c.can_act() or not CasterLoadout.is_caster(f.def.role) or ScenarioNull.muted(f) or Contact.in_combat(c.state.figures,f) or f.spell_effects.has("blinding_light"):
 		return
-	for target in c.state.figures:
-		if LayeredLeap.eligible(c,target):
-			bi.cast_options.append("leap")
-			break
 	if LayeredBridge.eligible(c):
 		bi.cast_options.append("bridge")
 
 
 static func handles_action(bi: BattleInput,key: String) -> bool:
-	return bi.available.has(key) and (key in ["spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation","potion_explosive_cocktail"] or (key.begins_with("spell_") and (SummonActions.PLACEMENT.has(key.trim_prefix("spell_")) or TerrainMagic.FLOOR_SPELLS.has(key.trim_prefix("spell_")))))
+	return bi.available.has(key) and (key in ["leap_raise","leap_lower","spell_teleport","spell_leap","spell_bridge","cancel_bridge","gear_rk_bottle_imp","gear_ring_teleportation","potion_teleportation","potion_explosive_cocktail"] or (key.begins_with("spell_") and (SummonActions.PLACEMENT.has(key.trim_prefix("spell_")) or TerrainMagic.FLOOR_SPELLS.has(key.trim_prefix("spell_")))))
 
 
 static func action(bi: BattleInput,key: String) -> bool:
 	match key:
+		"leap_raise","leap_lower":
+			bi.leap_air_offset=clampf(bi.leap_air_offset+(1.0 if key=="leap_raise" else -1.0),0.0,10.0)
+			bi.preview()
+			return false
 		"cancel_bridge": return BattleSpellAction.execute(bi.c,"cancel_bridge")
 		"spell_teleport":
 			bi.mode="floor_teleport"
@@ -30,6 +30,7 @@ static func action(bi: BattleInput,key: String) -> bool:
 		"spell_leap":
 			bi.mode="floor_leap_target"
 			bi.selected_spell="leap"
+			bi.leap_air_offset=0.0
 		"spell_bridge":
 			bi.mode="floor_bridge"
 			bi.selected_spell="bridge"
@@ -67,7 +68,7 @@ static func _index(bi: BattleInput,f: Figure) -> int:
 static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 	if bi.mode=="floor_leap_target":
 		for t in bi.c.state.figures:
-			if LayeredLeap.eligible(bi.c,t):
+			if bi.c._magic.can_cast("leap",t.id):
 				bi.targets.append(t)
 		s.radius=0.65
 		s.hint="Select an ally, then select a landing floor."
@@ -114,24 +115,35 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 	elif bi.mode in ["floor_bridge","floor_bridge_end"]:
 		candidates=LayeredBridgePicker.points(bi.c,layout,index,bi.bridge_start if bi.mode=="floor_bridge_end" else null)
 		s.hint="Select first bridge endpoint." if bi.mode=="floor_bridge" else "Select a different floor and the second endpoint."
-	else:
-		var grid:=LayeredGrid.new(layout,t,bi.c.state.figures)
-		var surface:=layout.surfaces[index]
-		for x in range(ceili(surface.rect.position.x/MoveGrid.STEP),floori(surface.rect.end.x/MoveGrid.STEP)+1):
-			for y in range(ceili(surface.rect.position.y/MoveGrid.STEP),floori(surface.rect.end.y/MoveGrid.STEP)+1):
-				var n:=Vector3i(x,y,index)
-				var valid:=LayeredMagic.can_teleport_with(bi.c,n,layout,grid) if bi.mode=="floor_teleport" else not LayeredLeap.path(bi.c,t,n,layout,grid).is_empty()
-				if valid:
-					candidates[n]=true
-		s.hint="Choose a visible legal destination." if bi.mode=="floor_teleport" else "Choose a legal Leap landing for "+t.label()+"."
+	elif bi.mode=="floor_leap":
+		if bi.leap_air_offset>0.0:
+			for n in LayeredLeap.air_points(bi.c,t,index,bi.leap_air_offset):
+				candidates[n]=true
+			s.hint="Leap ends %.0f inches above this floor, then falls. Damage: %d."%[bi.leap_air_offset,LayeredFall.damage(bi.c.state,t,bi.leap_air_offset)]
+		else:
+			for n in LayeredLeap.points(bi.c,t,false,index):
+				candidates[n]=true
+			s.hint="Choose a legal Leap landing for "+t.label()+"."
+		if not bi.available.has("leap_raise"):
+			bi.available.append("leap_raise")
+		if not bi.available.has("leap_lower"):
+			bi.available.append("leap_lower")
 	for n: Vector3i in candidates:
-		bi.floor_points[n]=layout.world(n)
+		bi.floor_points[n]=layout.world(n)+Vector3.UP*(bi.leap_air_offset if bi.mode=="floor_leap" else 0.0)
 	s.hint+=" Change floor to see other destinations."
 	return true
 
 
 static func visible(bi: BattleInput,id: String) -> bool:
-	return bi.floor_id.is_empty() or id==bi.floor_id
+	return FloorViewFilter.matches(bi.floor_id,id)
+
+
+static func point_visible(bi: BattleInput,n: Vector3i,index: int) -> bool:
+	if bi.mode in BattleMovePlan.MODES:
+		return FloorViewFilter.matches(bi.floor_id,bi.floor_layout.surface_id(n))
+	if bi.floor_id==FloorViewFilter.CLIMBING:
+		return false
+	return n.z==index
 
 
 static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> void:
@@ -142,7 +154,7 @@ static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> voi
 		var actor:=bi.c.state.figure(bi.spell_first) if bi.mode in ["floor_leap","floor_suggestion"] else f
 		var index:=_index(bi,actor) if actor!=null else -1
 		for n: Vector3i in bi.floor_points:
-			if n.z==index:
+			if point_visible(bi,n,index):
 				world.append(bi.floor_points[n])
 	elif s!=null:
 		for t in bi.targets:
@@ -181,7 +193,7 @@ static func pick(bi: BattleInput,screen: Vector2) -> Variant:
 	var best: Variant=null
 	var distance:=28.0
 	for n: Vector3i in bi.floor_points:
-		if n.z!=index:
+		if not point_visible(bi,n,index):
 			continue
 		var point: Vector3=bi.floor_points[n]
 		if bi.camera.is_position_behind(point):
@@ -201,6 +213,8 @@ static func surface_point(bi: BattleInput,screen: Vector2) -> Variant:
 	if index<0:
 		return null
 	var surface:=bi.floor_layout.surfaces[index]
+	if not surface.profiles.is_empty():
+		return SurfacePicker.pick(bi.c.state.board,bi.camera.project_ray_origin(screen),bi.camera.project_ray_normal(screen),true)
 	var run:=surface.rect.size.y if surface.axis_y else surface.rect.size.x
 	var slope:=(surface.end_level-surface.level)/run
 	var normal:=Vector3(0,1,-slope) if surface.axis_y else Vector3(-slope,1,0)
@@ -215,7 +229,7 @@ static func surface_point(bi: BattleInput,screen: Vector2) -> Variant:
 static func tap(bi: BattleInput,screen: Vector2) -> bool:
 	if bi.mode=="floor_leap_target":
 		var id:=bi._figure_at(screen)
-		if id<0:
+		if id<0 or not bi.c._magic.can_cast("leap",id):
 			return false
 		bi.spell_first=id
 		bi.mode="floor_leap"
@@ -234,7 +248,10 @@ static func tap(bi: BattleInput,screen: Vector2) -> bool:
 		"floor_cocktail": return BattleEquipmentAction.execute(bi.c,"potion_explosive_cocktail",{"at":node})
 		"floor_suggestion": return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"suggestion","target":bi.spell_first,"at":node}))
 		"floor_treasure_destination": return bi._declared(BattleSpellAction.execute(bi.c,"treasure",{"spell":bi.selected_spell,"target":bi.spell_first,"at":node}))
-		"floor_leap": return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"leap","target":bi.spell_first,"at":node}))
+		"floor_leap":
+			if bi.leap_air_offset>0.0:
+				return bi._declared(BattleSpellAction.execute(bi.c,"leap_air",{"spell":"leap","target":bi.spell_first,"at":bi.floor_points[node]}))
+			return bi._declared(BattleSpellAction.execute(bi.c,"move",{"spell":"leap","target":bi.spell_first,"at":node}))
 		"floor_bottle": return BattleEquipmentAction.execute(bi.c,"bottle_imp",{"at":node})
 		"floor_bridge":
 			bi.bridge_start=node

@@ -39,6 +39,7 @@ static func activate(c: GameController, id: int) -> bool:
 		CreatureEffects.activation(c,f)
 		RedKingSinkhole.activation(c,f)
 	HolyLantern.flee(c,f)
+	Swimming.activate(c,f)
 	if not f.in_play():
 		f.actions_left=0
 	return true

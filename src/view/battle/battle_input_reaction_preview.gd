@@ -6,6 +6,15 @@ extends RefCounted
 ## Fills `s` for reaction, scenario and basic modes.
 static func reactions(bi: BattleInput, f: Figure, s: BattleInputPreview.State) -> bool:
 	match bi.mode:
+		"melee_weapon_choice":
+			var p:=MeleeWeaponChoice.pending(bi.c)
+			var owner:=bi.c.state.figure(int(p["owner"]))
+			var opponent:=bi.c.state.figure(int(p["b"] if owner.id==int(p["a"]) else p["a"]))
+			bi.targets.append(owner)
+			s.radius=0.65
+			s.hint="%s vs %s — choose your melee weapon before either roll."%[owner.label(),opponent.label()]
+			for w in MeleeWeaponChoice.options(owner):
+				s.hint+="\n%s: Fight %+d, damage %+d, incoming damage %+d"%[w.name,w.fight_mod+MagicEquipment.bonus(owner,"fight",w.id),w.damage_mod+MagicEquipment.bonus(owner,"damage",w.id),w.enemy_damage_mod]
 		"direction_reaction":
 			var choice: Dictionary=bi.c.state.scenario_data["rk_direction_choice"]
 			var target := bi.c.state.figure(int(choice["target"]))

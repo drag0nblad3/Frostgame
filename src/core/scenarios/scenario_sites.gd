@@ -97,39 +97,42 @@ static func end_move(c: GameController, f: Figure) -> void:
 	var dest := site_at(s, "arcane_disc", to)
 	if dest == null:
 		return
+	var choices: Array[Dictionary]=[]
 	if not s.board.floor_layout.is_empty():
 		var layout:=s.board.floor_geometry()
 		var options:=BattlePlacement.nearby_floor(s,to,dest.base_height,dest.rect.size.x*0.5-Figure.BASE_RADIUS,dest.surface_id,f)
-		options.sort_custom(func(a: Vector3i,b: Vector3i) -> bool: return layout.point(a).distance_squared_to(to)<layout.point(b).distance_squared_to(to))
 		var floor_grid:=LayeredGrid.new(layout,f,s.figures)
 		for n in options:
-			if not floor_grid.open(n):
-				continue
-			var before:=Vector3(f.pos.x,f.elevation,f.pos.y)
-			var previous:=f.surface_id
-			f.pos=layout.point(n)
-			f.elevation=layout.height(n)
-			f.surface_id=layout.surface_id(n)
-			c.emit("layered_move",{"id":f.id,"path":PackedVector3Array([before,layout.world(n)]),"surfaces":[previous,f.surface_id],"cost":0.0})
-			_finish_disc(c,f,roll)
-			return
+			if floor_grid.open(n):
+				choices.append(CoreScenarioChoice.point(s,layout.point(n),layout.surface_id(n)))
+	else:
+		var grid:=MoveGrid.new(s.board,f,s.figures)
+		for x in range(-2,3):
+			for y in range(-2,3):
+				var at:=to+Vector2(x,y)*0.5
+				if at.distance_to(to)<=dest.rect.size.x*0.5-Figure.BASE_RADIUS+0.001 and grid.open(MovePlanner.node_at(at)):
+					choices.append(CoreScenarioChoice.point(s,at))
+	if choices.is_empty():
 		c.emit("disc_stay",{"id":f.id,"roll":roll})
 		return
-	var grid := MoveGrid.new(s.board, f, s.figures)
-	var points: Array[Vector2] = []
-	for x in range(-2, 3):
-		for y in range(-2, 3):
-			var at := to + Vector2(x, y) * 0.5
-			if at.distance_to(to) <= dest.rect.size.x * 0.5 - Figure.BASE_RADIUS + 0.001 and grid.open(MovePlanner.node_at(at)):
-				points.append(MoveGrid.to_pos(MovePlanner.node_at(at)))
-	if points.is_empty():
-		c.emit("disc_stay", {"id": f.id, "roll": roll})
+	if CoreScenarioChoice.offer(c,"disc",f.side,f.id,-1,roll,choices):
 		return
-	points.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_squared_to(to) < b.distance_squared_to(to))
-	var old := f.pos
-	f.pos = points[0]
-	f.elevation = s.board.height_at(f.pos)
-	c.emit("move", {"id": f.id, "path": PackedVector2Array([old, f.pos]), "cost": 0.0})
+	choices.sort_custom(func(a: Dictionary,b: Dictionary) -> bool: return Vector2(a["at"]).distance_squared_to(to)<Vector2(b["at"]).distance_squared_to(to))
+	land_disc(c,f,choices[0],roll)
+
+
+static func land_disc(c: GameController,f: Figure,p: Dictionary,roll: int) -> void:
+	var old:=f.pos
+	var before:=Vector3(old.x,f.elevation,old.y)
+	var previous:=f.surface_id
+	f.pos=p["at"]
+	f.surface_id=p["surface"]
+	var world: Vector3=p["world"]
+	f.elevation=world.y
+	if f.surface_id.is_empty():
+		c.emit("move",{"id":f.id,"path":PackedVector2Array([old,f.pos]),"cost":0.0})
+	else:
+		c.emit("layered_move",{"id":f.id,"path":PackedVector3Array([before,world]),"surfaces":[previous,f.surface_id],"cost":0.0})
 	_finish_disc(c,f,roll)
 
 

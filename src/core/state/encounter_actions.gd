@@ -2,12 +2,16 @@ class_name EncounterActions
 extends RefCounted
 ## Optional first-pickup encounters (p. 176). Three-tier encounter table in JSON.
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 var pool: Array = []
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 	if c.state.random_encounters:
 		pool = JsonFile.read("res://data/encounters.json").get("tiers", [])
 
@@ -49,7 +53,7 @@ func _spawn(type: String, edge: int) -> void:
 		var offset := float(floori((i + 1) / 2.0)) * 0.5 * (1 if i % 2 == 0 else -1)
 		at = mid + along * offset
 		if not b.floor_layout.is_empty():
-			var n: Variant=BattlePlacement.support(s,at)
+			var n: Variant=BattlePlacement.ground_at(s,at)
 			if n!=null:
 				_spawn_on_floor(type,n)
 				return
@@ -74,7 +78,7 @@ func on_end_turn() -> void:
 	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool: return a.distance_squared_to(at) < b.distance_squared_to(at))
 	for p in candidates:
 		if not s.board.floor_layout.is_empty():
-			var n: Variant=BattlePlacement.support(s,MoveGrid.to_pos(MovePlanner.node_at(p)))
+			var n: Variant=BattlePlacement.ground_at(s,MoveGrid.to_pos(MovePlanner.node_at(p)))
 			if n!=null:
 				_spawn_on_floor("skeleton",n)
 				return

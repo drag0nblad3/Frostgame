@@ -1,0 +1,215 @@
+class_name LayeredCombatRoute
+extends RefCounted
+## Goal-directed combat routing. Legal endpoints and edges use the same
+## grid as player movement; a horizontal lower bound never discounts a
+## climb or ignores an obstruction.
+
+static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,grid: LayeredGrid,quarry: Figure) -> bool:
+	if f.ranged!=null and f.actions_left>=2 and c.can_act() and (not f.ranged.needs_reload or f.loaded):
+		var spot: Variant=LayeredBattleBot._shooting_spot(c,f,layout,reach)
+		if spot!=null:
+			return c.move_from_fresh_reach(spot,reach)
+	var enemies: Array[Figure]=[]
+	var weights: Array[float]=[]
+	for enemy in c.state.figures:
+		if not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side or WormRider.ignored(f,enemy) or RingworldBot.protected_key(c.state,f,enemy) or (RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(enemy)):
+			continue
+		if (quarry!=null and enemy!=quarry) or (quarry==null and not IllusionRules.visible_to(c.state.figures,f,enemy)):
+			continue
+		enemies.append(enemy)
+		weights.append(BotPreference.charge_penalty(c.state,f,enemy)+(0.0 if BotTargets.can_harm(f,enemy,f.melee) else 20.0))
+	var scores: Array[float]=[]
+	for i in enemies.size():
+		var target:=enemies[i]
+		scores.append(BattleSpace.center(f).distance_to(BattleSpace.center(target))+weights[i])
+	var selected: Array[Figure]=[]
+	var selected_weights: Array[float]=[]
+	for i in BotPreference.objective_indices(f,scores):
+		selected.append(enemies[i])
+		selected_weights.append(weights[i])
+	var route:=search(grid,reach.start,selected,selected_weights,BotPreference.route_budget(f),reach)
+	var goal: Variant=route.get("goal")
+	if goal==null:
+		return false
+	var path: Array[Vector3i]=route["path"]
+	for i in range(path.size()-1,0,-1):
+		if reach.can_reach(path[i]):
+			return c.move_from_fresh_reach(path[i],reach)
+	return false
+
+
+static func lower_bound(layout: FloorLayout,n: Vector3i,enemies: Array[Figure],weights: Array[float]) -> float:
+	var at:=layout.point(n)
+	var best:=INF
+	for i in enemies.size():
+		best=minf(best,maxf(0.0,at.distance_to(enemies[i].pos)-Contact.CONTACT)+weights[i])
+	return best
+
+
+static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weights: Array[float],budget: int=0,local: LayeredReach=null) -> Dictionary:
+	if enemies.is_empty() or not grid.open(start):
+		return {}
+	var layout:=grid.layout
+	var goals: Array[Vector3i]=[]
+	for enemy in enemies:
+		goals.append(layout.node(enemy.surface_id,enemy.pos))
+	var heuristic:=func(n: Vector3i) -> float:
+		if budget<=0:
+			return lower_bound(layout,n,enemies,weights)
+		var best:=INF
+		for i in goals.size():
+			best=minf(best,maxf(0.0,layout.coarse_distance(n,goals[i])-Contact.CONTACT)+weights[i])
+		return best
+	# Contact is possible only in the small horizontal neighborhood of
+	# a target. Index those neighborhoods once per unchanged decision.
+	var nearby: Dictionary={}
+	for i in enemies.size():
+		var center:=MovePlanner.node_at(enemies[i].pos)
+		var radius:=ceili(Contact.CONTACT/MoveGrid.STEP)+1
+		for dx in range(-radius,radius+1):
+			for dy in range(-radius,radius+1):
+				var p:=center+Vector2i(dx,dy)
+				if not Contact.touching(enemies[i].pos,MoveGrid.to_pos(p)):
+					continue
+				if not nearby.has(p):
+					nearby[p]=[]
+				nearby[p].append(i)
+	var evaluate:=func(n: Vector3i) -> float:
+		var weight:=INF
+		var indices: Array=nearby.get(Vector2i(n.x,n.y),[])
+		if indices.is_empty():
+			return weight
+		var at:=layout.point(n)
+		var height:=layout.height(n)
+		var support:=layout.surface_id(n)
+		for i: int in indices:
+			if Contact.touches_position(enemies[i],at,height,support):
+				weight=minf(weight,weights[i])
+		return weight
+	return search_or_reuse(grid,start,heuristic,evaluate,local,"combat",false,budget)
+
+
+## Shared A* engine. The heuristic must be a lower bound on the remaining
+## movement plus goal penalty. Infinite evaluation means not a goal.
+static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,allow_start: bool=false,limit: float=100.0,budget: int=0) -> Dictionary:
+	if not grid.open(start):
+		return {}
+	var heap:=MinHeap.new()
+	var distances: Dictionary={start:0.0}
+	var prev: Dictionary={}
+	var best:=INF
+	var goal: Variant=null
+	var partial: Variant=null
+	var estimates: Dictionary={}
+	var remaining:=float(heuristic.call(start))
+	estimates[start]=remaining
+	var expanded:=0
+	var truncated:=false
+	heap.push(remaining,start)
+	while not heap.is_empty():
+		var item:=heap.pop()
+		var priority: float=item[0]
+		var n: Vector3i=item[1]
+		if priority>=best:
+			break
+		var distance: float=distances[n]
+		var estimate_remaining:=float(estimates[n])
+		if priority>distance+estimate_remaining+0.0001:
+			continue
+		if budget>0 and (expanded>=budget or not grid.spend_ai_work()):
+			truncated=true
+			break
+		expanded+=1
+		if n!=start and estimate_remaining<remaining-0.001:
+			remaining=estimate_remaining
+			partial=n
+		var weight:=float(evaluate.call(n))
+		if (allow_start or n!=start) and distance+weight<best:
+			best=distance+weight
+			goal=n
+		if grid.stops(n):
+			continue
+		for edge in grid.neighbors(n):
+			var next: Vector3i=edge["to"]
+			var total:=distance+float(edge["cost"])
+			if total>limit+0.001 or total>=float(distances.get(next,INF)):
+				continue
+			if not estimates.has(next):
+				estimates[next]=float(heuristic.call(next))
+			var estimate:=total+float(estimates[next])
+			if estimate>=best:
+				continue
+			distances[next]=total
+			prev[next]=n
+			heap.push(estimate,next)
+	if goal==null:
+		if not truncated or partial==null:
+			return {}
+		goal=partial
+	var path: Array[Vector3i]=[]
+	var current: Vector3i=goal
+	while current!=start:
+		path.append(current)
+		current=prev[current]
+	path.append(start)
+	path.reverse()
+	return {"goal":goal,"path":path,"cost":distances[goal],"score":best,"visited":distances.size(),"expanded":expanded,"partial":truncated and not is_finite(best)}
+
+
+## A useful objective already within the exact movement field does not
+## require a second graph search. This intentionally favors attainable
+## objectives over potentially more attractive distant ones. No budget or
+## geometry check is bypassed: the same legal reach supplies the route.
+static func local_goal(reach: LayeredReach,evaluate: Callable,allow_start: bool=false) -> Dictionary:
+	var goal: Variant=null
+	var best:=INF
+	for n: Vector3i in reach.cost:
+		if not allow_start and n==reach.start:
+			continue
+		var cost:=float(reach.cost[n])
+		if cost>=best:
+			continue
+		var score:=cost+float(evaluate.call(n))
+		if score<best:
+			best=score
+			goal=n
+	if goal==null:
+		return {}
+	return {"goal":goal,"path":reach.path_to(goal),"cost":reach.cost[goal],"score":best,"visited":reach.cost.size(),"expanded":0,"partial":false,"local":true}
+
+
+## Reuse only a previous complete objective route in the same decision
+## session. Recheck target eligibility, current geometry and the new exact
+## local reach; the old path is guidance, never permission to move.
+static func search_or_reuse(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,local: LayeredReach,kind: String,allow_start: bool,budget: int) -> Dictionary:
+	if local!=null:
+		var nearby:=local_goal(local,evaluate,allow_start)
+		if not nearby.is_empty():
+			if not grid.ai_work.is_empty():
+				grid.ai_work["local_goals"]=int(grid.ai_work.get("local_goals",0))+1
+			return nearby
+		var prior:=reuse_route(grid,local,evaluate,kind)
+		if not prior.is_empty():
+			if not grid.ai_work.is_empty():
+				grid.ai_work["route_reuses"]=int(grid.ai_work.get("route_reuses",0))+1
+			return prior
+	var route:=search_goal(grid,start,heuristic,evaluate,allow_start,100.0,budget)
+	if local!=null and not grid.ai_work.is_empty() and not route.is_empty() and not bool(route.get("partial",false)):
+		grid.ai_work["route_"+kind]={"layout":grid.layout,"path":route["path"]}
+	return route
+
+
+static func reuse_route(grid: LayeredGrid,local: LayeredReach,evaluate: Callable,kind: String) -> Dictionary:
+	var cached: Dictionary=grid.ai_work.get("route_"+kind,{})
+	if cached.is_empty() or cached.get("layout")!=grid.layout:
+		return {}
+	var path: Array[Vector3i]=cached["path"]
+	var index:=path.find(local.start)
+	if index<=0 or index>=path.size()-1 or not is_finite(float(evaluate.call(path[-1]))):
+		return {}
+	# A changed blocker can invalidate the intended step. Never route
+	# through it on the strength of an old plan; use fresh reach instead.
+	for i in range(path.size()-1,index,-1):
+		if local.can_reach(path[i]):
+			return {"goal":path[-1],"path":path.slice(index),"expanded":0,"partial":false,"reused":true}
+	return {}

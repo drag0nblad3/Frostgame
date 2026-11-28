@@ -50,3 +50,7 @@ Haunted Houses implementation was verified in the existing branch: exact outer-w
 - Ringworld: replaced generic ruin boxes with carved alien ribs, monoliths and climbable terraces. Preserved marker positions, guards, wrapping and plane rules.
 - Silent Tower: new route-graph regression traverses all reachable physical floor nodes from the street, checks both directions of every authored connection, every one-inch climb interval, and base-contact access to each treasure. Tests are geometry-level without opposing figures and do not establish AI tactics or every camera cutaway.
 - All new terrain types participate in the existing asset pre-bake pipeline. No APK build or merge requested.
+
+## Standard treasure placement follow-up
+
+Live deployment now selects seeded treasure positions before the side roll. Ordinary boards choose the nearest legal centre; Well, Library and Silent Tower retain their mandated first objective. All other positions use 3D separation and the printed edge restriction. Authored locations remain preview/test fixtures; snapshots store the generated locations. The central merchant-quarter, Frozen Ruins and Worm Hunts buildings use screened open interiors instead of a solid central block. Genie placement no longer relaxes its 2-inch or closest-figure limit; a completely blocked spawn reserves the lamp and retries in the Creature phase rather than overlapping or spawning illegally. Automatic deployment prefers concealed objectives, but arbitrary manual formations and full route/visibility coverage still need verification.

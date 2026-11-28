@@ -21,6 +21,55 @@ static func landing(layout: FloorLayout,grid: LayeredGrid,at: Vector2,above: flo
 		return null
 	return best if clear_descent(layout,layout.world(best),above) else null
 
+## Dropped treasure has its own physical radius and never occupies a hanging
+## pseudo-surface. A crest may require a short slide off the wall before falling.
+static func treasure_landing(s: GameState,at: Vector2,above: float) -> Variant:
+	var layout:=s.board.floor_geometry()
+	var center:=MovePlanner.node_at(at)
+	var candidates: Array[Vector2i]=[center]
+	for offset: Vector2i in MoveGrid.NEIGHBORS:
+		candidates.append(center+offset)
+	for offset: Vector2i in MoveGrid.NEIGHBORS:
+		candidates.append(center+offset*2)
+	candidates.sort_custom(func(a: Vector2i,b: Vector2i) -> bool:
+		return MoveGrid.to_pos(a).distance_squared_to(at)<MoveGrid.to_pos(b).distance_squared_to(at))
+	for point in candidates:
+		var p:=MoveGrid.to_pos(point)
+		if s.board.over_void(p,TreasureRules.TOKEN_RADIUS) or not s.board.contains(p,TreasureRules.TOKEN_RADIUS):
+			continue
+		var highest: Variant=null
+		var height:=-INF
+		for i in layout.surfaces.size():
+			var deck:=layout.surfaces[i]
+			if deck.id.begins_with("climb:"):
+				continue
+			var n:=Vector3i(point.x,point.y,i)
+			if not layout.contains(n,TreasureRules.TOKEN_RADIUS):
+				continue
+			var h:=layout.height(n)
+			if h<=above+0.001 and h>height:
+				height=h
+				highest=n
+		if highest==null:
+			continue
+		var start:=Vector3(at.x,above,at.y)
+		var edge:=Vector3(p.x,above,p.y)
+		var finish:=layout.world(highest)
+		var clear:=true
+		for segment: Array in [[start,edge],[edge,finish]]:
+			var a: Vector3=segment[0]
+			var b: Vector3=segment[1]
+			var steps:=maxi(1,ceili(a.distance_to(b)*10.0))
+			for i in range(steps+1):
+				if not layout.clearance(a.lerp(b,float(i)/steps),TreasureRules.TOKEN_RADIUS,0.5):
+					clear=false
+					break
+			if not clear:
+				break
+		if clear:
+			return highest
+	return null
+
 
 static func clear_descent(layout: FloorLayout,to: Vector3,above: float) -> bool:
 	var steps := maxi(1,ceili((above-to.y)/0.1))
@@ -31,7 +80,18 @@ static func clear_descent(layout: FloorLayout,to: Vector3,above: float) -> bool:
 	return true
 
 
+## Calculate actual landing damage before offering voluntary movement.
+static func damage(s: GameState,f: Figure,distance: float) -> int:
+	if MagicEquipment.bonus(f,"slow_fall")>0 or f.def.traits.has("flying"):
+		return 0
+	return ElevationRules.fall_damage(distance-(3.0 if s.board.low_gravity else 0.0))
+
+
+static func voluntary_allowed(s: GameState,f: Figure,distance: float) -> bool:
+	return f.control_spell!="mind_control" or damage(s,f,distance)==0
+
+
 static func apply(c: GameController,f: Figure,distance: float,by: Figure) -> void:
-	var damage := ElevationRules.fall_damage(distance-(3.0 if c.state.board.low_gravity else 0.0))
-	if damage>0 and MagicEquipment.bonus(f,"slow_fall")==0 and not f.def.traits.has("levitate"):
-		c._hurt(f,damage,by,false)
+	var amount:=damage(c.state,f,distance)
+	if amount>0:
+		c._hurt(f,amount,by,false)

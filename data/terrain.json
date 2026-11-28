@@ -308,5 +308,21 @@
     "cover": 1,
     "move_mult": 2,
     "height": 0.4
+  },
+  "shallow_water": {
+    "name": "Shallow water",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "move_mult": 2,
+    "height": 0.05
+  },
+  "deep_water": {
+    "name": "Deep water",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 0,
+    "move_mult": 2,
+    "height": 0.05
   }
 }

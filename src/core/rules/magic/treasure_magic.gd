@@ -1,11 +1,15 @@
 class_name TreasureMagic
 extends RefCounted
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func can_target(f: Figure, id: String, token: TreasureToken) -> bool:

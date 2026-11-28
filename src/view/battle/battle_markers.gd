@@ -79,13 +79,13 @@ func show_move_plan(path: PackedVector2Array) -> void:
 	show_world_plan(world)
 
 
-func show_world_plan(path: PackedVector3Array) -> void:
+func show_world_plan(path: PackedVector3Array,risky: bool=false) -> void:
 	clear_move_plan()
 	if path.is_empty():
 		return
 	_plan=Node3D.new()
 	add_child(_plan)
-	var gold := Color("f6d487")
+	var gold := Color("f0a275") if risky else Color("f6d487")
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.albedo_color=gold
@@ -103,22 +103,47 @@ func show_world_plan(path: PackedVector3Array) -> void:
 	_plan.add_child(end)
 	if path.size()<2:
 		return
-	var vertices := PackedVector3Array()
+	var shape:=ImmediateMesh.new()
+	var ribbon:=StandardMaterial3D.new()
+	ribbon.shading_mode=BaseMaterial3D.SHADING_MODE_UNSHADED
+	ribbon.vertex_color_use_as_albedo=true
+	ribbon.cull_mode=BaseMaterial3D.CULL_DISABLED
+	var segments:=0
 	for i in range(1,path.size()):
+		var a:=path[i-1]+Vector3.UP*0.12
+		var b:=path[i]+Vector3.UP*0.12
+		var delta:=b-a
 		# A linked edge can jump across the board: do not draw a false route.
-		var length := path[i-1].distance_to(path[i])
-		if length<0.001 or Vector2(path[i].x-path[i-1].x,path[i].z-path[i-1].z).length()>1.5:
+		if delta.length()<0.001 or Vector2(delta.x,delta.z).length()>1.5:
 			continue
-		for p in [path[i-1],path[i]]:
-			vertices.append(p+Vector3.UP*0.12)
-	if vertices.is_empty():
-		return
-	var shape := ImmediateMesh.new()
-	shape.surface_begin(Mesh.PRIMITIVE_LINES,mat)
-	for vertex in vertices:
-		shape.surface_add_vertex(vertex)
-	shape.surface_end()
-	var line := MeshInstance3D.new()
-	line.mesh=shape
-	line.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_plan.add_child(line)
+		var color:=gold
+		if delta.y>0.03:
+			color=Color("8bd7f5")
+		elif delta.y<-0.03:
+			color=Color("f6a47d")
+		var across:=Vector3(-delta.z,0,delta.x).normalized()*0.055
+		if across.length_squared()<0.00001:
+			across=Vector3.RIGHT*0.055
+		if segments==0:
+			shape.surface_begin(Mesh.PRIMITIVE_TRIANGLES,ribbon)
+		for vertex in [a-across,a+across,b+across,a-across,b+across,b-across]:
+			shape.surface_set_color(color)
+			shape.surface_add_vertex(vertex)
+		segments+=1
+	if segments>0:
+		shape.surface_end()
+		var line:=MeshInstance3D.new()
+		line.mesh=shape
+		line.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_plan.add_child(line)
+	var rise:=path[-1].y-path[0].y
+	if absf(rise)>=0.5:
+		var height_label:=Label3D.new()
+		height_label.text="%+.1f″"%rise
+		height_label.font_size=42
+		height_label.pixel_size=0.008
+		height_label.outline_size=8
+		height_label.modulate=Color("8bd7f5") if rise>0 else Color("f6a47d")
+		height_label.billboard=BaseMaterial3D.BILLBOARD_ENABLED
+		height_label.position=path[-1]+Vector3.UP*1.05
+		_plan.add_child(height_label)

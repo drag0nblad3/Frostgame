@@ -10,6 +10,21 @@ var dice: Dice
 var history: Array[GameEvent] = []
 var command_history: Array[Dictionary] = []
 var recording_command := false
+## Optional diagnostic timers; never used to choose game actions.
+var ai_profile_enabled:=false
+var ai_profile: Dictionary={}
+## Shared optional-search work allowance for a bot decision session.
+## Empty outside bot play; never affects player legality or exact reach.
+var ai_work: Dictionary={}
+
+func ai_begin() -> int:
+	return Time.get_ticks_usec() if ai_profile_enabled else 0
+
+func ai_end(label: String,started: int) -> void:
+	if started==0:
+		return
+	ai_profile[label]=int(ai_profile.get(label,0))+Time.get_ticks_usec()-started
+
 var capture_frames := false
 var replay_frames: Array[Dictionary]=[]
 var _flow: TurnFlow
@@ -36,6 +51,13 @@ func _init(s: GameState, d: Dice) -> void:
 	_fate_combat = FateCombat.new(self)
 
 
+## Terminal lifecycle operation, only for a battle that is being discarded.
+## A pending Will/Beauty continuation can bind the controller back into its
+## own helper, so dropping the scene reference alone may not release it.
+func abandon_pending_callbacks() -> void:
+	_magic.resistance.continuation=Callable()
+
+
 func emit(type: String, data: Dictionary = {}) -> void:
 	var e := GameEvent.new(type, data)
 	history.append(e)
@@ -45,9 +67,9 @@ func emit(type: String, data: Dictionary = {}) -> void:
 		RedKingInvestigations.observe_event(self,type,data)
 
 
-func begin_deployment(human_side: int=-1) -> BattleDeployment:
+func begin_deployment(human_side: int=-1,manual_treasure: bool=false) -> BattleDeployment:
 	deployment=BattleDeployment.new(self,human_side)
-	deployment.begin()
+	deployment.begin(manual_treasure)
 	return deployment
 
 
@@ -84,6 +106,12 @@ func layered_reach() -> LayeredReach:
 
 func move_on_floor(node: Vector3i) -> bool:
 	return BattleRecord.run(self,"move_on_floor",{"node":node},func() -> bool: return LayeredMovement.move(self,node))
+
+
+## AI-only: use the exact reach from this unchanged decision, retaining the
+## same replay command and normal movement declaration/reaction handling.
+func move_from_fresh_reach(node: Vector3i,reach: LayeredReach) -> bool:
+	return BattleRecord.run(self,"move_on_floor",{"node":node},func() -> bool: return LayeredMovement.declare_walk(self,node,reach))
 
 
 func floor_exit_nodes() -> Array[Vector3i]:
@@ -337,6 +365,8 @@ func answer_elemental_combat(use: bool) -> bool:
 
 
 func awaiting_reaction() -> bool:
+	if not CoreScenarioChoice.pending(self).is_empty() or not MeleeWeaponChoice.pending(self).is_empty():
+		return true
 	if state.scenario_data.has("rk_end_choice") or state.scenario_data.has("rk_priority_choice") or state.scenario_data.has("rk_spell_absorption") or state.scenario_data.has("rk_direction_choice") or state.scenario_data.has("rk_lightning_absorb") or state.scenario_data.has("rk_worm_relocation"):
 		return true
 	if not state.pending_combat.is_empty() or state.pending_initiative or not state.pending_intercept.is_empty() or not state.pending_resistance.is_empty():
@@ -403,6 +433,7 @@ func select_melee(id: String) -> bool:
 		for w in selectable_melee():
 			if w.id == id:
 				var f := state.active()
+				WeaponEnchantment.migrate(f)
 				f.melee = w
 				emit("weapon_selected", {"id": f.id, "weapon": id})
 				return true

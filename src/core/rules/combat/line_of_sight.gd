@@ -1,7 +1,7 @@
 class_name LineOfSight
 extends RefCounted
 ## Line of sight and cover between two points on the table, centre to centre.
-## TODO(rules): 2e lets a shot see any part of the target; we trace centre to centre only.
+## Figure sight tests the head and torso using BodySight; point targets retain the point ray.
 ## TODO(rules): figures do not block line of sight yet.
 
 ## A cover piece this close to the target (inches from its footprint) gives
@@ -30,7 +30,10 @@ static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -
 		result.clear=false
 		return result
 	if board.floor_layout.is_empty():
-		return check(board,Vector2(at.x,at.z),to.pos,from)
+		var direct:=check(board,Vector2(at.x,at.z),to.pos,from)
+		if board.reality_sphere or board.ringworld or RuleHooks.first("sight",[board,Vector2(at.x,at.z),to.pos,from])!=null:
+			return direct
+		return BodySight.fallback(board,from,at,to,direct)
 	var layout := board.floor_geometry()
 	var target := Vector3(to.pos.x,to.elevation,to.pos.y)
 	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(at.x,at.z),to.pos)
@@ -45,6 +48,8 @@ static func check_from_world(board: Board,from: Figure,at: Vector3,to: Figure) -
 	result.clear = not from.surface_id.is_empty() and not to.surface_id.is_empty() and floor_ray(board,layout,at+Vector3.UP*1.5,target+Vector3.UP,from,false)
 	if board.darkness and maxf(0.0,at.distance_to(target)-2.0*Figure.BASE_RADIUS)>12.0:
 		result.clear=false
+	if not result.clear and not board.darkness and not from.surface_id.is_empty() and not to.surface_id.is_empty():
+		BodySight.fallback(board,from,at,to,result)
 	if result.clear:
 		floor_cover(board,at,target,result)
 	return result
@@ -90,7 +95,7 @@ static func physical_floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Ve
 		if p.surface_id.is_empty() or not p.kind.blocks_los:
 			continue
 		var volume:=AABB(Vector3(p.rect.position.x,p.base_height,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
-		if LayeredSight.intersects(a,b,volume):
+		if (LayeredSight.intersects_cylinder(a,b,volume) if p.circular else LayeredSight.intersects(a,b,volume)):
 			return false
 	return true
 
@@ -109,6 +114,8 @@ static func within_centres(board: Board,from: Figure,to: Figure,limit: float=24.
 static func spell_visible(board: Board,from: Figure,to: Figure,limit: float=24.0) -> bool:
 	if from.ring_side!=to.ring_side:
 		return false
+	if within_centres(board,from,to,limit):
+		return true
 	if board.floor_layout.is_empty():
 		return WizardEye.visible(board,from,to.pos,limit)
 	return WizardEye.floor_origin(board,from,Vector3(to.pos.x,to.elevation,to.pos.y),limit)!=null

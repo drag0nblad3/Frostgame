@@ -31,3 +31,16 @@ func test_natural_one_no_empowerment() -> void:
 	check(c.finish_cast(0))
 	check(not c.awaiting_reaction())
 	check(c.state.figure(2).petrified_skip)
+
+
+func test_abandon_pending_resistance_releases_controller() -> void:
+	var c:=_game([18,12])
+	var reference: WeakRef=weakref(c)
+	check(c.start_cast("petrify",2))
+	check(c.finish_cast(0))
+	check(not c.state.pending_resistance.is_empty())
+	check(c._magic.resistance.continuation.is_valid())
+	c.abandon_pending_callbacks()
+	check(not c._magic.resistance.continuation.is_valid())
+	c=null
+	check(reference.get_ref()==null,"discarding an unresolved reaction must release the battle")

@@ -4,6 +4,7 @@ extends RefCounted
 
 var failures: Array[String] = []
 var _current := ""
+var _battle_refs: Array[WeakRef]=[]
 
 
 func check(cond: bool, msg: String = "") -> void:
@@ -54,4 +55,15 @@ func make_game(board: Board, figs: Array[Figure], dice: Dice) -> GameController:
 	for i in figs.size():
 		figs[i].id = i + 1
 		s.figures.append(figs[i])
-	return GameController.new(s, dice)
+	var c:=GameController.new(s,dice)
+	_battle_refs.append(weakref(c))
+	return c
+
+
+## Report survivors without keeping the battle alive or masking the leak.
+func report_retained_battles() -> void:
+	for reference in _battle_refs:
+		var c:=reference.get_ref() as GameController
+		if c!=null:
+			print("TEST_RETAINED_BATTLE|",_current,"|pending_resistance=",not c.state.pending_resistance.is_empty(),"|callback=",c._magic.resistance.continuation.is_valid(),"|events=",c.history.size())
+	_battle_refs.clear()

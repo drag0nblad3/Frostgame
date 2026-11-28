@@ -1,11 +1,15 @@
 class_name WeaponActions
 extends RefCounted
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 static func magical(t: Figure, w: WeaponDef) -> bool:
@@ -13,7 +17,7 @@ static func magical(t: Figure, w: WeaponDef) -> bool:
 		return false
 	if not w.is_ranged() and t.spell_effects.get("potion_fairy_dust", "") == w.id:
 		return true
-	if t.spell_effects.has("enchant_weapon") and (w == t.ranged or (t.ranged == null and w == t.melee)):
+	if WeaponEnchantment.active(t,w):
 		return true
 	for item in t.items:
 		if item.get("gear_info", {}).get("type", "") == w.id:
@@ -36,6 +40,9 @@ func options(f: Figure) -> Array[Dictionary]:
 func destroy(t: Figure, id: String) -> void:
 	if t.destroyed_weapons.has(id):
 		return
+	WeaponEnchantment.migrate(t)
+	WeaponEnchantment.remove(t,id)
+	WeaponEnchantment.remove(t,id,WeaponEnchantment.HAMMER)
 	t.destroyed_weapons.append(id)
 	if t.melee.id == id:
 		t.melee = t.unarmed_weapon
@@ -56,4 +63,8 @@ func destroy(t: Figure, id: String) -> void:
 static func magic_attack(f: Figure, w: WeaponDef) -> bool:
 	if ScenarioNull.muted(f):
 		return false
-	return (w == f.melee and ActiveGear.has(f, "gear_construct_hammer")) or f.is_demon() or f.def.traits.has("magic_attack") or magical(f, w) or f.spell_effects.get("potion_fairy_dust", "") == w.id or (f.spell_effects.has("elemental_hammer") and (w == f.ranged or f.ranged == null))
+	# Core pp.97,121: a magical bow does not make ordinary ammunition magical.
+	# Innate creature attacks and explicit magic-ammunition resolution are separate.
+	if w.id in ["bow","crossbow"]:
+		return f.is_demon() or f.def.traits.has("magic_attack") or (not MagicEquipment.suppressed(f) and f.spell_effects.get("potion_fairy_dust","")==w.id)
+	return (w == f.melee and ActiveGear.has(f, "gear_construct_hammer")) or f.is_demon() or f.def.traits.has("magic_attack") or magical(f, w) or f.spell_effects.get("potion_fairy_dust", "") == w.id

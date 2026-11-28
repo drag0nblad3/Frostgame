@@ -33,6 +33,7 @@ const LOG_LINES := 4
 static var action_labels: Dictionary = JsonFile.read("res://data/action_labels.json")
 
 var _status: Label
+var _performance: Label
 var _hint: Label
 var _log: Label
 var _lines: Array[String] = []
@@ -96,6 +97,11 @@ func _ready() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.move_child(top,0)
 	col.add_child(_status)
+	_performance=_label(16)
+	_performance.modulate=Color("9ed6dd")
+	_performance.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_performance.hide()
+	col.add_child(_performance)
 	_watch = _button("Watch", func() -> void: watch_toggled.emit(_watch.button_pressed))
 	_watch.toggle_mode = true
 	top.add_child(_watch)
@@ -322,10 +328,20 @@ func set_floors(layout: FloorLayout,selected: String="") -> void:
 		return
 	_floor_choice.add_item("All floors")
 	_floor_choice.set_item_metadata(0,"")
+	var selected_index:=0
 	for surface in layout.surfaces:
+		if surface.id.begins_with("climb:"):
+			continue
 		_floor_choice.add_item(surface.id.replace("_"," ").capitalize())
 		_floor_choice.set_item_metadata(_floor_choice.item_count-1,surface.id)
-	_floor_choice.select(maxi(0,layout.index_of(selected)+1))
+		if surface.id==selected:
+			selected_index=_floor_choice.item_count-1
+	if FloorViewFilter.has_climbing(layout):
+		_floor_choice.add_item("Climbing positions")
+		_floor_choice.set_item_metadata(_floor_choice.item_count-1,FloorViewFilter.CLIMBING)
+		if selected.begins_with("climb:"):
+			selected_index=_floor_choice.item_count-1
+	_floor_choice.select(selected_index)
 
 
 func set_active_summary(f: Figure) -> void:
@@ -338,7 +354,7 @@ static func active_summary(f: Figure) -> String:
 		return ""
 	var text := "%s  ·  HP %d/%d\n%d ACTIONS  ·  MOVE %.1f″\nF %+d   S %+d   A %d   W %+d"%[f.label(),f.health,f.def.health,f.actions_left,MoveRules.allowance(f),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
 	if not f.surface_id.is_empty():
-		text+="\n%s · %.1f″ elevation"%[f.surface_id.replace("_"," ").capitalize(),f.elevation]
+		text+="\n%s · %.1f″ elevation"%[("Hanging on wall" if f.surface_id.begins_with("climb:") else f.surface_id.replace("_"," ").capitalize()),f.elevation]
 	if f.melee!=null:
 		text+="\n"+f.melee.name
 	if f.ranged!=null:
@@ -365,7 +381,7 @@ func set_actions(available: Array[String], mode: String, hint: String) -> void:
 		if key.begins_with("spell_") and _spell_catalog.has(key.trim_prefix("spell_")):
 			b.tooltip_text=SpellReference.text(key.trim_prefix("spell_"))
 		if key=="move_confirm":
-			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else ("Confirm jump" if mode=="jump" else "Confirm move"))
+			b.text="Confirm retreat" if mode=="exit" else ("Confirm run" if mode in ["run_for_it","run_talisman"] else ("Confirm jump" if mode=="jump" else ("Confirm fall" if mode=="drop_down" else "Confirm move")))
 			b.tooltip_text=b.text
 	if changed:
 		for i in available.size():
@@ -505,3 +521,9 @@ func _fit_actions() -> void:
 
 static func action_columns(usable: float,minimum: float,wide: bool) -> int:
 	return clampi(floori((usable+10.0)/(maxf(1.0,minimum)+10.0)),1,2 if wide else 4)
+
+
+func set_performance(text: String) -> void:
+	_performance.visible=not text.is_empty()
+	if _performance.visible:
+		_performance.text=text

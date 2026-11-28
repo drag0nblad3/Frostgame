@@ -27,14 +27,58 @@
       "quarter_turns": 2
     },
     {
-      "ruin_kit": "courtyard_ruin",
+      "kind": "ruin",
       "rect": [
         15,
         15,
         6,
-        6
-      ],
-      "quarter_turns": 1
+        0.7
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        15,
+        20.3,
+        6,
+        0.7
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        20.3,
+        15.7,
+        0.7,
+        4.6
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        15,
+        15.7,
+        0.4,
+        3.1
+      ]
+    },
+    {
+      "kind": "ruin",
+      "rect": [
+        17,
+        18.15,
+        0.4,
+        2.15
+      ]
+    },
+    {
+      "kind": "rubble",
+      "rect": [
+        18.6,
+        15.8,
+        1.1,
+        1.1
+      ]
     },
     {
       "ruin_kit": "shattered_shop",
@@ -294,5 +338,6 @@
         1
       ]
     }
-  ]
+  ],
+  "shared_profiled_climbing": true
 }

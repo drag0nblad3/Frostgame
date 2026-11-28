@@ -22,6 +22,9 @@ static func legal(s: GameState,layout: FloorLayout,f: Figure,n: Vector3i,rect: R
 	for solid in layout.solids:
 		if solid.intersects(volume):
 			return false
+	for cylinder in layout.circular_solids:
+		if cylinder.intersects(volume):
+			return false
 	for prism in layout.convex_solids:
 		if prism.overlaps(volume):
 			return false
@@ -57,6 +60,9 @@ static func add_volume(layout: FloorLayout,entry: Dictionary) -> void:
 		layout.errors.append("Invalid conjured wall "+id)
 		return
 	var solid:=solid_for(entry)
+	if bool(entry.get("circular",false)):
+		layout.circular_solids.append(solid)
+		return
 	layout.solids.append(solid)
 	layout.magic_solids.append(solid)
 	if not bool(entry.get("walkable",true)):
@@ -73,10 +79,16 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 	var surface:=layout.surfaces[index]
 	var rect:=surface.rect
 	var rotated:=rect.size.y>rect.size.x
+	_add_face_climbs(layout,entry,surface,rotated,"")
+	_add_face_climbs(layout,entry,surface,not rotated,":end")
+
+
+static func _add_face_climbs(layout: FloorLayout,entry: Dictionary,surface: FloorSurface,rotated: bool,suffix: String) -> void:
+	var id:=str(entry["id"])
+	var rect:=surface.rect
 	var along:=Vector2.DOWN if rotated else Vector2.RIGHT
 	var across:=Vector2.RIGHT if rotated else Vector2.DOWN
-	var h:=float(entry["height"])
-	var rise:=surface.level-h
+	var base:=float(entry["height"])
 	var length:=rect.size.y if rotated else rect.size.x
 	var width:=rect.size.x if rotated else rect.size.y
 	for i in range(1,int(length*2)):
@@ -85,13 +97,25 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 			var outside:=at+across*(width*0.5+Figure.BASE_RADIUS)*side
 			# Climb to the nearest legal top edge, not the centre of a broad roof.
 			var edge:=at+across*maxf(0.0,width*0.5-Figure.BASE_RADIUS)*side
+			var normal:=across*side
+			outside=ArchitectureClimbs._snap_outside(at+across*(width*0.5)*side,normal)
 			var a:=layout.node(str(entry["support"]),outside)
 			var b:=layout.node(id,edge)
+			# Snap inward at the lip so a fractional footprint does not
+			# discard an otherwise reachable roof edge.
+			if not layout.contains(b) and width>=Figure.BASE_RADIUS*2+0.001:
+				b=layout.node(id,layout.point(b)-normal*MoveGrid.STEP)
 			outside=layout.point(a)
 			if outside.distance_to(layout.point(b))>1.5:
 				continue
-			if not layout.standable(a) or not layout.standable(b) or not is_equal_approx(layout.height(a),h):
+			if not layout.standable(a) or not layout.standable(b):
 				continue
+			var h:=layout.height(a)
+			# A wall bordering a higher bank can be scaled from that bank.
+			# Do not create a floating climb below the actual masonry base.
+			if h<base-0.001 or h>=surface.level-0.001:
+				continue
+			var rise:=surface.level-h
 			var clear:=true
 			var steps:=maxi(1,ceili(rise*10.0))
 			for step in range(steps+1):
@@ -105,4 +129,4 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 					clear=false
 					break
 			if clear:
-				FloorClimb.add(layout,{"id":id+":"+str(i)+":"+str(side),"from":[entry["support"],outside.x,outside.y],"to":[id,layout.point(b).x,layout.point(b).y]})
+				FloorClimb.add(layout,{"id":id+suffix+":"+str(i)+":"+str(side),"from":[entry["support"],outside.x,outside.y],"to":[id,layout.point(b).x,layout.point(b).y]})

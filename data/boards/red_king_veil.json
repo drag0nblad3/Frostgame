@@ -1,6 +1,7 @@
 {
   "id": "red_king_veil",
   "name": "The Veil of Unreality",
+  "shared_climbing": true,
   "size": [
     24,
     36

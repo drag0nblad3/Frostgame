@@ -92,3 +92,60 @@ func test_standard_scenarios_have_distinct_playable_maps() -> void:
 		ids.append(s.board.id)
 		for t in s.treasures:
 			check(s.board.can_stand(t.pos,TreasureRules.TOKEN_RADIUS),id+" token "+str(t.id))
+
+
+func test_seeded_standard_treasure_placement() -> void:
+	for id in ["treasure_skirmish","sunken_streets","worm_hunts","genie_in_the_bottle","dreams_well","underground_library","silent_tower"]:
+		var layouts: Array=[]
+		for seed_value in [7,19,41]:
+			var s:=ScenarioLoader.load_id(id,db(),terrain())
+			var original:=_world(s,s.treasures[0])
+			check(StandardTreasurePlacement.prepare(s,Dice.new(seed_value)),id)
+			var center:=_world(s,s.treasures[0])
+			if s.scenario_special in StandardTreasurePlacement.ANCHORED:
+				check_eq(center,original,id+" anchor")
+			else:
+				check_eq(s.treasures[0].pos,s.board.size*0.5,id+" centre")
+			var positions: Array=[]
+			for i in 5:
+				var t:=s.treasures[i]
+				var at:=_world(s,t)
+				positions.append(at)
+				check(not is_nan(at.y),id)
+				if i in [1,2]:
+					check(at.distance_to(center)>=6.0 and at.distance_to(center)<=8.0,id+" inner")
+				if i>2:
+					check(TreasureRules.edge_distance(s.board,t.pos)>9.0,id+" outer")
+				for j in range(i):
+					var separation:=at.distance_to(_world(s,s.treasures[j]))
+					check(separation>6.0 if i>2 else separation>=6.0,id+" separation")
+			check(StandardTreasurePlacement.prepare(s,Dice.new(99)),id+" repeat")
+			for i in 5:
+				check_eq(_world(s,s.treasures[i]),positions[i],id+" unchanged")
+			layouts.append(positions)
+		check(layouts[0]!=layouts[1] or layouts[1]!=layouts[2],id+" variation")
+
+
+func test_genie_central_ruin_access_and_screening() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var center:=s.board.size*0.5
+	var grid:=MoveGrid.new(s.board)
+	var goal:=MovePlanner.node_at(center)
+	var start:=MovePlanner.node_at(Vector2(14,19.5))
+	var queue: Array[Vector2i]=[start]
+	var visited: Dictionary={start:true}
+	while not queue.is_empty() and not visited.has(goal):
+		var node: Vector2i=queue.pop_front()
+		for delta: Vector2i in MoveGrid.NEIGHBORS:
+			var next:=node+delta
+			if visited.has(next) or MoveGrid.to_pos(next).distance_to(center)>8.0 or not grid.open(next) or not is_finite(grid.step_cost(node,next)):
+				continue
+			visited[next]=true
+			queue.append(next)
+	check(visited.has(goal),"Walkable entrance to central treasure")
+	for edge in 4:
+		for x in range(1,72):
+			for y in range(1,72):
+				var at:=Vector2(x,y)*0.5
+				if DeploymentRules.zone(s,edge,at) and s.board.can_stand(at,Figure.BASE_RADIUS):
+					check(not LineOfSight.check(s.board,at,center).clear,"Screened centre from "+str(at))

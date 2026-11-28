@@ -20,8 +20,8 @@ static func weakest_contact(s: GameState, f: Figure) -> Figure:
 			continue
 		if RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(e):
 			continue
-		var score := float(e.health) / MagicTactics.importance(e) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
-		var previous := INF if best == null else float(best.health) / MagicTactics.importance(best) + (0.0 if can_harm(f, best, f.melee) else 1000.0)
+		var score := float(e.health) / (MagicTactics.importance(e)*BotPreference.appeal(s,f,e.id,"melee")*BotPreference.threat_appeal(f,e)) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
+		var previous := INF if best == null else float(best.health) / (MagicTactics.importance(best)*BotPreference.appeal(s,f,best.id,"melee")*BotPreference.threat_appeal(f,best)) + (0.0 if can_harm(f, best, f.melee) else 1000.0)
 		if score < previous:
 			best = e
 	return best
@@ -55,7 +55,7 @@ static func best_shot(s: GameState, f: Figure) -> Figure:
 	for t in s.figures:
 		if t.side == f.side or RingworldBot.protected_key(s,f,t) or Contact.in_combat(s.figures, t) or Shooting.blocked_reason(s.board, s.figures, f, t) != "":
 			continue
-		var v := shot_value(s, f, f.pos, t)
+		var v := shot_value(s, f, f.pos, t)*BotPreference.appeal(s,f,t.id,"shot")*BotPreference.threat_appeal(f,t)
 		if v > best_v:
 			best = t
 			best_v = v
@@ -69,7 +69,7 @@ static func best_legal_shot(c: GameController,f: Figure) -> Figure:
 	for t in c.state.figures:
 		if t.side==f.side or RingworldBot.protected_key(c.state,f,t) or Contact.in_combat(c.state.figures,t) or not BattleAction.legal(c,"shoot",t.id):
 			continue
-		var score:=shot_value(c.state,f,f.pos,t)
+		var score:=shot_value(c.state,f,f.pos,t)*BotPreference.appeal(c.state,f,t.id,"shot")*BotPreference.threat_appeal(f,t)
 		if score>value:
 			best=t
 			value=score
@@ -80,7 +80,7 @@ static func best_legal_shot(c: GameController,f: Figure) -> Figure:
 static func shooting_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 	var best := {}
 	var best_v := 0.0
-	for n: Vector2i in r.nodes():
+	for n: Vector2i in BotPreference.positions(s,f,r.nodes()):
 		var at := MoveGrid.to_pos(n)
 		if _touches_enemy(s, f, at):
 			continue
@@ -89,7 +89,7 @@ static func shooting_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 				continue
 			if not Shooting.possible_from(s.board, s.figures, f, at, t):
 				continue
-			var v: float = shot_value(s, f, at, t) - r.cost[n] * 0.01
+			var v: float = shot_value(s, f, at, t)*BotPreference.appeal(s,f,t.id,"shot") - r.cost[n] * 0.01
 			if v > best_v:
 				best_v = v
 				best = {"node": n, "target": t}
@@ -105,7 +105,7 @@ static func charge_spot(s: GameState, f: Figure, r: MoveReach) -> Dictionary:
 		for t in s.figures:
 			if t.side == f.side or not t.in_play() or RingworldBot.protected_key(s,f,t) or t.ring_side!=f.ring_side or not IllusionRules.visible_to(s.figures, f, t) or not Contact.touching(at, t.pos) or absf(s.board.height_at(at) - t.elevation) >= 0.5:
 				continue
-			var score: float = t.health * 10.0 + r.cost[n] + (0.0 if can_harm(f, t, f.melee) else 1000.0)
+			var score: float = t.health * 10.0 / BotPreference.appeal(s,f,t.id,"charge") + r.cost[n] + (0.0 if can_harm(f, t, f.melee) else 1000.0)
 			if RedKingTethers.pylon(t) or RedKingRingworld.key_master(t) or RedKingMadMan.is_ryce(t):
 				score-=50.0
 			if score < best_score:

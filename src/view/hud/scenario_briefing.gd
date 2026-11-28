@@ -3,7 +3,7 @@ extends RefCounted
 ## Player-facing descriptions of implemented behavior, not verbatim rulebook text.
 
 const ENTRIES := {
-	"sunken_streets": ["Sunken Streets", "Recover treasure from a collapsed city district.", "A sunken courtyard and raised streets offer alternate routes. Follow ramps and stairs to avoid steep climbing costs. Banks can block shots. Five treasures."],
+	"sunken_streets": ["Sunken Streets", "Recover treasure from a collapsed city district.", "A sunken courtyard and raised streets offer alternate routes. Follow ramps and stairs to avoid steep climbing costs. Banks can block shots. Two flooded pools have shallow rough edges and deep centres: swimming tests on activation, no bows or crossbows in deep water. Five treasures."],
 	"treasure_skirmish": ["Frozen Ruins", "Explore the ruined streets and carry treasure off the table.", "Five treasures. Raised and sunken streets provide different sightlines; marked stairs and ramps provide cheaper routes. The central marker earns a campaign loot reroll. First collections can attract wandering monsters."],
 	"mausoleum": ["The Mausoleum", "Loot a burial complex defended by skeletons.", "Six treasures; six initial skeletons. A further skeleton enters from a doorway after each Creature phase. No central treasure."],
 	"living_museum": ["The Living Museum", "The statues are more dangerous than they look.", "Collecting treasure requires a Will roll (TN 8). Success awakens a remaining statue as a medium construct. Failed attempts spend an action."],
@@ -12,9 +12,9 @@ const ENTRIES := {
 	"underground_library": ["The Library", "Recover arcane knowledge from a buried library.", "The central treasure must be broken free with a Fight roll (TN 14) before collection. Leave through the four marked doorways, not arbitrary table edges. Campaign treasure includes special library loot."],
 	"haunted_houses": ["The Haunted Houses", "Search five abandoned huts.", "The first entry or magical movement of a hut's treasure can reveal a ghoul or wraith. Discovery of an undead occupant earns 15 XP. Once searched, the hut does not spawn another occupant."],
 	"the_keep": ["The Keep", "Four arcane discs link distant parts of the battlefield.", "Ending a move on a disc can transport the figure to another disc. Treasure on a disc cannot be moved by spells. A wizard or apprentice gains 30 or 20 XP on their first successful transport."],
-	"genie_in_the_bottle": ["Genie in the Bottle", "One treasure hides a dangerous lamp.", "A first pickup may release the genie; the last token guarantees discovery if it has not appeared. Mundane weapons cannot hurt it. After three victims it seeks an exit. The recovered lamp is worth 250 gc."],
+	"genie_in_the_bottle": ["Genie in the Bottle", "One treasure hides a dangerous lamp.", "A first pickup may release the genie; the finder’s player selects its legal emergence point; the last token guarantees discovery if it has not appeared. Mundane weapons cannot hurt it. After three victims it seeks an exit. The recovered lamp is worth 250 gc."],
 	"silent_tower": ["The Silent Tower", "Explore a tower where magic fails.", "The tower and linked buildings cancel ongoing magic and suppress spellcasting, potions and magic gear. Treasure near the tower resists magical movement. First caster entry earns bonus XP. Use the ruined tower's stairs, walkways and adjoining buildings to reach the summit."],
-	"complex_temple": ["The Complex Temple", "Break the guardians to reveal six treasures.", "Touching a guardian column triggers an opposed Fight roll without another action. Losing can cause damage; winning destroys the column and reveals its treasure. Eligible winners collect automatically. Caster challenges grant XP once each."]
+	"complex_temple": ["The Complex Temple", "Break the guardians to reveal six treasures.", "Touching a guardian column triggers an opposed Fight roll without another action. Losing can cause damage; winning destroys the column and reveals its treasure. Eligible winners may collect immediately for free or leave the treasure. Caster challenges grant XP once each."]
 }
 
 
@@ -24,7 +24,10 @@ static func title(id: String) -> String:
 
 static func description(id: String) -> String:
 	var entry: Array = all_entries().get(id, ["Skirmish", "Recover treasure or defeat the opposing warband.", ""])
-	return "%s\n\n%s" % [entry[1], entry[2]]
+	var description_text: String="%s\n\n%s" % [entry[1], entry[2]]
+	if id in ["treasure_skirmish","sunken_streets","worm_hunts","genie_in_the_bottle","dreams_well","underground_library","silent_tower"]:
+		description_text+="\n\nTreasure positions vary each battle; the map preview shows an example."
+	return description_text
 
 
 static func progress(s: GameState) -> String:
@@ -111,6 +114,8 @@ static func progress(s: GameState) -> String:
 		"genie_in_the_bottle":
 			if s.lamp_token < 0:
 				text += " | Lamp hidden"
+			elif s.scenario_data.has("genie_pending_finder"):
+				text += " | Lamp found · release blocked"
 			else:
 				var genie := s.figure(s.genie_id)
 				text += " | Genie %s" % ("escaping" if genie != null and genie.in_play() and s.genie_kills >= 3 else ("active" if genie != null and genie.in_play() else "gone"))

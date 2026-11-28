@@ -1,7 +1,11 @@
 class_name PotionActions
 extends RefCounted
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 var catalog: Dictionary
 const POINTS := ["explosive_cocktail", "teleportation"]
 const COATINGS := ["poison", "fairy_dust"]
@@ -10,7 +14,7 @@ const COATINGS := ["poison", "fairy_dust"]
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 	catalog = CampaignInventory.catalog()
 
 

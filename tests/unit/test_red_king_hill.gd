@@ -44,6 +44,7 @@ func test_downhill_motion_and_airborne_immunity() -> void:
 	var s := c.state
 	RedKingHill.transform(c)
 	s.board.pieces.clear()
+	s.board.floor_layout.erase("walls")
 	s.board.invalidate_terrain()
 	var f := s.figures[0]
 	f.pos=Vector2(18,10)
@@ -69,6 +70,7 @@ func test_player_selects_pyramid_slope() -> void:
 	var f := s.figures[0]
 	f.pos=Vector2(10,10)
 	s.board.pieces.clear()
+	s.board.floor_layout.erase("walls")
 	s.board.invalidate_terrain()
 	RedKingHill.transform(c)
 	var choice: Dictionary=s.scenario_data.get("rk_priority_choice",{})

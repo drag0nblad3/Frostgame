@@ -7,6 +7,8 @@ extends RefCounted
 ## Single-core devices (and tests that want the old timing) play inline.
 var threaded := OS.get_processor_count() > 1
 var _task := -1
+## Read only after done() joins the worker, or inline play completes.
+var last_ms:=0.0
 var _running := false
 var _controller: GameController
 var _events: Array[GameEvent] = []
@@ -21,6 +23,7 @@ func start(c: GameController) -> void:
 	_controller = c
 	if not threaded:
 		_play()
+		_controller=null
 		return
 	_running = true
 	_task = WorkerThreadPool.add_task(_play, false, "Frostgame bot")
@@ -43,6 +46,7 @@ func done() -> bool:
 	WorkerThreadPool.wait_for_task_completion(_task)
 	_task = -1
 	_running = false
+	_controller=null
 	return true
 
 
@@ -60,11 +64,14 @@ func finish() -> void:
 		WorkerThreadPool.wait_for_task_completion(_task)
 	_task = -1
 	_running = false
+	_controller=null
 	take_events()
 
 
 func _play() -> void:
+	var started:=Time.get_ticks_usec()
 	if _controller.state.active() != null:
 		Bot.resume_activation(_controller)
 	else:
 		Bot.play_activation(_controller)
+	last_ms=float(Time.get_ticks_usec()-started)/1000.0

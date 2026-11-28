@@ -5,11 +5,15 @@ extends RefCounted
 ## TODO(rules): victory is last warband standing (or a draw at the turn limit)
 ## until treasure and scenarios exist.
 
-var _c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var _c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(c: GameController) -> void:
-	_c = c
+	_controller_ref=weakref(c)
 
 
 func start_turn() -> void:
@@ -126,8 +130,12 @@ func _settle() -> void:
 		s.early.capture(s)
 		if s.phase == Phase.CREATURE:
 			ScenarioObjectives.spawn_worm(_c)
+			if CoreScenarioChoice.pending(_c).is_empty():
+				ScenarioGenie.retry_pending(_c)
 		if s.phase != Phase.CREATURE or not s.waiting(-1).is_empty():
 			_c.emit("phase", {"phase": s.phase})
+		if not CoreScenarioChoice.pending(_c).is_empty():
+			return
 
 
 ## A pending end-of-turn choice pauses before the remaining end-turn hooks.

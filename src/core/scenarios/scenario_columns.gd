@@ -31,7 +31,7 @@ static func challenge(c: GameController, f: Figure) -> bool:
 		return false
 	var raw := c.dice.d20()
 	var defence := c.dice.d20()
-	var total := raw + mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + (1 if f.ranged == null and f.spell_effects.has("enchant_weapon") else 0), 10) + f.roll_penalty()
+	var total := raw + mini(f.effective_fight() + f.melee.fight_mod + MagicEquipment.bonus(f, "fight", f.melee.id) + (1 if WeaponEnchantment.active(f,f.melee) else 0), 10) + f.roll_penalty()
 	var win := total > defence
 	var lose := total < defence
 	if s.critical_hits:
@@ -54,8 +54,11 @@ static func challenge(c: GameController, f: Figure) -> bool:
 			c._magic.terrain.remove(p)
 		token.frozen=false
 		c.emit("column_opened", {"id": f.id, "treasure": token.id})
-		# Free collection is automatic for eligible winners. A figure already
-		# carrying treasure or threatened by enemies leaves the token on the floor.
+		# Eligible winners may collect without spending another action.
 		if f.pos.distance_to(token.pos) <= Figure.BASE_RADIUS + 1.0 and f.in_play():
+			if f.side==s.reaction_side and c._loot.can_claim_free(f,token):
+				var options: Array[Dictionary]=[{"collect":true},{"collect":false}]
+				if CoreScenarioChoice.offer(c,"column",f.side,f.id,token.id,0,options):
+					return true
 			c._loot.claim_free(f, token)
 	return true

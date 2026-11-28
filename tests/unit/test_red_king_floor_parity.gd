@@ -71,3 +71,77 @@ func test_ground_spawn_cannot_select_roof() -> void:
 		check_eq(b.floor_geometry().surface_id(n),"street")
 	b.floor_layout["spawn_surfaces"]=["missing"]
 	check(BattlePlacement.nearest_ground(c.state,Vector2(8,8),2.0)==null)
+
+
+func test_first_expansion_maps_adopt_shared_floor_graph() -> void:
+	var profile:=ContentProfile.new(["red_king"])
+	var defs:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	for id: String in ["red_king_investigations","red_king_squatter","red_king_demons_and_mad_man","red_king_veil","red_king_herded","red_king_mind","red_king_hill","red_king_back_into_fire","red_king_sinkhole","red_king_tethers","red_king_bridge","red_king_ringworld"]:
+		var s:=ScenarioLoader.load_id(id,defs,terrain())
+		check(not s.board.floor_layout.is_empty(),id)
+		var l:=s.board.floor_geometry()
+		check(l.errors.is_empty(),id+":"+str(l.errors))
+		check(not s.scenario_data.has("support_errors"),id+":"+str(s.scenario_data.get("support_errors",[])))
+		for f in s.figures:
+			var n:=l.node(f.surface_id,f.pos)
+			check(l.standable(n),id+" figure "+str(f.id))
+			check_eq(l.point(n),f.pos)
+			check_eq(l.height(n),f.elevation)
+		for t in s.treasures:
+			if t.on_ground():
+				check_eq(t.surface_id,"street")
+				check(not is_nan(TreasureRules.token_height(s,t)))
+		check(l.index_of("street")>=0,id+" ground support")
+
+
+func test_round_obstacle_clearance_and_sight() -> void:
+	var b:=BoardLoader.from_dict({"size":[36,36],"shared_climbing":true,"pieces":[{"kind":"red_king_sinkhole_orb","rect":[16.5,16.5,3,3]}]},terrain())
+	var l:=b.floor_geometry()
+	check_eq(l.circular_solids.size(),1)
+	check(not l.standable(l.node("street",Vector2(18,18))))
+	check(l.standable(l.node("street",Vector2(19.5,19.5))))
+	check(l.standable(l.node("street",Vector2(20,18))))
+	check(not LayeredSight.clear(l,Vector3(15,1,18),Vector3(21,1,18)))
+	check(LayeredSight.clear(l,Vector3(15,4,18),Vector3(21,4,18)))
+	check(LayeredSight.clear(l,Vector3(19.4,1,19.4),Vector3(21,1,21)))
+
+
+func test_bridge_and_ringworld_shared_routes() -> void:
+	var profile:=ContentProfile.new(["red_king"])
+	var defs:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	var s:=ScenarioLoader.load_id("red_king_bridge",defs,terrain())
+	var c:=GameController.new(s,Dice.new(17))
+	var f:=s.figures[0]
+	var l:=s.board.floor_geometry()
+	var g:=LayeredGrid.new(l,f,s.figures)
+	check(not g.open(l.node("street",Vector2(5,33))))
+	check(g.open(l.node("street",Vector2(15,35))))
+	s=ScenarioLoader.load_id("red_king_ringworld",defs,terrain())
+	l=s.board.floor_geometry()
+	check(BoardTopology.floor_destinations(s.board,l,l.node("street",Vector2(10,0.5))).has(l.node("street",Vector2(10,35.5))))
+
+
+func test_moving_reality_disc_retains_round_geometry() -> void:
+	var b:=BoardLoader.from_dict({"size":[36,36],"shared_climbing":true,"pieces":[]},terrain())
+	var f:=fig("wizard",0,Vector2(19.5,19.5))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(17))
+	var k:=TerrainKind.new()
+	k.id="reality_hoof"
+	k.height=3.0
+	k.blocks_move=true
+	k.blocks_los=true
+	var p:=TerrainPiece.new(k,Rect2(16.5,16.5,3,3))
+	p.circular=true
+	check(RealityFloorTerrain.place_disc(c,p))
+	b.pieces.append(p)
+	var l:=b.floor_geometry()
+	check_eq(l.circular_solids.size(),1)
+	check(l.standable(l.node("street",f.pos)))
+	RealityFloorTerrain.relocate_touching(c,p)
+	check_eq(f.pos,Vector2(19.5,19.5))
+	check(RealityFloorTerrain.move_disc(c,p,Vector2(24,24)))
+	l=b.floor_geometry()
+	check(l.standable(l.node("street",Vector2(18,18))))
+	check(not l.standable(l.node("street",Vector2(24,24))))
+	check_eq(l.circular_solids.size(),1)

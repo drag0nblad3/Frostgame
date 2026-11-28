@@ -6,9 +6,7 @@ extends RefCounted
 static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=false) -> bool:
 	var s := sa.c.state
 	if not s.board.floor_layout.is_empty() and id=="leap":
-		# These effects still require an explicit floor placement/origin.
-		# All other figure-targeted effects use the standard rules below.
-		return false
+		return not LayeredLeap.points(sa.c,s.figure(target_id),true).is_empty()
 	var f := s.active()
 	var t := s.figure(target_id)
 	if not sa.c.can_act() or f == null or t == null or f.ring_side!=t.ring_side or not t.in_play() or RedKingMadMan.is_ryce(t) or ScenarioNull.muted(t) or t.def.traits.has("antithetical_magic"):
@@ -49,16 +47,18 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 	if t != f:
 		if not s.board.floor_layout.is_empty():
 			var direct:=LineOfSight.within_centres(s.board,f,t,limit)
-			var remote:=kind not in ["touch","area_shot"] and LineOfSight.spell_visible(s.board,f,t,limit)
+			var remote:=not direct and kind not in ["touch","area_shot"] and WizardEye.floor_origin(s.board,f,BattleSpace.center(t),limit)!=null
 			if not direct and not remote and (kind=="touch" or TigerEye.floor_witness(s.board,f,BattleSpace.center(t),limit)==null):
 				return false
 		elif kind == "area_shot":
-			if BattleSpace.edge_distance(f,t)>limit or (not LineOfSight.check(s.board,f.pos,t.pos).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
+			if BattleSpace.edge_distance(f,t)>limit or (not LineOfSight.check_figures(s.board,f,t).clear and TigerEye.witness(s.board,f,t.pos,limit)==null):
 				return false
-		elif not WizardEye.visible(s.board,f,t.pos,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
+		elif not LineOfSight.spell_visible(s.board,f,t,limit) and (kind=="touch" or TigerEye.witness(s.board,f,t.pos,limit)==null):
 			return false
 	if ammo:
 		return id=="enchant_weapon" and t.side==f.side and MagicAmmo.can_enchant(t)
+	if id in ["enchant_weapon","elemental_hammer"]:
+		return not WeaponEnchantment.options(t,id).is_empty()
 	if kind == "shot":
 		return t != f
 	if kind == "area_shot":
@@ -113,10 +113,18 @@ static func can_cast(sa: SpellActions, id: String, target_id: int,ammo: bool=fal
 static func counter_options(sa: SpellActions, id: String) -> Array[Dictionary]:
 	var f := sa.c.state.active()
 	var empty: Array[Dictionary] = []
-	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"] or not sa.c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light"):
+	if id not in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye", "enchant_weapon", "elemental_hammer"] or not sa.c.can_act() or f == null or f.def.role not in ["wizard", "apprentice"] or Contact.in_combat(sa.c.state.figures, f) or f.spell_effects.has("blinding_light"):
 		return empty
 	if not sa.available_spell(f, id):
 		return empty
+	if id in ["enchant_weapon","elemental_hammer"]:
+		var choices: Array[Dictionary]=[]
+		for t in sa.c.state.figures:
+			if not can_cast(sa,id,t.id):
+				continue
+			for w in WeaponEnchantment.options(t,id):
+				choices.append({"kind":"weapon","target":t.id,"weapon":w.id,"label":"%s #%d — %s"%[t.label(),t.id,w.name]})
+		return choices
 	if id == "wizard_eye":
 		return sa.eye.options(f)
 	if id == "crumble":
@@ -141,10 +149,10 @@ static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=
 	var out: Array[Vector3i]=[]
 	var s:=sa.c.state
 	var layout:=s.board.floor_geometry()
-	var origin:=BattleSpace.center(t)
 	var start:=layout.node(t.surface_id,t.pos)
 	if not layout.standable(start):
 		return out
+	var origin:=layout.world(start)
 	# The common route graph supplies safe inclines, stairs and short climbs.
 	# Allow leaving existing contact as the ordinary Suggestion rule does.
 	var grid:=LayeredGrid.new(layout,t,s.figures)
@@ -158,12 +166,12 @@ static func floor_suggestion_points(sa: SpellActions,t: Figure,first_only: bool=
 			out.append(n)
 		if first_only and not out.is_empty():
 			return out
-	# Safe downward displacements can fall up to three inches without harm.
+	# Downward displacement is legal only when it causes no actual fall damage.
 	for n in BattlePlacement.nodes(s.board,t.pos,3.0,index):
 		if out.has(n) or not BattlePlacement.floor_open(s,n,t,Figure.BASE_RADIUS,1.6,false) or ScenarioNull.field_at(s.board,layout.point(n)):
 			continue
 		var dest:=layout.world(n)
-		if dest.y>=origin.y or origin.distance_to(dest)>3.001:
+		if dest.y>=origin.y or origin.distance_to(dest)>3.001 or LayeredFall.damage(s,t,origin.y-dest.y)>0:
 			continue
 		if not LayeredFall.clear_descent(layout,dest,origin.y):
 			continue

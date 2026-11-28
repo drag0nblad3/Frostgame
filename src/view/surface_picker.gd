@@ -3,10 +3,10 @@ extends RefCounted
 ## Analytic ray intersection with actual exposed surfaces.
 
 
-static func pick(board: Board,origin: Vector3,direction: Vector3) -> Variant:
+static func pick(board: Board,origin: Vector3,direction: Vector3,ground_only: bool=false) -> Variant:
 	var planes: Array[Plane] = [Plane(Vector3.UP,0.0)]
 	for p in board.pieces:
-		if not (p.kind.walkable_top or p.kind.ground_surface):
+		if (ground_only and not p.kind.ground_surface) or not (p.kind.walkable_top or p.kind.ground_surface):
 			continue
 		if p.ramp:
 			var slope := (p.ramp_end-p.ramp_start)/(p.rect.size.y if p.ramp_rotated else p.rect.size.x)
@@ -21,7 +21,7 @@ static func pick(board: Board,origin: Vector3,direction: Vector3) -> Variant:
 		if hit == null:
 			continue
 		var point := TableSpace.to_table(hit)
-		if not board.contains(point) or absf(board.height_at(point)-hit.y)>0.002:
+		if not board.contains(point) or absf((board.ground_height_at(point) if ground_only else board.height_at(point))-hit.y)>0.002:
 			continue
 		var d := origin.distance_to(hit)
 		if d<distance:

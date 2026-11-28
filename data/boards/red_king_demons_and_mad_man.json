@@ -1,6 +1,7 @@
 {
   "id": "red_king_demons_and_mad_man",
   "name": "The Demons and the Mad Man",
+  "shared_climbing": true,
   "size": [
     36,
     36

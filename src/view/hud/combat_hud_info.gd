@@ -11,6 +11,11 @@ static func unit(f: Figure) -> String:
 		f.effective_move(),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
 	if f.treasure_id>=0:
 		text+=" · Loot %d"%f.carried_treasures().size()
+	var depth:=Swimming.figure_depth(f)
+	if depth==2:
+		text+=" · Deep water"+(" (swim exempt)" if Swimming.immune(f) else " · Swim TN5 · Fight −2")
+	elif depth==1:
+		text+=" · Shallow water"+(" (exempt)" if Swimming.immune(f) else " · Rough")
 	return text
 
 
@@ -37,4 +42,32 @@ static func action(bi: BattleInput,f: Figure) -> String:
 			return "Retreat · Leaving the table is final."
 		"items_menu":
 			return "%d equipment choices"%bi.item_options.size()
+	return ""
+
+
+## Explain common disabled action classes using already-computed menu
+## availability. Do not launch additional reach, target or spell searches.
+static func restrictions(c: GameController,f: Figure,available: Array[String]) -> String:
+	if f==null or c.awaiting_reaction() or not c.state.pending_cast.is_empty():
+		return ""
+	if f.actions_left<=0:
+		return "No actions remaining."
+	if f.spell_effects.has("plane_walk"):
+		return "Plane Walk: movement only."
+	if c.state.group.movement_pass():
+		return "Group activation: movement pass."
+	if f.spell_effects.has("petrify"):
+		return "Petrified: restricted actions."
+	if Contact.in_combat(c.state.figures,f):
+		if f.spell_effects.has("blinding_light"):
+			return "Engaged and blinded; normal fighting is unavailable."
+		return "Engaged: normal movement, shooting and casting are restricted."
+	if f.ranged!=null and f.ranged.needs_reload and not f.loaded and available.has("reload"):
+		return "Ranged weapon unloaded; reload before shooting."
+	if f.acted and not c.can_act() and c.can_move():
+		return "Non-movement action used; only movement remains."
+	if not available.has("move") and not c.can_move():
+		return "Movement unavailable this activation."
+	if f.ranged!=null and not available.has("shoot") and c.can_act():
+		return "No legal shot (range, sight or target restrictions)."
 	return ""

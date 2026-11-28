@@ -27,7 +27,8 @@
       14,
       8,
       8
-    ]
+    ],
+    "auto_architecture_climbs": true
   },
   "floor_kits": {
     "tower_complex": {

@@ -1,6 +1,7 @@
 {
   "id": "red_king_mind",
   "name": "In the Mind of Kalamon Ryce",
+  "shared_climbing": true,
   "size": [
     24,
     24

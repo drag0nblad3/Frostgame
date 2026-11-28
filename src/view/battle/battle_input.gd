@@ -34,6 +34,7 @@ var selected_drop := -1
 var spell_rotated := false
 var spell_extended := false
 var spell_first := -1
+var leap_air_offset:=0.0
 var counter_index := 0
 var counter_choices: Array[Dictionary] = []
 var empower := 0
@@ -58,7 +59,7 @@ func select_floor(id: String) -> void:
 		# Floor selection is a view change only; preserve the draft.
 		BattleFloorInput.draw_points(self)
 		move_plan.choose_node(self,move_plan.destination)
-		markers.show_world_plan(movement.path(move_plan.destination))
+		move_plan.draw(self)
 	elif attack_target>=0:
 		preview()
 		plan_attack(attack_target)
@@ -85,7 +86,7 @@ func refresh() -> void:
 	movement=null
 	floor_points.clear()
 	if is_layered():
-		floor_layout=FloorLayout.from_dict(c.state.board.floor_layout)
+		floor_layout=c.state.board.floor_geometry()
 		if floor_layout.index_of(floor_id)<0:
 			floor_id=""
 	BattleInputMenu.refresh(self)
@@ -96,6 +97,10 @@ func preview() -> void:
 
 
 func action(key: String) -> bool:
+	if key.begins_with("combat_weapon_"):
+		return available.has(key) and BattleEquipmentAction.execute(c,"melee_choice",{"weapon":key.trim_prefix("combat_weapon_")})
+	if key in ["core_collect","core_leave"]:
+		return available.has(key) and BattleScenarioAction.execute(c,"core_choice",{"index":0 if key=="core_collect" else 1})
 	if key=="move_confirm":
 		return available.has(key) and move_plan.confirm(self)
 	if key=="move_undo" and available.has(key):

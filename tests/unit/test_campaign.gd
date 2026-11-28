@@ -75,3 +75,13 @@ func test_deployment_blockers_and_prepared_caster() -> void:
 	p.data["pending_treasure"]=[{"token":0}]
 	check(not p.can_deploy())
 	check(not p.deployment_blockers().is_empty())
+
+
+## Core p.85: exhaustively check the twenty primary treasure entries.
+func test_primary_treasure_table_all_rows() -> void:
+	var golds: Array[int]=[50,70,140,20,40,20,40,0,20,40,0,20,40,0,20,40,60,80,100,120]
+	var kinds: Array[String]=["","","","3 potions","2 potions","1 scroll","2 scrolls","magic arms/armour","magic arms/armour","magic arms/armour","magic item","magic item","magic item","grimoire","grimoire","grimoire","grimoire","grimoire","grimoire","grimoire"]
+	for i in range(20):
+		var result:=CampaignProgress.treasure_result(i+1,LoadedDice.new([7]))
+		check_eq(result["gold"],golds[i],"gold roll %d"%(i+1))
+		check_eq(result["kind"],kinds[i],"kind roll %d"%(i+1))

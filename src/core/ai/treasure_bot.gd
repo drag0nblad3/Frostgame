@@ -98,7 +98,7 @@ static func _nearest(c: GameController, f: Figure) -> TreasureToken:
 		var route: float = field.get(MovePlanner.node_at(f.pos), INF)
 		if not is_finite(route):
 			continue
-		var d := route + (3.0 if token.frozen else 0.0)
+		var d := route + (3.0 if token.frozen else 0.0)+2.0*BotPreference.variation(c.state,f,token.id,"treasure")
 		for ally in c.state.side_figures(f.side):
 			if ally != f and ally.ring_side==f.ring_side and ally.treasure_id < 0 and not ally.def.traits.has("animal") and float(field.get(MovePlanner.node_at(ally.pos), INF)) + 2.0 < route:
 				d += 2.0

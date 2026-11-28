@@ -41,3 +41,70 @@ func test_genie_kills_and_escape() -> void:
 	var restored := BattleSnapshot.rebuild(BattleSnapshot.capture(c), db())
 	check_eq(restored.state.genie_kills, 3)
 	check_eq(restored.state.lamp_token, 0)
+
+
+func test_genie_spawn_distance_and_closest() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20]))
+	var finder:=s.figure(1)
+	finder.pos=Vector2(18,18)
+	finder.elevation=s.board.height_at(finder.pos)
+	s.treasure(0).ever_collected=true
+	ScenarioGenie.first_pickup(c,finder,s.treasure(0))
+	var genie:=s.figure(s.genie_id)
+	check(genie!=null)
+	if genie==null:
+		return
+	var at:=Vector3(genie.pos.x,genie.elevation,genie.pos.y)
+	var d:=at.distance_to(Vector3(finder.pos.x,finder.elevation,finder.pos.y))
+	check(d<=2.0)
+	for other in s.figures:
+		if other!=finder and other!=genie and other.in_play():
+			check(at.distance_to(Vector3(other.pos.x,other.elevation,other.pos.y))>d)
+
+
+func test_player_selects_genie_spawn() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20]))
+	s.reaction_side=0
+	var f:=s.figure(1)
+	f.pos=Vector2(18,18)
+	f.elevation=s.board.height_at(f.pos)
+	s.treasure(0).ever_collected=true
+	ScenarioGenie.first_pickup(c,f,s.treasure(0))
+	check(c.awaiting_reaction())
+	var d:=CoreScenarioChoice.pending(c)
+	check_eq(d.get("kind",""),"genie")
+	check(not BattleScenarioAction.execute(c,"core_choice",{"index":-1}))
+	if not d.is_empty():
+		var chosen: Vector3=d["options"][0]["world"]
+		check(BattleScenarioAction.execute(c,"core_choice",{"index":0}))
+		var genie:=s.figure(s.genie_id)
+		check(genie!=null)
+		if genie!=null:
+			check_eq(Vector3(genie.pos.x,genie.elevation,genie.pos.y),chosen)
+		check(not c.awaiting_reaction())
+
+
+func test_pending_genie_choice_survives_checkpoint() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20]))
+	s.reaction_side=0
+	var f:=s.figure(1)
+	f.pos=Vector2(18,18)
+	f.elevation=s.board.height_at(f.pos)
+	s.treasure(0).ever_collected=true
+	ScenarioGenie.first_pickup(c,f,s.treasure(0))
+	var before:=CoreScenarioChoice.pending(c)
+	check(not before.is_empty())
+	if before.is_empty():
+		return
+	var restored:=BattleSnapshot.rebuild(BattleSnapshot.capture(c),db())
+	check(restored!=null)
+	if restored==null:
+		return
+	check_eq(CoreScenarioChoice.pending(restored),before)
+	check(restored.awaiting_reaction())
+	check(BattleScenarioAction.execute(restored,"core_choice",{"index":0}))
+	check(restored.state.genie_id>=0)
+	check(not restored.awaiting_reaction())

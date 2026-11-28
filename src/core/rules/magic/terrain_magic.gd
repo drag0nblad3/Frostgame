@@ -4,11 +4,15 @@ extends RefCounted
 const EXTENDED := "gear_rk_extended_scroll"
 const SPELLS := ["wall", "fog", "mud", "explosive_rune", "planar_tear", "grenade", "circle_of_protection", "bridge"]
 const FLOOR_SPELLS := ["wall","fog","mud","explosive_rune","planar_tear","grenade","circle_of_protection"]
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func footprint(id: String, at: Vector2, rotated: bool,extended: bool=false) -> Rect2:
@@ -169,10 +173,12 @@ static func effect_height(b: Board,p: TerrainPiece) -> float:
 	return p.base_height if not p.surface_id.is_empty() else b.height_at(p.rect.get_center())
 
 
-static func floor_multiplier(b: Board,at: Vector2,height: float) -> float:
+static func floor_multiplier(b: Board,at: Vector2,height: float,mover: Figure=null) -> float:
 	var mult:=1.0
 	for p in b.pieces:
 		if not p.surface_id.is_empty() and p.contains(at) and absf(height-p.base_height)<0.5:
+			if p.kind.id in ["shallow_water","deep_water"] and Swimming.immune(mover):
+				continue
 			mult=maxf(mult,p.kind.move_mult)
 	return mult
 
@@ -281,6 +287,7 @@ func remove(p: TerrainPiece) -> void:
 	if not s.board.floor_layout.is_empty():
 		if before!=null:
 			FloorSupportRemoval.resolve(c,before,p.dynamic_surface)
+			FloorSupportRemoval.reconcile(c,before)
 		return
 	for t in s.figures:
 		if not t.in_play():

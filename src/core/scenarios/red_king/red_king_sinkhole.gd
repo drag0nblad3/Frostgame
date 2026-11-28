@@ -99,6 +99,8 @@ static func pull(c: GameController,f: Figure,resist: String="") -> void:
 		var route:=FloorDisplacement.trace(c,f,direction,origin.distance_to(target),true)
 		if not route.is_empty() and route["path"].size()>1:
 			ForcedRelocation.apply_floor(c,f,route["node"])
+		if f.in_play():
+			record_xp(c,f)
 		return
 	var last := origin
 	for i in range(1,5):

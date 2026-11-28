@@ -71,3 +71,706 @@ func test_jump_needs_runup_and_consumes_movement() -> void:
 	check_eq(f.surface_id,"east")
 	check_eq(f.actions_left,1)
 	check_eq(f.moves_taken,1)
+
+
+func test_geometry_gap_jump_without_authored_link() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,6,6],"level":3},{"id":"east","rect":[7,0,6,6],"level":3}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=1
+	f.actions_left=2
+	var target:=b.floor_geometry().node("east",Vector2(7.5,3))
+	check(LayeredJump.plans(c,true).has(target))
+	check(c.commit_movement("jump",target))
+	check_eq(f.surface_id,"east")
+
+func test_short_jump_requires_no_runup() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,6,6],"level":3},{"id":"east","rect":[6,0,6,6],"level":3}],"jumps":[{"from":["west",5.5,3],"to":["east",6.5,3]}]}
+	var f:=fig("thug",0,Vector2(5.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=1
+	f.actions_left=2
+	check(LayeredJump.plans(c).has(b.floor_geometry().node("east",Vector2(6.5,3))))
+
+func test_voluntary_fall_has_cost_damage_and_no_preview_mutation() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=1
+	f.actions_left=2
+	var target:=b.floor_geometry().node("street",Vector2(13.5,10))
+	var hp:=f.health
+	var options:=LayeredDrop.plans(c)
+	check(options.has(target))
+	check_eq(f.health,hp)
+	check_eq(f.surface_id,"deck")
+	check_eq(f.actions_left,2)
+	if options.has(target):
+		check_eq(options[target]["cost"],4.0)
+		check(c.commit_movement("drop_down",target))
+		check_eq(f.surface_id,"street")
+		check_eq(f.health,hp-4)
+		check_eq(f.moves_taken,1)
+		check_eq(f.actions_left,1)
+
+
+func _jump_reaction(guard_on_landing: bool) -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,6,6],"level":3},{"id":"east","rect":[7,0,6,6],"level":3}],"jumps":[{"from":["west",5.5,3],"to":["east",7.5,3]}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var g:=fig("thug",1,Vector2(9.5,3) if guard_on_landing else Vector2(4.5,5),2)
+	g.surface_id="east" if guard_on_landing else "west"
+	g.elevation=3.0
+	var c:=make_game(b,[f,g],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=true
+	c.state.reaction_side=1
+	return c
+
+
+func test_runup_interception_stops_before_jump() -> void:
+	var c:=_jump_reaction(false)
+	var f:=c.state.active()
+	var target:=c.state.board.floor_geometry().node("east",Vector2(7.5,3))
+	check(c.jump_on_floor(target))
+	check(not c.state.pending_intercept.is_empty())
+	check_eq(f.pos,Vector2(3.5,3))
+	check_eq(f.actions_left,2)
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"west")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_landing_interception_may_be_declined() -> void:
+	for accept in [false,true]:
+		var c:=_jump_reaction(true)
+		var f:=c.state.active()
+		var target:=c.state.board.floor_geometry().node("east",Vector2(7.5,3))
+		check(c.jump_on_floor(target))
+		check(not c.state.pending_intercept.is_empty())
+		check_eq(f.moves_taken,0)
+		if c.state.pending_intercept.is_empty():
+			continue
+		check(c.answer_intercept(accept))
+		check_eq(f.surface_id,"east")
+		check_eq(f.pos,Vector2(7.5,3))
+		check_eq(f.moves_taken,1)
+		check_eq(f.actions_left,1)
+		check_eq(Contact.in_combat(c.state.figures,f),accept)
+
+
+func test_drop_landing_interception_retains_fall_damage() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var g:=fig("thug",1,Vector2(15.5,10),2)
+	g.surface_id="street"
+	var c:=make_game(b,[f,g],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=true
+	c.state.reaction_side=1
+	var hp:=f.health
+	var dest:=b.floor_geometry().node("street",Vector2(13.5,10))
+	check(c.commit_movement("drop_down",dest))
+	check(not c.state.pending_intercept.is_empty())
+	check_eq(f.health,hp)
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp-4)
+	check_eq(f.moves_taken,1)
+	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_jump_with_followthrough_uses_one_move() -> void:
+	var c:=_jump_reaction(true)
+	var f:=c.state.active()
+	c.state.figure(2).pos=Vector2(12.5,5)
+	var layout:=c.state.board.floor_geometry()
+	var dest:=layout.node("east",Vector2(9,3))
+	var too_far:=layout.node("east",Vector2(10,3))
+	var options:=c.movement_options("jump")
+	check(options.cost.has(dest))
+	check(not options.cost.has(too_far))
+	check_eq(f.pos,Vector2(3.5,3))
+	check_eq(f.actions_left,2)
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-5.5)<0.001)
+	check_eq(options.path(dest)[-1],layout.world(dest))
+	check(c.commit_movement("jump",dest))
+	check_eq(f.pos,Vector2(9,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_interception_after_jump_stops_remaining_walk() -> void:
+	var c:=_jump_reaction(true)
+	var f:=c.state.active()
+	c.state.figure(2).pos=Vector2(10,3)
+	var target:=c.state.board.floor_geometry().node("east",Vector2(8.5,3))
+	check(c.commit_movement("jump",target))
+	check(not c.state.pending_intercept.is_empty())
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.pos,Vector2(8,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_drop_and_walk_uses_remaining_budget() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(1))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var target:=b.floor_geometry().node("street",Vector2(15,10))
+	var hp:=f.health
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(target))
+	if not options.cost.has(target):
+		return
+	check(absf(float(options.cost[target])-5.5)<0.001)
+	check(c.commit_movement("drop_down",target))
+	check_eq(f.pos,Vector2(15,10))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp-4)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func _approach_drop_game(with_guard: bool=false) -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(11,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var figures: Array[Figure]=[f]
+	if with_guard:
+		var g:=fig("thug",1,Vector2(11.5,12),2)
+		g.surface_id="deck"
+		g.elevation=3.0
+		figures.append(g)
+	var c:=make_game(b,figures,Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=with_guard
+	c.state.reaction_side=1
+	return c
+
+
+func test_approach_drop_and_walk_share_one_allowance() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var dest:=layout.node("street",Vector2(14,10))
+	var too_far:=layout.node("street",Vector2(14.5,10))
+	var hp:=f.health
+	check(not LayeredDrop.plans(c).has(dest))
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(dest))
+	check(not options.cost.has(too_far))
+	check_eq(f.pos,Vector2(11,10))
+	check_eq(f.health,hp)
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-6.0)<0.001)
+	var preview:=options.path(dest)
+	check_eq(preview[0],Vector3(11,3,10))
+	check_eq(preview[-1],layout.world(dest))
+	check(c.commit_movement("drop_down",dest))
+	check_eq(f.pos,Vector2(14,10))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp-4)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_interception_on_drop_approach_prevents_fall() -> void:
+	var c:=_approach_drop_game(true)
+	var f:=c.state.active()
+	var dest:=c.state.board.floor_geometry().node("street",Vector2(13.5,10))
+	var hp:=f.health
+	check(c.commit_movement("drop_down",dest))
+	check(not c.state.pending_intercept.is_empty())
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"deck")
+	check_eq(f.elevation,3.0)
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_generated_oblique_jump() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,4,6],"level":3},{"id":"east","rect":[5,0,6,6],"level":3}]}
+	var f:=fig("thug",0,Vector2(1.5,1))
+	f.surface_id="west"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var layout:=b.floor_geometry()
+	var target:=layout.node("east",Vector2(5.5,3))
+	var options:=LayeredJump.plans(c,true)
+	check(options.has(target))
+	if not options.has(target):
+		return
+	check(absf(float(options[target]["cost"])-sqrt(20.0))<0.001)
+	check(c.jump_on_floor(target))
+	check_eq(f.pos,Vector2(5.5,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+
+
+func test_weighted_landing_search_matches_independent_reach() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	f.pos=Vector2(12.5,10)
+	var layout:=c.state.board.floor_geometry()
+	var base:=LayeredDrop.plans(c)
+	check(base.size()>1)
+	var allowance:=MoveRules.allowance(f)
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var expected: Dictionary={}
+	var origin:=layout.node(f.surface_id,f.pos)
+	for landing: Vector3i in base:
+		var paid:=float(base[landing]["cost"])
+		expected[landing]=minf(paid,float(expected.get(landing,INF)))
+		var remaining:=allowance-paid
+		if remaining<MoveGrid.STEP-0.001 or bool(base[landing]["end_activation"]) or grid.stops(landing):
+			continue
+		var reach:=LayeredReach.search(grid,landing,remaining)
+		for n: Vector3i in reach.cost:
+			if n!=origin:
+				expected[n]=minf(paid+float(reach.cost[n]),float(expected.get(n,INF)))
+	var actual:=LayeredMovement.extend_aerial(c,base)
+	check_eq(actual.size(),expected.size())
+	for n: Vector3i in expected:
+		check(actual.has(n))
+		if actual.has(n):
+			check(absf(float(actual[n]["cost"])-float(expected[n]))<0.001)
+			var preview: PackedVector3Array=actual[n].get("preview",actual[n]["path"])
+			check_eq(preview[-1],layout.world(n))
+
+
+func _two_jump_game(with_guard: bool=false) -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,4,6],"level":3},{"id":"middle","rect":[4,0,2,6],"level":3},{"id":"east","rect":[6,0,5,6],"level":3}],"jumps":[{"from":["west",3.5,3],"to":["middle",4.5,3]},{"from":["middle",5.5,3],"to":["east",6.5,3]}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var figures: Array[Figure]=[f]
+	if with_guard:
+		var guard:=fig("thug",1,Vector2(8.5,3),2)
+		guard.surface_id="east"
+		guard.elevation=3.0
+		figures.append(guard)
+	var c:=make_game(b,figures,Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=with_guard
+	c.state.reaction_side=1
+	return c
+
+
+func test_two_jumps_and_followthrough_spend_once() -> void:
+	var c:=_two_jump_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var dest:=layout.node("east",Vector2(8,3))
+	var options:=c.movement_options("jump")
+	check(options.cost.has(dest))
+	check_eq(f.pos,Vector2(3.5,3))
+	check_eq(f.actions_left,2)
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-4.5)<0.001)
+	check_eq(options.path(dest)[-1],layout.world(dest))
+	check(c.commit_movement("jump",dest))
+	check_eq(f.pos,Vector2(8,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_second_jump_landing_interception() -> void:
+	var c:=_two_jump_game(true)
+	var f:=c.state.active()
+	var dest:=c.state.board.floor_geometry().node("east",Vector2(6.5,3))
+	check(c.commit_movement("jump",dest))
+	check(not c.state.pending_intercept.is_empty())
+	check_eq(f.moves_taken,0)
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"east")
+	check_eq(f.pos,Vector2(6.5,3))
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
+
+
+func test_two_short_descents_share_allowance() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"upper","rect":[0,0,4,6],"level":2},{"id":"middle","rect":[4,0,2,6],"level":1},{"id":"lower","rect":[6,0,5,6],"level":0}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="upper"
+	f.elevation=2.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var layout:=b.floor_geometry()
+	var dest:=layout.node("lower",Vector2(6.5,3))
+	var hp:=f.health
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(dest))
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-5.0)<0.001)
+	check(options.jumps[dest].has("next"))
+	check(c.commit_movement("drop_down",dest))
+	check_eq(f.surface_id,"lower")
+	check_eq(f.pos,Vector2(6.5,3))
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_preview_edge_cache_reduces_repeated_search_work() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var seeds: Array[Vector3i]=[
+		layout.node("deck",Vector2(11,10)),
+		layout.node("deck",Vector2(11.5,10)),
+		layout.node("deck",Vector2(12,10))
+	]
+	var expected: Array[Dictionary]=[]
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var before:=LayeredGrid.edge_evaluations
+	var clock:=Time.get_ticks_usec()
+	for seed in seeds:
+		expected.append(LayeredDrop.from_position(c,layout,grid,seed,4.5,true))
+	var uncached_us:=Time.get_ticks_usec()-clock
+	var uncached:=LayeredGrid.edge_evaluations-before
+	grid=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	before=LayeredGrid.edge_evaluations
+	var cached_results: Array[Dictionary]=[]
+	clock=Time.get_ticks_usec()
+	for seed in seeds:
+		cached_results.append(LayeredDrop.from_position(c,layout,grid,seed,4.5,true))
+	var cached_us:=Time.get_ticks_usec()-clock
+	var cached:=LayeredGrid.edge_evaluations-before
+	for i in seeds.size():
+		var actual:=cached_results[i]
+		check_eq(actual.size(),expected[i].size())
+		for n: Vector3i in expected[i]:
+			check(actual.has(n))
+			if actual.has(n):
+				check_eq(actual[n]["cost"],expected[i][n]["cost"])
+				check_eq(actual[n]["preview"],expected[i][n]["preview"])
+	check(uncached>0)
+	check(cached<uncached,"cached overlapping searches should compute fewer edges")
+	print("aerial preview edge cache: ",uncached," -> ",cached," evaluations; ",uncached_us/1000.0," -> ",cached_us/1000.0," ms")
+	clock=Time.get_ticks_usec()
+	var options:=c.movement_options("drop_down")
+	print("compound drop preview: ",options.cost.size()," destinations in ",(Time.get_ticks_usec()-clock)/1000.0," ms")
+	check(not options.cost.is_empty())
+	check_eq(f.pos,Vector2(11,10))
+	check_eq(f.actions_left,2)
+
+
+func test_mind_control_rejects_damaging_voluntary_descent() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	f.pos=Vector2(12.5,10)
+	var layout:=c.state.board.floor_geometry()
+	var target:=layout.node("street",Vector2(13.5,10))
+	check(LayeredDrop.plans(c).has(target))
+	f.control_spell="mind_control"
+	check_eq(LayeredFall.damage(c.state,f,3.0),4)
+	check(not LayeredDrop.plans(c).has(target))
+	check(not c.movement_options("drop_down").cost.has(target))
+	check(not c.commit_movement("drop_down",target))
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
+	f.control_spell=""
+	check(LayeredDrop.plans(c).has(target))
+
+
+func test_mind_control_allows_harmless_short_descent() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":2}]}
+	var f:=fig("thug",0,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=2.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.control_spell="mind_control"
+	var target:=b.floor_geometry().node("street",Vector2(13.5,10))
+	check_eq(LayeredFall.damage(c.state,f,2.0),0)
+	check(LayeredDrop.plans(c).has(target))
+	check(c.commit_movement("drop_down",target))
+	check_eq(f.surface_id,"street")
+	check_eq(f.moves_taken,1)
+
+
+func test_suggestion_rejects_damaging_vertical_descent() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",0,Vector2(10,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var target:=b.floor_geometry().node("street",f.pos)
+	check(not SpellAvailability.floor_suggestion_points(c._magic,f).has(target))
+	check_eq(f.surface_id,"deck")
+	check_eq(f.moves_taken,0)
+
+
+func test_ai_uses_compound_jump_for_unreachable_treasure() -> void:
+	var c:=_two_jump_game()
+	var f:=c.state.active()
+	var token:=TreasureToken.new(0,Vector2(8,3))
+	token.surface_id="east"
+	c.state.treasures.append(token)
+	var layout:=c.state.board.floor_geometry()
+	var reach:=c.layered_reach()
+	check(LayeredTactics.aerial_progress(c,f,layout,reach,false))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_ai_can_descend_two_terraces_in_one_action() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"upper","rect":[0,0,4,6],"level":2},{"id":"middle","rect":[4,0,2,6],"level":1},{"id":"lower","rect":[6,0,5,6],"level":0}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="upper"
+	f.elevation=2.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var token:=TreasureToken.new(0,Vector2(7,3))
+	token.surface_id="lower"
+	c.state.treasures.append(token)
+	var hp:=f.health
+	check(LayeredTactics.aerial_progress(c,f,b.floor_geometry(),c.layered_reach(),false))
+	check_eq(f.surface_id,"lower")
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+
+
+func test_ai_aerial_damage_counts_each_leg() -> void:
+	var c:=_two_jump_game()
+	var f:=c.state.active()
+	check_eq(LayeredTactics.aerial_damage(c.state,f,{"fall":3.0,"next":{"fall":3.0}}),8)
+	check_eq(LayeredTactics.aerial_damage(c.state,f,{"fall":2.0,"next":{"fall":2.0}}),0)
+
+
+func test_aerial_ai_shared_preview_matches_independent_options() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var reach:=c.layered_reach()
+	var before:=LayeredGrid.edge_evaluations
+	var start:=Time.get_ticks_usec()
+	var separate_jump:=LayeredJump.plans(c,true,true)
+	var separate_drop:=LayeredDrop.plans(c,true)
+	var separate_us:=Time.get_ticks_usec()-start
+	var separate_edges:=LayeredGrid.edge_evaluations-before
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	before=LayeredGrid.edge_evaluations
+	start=Time.get_ticks_usec()
+	var shared_jump:=LayeredJump.plans(c,true,true,grid)
+	var shared_drop:=LayeredDrop.plans(c,true,grid,reach)
+	var shared_us:=Time.get_ticks_usec()-start
+	var shared_edges:=LayeredGrid.edge_evaluations-before
+	for pair: Array in [[separate_jump,shared_jump],[separate_drop,shared_drop]]:
+		check_eq(pair[0].size(),pair[1].size())
+		for n: Vector3i in pair[0]:
+			check(pair[1].has(n))
+			if pair[1].has(n):
+				check_eq(pair[0][n]["cost"],pair[1][n]["cost"])
+				check_eq(pair[0][n]["preview"],pair[1][n]["preview"])
+	check(not shared_drop.is_empty())
+	check(shared_edges<separate_edges,"reusing the existing walking reach must reduce edge evaluations")
+	print("aerial AI previews: ",separate_edges," -> ",shared_edges," edges; ",separate_us/1000.0," -> ",shared_us/1000.0," ms")
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
+
+
+func test_drop_preview_stops_at_new_wound() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	c.state.wounded_rules=true
+	f.health=7
+	var layout:=c.state.board.floor_geometry()
+	var landing:=layout.node("street",Vector2(13.5,10))
+	var followthrough:=layout.node("street",Vector2(14,10))
+	check(not f.wounded())
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(landing))
+	check(not options.cost.has(followthrough))
+	check(c.commit_movement("drop_down",landing))
+	check_eq(f.pos,Vector2(13.5,10))
+	check_eq(f.health,3)
+	check(f.wounded())
+	check_eq(f.moves_taken,1)
+
+
+func test_uncontrolled_creature_jumps_toward_designated_quarry() -> void:
+	var c:=_two_jump_game(true)
+	var f:=c.state.active()
+	var quarry:=c.state.figure(2)
+	f.side=-1
+	c.state.forced_combat=false
+	var layout:=c.state.board.floor_geometry()
+	var hp:=f.health
+	check(LayeredTactics.aerial_progress(c,f,layout,c.layered_reach(),false,quarry))
+	check_eq(f.surface_id,"east")
+	check(Contact.touches_position(quarry,f.pos,f.elevation,f.surface_id))
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+
+
+func test_creature_does_not_choose_damaging_drop() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",-1,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var target:=fig("thug",0,Vector2(15,10),2)
+	target.surface_id="street"
+	var c:=make_game(b,[f,target],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(not LayeredTactics.aerial_progress(c,f,b.floor_geometry(),c.layered_reach(),false,target))
+	check_eq(f.surface_id,"deck")
+	check_eq(f.moves_taken,0)
+
+
+func test_ground_and_aerial_search_share_edges_without_changing_routes() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var before:=LayeredGrid.edge_evaluations
+	var before_open:=LayeredGrid.evaluations
+	var normal:=c.layered_reach()
+	var independent:=LayeredDrop.plans(c,true,null,normal)
+	var separate_edges:=LayeredGrid.edge_evaluations-before
+	var separate_open:=LayeredGrid.evaluations-before_open
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	before=LayeredGrid.edge_evaluations
+	before_open=LayeredGrid.evaluations
+	var shared:=LayeredMovement.reach(c,false,false,false,grid)
+	var drops:=LayeredDrop.plans(c,true,grid,shared)
+	var shared_edges:=LayeredGrid.edge_evaluations-before
+	var shared_open:=LayeredGrid.evaluations-before_open
+	check_eq(shared.cost,normal.cost)
+	check_eq(shared.prev,normal.prev)
+	check_eq(drops,independent)
+	check(shared_edges<=separate_edges,"shared cache must not increase edge calculations")
+	check(shared_open<separate_open,"shared cache avoids duplicate placement checks")
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
+	print("ground/aerial shared edges: ",separate_edges," -> ",shared_edges,"; open checks: ",separate_open," -> ",shared_open)
+
+
+func test_ai_aerial_shortlist_does_not_prune_player_previews() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var target:=Vector3(15,0,10)
+	var rank:=func(at: Vector3) -> float:return at.distance_to(target)
+	var full:=c.movement_options("drop_down")
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	var walking:=LayeredMovement.reach(c,false,false,false,grid)
+	var limited:=LayeredDrop.plans(c,true,grid,walking,false,rank,1)
+	check(not limited.is_empty())
+	for n: Vector3i in limited:
+		check(full.jumps.has(n))
+	var after:=c.movement_options("drop_down")
+	check_eq(after.cost,full.cost)
+	check_eq(after.jumps,full.jumps)
+	check_eq(f.pos,Vector2(11,10))
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
+
+
+func test_shortlisted_aerial_bot_resume_replays_exact_route() -> void:
+	var c:=_two_jump_game(true)
+	var f:=c.state.active()
+	c.state.creature_db=db()
+	c.state.forced_combat=false
+	c.state.reaction_side=-2
+	var token:=TreasureToken.new(0,Vector2(7,3))
+	token.surface_id="east"
+	c.state.treasures.append(token)
+	var checkpoint:=BattleSnapshot.capture(c)
+	check(not checkpoint.is_empty())
+	check(Bot.resume_activation(c))
+	check_eq(f.surface_id,"east")
+	check(c.history.any(func(e: GameEvent) -> bool:return e.type=="layered_move"))
+	check_eq(c.command_history.size(),1)
+	if c.command_history.size()==1:
+		check_eq(c.command_history[0]["key"],"bot_resume")
+		var result:=BattleReplay.verify(checkpoint,db(),c.command_history,BattleRecord.pack(c.history))
+		check(result.get("ok",false),str(result))
+	check(c.ai_work.is_empty())
+
+
+func test_chained_fall_preview_matches_rule_damage_without_mutation() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var plan: Dictionary={"fall":3.0,"end_activation":false,"next":{"fall":4.0,"end_activation":true}}
+	var hp:=f.health
+	var rng:=c.dice._rng.state
+	var risk:=BattleMovePlan.aerial_risk(c.state,f,plan)
+	check_eq(risk["damage"],LayeredFall.damage(c.state,f,3.0)+LayeredFall.damage(c.state,f,4.0))
+	check_eq(risk["descent"],7.0)
+	check_eq(risk["legs"],2)
+	check(risk["end"])
+	c.state.board.low_gravity=true
+	check_eq(BattleMovePlan.aerial_risk(c.state,f,plan)["damage"],0)
+	check_eq(f.health,hp)
+	check_eq(c.dice._rng.state,rng)
+	check_eq(f.actions_left,2)

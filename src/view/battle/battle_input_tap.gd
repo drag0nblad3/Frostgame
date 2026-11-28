@@ -4,6 +4,21 @@ extends RefCounted
 
 
 static func tap(bi: BattleInput, screen: Vector2) -> bool:
+	if bi.mode=="core_choice":
+		var options: Array=CoreScenarioChoice.pending(bi.c).get("options",[])
+		var best:=-1
+		var distance:=30.0
+		for i in options.size():
+			if not options[i].has("world") or not BattleFloorInput.visible(bi,str(options[i].get("surface",""))):
+				continue
+			var world: Vector3=options[i]["world"]
+			if bi.camera.is_position_behind(world):
+				continue
+			var d:=bi.camera.unproject_position(world).distance_to(screen)
+			if d<distance:
+				best=i
+				distance=d
+		return best>=0 and BattleScenarioAction.execute(bi.c,"core_choice",{"index":best})
 	if bi.is_layered() and (bi.mode in BattleMovePlan.MODES or bi.mode in BattleFloorInput.POINT_MODES or bi.mode=="floor_leap_target"):
 		return BattleFloorInput.tap(bi,screen)
 	if bi.is_layered() and bi.mode in ["gear_worm_point","worm_relocation"]:

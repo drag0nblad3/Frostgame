@@ -1,6 +1,7 @@
 {
   "id": "red_king_investigations",
   "name": "Investigations",
+  "shared_climbing": true,
   "size": [
     36,
     36

@@ -1,6 +1,7 @@
 {
   "id": "red_king_herded",
   "name": "Herded Like Cattle!",
+  "shared_climbing": true,
   "size": [
     30,
     36

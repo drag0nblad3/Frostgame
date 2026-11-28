@@ -38,3 +38,142 @@ func test_distance_field_does_not_shortcut_a_wall() -> void:
 	var b := make_board([["hut_wall", 10, 3, 0.5, 30]])
 	var field := MovePlanner.distance_field(b, Vector2(9, 18))
 	check(float(field.get(MovePlanner.node_at(Vector2(11, 18)), INF)) > 20.0)
+
+
+func test_leap_ai_repositions_carrier_and_exhausts_it() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(8,16))
+	var t:=fig("thug",0,Vector2(8,10),2)
+	var enemy:=fig("thug",1,Vector2(11,10),3)
+	for figure in [f,t,enemy]:
+		figure.surface_id="street"
+	var c:=make_game(b,[f,t,enemy],LoadedDice.new([20]))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"leap":8}
+	c.state.active_id=f.id
+	f.actions_left=2
+	t.treasure_id=0
+	t.activated=true
+	var before:=TreasureRules.edge_distance(b,t.pos)
+	var choice:=MagicBot.leap_plan(c,f)
+	check_eq(choice.get("spell"),"leap")
+	check_eq(choice.get("target"),t.id)
+	check_eq(choice,MagicBot.leap_plan(c,f))
+	check_eq(t.pos,Vector2(8,10))
+	if choice.is_empty():
+		return
+	check(MagicBot.play(c,f))
+	check(TreasureRules.edge_distance(b,t.pos)<before)
+	check(t.magic_exhausted)
+	check_eq(t.actions_left,0)
+	check_eq(f.actions_left,1)
+
+
+func test_leap_ai_skips_unthreatened_non_carriers() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(10,10))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"leap":8}
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(MagicBot.leap_plan(c,f).is_empty())
+
+
+func test_leap_escape_estimate_respects_library_doors_and_floor() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"roof","rect":[0,0,36,36],"level":4}]}
+	var f:=fig("wizard",0,Vector2(4,8))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.scenario_special="underground_library"
+	var exits:=MagicBot._leap_exit_segments(c.state,b.floor_geometry(),f.side)
+	check(not exits.is_empty())
+	var wall:=MagicBot._leap_exit_distance(exits,Vector3(0.5,0,8))
+	var doorway:=MagicBot._leap_exit_distance(exits,Vector3(0.5,0,18))
+	check(wall>5.0)
+	check(doorway<0.01)
+	check(MagicBot._leap_exit_distance(exits,Vector3(0.5,4,18))>=4.0)
+	for segment in exits:
+		for point in segment:
+			check_eq(point.y,0.0)
+			check(ScenarioObjectives.exit_allowed(c.state,Vector2(point.x,point.z),f.side))
+
+
+func test_leap_escape_estimate_obeys_reality_exit_changes() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(4,8))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.scenario_data["reality_current"]=17
+	check(MagicBot._leap_exit_segments(c.state,b.floor_geometry(),f.side).is_empty())
+	c.state.scenario_data["reality_current"]=12
+	var exits:=MagicBot._leap_exit_segments(c.state,b.floor_geometry(),f.side)
+	check(not exits.is_empty())
+	check(MagicBot._leap_exit_distance(exits,Vector3(18,0,18))<0.01)
+	check(MagicBot._leap_exit_distance(exits,Vector3(0.5,0,18))>17.0)
+
+
+func test_airborne_leap_ai_rescues_slow_fall_carrier_from_high_platform() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"tower","rect":[4,9,2,2],"level":8}]}
+	var f:=fig("wizard",0,Vector2(5,10))
+	f.surface_id="tower"
+	f.elevation=8.0
+	var c:=make_game(b,[f],LoadedDice.new([20]))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"leap":8}
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.treasure_id=0
+	var hp:=f.health
+	check(MagicBot.leap_plan(c,f).is_empty(),"carrier should avoid a damaging descent")
+	var gear: Dictionary=JsonFile.read("res://data/magic_equipment.json")
+	f.items.append({"gear":"gear_ring_slow_fall","gear_info":gear["gear_ring_slow_fall"]})
+	var choice:=MagicBot.leap_plan(c,f)
+	check(choice.has("air_endpoint"))
+	check_eq(choice,MagicBot.leap_plan(c,f))
+	check_eq(f.pos,Vector2(5,10))
+	if not choice.has("air_endpoint"):
+		return
+	var endpoint: Vector3=choice["air_endpoint"]
+	var node: Vector3i=choice["node"]
+	var layout:=b.floor_geometry()
+	check(BattleSpace.center(f).distance_to(endpoint)<=5.001)
+	check(BattleSpace.center(f).distance_to(layout.world(node))>5.0)
+	check(MagicBot.play(c,f))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp)
+	check(f.magic_exhausted)
+
+
+func test_cached_magic_tactical_inputs_preserve_scores() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(10,10))
+	var ally:=fig("thug",0,Vector2(12,10))
+	var enemy:=fig("thug",1,Vector2(16,10))
+	for figure in [f,ally,enemy]:
+		figure.surface_id="street"
+	var c:=make_game(b,[f,ally,enemy],Dice.new(19))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"heal":8,"bone_dart":10,"slow":10,"fleet_feet":8,"shield":10}
+	c.state.active_id=f.id
+	f.actions_left=2
+	ally.health=2
+	ally.treasure_id=0
+	var rng:=c.dice._rng.state
+	for id: String in c.state.spellbooks[0]:
+		var chance:=MagicTactics.probability(c,f,id)
+		for t in c.state.figures:
+			var threat:=MagicTactics.near_enemy(c.state,t)
+			check_eq(MagicTactics.value(c,f,t,id,threat,chance),MagicTactics.value(c,f,t,id))
+	var chosen:=MagicBot.plan(c,f)
+	check(not chosen.is_empty())
+	check_eq(chosen,MagicBot.plan(c,f))
+	check_eq(c.dice._rng.state,rng)
+	check_eq(f.actions_left,2)

@@ -13,62 +13,69 @@ static func first_pickup(c: GameController, finder: Figure, token: TreasureToken
 			collected += 1
 	if collected < s.treasures.size() and c.dice.d20() < 15:
 		return
+	s.lamp_token=token.id
+	s.scenario_data["genie_pending_finder"]=finder.id
+	if not _try_release(c,finder,token):
+		c.emit("genie_spawn_blocked",{"treasure":token.id,"id":finder.id})
+
+
+## Preserve the discovered lamp if crowded terrain temporarily prevents a legal
+## release. Retry at the Creature phase, without rerolling or changing the lamp.
+static func retry_pending(c: GameController) -> void:
+	var s:=c.state
+	if not s.scenario_data.has("genie_pending_finder") or s.genie_id>=0:
+		return
+	var token:=s.treasure(s.lamp_token)
+	if token==null:
+		return
+	var finder:=s.figure(int(s.scenario_data["genie_pending_finder"]))
+	if finder==null or not finder.in_play():
+		finder=s.figure(token.carrier_id)
+	if finder!=null and finder.in_play():
+		_try_release(c,finder,token)
+
+
+static func _try_release(c: GameController,finder: Figure,token: TreasureToken) -> bool:
+	var s:=c.state
+	var options: Array[Dictionary]=[]
 	if not s.board.floor_layout.is_empty():
 		var layout:=s.board.floor_geometry()
-		var nodes:=BattlePlacement.nearby_floor(s,finder.pos,finder.elevation,4.0,finder.surface_id)
-		var best: Variant=null
-		var score:=INF
-		for n in nodes:
-			var at:=layout.point(n)
-			var distance:=at.distance_to(finder.pos)
-			var closer:=true
-			for other in s.figures:
-				if other!=finder and other.in_play() and absf(other.elevation-finder.elevation)<0.5 and other.pos.distance_to(at)<=distance:
-					closer=false
-					break
-			var value:=absf(distance-1.75)+(0.0 if closer else 10.0)
-			if value<score:
-				score=value
-				best=n
-		if best!=null:
-			var creature:=c._encounters._spawn_on_floor("genie",best)
-			_released(c,finder,token,creature)
-		return
-	var grid := MoveGrid.new(s.board, null, s.figures)
-	var candidates: Array[Vector2] = []
-	var center := MovePlanner.node_at(finder.pos)
-	for dx in range(-8, 9):
-		for dy in range(-8, 9):
-			var node := center + Vector2i(dx, dy)
-			var at := MoveGrid.to_pos(node)
-			if not grid.open(node):
-				continue
-			var dist := at.distance_to(finder.pos)
-			if dist > 4.0 or absf(s.board.height_at(at) - finder.elevation) >= 0.5:
-				continue
-			var closer := true
-			for other in s.figures:
-				if other != finder and other.in_play() and absf(other.elevation - finder.elevation) < 0.5 and other.pos.distance_to(at) <= dist:
-					closer = false
-					break
-			if closer:
-				candidates.append(at)
-	if candidates.is_empty():
-		# Crowded sites use the nearest unoccupied node, never overlap a base.
-		for dx in range(-8, 9):
-			for dy in range(-8, 9):
-				var node := center + Vector2i(dx, dy)
-				if grid.open(node):
-					candidates.append(MoveGrid.to_pos(node))
-	if candidates.is_empty():
-		return
-	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool:
-		return absf(a.distance_to(finder.pos) - 1.75) < absf(b.distance_to(finder.pos) - 1.75))
-	var creature := c._encounters._spawn_at("genie", candidates[0])
-	_released(c,finder,token,creature)
+		for n in BattlePlacement.nodes(s.board,finder.pos,2.0):
+			if BattlePlacement.floor_open(s,n) and legal_spawn(s,finder,layout.world(n)):
+				options.append(CoreScenarioChoice.point(s,layout.point(n),layout.surface_id(n)))
+	else:
+		var grid:=MoveGrid.new(s.board,null,s.figures)
+		var center:=MovePlanner.node_at(finder.pos)
+		for dx in range(-4,5):
+			for dy in range(-4,5):
+				var node:=center+Vector2i(dx,dy)
+				if not grid.open(node):
+					continue
+				var at:=MoveGrid.to_pos(node)
+				var point:=CoreScenarioChoice.point(s,at)
+				if legal_spawn(s,finder,point["world"]):
+					options.append(point)
+	if options.is_empty():
+		return false
+	if CoreScenarioChoice.offer(c,"genie",finder.side,finder.id,token.id,0,options):
+		return true
+	var p:=CoreScenarioChoice.tactical(c,finder.side,options)
+	_released(c,finder,token,CoreScenarioChoice._spawn(c,"genie",p))
+	return true
+
+
+static func legal_spawn(s: GameState,finder: Figure,at: Vector3) -> bool:
+	var distance:=at.distance_to(Vector3(finder.pos.x,finder.elevation,finder.pos.y))
+	if distance>2.0 or distance<Contact.OVERLAP:
+		return false
+	for other in s.figures:
+		if other!=finder and other.in_play() and at.distance_to(Vector3(other.pos.x,other.elevation,other.pos.y))<=distance:
+			return false
+	return true
 
 
 static func _released(c: GameController,finder: Figure,token: TreasureToken,creature: Figure) -> void:
+	c.state.scenario_data.erase("genie_pending_finder")
 	c.state.lamp_token=token.id
 	c.state.genie_id=creature.id
 	c.emit("genie_released",{"id":creature.id,"side":finder.side,"treasure":token.id,"xp":30})

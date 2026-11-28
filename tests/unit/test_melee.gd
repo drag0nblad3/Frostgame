@@ -75,3 +75,30 @@ func test_fight_through_controller() -> void:
 	check(c.fight(2), "fight allowed")
 	check_eq(c.state.figure(2).health, 1, "10 - 9")
 	check(not c.can_act(), "one fight per activation")
+
+
+func test_defender_selects_weapon_before_any_roll() -> void:
+	var c:=make_game(make_board(),_pair("thug","knight"),LoadedDice.new([15,10]))
+	c.state.reaction_side=1
+	c.state.active_id=1
+	c.state.active().actions_left=2
+	check(c.fight(2))
+	check(c.awaiting_reaction())
+	check(c.state.pending_combat.is_empty())
+	check_eq((c.dice as LoadedDice).queue,[15,10])
+	check(not BattleEquipmentAction.execute(c,"melee_choice",{"weapon":"staff"}))
+	check_eq((c.dice as LoadedDice).queue,[15,10])
+	check(BattleEquipmentAction.execute(c,"melee_choice",{"weapon":"dagger"}))
+	check_eq(c.state.figure(2).melee.id,"dagger")
+	check((c.dice as LoadedDice).queue.is_empty())
+	check(MeleeWeaponChoice.pending(c).is_empty())
+
+func test_weapon_selection_does_not_remove_carried_encumbrance() -> void:
+	var figs:=_pair("barbarian","thug")
+	var f:=figs[0]
+	for w in f.def.weapons:
+		if w.id=="dagger":
+			f.melee=w
+	check(f.treasure_encumbered(),"still carries two-handed weapon")
+	f.destroyed_weapons.append("two_handed")
+	check(not f.treasure_encumbered())

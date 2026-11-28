@@ -72,6 +72,23 @@ func _refresh() -> void:
 	for child in _edges.get_children():
 		_edges.remove_child(child)
 		child.queue_free()
+	_sync_treasures()
+	if setup.treasure_stage>0:
+		_heading.text="Treasure setup · Place your "+("inner" if setup.treasure_stage==1 else "outer")+" treasure"
+		_hint.text="Choose a highlighted legal position. The rival places one next. Starting edges are rolled only after treasure placement."
+		if setup.treasure_stage==4:
+			_heading.text="Mausoleum · Place your treasure"
+			_hint.text="Choose a highlighted position within 9 inches of the building. A skeleton guards each additional treasure."
+		if not setup.error.is_empty():
+			_hint.text=setup.error
+		_edges.hide()
+		_units.hide()
+		_confirm.hide()
+		_auto.text="Auto place remaining treasures"
+		_sync_figures()
+		_refresh_points()
+		return
+	_auto.text="Auto deploy"
 	var waiting:=not setup.zones.has(battle.player_side)
 	_heading.text="Deployment · "+("Choose your starting position" if waiting else "Arrange your warband")
 	var roll_text:=""
@@ -111,14 +128,28 @@ func _sync_figures() -> void:
 		v.set_active(f.id==_selected and v.visible)
 
 
+func _sync_treasures() -> void:
+	for t in setup.c.state.treasures:
+		var marker: MeshInstance3D=battle.player.treasure_views.get(t.id)
+		if marker==null:
+			continue
+		marker.position=TableSpace.to_world(t.pos,TreasureRules.token_height(setup.c.state,t)+0.25)
+		marker.visible=t.on_ground() and (setup.treasure_stage==0 or t.id<setup.treasure_stage) and not (setup.c.state.scenario_special=="complex_temple" and t.frozen)
+
+
 func _refresh_points() -> void:
-	_points=setup.points(_selected)
+	if setup.treasure_stage>0:
+		_points=setup.treasure_options()
+	else:
+		_points=setup.points(_selected)
 	battle._markers.clear()
 	var world:=PackedVector3Array()
 	for p in _points:
 		var at: Vector2=p["at"]
-		world.append(TableSpace.to_world(at,float(p["height"])))
+		world.append(TableSpace.to_world(at,float(p.get("height",p.get("world",Vector3.ZERO).y))))
 	battle._markers.show_world_points(world,Color("7cd9ae"),0.16)
+	if setup.treasure_stage>0:
+		return
 	var f:=setup.c.state.figure(_selected)
 	if f!=null and setup.visible(f):
 		battle._markers.show_world_points(PackedVector3Array([TableSpace.to_world(f.pos,f.elevation)]),Color("f4d58c"),0.64,true)
@@ -132,18 +163,26 @@ func tap(screen: Vector2) -> void:
 	var distance:=28.0
 	for p in _points:
 		var at: Vector2=p["at"]
-		var world:=TableSpace.to_world(at,float(p["height"]))
+		var world:=TableSpace.to_world(at,float(p.get("height",p.get("world",Vector3.ZERO).y)))
 		if battle._rig.camera.is_position_behind(world):
 			continue
 		var d:=screen.distance_to(battle._rig.camera.unproject_position(world))
 		if d<distance:
 			best=p
 			distance=d
+	if not best.is_empty() and setup.treasure_stage>0:
+		setup.place_treasure(best)
+		_refresh()
+		return
 	if not best.is_empty() and setup.move(_selected,best):
 		_refresh_points()
 
 
 func _auto_finish() -> void:
+	if setup.treasure_stage>0:
+		setup.finish_treasure_setup()
+		_refresh()
+		return
 	if not setup.zones.has(battle.player_side) and not setup.auto_choose():
 		_refresh()
 		return

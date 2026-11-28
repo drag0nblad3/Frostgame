@@ -10,7 +10,7 @@ static func action_rest(bi: BattleInput, key: String) -> bool:
 		bi.selected_spell="enchant_weapon" if bi.spell_ammo else key.trim_prefix("spell_")
 		bi.spell_rotated = false
 		bi.spell_extended=false
-		if bi.selected_spell in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"]:
+		if bi.selected_spell in ["dispel", "spell_eater", "decay", "power_word", "draining_word", "crumble", "wizard_eye"] or (bi.selected_spell in ["enchant_weapon","elemental_hammer"] and not bi.spell_ammo):
 			bi.counter_choices = bi.c._magic.counter_options(bi.selected_spell)
 			if bi.counter_choices.is_empty():
 				bi.refresh()

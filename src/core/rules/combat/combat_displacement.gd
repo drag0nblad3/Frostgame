@@ -2,11 +2,15 @@ class_name CombatDisplacement
 extends RefCounted
 ## Post-fight withdrawal and deterministic optional interception (pp. 47, 53).
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func clear() -> void:
@@ -77,7 +81,7 @@ func push(own: bool,distance: float=1.0) -> bool:
 		return true
 	c._magic.terrain.trigger_landing(moving)
 	var fall := ElevationRules.fall_damage(old_height - moving.elevation)
-	if fall > 0 and MagicEquipment.bonus(moving, "slow_fall") == 0:
+	if fall > 0 and MagicEquipment.bonus(moving, "slow_fall") == 0 and not moving.def.traits.has("flying"):
 		c._hurt(moving, fall, other, false)
 	ScenarioSites.end_move(c, moving)
 	return true
@@ -101,7 +105,7 @@ func _clear_path(moving: Figure, dest: Vector2,allow_void: bool=false) -> bool:
 
 ## Same guard eligibility, regardless of route geometry.
 func guard_can_intercept(mover: Figure,guard: Figure,ignored: Array[int]) -> bool:
-	return guard.ring_side==mover.ring_side and not ignored.has(guard.id) and not guard.spell_effects.has("plane_walk") and guard.in_play() and guard.side!=mover.side and not Contact.in_combat(c.state.figures,guard) and IllusionRules.visible_to(c.state.figures,guard,mover) and not BeautyActions.protected_from(c.state,guard,mover)
+	return guard.ring_side==mover.ring_side and not ignored.has(guard.id) and not guard.spell_effects.has("plane_walk") and guard.in_play() and guard.side!=mover.side and MoveRules.can_move(guard,c.state.figures) and not guard.petrified_skip and not guard.spell_effects.has("petrify") and IllusionRules.visible_to(c.state.figures,guard,mover) and not BeautyActions.protected_from(c.state,guard,mover)
 
 
 func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []) -> Dictionary:
@@ -170,7 +174,9 @@ func intercept_floor(mover: Figure,path: PackedVector3Array,surfaces: Array[Stri
 			var steps:=maxi(4,ceili(from.distance_to(to)*4.0))
 			for step in range(1,steps+1):
 				var at:=from.lerp(to,float(step)/steps)
-				if not layout.clearance(at,Figure.BASE_RADIUS,1.6) or not grid.segment_allowed(from,at):
+				var guard_support:=layout.surfaces[n.z]
+				var point_on_table:=Vector2(at.x,at.z)
+				if not guard_support.contains(point_on_table,Figure.BASE_RADIUS) or absf(guard_support.height_at(point_on_table)-at.y)>=0.5 or not layout.clearance(at,Figure.BASE_RADIUS,1.6) or not grid.segment_allowed(from,at) or c.state.board.over_void(Vector2(at.x,at.z),Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(c.state.board,guard,Vector2(at.x,at.z),at.y):
 					clear=false
 					break
 				for other in grid.others:

@@ -2,11 +2,15 @@ class_name TreasureActions
 extends RefCounted
 ## GameController helper: the only writer of live treasure state.
 
-var _c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var _c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(c: GameController) -> void:
-	_c = c
+	_controller_ref=weakref(c)
 
 
 func can_pick_up(id: int) -> bool:
@@ -35,7 +39,7 @@ func pick_up(id: int) -> bool:
 	return _claim(f, token)
 
 
-func claim_free(f: Figure, token: TreasureToken) -> bool:
+func can_claim_free(f: Figure, token: TreasureToken) -> bool:
 	if RedKingHill.guarded(_c.state,token):
 		return false
 	# Column contact is with its edge, rather than the newly revealed centre.
@@ -45,7 +49,11 @@ func claim_free(f: Figure, token: TreasureToken) -> bool:
 		return false
 	if TreasureRules.enemy_interferes(_c.state,f,token):
 		return false
-	return _claim(f, token)
+	return true
+
+
+func claim_free(f: Figure,token: TreasureToken) -> bool:
+	return can_claim_free(f,token) and _claim(f,token)
 
 
 func _claim(f: Figure, token: TreasureToken) -> bool:
@@ -61,7 +69,10 @@ func _claim(f: Figure, token: TreasureToken) -> bool:
 	if not token.ever_collected:
 		token.ever_collected = true
 		ScenarioGenie.first_pickup(_c, f, token)
-		_c._encounters.on_pickup()
+		if CoreScenarioChoice.pending(_c).get("kind","")=="genie":
+			_c.state.scenario_data["core_pending_pickup_encounter"]=true
+		else:
+			_c._encounters.on_pickup()
 	return true
 
 
@@ -118,6 +129,14 @@ func _drop(f: Figure, at: Vector2, id: int = -1,surface: String="") -> void:
 	if token == null or token.carrier_id != f.id:
 		return
 	_c._magic.illusions.reveal(f)
+	if surface.is_empty() and f.surface_id.begins_with("climb:"):
+		var landing: Variant=LayeredFall.treasure_landing(_c.state,f.pos,f.elevation)
+		if landing==null:
+			lose(token)
+			return
+		var support:=_c.state.board.floor_geometry()
+		at=support.point(landing)
+		surface=support.surface_id(landing)
 	_clear_carrier(token)
 	token.pos = at
 	token.surface_id = f.surface_id if surface.is_empty() else surface

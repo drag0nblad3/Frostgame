@@ -74,12 +74,14 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 			continue
 		if solid.position.y>0.1:
 			continue
-		for i in range(1,5):
+		var courses:=2 if GraphicsQuality.mode()==0 else (3 if GraphicsQuality.mode()==1 else 5)
+		for i in range(1,courses):
 			var p := solid.get_center()
-			p.y=solid.position.y+solid.size.y*float(i)/5.0
+			p.y=solid.position.y+solid.size.y*float(i)/float(courses)
 			var course:=_box(p,Vector3(solid.size.x+0.035,0.035,solid.size.z+0.035),Color(0.23,0.32,0.39),false)
 			course.set_meta("cut_height",solid.position.y)
 			course.set_meta("occlusion_bounds",solid)
+			course.cast_shadow=GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 
 func _bridge(s: FloorSurface) -> void:

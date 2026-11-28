@@ -11,6 +11,8 @@ var pieces: Array[TerrainPiece] = []
 var floor_layout := {}
 var _floor_geometry: FloorLayout
 var _floor_geometry_hash := 0
+## Directional terrain-only edge costs, separated by movement traits.
+var floor_step_costs: Dictionary={}
 ## Serialized rule boundaries; ordinary battlefields have none.
 var boundaries: Array[Dictionary]=[]
 ## Directed links between edge segments and their destination centers.
@@ -30,7 +32,9 @@ var void_regions: Array[Rect2]=[]
 func floor_geometry() -> FloorLayout:
 	var revision:=floor_layout.hash()
 	if _floor_geometry==null or revision!=_floor_geometry_hash:
+		floor_step_costs.clear()
 		_floor_geometry=FloorLayout.from_dict(floor_layout)
+		_floor_geometry.prepare_coarse_navigation()
 		_floor_geometry_hash=revision
 	return _floor_geometry
 
@@ -56,7 +60,13 @@ func pieces_at(p: Vector2) -> Array[TerrainPiece]:
 
 
 ## Movement cost multiplier at a point (the worst piece there).
-func move_mult_at(p: Vector2) -> float:
+func move_mult_at(p: Vector2,mover: Figure=null) -> float:
+	if has_water and (Swimming.immune(mover) or absf(height_at(p)-ground_height_at(p))>=0.5):
+		var result:=1.0
+		for piece in pieces_at(p):
+			if piece.kind.id not in ["deep_water","shallow_water"]:
+				result=maxf(result,piece.kind.move_mult)
+		return result
 	var i := _lattice(p)
 	if i >= 0 and _mult_cache[i] >= 0.0:
 		return _mult_cache[i]
@@ -94,6 +104,7 @@ var static_step_cache := PackedFloat64Array()
 var field_cache := {}
 ## Shared terrain-only open-node answers for repeated AI distance fields.
 var static_open_cache := {}
+var has_water := false
 var has_ground_profiles := false
 var has_ramps := false
 var _ground_profiles: Array[TerrainPiece]=[]
@@ -210,11 +221,14 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 
 
 func invalidate_terrain() -> void:
+	floor_step_costs.clear()
+	has_water=false
 	has_ground_profiles = false
 	has_ramps = false
 	_ground_profiles.clear()
 	ground_max=0.0
 	for piece in pieces:
+		has_water=has_water or piece.kind.id in ["deep_water","shallow_water"]
 		has_ground_profiles = has_ground_profiles or piece.kind.ground_surface
 		has_ramps = has_ramps or piece.ramp
 		if piece.kind.ground_surface:

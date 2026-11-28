@@ -22,7 +22,9 @@ func test_empty_hut_and_magic_discovery() -> void:
 	var c := GameController.new(s, LoadedDice.new([6, 12]))
 	check(not ScenarioSites.discover(c, Vector2(18, 18), 0))
 	check_eq(s.discovered_huts.size(), 1)
-	c._magic.treasure_magic.apply(s.figure(1), "telekinesis", s.treasure(1), Vector2(8, 17), 15)
+	var caster:=s.figure(1)
+	caster.pos=Vector2(7.5,15)
+	c._magic.treasure_magic.apply_floor(caster,"telekinesis",s.treasure(1),Vector2(8,17),"street",15)
 	check_eq(s.discovered_huts.size(), 2)
 	check_eq(s.figures.back().def.id, "ghoul")
 	check_eq(s.treasure(1).pos, Vector2(8, 17))
@@ -54,11 +56,11 @@ func test_disc_hook_on_real_move_and_magic() -> void:
 	f.actions_left = 2
 	s.active_id = f.id
 	s.forced_combat = false
-	check(c.move_to(MovePlanner.node_at(Vector2(18, 12))))
+	check(c.move_on_floor(s.board.floor_geometry().node("street",Vector2(18,12))))
 	check_eq(f.pos, Vector2(18, 24))
 	check_eq(f.moves_taken, 1)
 	check_eq(f.actions_left, 1)
-	c._magic.movement.move(f, Vector2(24, 18))
+	c._magic.movement.move_floor(f,s.board.floor_geometry().node("street",Vector2(24,18)))
 	check_eq(f.pos, Vector2(12, 18))
 
 
@@ -70,7 +72,7 @@ func test_hut_discovered_on_real_movement() -> void:
 	f.actions_left = 2
 	s.active_id = f.id
 	s.forced_combat = false
-	check(c.move_to(MovePlanner.node_at(Vector2(20, 8))))
+	check(c.move_on_floor(s.board.floor_geometry().node("street",Vector2(20,8))))
 	check_eq(s.discovered_huts.size(), 1)
 	check_eq(f.pos, Vector2(20, 8))
 
@@ -79,10 +81,18 @@ func test_hut_interrupts_stale_path_without_overlapping() -> void:
 	var s := ScenarioLoader.load_id("haunted_houses", db(), terrain())
 	var c := GameController.new(s, LoadedDice.new([12]))
 	var f := s.figure(1)
-	f.pos = Vector2(18, 8)
+	f.pos = Vector2(20,11)
+	f.actions_left=2
+	s.active_id=f.id
+	s.forced_combat=false
 	# A valid path into the hut may become obstructed by its hidden occupant.
 	var path := PackedVector2Array([Vector2(20, 11),Vector2(20,10.5),Vector2(20,10),Vector2(20,9.5),Vector2(20,9),Vector2(20,8.5),Vector2(20,8),Vector2(20,7.5),Vector2(20,7),Vector2(20,6.5)])
-	c._magic.terrain.travel(f, path, 5.0)
+	var world:=PackedVector3Array()
+	var surfaces: Array[String]=[]
+	for at in path:
+		world.append(Vector3(at.x,0,at.y))
+		surfaces.append("street")
+	LayeredMovement._apply(c,f,world,surfaces,5.0,{},false,false,false)
 	var occupant: Figure = s.figures.back()
 	check_eq(occupant.def.id, "ghoul")
 	check(f.pos.distance_to(occupant.pos) >= Contact.OVERLAP)
@@ -116,8 +126,26 @@ func test_haunted_hut_wall_spacing_and_entrances() -> void:
 		# standability lattice. The closest legal node may be one step inward.
 		check(occupant.pos.distance_to(target)<=0.501)
 		check(hut.rect.grow(-Figure.BASE_RADIUS+0.001).has_point(occupant.pos))
-		check(s.board.can_stand(occupant.pos,Figure.BASE_RADIUS))
+		check(s.board.floor_geometry().standable(s.board.floor_geometry().node(occupant.surface_id,occupant.pos)))
 	check_eq(directions.size(),4)
 	var restored:=BattleSnapshot.rebuild(BattleSnapshot.capture(c),db())
 	for i in s.board.pieces.size():
 		check_eq(restored.state.board.pieces[i].entrance,s.board.pieces[i].entrance)
+
+
+func test_disc_destination_is_player_choice() -> void:
+	var s:=ScenarioLoader.load_id("the_keep",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([6]))
+	s.reaction_side=0
+	var f:=s.figure(1)
+	f.pos=Vector2(18,12)
+	ScenarioSites.end_move(c,f)
+	var d:=CoreScenarioChoice.pending(c)
+	check_eq(d.get("kind",""),"disc")
+	if d.is_empty():
+		return
+	check(d["options"].size()>1)
+	var at: Vector2=d["options"][-1]["at"]
+	check(BattleScenarioAction.execute(c,"core_choice",{"index":d["options"].size()-1}))
+	check_eq(f.pos,at)
+	check(not c.awaiting_reaction())

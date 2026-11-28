@@ -7,6 +7,18 @@ static func preview(bi: BattleInput) -> void:
 	bi.targets.clear()
 	bi.tokens.clear()
 	bi.nodes.clear()
+	if bi.mode=="core_choice":
+		var choice:=CoreScenarioChoice.pending(bi.c)
+		var world:=PackedVector3Array()
+		bi.floor_points.clear()
+		bi.movement=null
+		var hints: Dictionary={"genie":"Choose where the genie appears, within 2″ and closest to the finder.","worm":"Choose the worm’s emergence point adjacent to the selected treasure.","disc":"Choose a landing point entirely on the destination disc.","column":"Collect the revealed treasure for free, or leave it here?"}
+		for p: Dictionary in choice.get("options",[]):
+			if p.has("world") and BattleFloorInput.visible(bi,str(p.get("surface",""))):
+				world.append(p["world"])
+		bi.markers.show_world_points(world,Color(0.28,0.9,0.8),0.25)
+		bi.hud.set_actions(bi.available,bi.mode,str(hints.get(choice.get("kind",""),"Choose a legal option.")))
+		return
 	var s := State.new()
 	var f := bi.c.state.active()
 	bi.hud.set_active_summary(f)
@@ -26,6 +38,8 @@ static func preview(bi: BattleInput) -> void:
 			s.hint="Choose an exit, then confirm to retreat."
 		elif bi.mode=="jump":
 			s.hint="Choose a jump destination. Landing can cause falling damage."
+		elif bi.mode=="drop_down":
+			s.hint="Choose a lower landing from this ledge. Preview the damage before confirming."
 		elif bi.mode in ["run_for_it","run_talisman"]:
 			s.hint="Plan a run up to %d inches. Confirm to end activation."%(6 if bi.mode=="run_talisman" else 3)
 		elif bi.mode=="gear_cape_move":
@@ -69,6 +83,10 @@ static func preview(bi: BattleInput) -> void:
 		var info: Dictionary=bi.c.state.spell_catalog[bi.selected_spell]
 		var tn:=int(bi.c.state.spellbooks.get(f.side,{}).get(bi.selected_spell,info["number"])) if f!=null else int(info["number"])
 		s.hint="%s · TN %d — %s"%[info["name"],tn,s.hint]
+	if f!=null and bi.mode in ["","move","fight","fight_hand","shoot","cast","collect","end","reload","exit","jump","drop_down"]:
+		var restriction:=CombatHudInfo.restrictions(bi.c,f,bi.available)
+		if not restriction.is_empty():
+			s.hint+="\n"+restriction
 	bi.hud.set_actions(bi.available,bi.mode,s.hint)
 
 

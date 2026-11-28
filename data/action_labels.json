@@ -157,6 +157,8 @@
   "spell_wall": "Wall",
   "rotate_spell": "Rotate spell",
   "spell_leap": "Leap",
+  "leap_raise": "Raise Leap",
+  "leap_lower": "Lower Leap",
   "spell_teleport": "Teleport",
   "spell_blink": "Blink",
   "spell_transpose": "Transpose",
@@ -206,5 +208,13 @@
   "potion_fury": "Philtre of Fury",
   "potion_burrowing": "Bottle of Burrowing",
   "potion_ethereal_vacuum": "Ethereal Vacuum",
-  "jump": "Jump"
+  "jump": "Jump",
+  "core_collect": "Collect for free",
+  "core_leave": "Leave treasure",
+  "combat_weapon_dagger": "Use dagger",
+  "combat_weapon_staff": "Use staff",
+  "combat_weapon_hand_weapon": "Use hand weapon",
+  "combat_weapon_two_handed": "Use two-handed weapon",
+  "combat_weapon_natural": "Use natural weapon",
+  "combat_weapon_unarmed": "Fight unarmed"
 }

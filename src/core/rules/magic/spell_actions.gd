@@ -2,7 +2,11 @@ class_name SpellActions
 extends RefCounted
 ## Two-stage spellcasting: announce target, roll, choose Health, then resolve.
 
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 var shatter := Shatterstar.new()
 var summons: SummonActions
 var terrain: TerrainMagic
@@ -18,7 +22,7 @@ var eye: WizardEye
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 	summons = SummonActions.new(c)
 	terrain = TerrainMagic.new(c)
 	movement = MagicMovement.new(c)
@@ -39,7 +43,18 @@ func can_cast(id: String, target_id: int,ammo: bool=false) -> bool:
 func start(id: String, target_id: int,ammo: bool=false) -> bool:
 	if not can_cast(id, target_id,ammo) or id in ["leap", "transpose", "suggestion"]:
 		return false
+	if id in ["enchant_weapon","elemental_hammer"] and not ammo:
+		return start_enchant(target_id,WeaponEnchantment.preferred(c.state.figure(target_id),id),id)
 	return _roll(id,target_id,null,false,-1,{"magic_ammo":true} if ammo else {})
+
+
+func start_enchant(target_id: int,weapon: String,id: String="enchant_weapon") -> bool:
+	if id not in ["enchant_weapon","elemental_hammer"] or not can_cast(id,target_id):
+		return false
+	for w in WeaponEnchantment.options(c.state.figure(target_id),id):
+		if w.id==weapon:
+			return _roll(id,target_id,null,false,-1,{"weapon":weapon})
+	return false
 
 
 func counter_options(id: String) -> Array[Dictionary]:

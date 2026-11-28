@@ -67,6 +67,11 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 			if RedKingHerded.active(s):
 				var x := 1.0+1.2*float(deploy_index%4)
 				at=[x if side==0 else s.board.size.x-x,1.0+1.2*floori(deploy_index/4.0)]
+			# Generated scenario formations must be legal movement nodes.
+			# Keep the authored region and nearest half-inch position.
+			if not s.board.floor_layout.is_empty() and (RedKingVeil.active(s) or RedKingHerded.active(s) or RedKingFire.active(s)):
+				var snapped:=MoveGrid.to_pos(MovePlanner.node_at(Vector2(at[0],at[1])))
+				at=[snapped.x,snapped.y]
 			deploy_index += 1
 			if wb.get("campaign_roster",false) and (s.scenario_special.begins_with("red_king_") or not s.board.floor_layout.is_empty()) and not RedKingMind.active(s):
 				var repaired: Variant=CampaignDeployment.find(s,Vector2(at[0],at[1]),side,d)
@@ -121,8 +126,8 @@ static func from_dict(d: Dictionary, figures: FigureDb, terrain: TerrainDb) -> G
 	for entry: Dictionary in d.get("creatures", []):
 		var at: Array = entry["at"]
 		var creature := Figure.new(next_id, figures.get_def(entry["type"]), -1, Vector2(at[0], at[1]), figures.unarmed())
-		assign_support(s,creature,str(entry.get("surface",at[2] if at.size()>2 else "")))
 		creature.ring_side=int(entry.get("ring_side",0))
+		assign_support(s,creature,str(entry.get("surface",at[2] if at.size()>2 else "")))
 		s.figures.append(creature)
 		next_id += 1
 	for at: Array in d.get("treasures", []):
@@ -168,7 +173,7 @@ static func assign_support(s: GameState,f: Figure,id: String="") -> void:
 	if s.board.floor_layout.is_empty():
 		f.elevation=s.board.height_at(f.pos)
 		return
-	var n: Variant=BattlePlacement.support(s,f.pos,id)
+	var n: Variant=BattlePlacement.support(s,f.pos,id,Figure.BASE_RADIUS,1.6,true,f.ring_side)
 	if n==null:
 		_report_support_error(s,f.label(),f.pos,id)
 		return
@@ -180,8 +185,18 @@ static func assign_support(s: GameState,f: Figure,id: String="") -> void:
 static func assign_token_support(s: GameState,t: TreasureToken,id: String="") -> void:
 	if s.board.floor_layout.is_empty():
 		return
-	var n: Variant=BattlePlacement.support(s,t.pos,id,TreasureRules.TOKEN_RADIUS,0.5,false)
-	if n==null:
+	var support:=BattlePlacement.authored_token_surface(s,t.pos,id)
+	if support.is_empty():
+		# Mausoleum corner tokens intentionally touch the masonry (core p.142).
+		# Their circular footprint may overlap our conservative square proxy.
+		if s.board.id=="mausoleum" and t.id<4 and (id.is_empty() or id=="street"):
+			for p in s.board.pieces:
+				if p.kind.id!="ruin" or not p.rect.has_point(s.board.size*0.5) or p.rect.has_point(t.pos):
+					continue
+				for corner: Vector2 in [p.rect.position,p.rect.end,Vector2(p.rect.position.x,p.rect.end.y),Vector2(p.rect.end.x,p.rect.position.y)]:
+					if corner.distance_to(t.pos)<=TreasureRules.TOKEN_RADIUS+0.001:
+						t.surface_id="street"
+						return
 		# Frozen temple treasures are intentionally inside their guardian column.
 		if t.frozen and s.scenario_special=="complex_temple":
 			for p in s.board.pieces:
@@ -190,7 +205,7 @@ static func assign_token_support(s: GameState,t: TreasureToken,id: String="") ->
 					return
 		_report_support_error(s,"Treasure "+str(t.id),t.pos,id)
 		return
-	t.surface_id=s.board.floor_geometry().surface_id(n)
+	t.surface_id=support
 
 
 static func _report_support_error(s: GameState,label: String,at: Vector2,id: String) -> void:

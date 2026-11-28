@@ -32,6 +32,8 @@ func test_movement_senses_and_missile_resistance() -> void:
 	var b := make_board()
 	var result := Shooting.resolve_rolls(b,archer,burning,19,1)
 	check_eq(result["dmg"],2)
-	archer.spell_effects["enchant_weapon"]=true
+	check(WeaponEnchantment.add(archer,"bow"))
 	result=Shooting.resolve_rolls(b,archer,burning,19,1)
-	check(int(result["dmg"])>2)
+	check_eq(result["dmg"],2,"enchanted bow fires normal arrows")
+	result=Shooting.resolve_rolls(b,archer,burning,19,1,false,0,false,true)
+	check(int(result["dmg"])>2,"magic ammunition bypasses missile resistance")

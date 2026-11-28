@@ -1,6 +1,7 @@
 {
   "id": "red_king_back_into_fire",
   "name": "Back Into the Fire",
+  "shared_climbing": true,
   "size": [
     36,
     36

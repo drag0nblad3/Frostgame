@@ -78,3 +78,62 @@ func test_pack_checkpoint_preserves_remaining_members() -> void:
 	check_eq(restored.state.pack_target, 1)
 	var next := restored.activatable()[0]
 	check(next.id in [a.id, b.id, third.id] and next.id != leader.id)
+
+
+func test_pursuit_does_not_take_second_move() -> void:
+	var c:=make_game(make_board(),[fig("thug",0,Vector2(22,10)),fig("ghoul",-1,Vector2(5,10))],Dice.new(3))
+	c.state.phase=Phase.CREATURE
+	check(c.activate(2))
+	var f:=c.state.figure(2)
+	var start:=f.pos
+	CreatureBot.play(c,f)
+	check(f.pos.distance_to(start)>0.0)
+	check_eq(f.actions_left,1)
+
+
+func test_layered_random_movement_stops_at_wall() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}],"solids":[[8,0,9,0.5,3,2]]}
+	var f:=fig("ghoul",-1,Vector2(6,10))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(3))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var layout:=b.floor_geometry()
+	var reach:=c.layered_reach()
+	var far:=layout.node("street",Vector2(9,10))
+	check(reach.can_reach(far),"a detour around the wall exists")
+	var dest: Variant=LayeredBattleBot.wander_destination(c,f,layout,reach,Vector2.RIGHT)
+	check_eq(dest,layout.node("street",Vector2(7.5,10)))
+	check_eq(f.pos,Vector2(6,10))
+	if dest!=null:
+		check(c.move_on_floor(dest))
+		check_eq(f.pos,Vector2(7.5,10))
+
+
+func test_layered_random_movement_stops_at_ledge() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[4,4,4,4],"level":2}]}
+	var f:=fig("ghoul",-1,Vector2(6,6))
+	f.surface_id="deck"
+	f.elevation=2.0
+	var c:=make_game(b,[f],Dice.new(3))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var layout:=b.floor_geometry()
+	check_eq(LayeredBattleBot.wander_destination(c,f,layout,c.layered_reach(),Vector2.RIGHT),layout.node("deck",Vector2(7.5,6)))
+
+
+func test_flat_random_movement_stops_at_wall() -> void:
+	var b:=make_board([["hut_wall",8,9,0.5,2]])
+	var f:=fig("ghoul",-1,Vector2(6,10))
+	var c:=make_game(b,[f],Dice.new(3))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var r:=c.reach()
+	check(r.can_reach(MovePlanner.node_at(Vector2(9,10))))
+	var n: Variant=CreatureBot.wander_destination(c,f,r,Vector2.RIGHT)
+	check(n!=null)
+	if n!=null:
+		check(MoveGrid.to_pos(n).x<=7.5)
+		check_eq(MoveGrid.to_pos(n).y,10.0)

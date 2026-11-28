@@ -29,8 +29,8 @@ static func query(c: GameController,mode: String,existing: MoveReach=null) -> Ba
 	else:
 		o.layout=o.board.floor_geometry()
 		match mode:
-			"jump":
-				o.jumps=LayeredJump.plans(c)
+			"jump","drop_down":
+				o.jumps=LayeredDrop.plans(c,true) if mode=="drop_down" else LayeredJump.plans(c,true,true)
 				for n: Vector3i in o.jumps:
 					o.cost[n]=o.jumps[n]["cost"]
 				return o
@@ -44,6 +44,16 @@ static func query(c: GameController,mode: String,existing: MoveReach=null) -> Ba
 			for n: Vector3i in o.floors.cost:
 				if n!=o.floors.start:
 					o.cost[n]=o.floors.cost[n]
+		if mode=="gear_cape_move" and GearActions.cape_ready(c):
+			var grid:=LayeredGrid.new(o.layout,c.state.active(),c.state.figures)
+			grid.memoize_edges=true
+			for plans: Dictionary in [LayeredJump.plans(c,true,true,grid,true),LayeredDrop.plans(c,true,grid,o.floors,true)]:
+				for n: Vector3i in plans:
+					var plan: Dictionary=plans[n]
+					if float(plan["cost"])>=float(o.cost.get(n,INF))-0.001:
+						continue
+					o.cost[n]=plan["cost"]
+					o.jumps[n]=plan
 	return o
 
 
@@ -58,11 +68,13 @@ func path(node: Variant) -> PackedVector3Array:
 	if not cost.has(node):
 		return PackedVector3Array()
 	if jumps.has(node):
-		return jumps[node]["path"]
+		return jumps[node].get("preview",jumps[node]["path"])
 	if routes.has(node):
 		return routes[node]
 	var result:=PackedVector3Array()
 	if node is Vector3i:
+		if floors.air_paths.has(node):
+			return floors.air_paths[node]
 		for n in floors.path_to(node):
 			result.append(layout.world(n))
 	else:
@@ -81,8 +93,15 @@ static func commit(c: GameController,mode: String,node: Variant) -> bool:
 					c.end_activation()
 				return true
 			"run_for_it","run_talisman": return LayeredMovement.move(c,node,false,true,mode=="run_talisman")
-			"gear_cape_move": return LayeredMovement.move(c,node,true)
+			"gear_cape_move":
+				var options:=query(c,mode)
+				if not options.cost.has(node):
+					return false
+				if options.jumps.has(node):
+					return LayeredMovement.cape_aerial(c,node,options.jumps[node])
+				return LayeredMovement.move(c,node,true)
 			"jump": return c.jump_on_floor(node)
+			"drop_down": return LayeredDrop.move(c,node)
 			"move": return c.move_on_floor(node)
 	elif node is Vector2i and c.state.board.floor_layout.is_empty():
 		match mode:

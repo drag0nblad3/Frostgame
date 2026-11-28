@@ -172,7 +172,7 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 			_remove(_floor_art)
 			_floor_art=LayeredGatehouseArt.new()
 			add_child(_floor_art)
-			_floor_art.build(FloorLayout.from_dict(board.floor_layout),false,scenario)
+			_floor_art.build(board.floor_geometry(),false,scenario)
 			_floor_revision=revision
 			_floor_art.cut_at(_cut_floor_height)
 			_cutaway_dirty=true
@@ -250,6 +250,8 @@ static func _piece_key(p: TerrainPiece) -> String:
 
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 	match piece.kind.id:
+		"shallow_water","deep_water":
+			WaterTerrainArt.build(root,board,piece)
 		"architecture_prism_target":
 			return
 		"ruin_timber_wall","ruin_market_counter","ruin_altar","ruin_workbench","ruin_hearth","ruin_archive_shelf","ruin_grave":

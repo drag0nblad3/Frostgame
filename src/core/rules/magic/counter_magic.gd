@@ -1,11 +1,15 @@
 class_name CounterMagic
 extends RefCounted
 ## List individual ongoing effects, not entire figures. Spawning is not an ongoing effect.
-var c: GameController
+## The controller owns this helper; avoid a RefCounted ownership cycle.
+var _controller_ref: WeakRef
+var c: GameController:
+	get:
+		return _controller_ref.get_ref() as GameController
 
 
 func _init(controller: GameController) -> void:
-	c = controller
+	_controller_ref=weakref(controller)
 
 
 func options(f: Figure) -> Array[Dictionary]:
@@ -15,6 +19,10 @@ func options(f: Figure) -> Array[Dictionary]:
 		if not t.in_play() or ScenarioNull.muted(t) or t.spell_effects.has("plane_walk") or Shooting.distance(f, t) > 24.0 or (t != f and not LineOfSight.spell_visible(s.board,f,t)):
 			continue
 		for id: String in t.spell_effects:
+			if id in ["enchant_weapon","elemental_hammer"]:
+				for weapon in WeaponEnchantment.ids(t,id):
+					result.append({"kind":"weapon_enchantment","target":t.id,"spell":id,"weapon":weapon,"label":"%s #%d — %s (%s)"%[t.label(),t.id,id.replace("_"," ").capitalize(),weapon.replace("_"," ")]})
+				continue
 			if s.spell_catalog.has(id) or id.begins_with("potion_"):
 				result.append({"kind": "effect", "target": t.id, "spell": id, "label": "%s #%d — %s" % [t.label(), t.id, s.spell_catalog.get(id, {"name": id.trim_prefix("potion_").capitalize()})["name"]]})
 		if t.elemental_shield > 0:
@@ -72,6 +80,9 @@ func apply(option: Dictionary) -> void:
 	var t := s.figure(option["target"])
 	var id: String = option["spell"]
 	match str(option["kind"]):
+		"weapon_enchantment":
+			if t!=null:
+				WeaponEnchantment.remove(t,str(option["weapon"]),id)
 		"effect":
 			if t == null:
 				return
