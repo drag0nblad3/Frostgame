@@ -40,11 +40,12 @@ static func try_cast(c: GameController,f: Figure,layout: FloorLayout,long_route:
 	candidates.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["estimate"]<b["estimate"])
 	var budget := 0
 	var route_budget:=0
+	var route_limit:=roundi(lerpf(3.0,5.0,BotPreference.trait_value(f,"deliberation")))
 	var best: Dictionary = {}
 	var best_cost := baseline-MoveRules.allowance(f)-2.0
 	for candidate in candidates:
 		budget+=1
-		if budget>24 or route_budget>=8:
+		if budget>24 or route_budget>=route_limit:
 			break
 		var bridge := LayeredBridge.proposal(c,candidate["a"],candidate["b"],layout)
 		if bridge.is_empty():
@@ -55,7 +56,7 @@ static func try_cast(c: GameController,f: Figure,layout: FloorLayout,long_route:
 		data["bridges"]=bridges
 		var hypothetical := FloorLayout.from_dict(data)
 		route_budget+=1
-		var cost:=objective_cost(LayeredGrid.new(hypothetical,f,c.state.figures),long_route.start,objectives,best_cost)
+		var cost:=objective_cost(LayeredGrid.new(hypothetical,f,c.state.figures),long_route.start,objectives,best_cost,mini(800,BotPreference.route_budget(f)))
 		if cost<best_cost:
 			best_cost=cost
 			best=candidate
@@ -66,7 +67,7 @@ static func try_cast(c: GameController,f: Figure,layout: FloorLayout,long_route:
 
 ## Search only as far as a useful loot destination, rather than filling
 ## the whole hypothetical floor graph for every proposed bridge.
-static func objective_cost(grid: LayeredGrid,start: Vector3i,objectives: Array[Vector3i],limit: float) -> float:
+static func objective_cost(grid: LayeredGrid,start: Vector3i,objectives: Array[Vector3i],limit: float,budget: int=0) -> float:
 	if objectives.is_empty():
 		return INF
 	var goals: Dictionary={}
@@ -88,5 +89,5 @@ static func objective_cost(grid: LayeredGrid,start: Vector3i,objectives: Array[V
 		return best
 	var evaluate:=func(n: Vector3i) -> float:
 		return 0.0 if goals.has(n) else INF
-	var route:=LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,true,limit)
-	return float(route.get("cost",INF))
+	var route:=LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,true,limit,budget)
+	return INF if route.get("partial",false) else float(route.get("cost",INF))
