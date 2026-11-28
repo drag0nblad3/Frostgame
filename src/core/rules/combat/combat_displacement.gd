@@ -170,7 +170,9 @@ func intercept_floor(mover: Figure,path: PackedVector3Array,surfaces: Array[Stri
 			var steps:=maxi(4,ceili(from.distance_to(to)*4.0))
 			for step in range(1,steps+1):
 				var at:=from.lerp(to,float(step)/steps)
-				if not layout.clearance(at,Figure.BASE_RADIUS,1.6) or not grid.segment_allowed(from,at) or c.state.board.over_void(Vector2(at.x,at.z),Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(c.state.board,guard,Vector2(at.x,at.z),at.y):
+				var guard_support:=layout.surfaces[n.z]
+				var point_on_table:=Vector2(at.x,at.z)
+				if not guard_support.contains(point_on_table,Figure.BASE_RADIUS) or absf(guard_support.height_at(point_on_table)-at.y)>=0.5 or not layout.clearance(at,Figure.BASE_RADIUS,1.6) or not grid.segment_allowed(from,at) or c.state.board.over_void(Vector2(at.x,at.z),Figure.BASE_RADIUS) or TerrainMagic.ward_blocks(c.state.board,guard,Vector2(at.x,at.z),at.y):
 					clear=false
 					break
 				for other in grid.others:
