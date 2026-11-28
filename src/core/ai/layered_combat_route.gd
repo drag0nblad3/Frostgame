@@ -71,10 +71,12 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 	var best:=INF
 	var goal: Variant=null
 	var partial: Variant=null
+	var estimates: Dictionary={}
 	var remaining:=float(heuristic.call(start))
+	estimates[start]=remaining
 	var expanded:=0
 	var truncated:=false
-	heap.push(float(heuristic.call(start)),start)
+	heap.push(remaining,start)
 	while not heap.is_empty():
 		var item:=heap.pop()
 		var priority: float=item[0]
@@ -82,13 +84,13 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 		if priority>=best:
 			break
 		var distance: float=distances[n]
-		if priority>distance+float(heuristic.call(n))+0.0001:
+		var estimate_remaining:=float(estimates[n])
+		if priority>distance+estimate_remaining+0.0001:
 			continue
 		if budget>0 and expanded>=budget:
 			truncated=true
 			break
 		expanded+=1
-		var estimate_remaining:=float(heuristic.call(n))
 		if n!=start and estimate_remaining<remaining-0.001:
 			remaining=estimate_remaining
 			partial=n
@@ -103,7 +105,9 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 			var total:=distance+float(edge["cost"])
 			if total>limit+0.001 or total>=float(distances.get(next,INF)):
 				continue
-			var estimate:=total+float(heuristic.call(next))
+			if not estimates.has(next):
+				estimates[next]=float(heuristic.call(next))
+			var estimate:=total+float(estimates[next])
 			if estimate>=best:
 				continue
 			distances[next]=total
