@@ -108,6 +108,12 @@ func move_on_floor(node: Vector3i) -> bool:
 	return BattleRecord.run(self,"move_on_floor",{"node":node},func() -> bool: return LayeredMovement.move(self,node))
 
 
+## AI-only: use the exact reach from this unchanged decision, retaining the
+## same replay command and normal movement declaration/reaction handling.
+func move_from_fresh_reach(node: Vector3i,reach: LayeredReach) -> bool:
+	return BattleRecord.run(self,"move_on_floor",{"node":node},func() -> bool: return LayeredMovement.declare_walk(self,node,reach))
+
+
 func floor_exit_nodes() -> Array[Vector3i]:
 	return LayeredLoot.exit_nodes(self)
 
