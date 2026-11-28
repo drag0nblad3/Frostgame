@@ -64,7 +64,7 @@ static func resolve(c: GameController) -> bool:
 ## Consider the same compound routes offered to the player, but only where
 ## an aerial shortcut is plausible. Compare progress with normal walking.
 ## This is deliberately a local heuristic, not an optimal multi-turn search.
-static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,extracting: bool,quarry: Figure=null) -> bool:
+static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,extracting: bool,quarry: Figure=null,shared_grid: LayeredGrid=null) -> bool:
 	var s:=c.state
 	if (f.side<0 and quarry==null) or reach.start.z<0 or PlaneWalk.uses_direct(f) or FuryRules.target(s,f)!=null or not reach.air_paths.is_empty():
 		return false
@@ -122,7 +122,7 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	var best_score:=initial-walking+0.65+0.6*caution
 	var best: Variant=null
 	var mode:=""
-	var grid:=LayeredGrid.new(layout,f,s.figures)
+	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,s.figures)
 	grid.memoize_edges=true
 	for kind: String in ["jump","drop_down"]:
 		if kind=="drop_down" and flat_street:
