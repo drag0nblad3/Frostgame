@@ -14,6 +14,9 @@ static func reconcile(c: GameController,before: FloorLayout) -> void:
 	for f in c.state.figures:
 		if f.in_play() and f.surface_id.begins_with("climb:auto:") and before.index_of(f.surface_id)>=0 and after.index_of(f.surface_id)<0 and not lost.has(f.surface_id):
 			lost.append(f.surface_id)
+	for token in c.state.treasures:
+		if token.on_ground() and token.surface_id.begins_with("climb:auto:") and before.index_of(token.surface_id)>=0 and after.index_of(token.surface_id)<0 and not lost.has(token.surface_id):
+			lost.append(token.surface_id)
 	for id in lost:
 		resolve(c,before,id)
 
@@ -51,7 +54,7 @@ static func resolve(c: GameController,before: FloorLayout,id: String) -> void:
 			c._loot.lose(token)
 			continue
 		var above:=before.surfaces[index].height_at(token.pos)
-		var n: Variant=LayeredFall.landing(layout,LayeredGrid.new(layout),token.pos,above+0.002)
+		var n: Variant=LayeredFall.treasure_landing(s,token.pos,above+0.002)
 		if n==null:
 			c._loot.lose(token)
 		else:

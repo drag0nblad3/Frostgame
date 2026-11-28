@@ -85,7 +85,7 @@ func refresh() -> void:
 	movement=null
 	floor_points.clear()
 	if is_layered():
-		floor_layout=FloorLayout.from_dict(c.state.board.floor_layout)
+		floor_layout=c.state.board.floor_geometry()
 		if floor_layout.index_of(floor_id)<0:
 			floor_id=""
 	BattleInputMenu.refresh(self)

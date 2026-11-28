@@ -351,7 +351,7 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	player_input.move_preview_changed.connect(_move_preview)
 	_visible_floor=""
 	_floor_revision=state.board.floor_layout.hash()
-	hud.set_floors(FloorLayout.from_dict(state.board.floor_layout) if not state.board.floor_layout.is_empty() else null)
+	hud.set_floors(state.board.floor_geometry() if not state.board.floor_layout.is_empty() else null)
 	if not state.board.floor_layout.is_empty():
 		_rig.frame_board(state.board.size)
 	if start:
@@ -564,7 +564,7 @@ func _update_floor_view() -> void:
 	var focus: Variant=null
 	if active!=null and active.in_play() and player.views.has(active.id):
 		var v: FigureView=player.views[active.id]
-		if _visible_floor.is_empty() or active.surface_id==_visible_floor:
+		if FloorViewFilter.matches(_visible_floor,active.surface_id):
 			focus=v.global_position+Vector3.UP*0.75
 	_board_view.set_cutaway_focus(focus)
 	if controller.state.board.floor_layout.is_empty():
@@ -573,7 +573,7 @@ func _update_floor_view() -> void:
 	var revision:=controller.state.board.floor_layout.hash()
 	if revision!=_floor_revision:
 		_floor_revision=revision
-		if layout.index_of(_visible_floor)<0:
+		if not FloorViewFilter.valid(layout,_visible_floor):
 			_visible_floor=""
 			player_input.floor_id=""
 		hud.set_floors(layout,_visible_floor)
@@ -584,13 +584,13 @@ func _update_floor_view() -> void:
 		var surface:=f.surface_id
 		if player_input.move_plan.actor==f.id and player_input.move_plan.destination is Vector3i and layout.contains(player_input.move_plan.destination,0.0):
 			surface=layout.surface_id(player_input.move_plan.destination)
-		player.views[f.id].visible=f.in_play() and (_visible_floor.is_empty() or _visible_floor==surface)
+		player.views[f.id].visible=f.in_play() and FloorViewFilter.matches(_visible_floor,surface)
 	for t in controller.state.treasures:
 		if not player.treasure_views.has(t.id):
 			continue
 		var carrier:=controller.state.figure(t.carrier_id)
 		var surface:=carrier.surface_id if carrier!=null else t.surface_id
-		player.treasure_views[t.id].visible=t.unresolved() and (_visible_floor.is_empty() or _visible_floor==surface)
+		player.treasure_views[t.id].visible=t.unresolved() and FloorViewFilter.matches(_visible_floor,surface)
 
 
 func _move_preview(id: int,at: Vector3,active: bool) -> void:

@@ -131,7 +131,15 @@ static func preview(bi: BattleInput,s: BattleInputPreview.State) -> bool:
 
 
 static func visible(bi: BattleInput,id: String) -> bool:
-	return bi.floor_id.is_empty() or id==bi.floor_id
+	return FloorViewFilter.matches(bi.floor_id,id)
+
+
+static func point_visible(bi: BattleInput,n: Vector3i,index: int) -> bool:
+	if bi.mode in BattleMovePlan.MODES:
+		return FloorViewFilter.matches(bi.floor_id,bi.floor_layout.surface_id(n))
+	if bi.floor_id==FloorViewFilter.CLIMBING:
+		return false
+	return n.z==index
 
 
 static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> void:
@@ -142,7 +150,7 @@ static func draw_points(bi: BattleInput,s: BattleInputPreview.State=null) -> voi
 		var actor:=bi.c.state.figure(bi.spell_first) if bi.mode in ["floor_leap","floor_suggestion"] else f
 		var index:=_index(bi,actor) if actor!=null else -1
 		for n: Vector3i in bi.floor_points:
-			if n.z==index:
+			if point_visible(bi,n,index):
 				world.append(bi.floor_points[n])
 	elif s!=null:
 		for t in bi.targets:
@@ -181,7 +189,7 @@ static func pick(bi: BattleInput,screen: Vector2) -> Variant:
 	var best: Variant=null
 	var distance:=28.0
 	for n: Vector3i in bi.floor_points:
-		if n.z!=index:
+		if not point_visible(bi,n,index):
 			continue
 		var point: Vector3=bi.floor_points[n]
 		if bi.camera.is_position_behind(point):

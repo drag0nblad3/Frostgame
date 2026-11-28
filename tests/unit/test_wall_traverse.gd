@@ -8,8 +8,8 @@ func test_narrow_wall_crossing_and_intermediate_positions() -> void:
 	d["solids"]=[[10,0,2,0.5,3,16]]
 	var l:=FloorLayout.from_dict(d)
 	check(l.errors.is_empty(),str(l.errors))
-	var start:=l.node("street",Vector2(9.5,10))
-	var finish:=l.node("street",Vector2(11,10))
+	var start:=l.node("street",Vector2(9.5,10.5))
+	var finish:=l.node("street",Vector2(11,10.5))
 	var grid:=LayeredGrid.new(l)
 	var short:=LayeredReach.search(grid,start,4.0)
 	check(not short.can_reach(finish))

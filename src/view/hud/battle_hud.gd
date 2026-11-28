@@ -322,10 +322,20 @@ func set_floors(layout: FloorLayout,selected: String="") -> void:
 		return
 	_floor_choice.add_item("All floors")
 	_floor_choice.set_item_metadata(0,"")
+	var selected_index:=0
 	for surface in layout.surfaces:
+		if surface.id.begins_with("climb:"):
+			continue
 		_floor_choice.add_item(surface.id.replace("_"," ").capitalize())
 		_floor_choice.set_item_metadata(_floor_choice.item_count-1,surface.id)
-	_floor_choice.select(maxi(0,layout.index_of(selected)+1))
+		if surface.id==selected:
+			selected_index=_floor_choice.item_count-1
+	if FloorViewFilter.has_climbing(layout):
+		_floor_choice.add_item("Climbing positions")
+		_floor_choice.set_item_metadata(_floor_choice.item_count-1,FloorViewFilter.CLIMBING)
+		if selected.begins_with("climb:"):
+			selected_index=_floor_choice.item_count-1
+	_floor_choice.select(selected_index)
 
 
 func set_active_summary(f: Figure) -> void:
@@ -338,7 +348,7 @@ static func active_summary(f: Figure) -> String:
 		return ""
 	var text := "%s  ·  HP %d/%d\n%d ACTIONS  ·  MOVE %.1f″\nF %+d   S %+d   A %d   W %+d"%[f.label(),f.health,f.def.health,f.actions_left,MoveRules.allowance(f),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
 	if not f.surface_id.is_empty():
-		text+="\n%s · %.1f″ elevation"%[f.surface_id.replace("_"," ").capitalize(),f.elevation]
+		text+="\n%s · %.1f″ elevation"%[("Hanging on wall" if f.surface_id.begins_with("climb:") else f.surface_id.replace("_"," ").capitalize()),f.elevation]
 	if f.melee!=null:
 		text+="\n"+f.melee.name
 	if f.ranged!=null:

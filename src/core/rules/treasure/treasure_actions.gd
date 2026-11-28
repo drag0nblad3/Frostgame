@@ -125,6 +125,14 @@ func _drop(f: Figure, at: Vector2, id: int = -1,surface: String="") -> void:
 	if token == null or token.carrier_id != f.id:
 		return
 	_c._magic.illusions.reveal(f)
+	if surface.is_empty() and f.surface_id.begins_with("climb:"):
+		var landing: Variant=LayeredFall.treasure_landing(_c.state,f.pos,f.elevation)
+		if landing==null:
+			lose(token)
+			return
+		var support:=_c.state.board.floor_geometry()
+		at=support.point(landing)
+		surface=support.surface_id(landing)
 	_clear_carrier(token)
 	token.pos = at
 	token.surface_id = f.surface_id if surface.is_empty() else surface
