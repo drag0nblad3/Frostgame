@@ -34,7 +34,7 @@ func _process(_delta: float) -> bool:
 		var options := c.activatable()
 		if options.is_empty():
 			return _fail("No selectable player figure")
-		var p: Vector2 = _scene._rig.camera.unproject_position(TableSpace.to_world(options[0].pos, 0.75))
+		var p: Vector2 = _scene._rig.camera.unproject_position(TableSpace.to_world(options[0].pos, options[0].elevation+0.75))
 		if not _scene.player_input.tap(p) or c.state.active() == null:
 			return _fail("Player selection failed")
 		_stage = 1
@@ -55,16 +55,19 @@ func _process(_delta: float) -> bool:
 			return _fail("Move not available")
 		_scene.player_input.action("move")
 		var start := c.state.active().pos
-		for n: Vector2i in _scene.player_input.nodes:
-			var at := MoveGrid.to_pos(n)
-			if start.distance_to(at) < 1.0:
+		var bi: BattleInput=_scene.player_input
+		if bi.movement==null:
+			return _fail("No movement options")
+		for n in bi.movement.cost:
+			var world:=bi.movement.world(n)
+			var at:=Vector2(world.x,world.z)
+			if start.distance_to(at)<1.0 or (n is Vector3i and not BattleFloorInput.visible(bi,bi.movement.layout.surface_id(n))):
 				continue
-			var p: Vector2 = _scene._rig.camera.unproject_position(TableSpace.to_world(at))
+			var p: Vector2=_scene._rig.camera.unproject_position(world)
 			var before_actions := c.state.active().actions_left
 			var before_moves := c.state.active().moves_taken
 			var before_rng := c.dice._rng.state
 			var before_history := c.history.size()
-			var bi: BattleInput=_scene.player_input
 			bi.tap(p)
 			if bi.move_plan.destination==null or c.state.active().pos!=start or c.state.active().actions_left!=before_actions:
 				return _fail("Tentative move mutated game state")
@@ -78,9 +81,11 @@ func _process(_delta: float) -> bool:
 				return _fail("Undo changed state or revealed a roll")
 			bi.tap(p)
 			# Retarget while preserving the original allowance.
-			for next: Vector2i in bi.nodes:
-				if next!=n and start.distance_to(MoveGrid.to_pos(next))>=1.0:
-					bi.move_plan.choose(bi,MoveGrid.to_pos(next))
+			for next in bi.movement.cost:
+				var next_world:=bi.movement.world(next)
+				if next!=n and start.distance_to(Vector2(next_world.x,next_world.z))>=1.0:
+					if not bi.move_plan.choose_node(bi,next):
+						return _fail("Retarget failed")
 					break
 			if c.state.active().pos!=start or c.state.active().actions_left!=before_actions or c.dice._rng.state!=before_rng:
 				return _fail("Retarget spent movement")

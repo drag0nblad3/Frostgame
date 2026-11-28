@@ -12,7 +12,7 @@ static func plan(c: GameController, f: Figure) -> Dictionary:
 		for t in c.state.figures:
 			if not t.in_play():
 				continue
-			var score := MagicTactics.value(c, f, t, id)
+			var score := MagicTactics.value(c, f, t, id)*BotPreference.spell_appeal(f,id)
 			if score > best_value and BattleAction.legal(c,"cast",t.id,id):
 				best_value = score
 				best = {"spell": id, "target": t.id, "score": score}

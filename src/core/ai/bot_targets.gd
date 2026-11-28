@@ -20,8 +20,8 @@ static func weakest_contact(s: GameState, f: Figure) -> Figure:
 			continue
 		if RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(e):
 			continue
-		var score := float(e.health) / (MagicTactics.importance(e)*BotPreference.appeal(s,f,e.id,"melee")) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
-		var previous := INF if best == null else float(best.health) / (MagicTactics.importance(best)*BotPreference.appeal(s,f,best.id,"melee")) + (0.0 if can_harm(f, best, f.melee) else 1000.0)
+		var score := float(e.health) / (MagicTactics.importance(e)*BotPreference.appeal(s,f,e.id,"melee")*BotPreference.threat_appeal(f,e)) + (0.0 if can_harm(f, e, f.melee) else 1000.0)
+		var previous := INF if best == null else float(best.health) / (MagicTactics.importance(best)*BotPreference.appeal(s,f,best.id,"melee")*BotPreference.threat_appeal(f,best)) + (0.0 if can_harm(f, best, f.melee) else 1000.0)
 		if score < previous:
 			best = e
 	return best
@@ -55,7 +55,7 @@ static func best_shot(s: GameState, f: Figure) -> Figure:
 	for t in s.figures:
 		if t.side == f.side or RingworldBot.protected_key(s,f,t) or Contact.in_combat(s.figures, t) or Shooting.blocked_reason(s.board, s.figures, f, t) != "":
 			continue
-		var v := shot_value(s, f, f.pos, t)*BotPreference.appeal(s,f,t.id,"shot")
+		var v := shot_value(s, f, f.pos, t)*BotPreference.appeal(s,f,t.id,"shot")*BotPreference.threat_appeal(f,t)
 		if v > best_v:
 			best = t
 			best_v = v
@@ -69,7 +69,7 @@ static func best_legal_shot(c: GameController,f: Figure) -> Figure:
 	for t in c.state.figures:
 		if t.side==f.side or RingworldBot.protected_key(c.state,f,t) or Contact.in_combat(c.state.figures,t) or not BattleAction.legal(c,"shoot",t.id):
 			continue
-		var score:=shot_value(c.state,f,f.pos,t)*BotPreference.appeal(c.state,f,t.id,"shot")
+		var score:=shot_value(c.state,f,f.pos,t)*BotPreference.appeal(c.state,f,t.id,"shot")*BotPreference.threat_appeal(f,t)
 		if score>value:
 			best=t
 			value=score

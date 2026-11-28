@@ -160,7 +160,7 @@ func tap(screen: Vector2) -> void:
 	var distance:=28.0
 	for p in _points:
 		var at: Vector2=p["at"]
-		var world:=TableSpace.to_world(at,float(p["height"]))
+		var world:=TableSpace.to_world(at,float(p.get("height",p.get("world",Vector3.ZERO).y)))
 		if battle._rig.camera.is_position_behind(world):
 			continue
 		var d:=screen.distance_to(battle._rig.camera.unproject_position(world))

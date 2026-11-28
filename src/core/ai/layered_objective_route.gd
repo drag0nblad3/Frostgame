@@ -60,6 +60,8 @@ static func exit_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i
 
 
 static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,grid: LayeredGrid,quarry: Figure,extracting: bool) -> bool:
+	if not extracting and BotPreference.prefers_combat(c.state,f) and LayeredCombatRoute.move(c,f,layout,reach,grid,quarry):
+		return true
 	var route:=exit_search(c.state,f,grid,reach.start) if extracting else treasure_search(c.state,f,grid,reach.start,true)
 	if route.is_empty() or route["goal"]==reach.start:
 		return LayeredCombatRoute.move(c,f,layout,reach,grid,quarry)

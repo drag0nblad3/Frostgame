@@ -34,7 +34,15 @@ static func trace(c: GameController,f: Figure,direction: Vector2,distance: float
 		blocked_at=Vector3(at.x,from.y,at.y)
 		var next: Variant=null
 		var same:=layout.node(layout.surface_id(node),at)
-		if layout.standable(same) and layout.height(same)<=from.y+0.5:
+		var support:=layout.surfaces[node.z]
+		var continuous:=false
+		if layout.standable(same) and not support.id.begins_with("climb:"):
+			if support.profiles.is_empty():
+				continuous=not is_equal_approx(support.level,support.end_level)
+			else:
+				var profile:=support.profile_at(layout.point(node))
+				continuous=profile!=null and profile.ramp and profile==support.profile_at(at)
+		if layout.standable(same) and (continuous or layout.height(same)<=from.y+0.5):
 			next=same
 		else:
 			# First try adjoining support at the same height, then a fall.
@@ -56,7 +64,7 @@ static func trace(c: GameController,f: Figure,direction: Vector2,distance: float
 			break
 		var to:=layout.world(next)
 		var edge:=Vector3(to.x,from.y,to.z)
-		var landing:=from.y-to.y>0.5
+		var landing:=from.y-to.y>0.5 and not (next==same and continuous)
 		var end:=edge if landing else to
 		var clear:=true
 		for step in range(1,5):
