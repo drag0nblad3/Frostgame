@@ -288,3 +288,34 @@ func test_second_move_route_reuse_checks_target_and_fresh_reach() -> void:
 	var revised_grid:=LayeredGrid.new(b.floor_geometry(),f,c.state.figures)
 	revised_grid.ai_work=work
 	check(LayeredCombatRoute.reuse_route(revised_grid,next_reach,evaluate,"test").is_empty())
+
+
+func test_indexed_treasure_goal_handles_off_lattice_tokens() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"upper","rect":[8,8,8,8],"level":3}]}
+	var f:=fig("knight",0,Vector2(8,9))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(2))
+	var token:=TreasureToken.new(0,Vector2(11.24,9.23))
+	token.surface_id="street"
+	c.state.treasures.append(token)
+	var upper:=TreasureToken.new(1,Vector2(9,9))
+	upper.surface_id="upper"
+	c.state.treasures.append(upper)
+	var layout:=b.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var start:=layout.node(f.surface_id,f.pos)
+	var reach:=LayeredReach.search(grid,start,6.0)
+	var result:=LayeredObjectiveRoute.treasure_search(c.state,f,grid,start,false,reach)
+	check(not result.is_empty())
+	if result.is_empty():
+		return
+	var goal: Vector3i=result["goal"]
+	check_eq(layout.surface_id(goal),"street")
+	check(layout.point(goal).distance_to(token.pos)<=0.8)
+	var best:=INF
+	for n: Vector3i in reach.cost:
+		if layout.surface_id(n)=="street" and layout.point(n).distance_to(token.pos)<=0.8:
+			best=minf(best,float(reach.cost[n]))
+	check_eq(result["cost"],best)
+	check_eq(result["expanded"],0)
