@@ -107,6 +107,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 	var layout := c.state.board.floor_geometry()
 	var grid:=LayeredGrid.new(layout,f,c.state.figures)
 	grid.memoize_edges=true
+	grid.ai_work=c.ai_work
 	var reach:=LayeredMovement.reach(c,false,false,false,grid)
 	c.ai_end("local_reach",started)
 	if reach.cost.is_empty():
@@ -146,6 +147,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 		# cached edges for the stricter search.
 		grid=LayeredGrid.new(layout,f,c.state.figures)
 		grid.avoid_lethal=true
+		grid.ai_work=c.ai_work
 	var column:=ScenarioColumns.contact(c.state.board,f.pos,f.elevation)
 	if column!=null and f.side>=0 and f.treasure_id<0:
 		for n: Vector3i in reach.cost:
@@ -163,9 +165,16 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 		started=c.ai_begin()
 		var moved:=LayeredObjectiveRoute.move(c,f,layout,reach,grid,quarry,extracting)
 		c.ai_end("objective_route",started)
-		return moved
+		if moved:
+			return true
+		if grid.ai_work.is_empty() or int(grid.ai_work["remaining"])>0:
+			return false
 	started=c.ai_begin()
 	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null,BotPreference.route_budget(f))
+	if long_route.truncated and long_route.cost.size()<=reach.cost.size() and not safe_route:
+		# Exhausted optional budget: retain the exact already computed local field.
+		long_route=reach
+		long_route.truncated=true
 	c.ai_end("long_route",started)
 	var goal: Variant = null
 	var best := INF
@@ -233,7 +242,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 				break
 			if run.can_reach(route[i]) and c.commit_movement("run_talisman",route[i]):
 				return true
-	if not safe_route and not long_route.truncated:
+	if not safe_route and not long_route.truncated and grid.spend_ai_work(120):
 		started=c.ai_begin()
 		var shortcut:=LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal)
 		c.ai_end("spell_shortcut",started)
