@@ -561,3 +561,43 @@ func test_suggestion_rejects_damaging_vertical_descent() -> void:
 	check(not SpellAvailability.floor_suggestion_points(c._magic,f).has(target))
 	check_eq(f.surface_id,"deck")
 	check_eq(f.moves_taken,0)
+
+
+func test_ai_uses_compound_jump_for_unreachable_treasure() -> void:
+	var c:=_two_jump_game()
+	var f:=c.state.active()
+	var token:=TreasureToken.new(0,Vector2(8,3))
+	token.surface_id="east"
+	c.state.treasures.append(token)
+	var layout:=c.state.board.floor_geometry()
+	var reach:=c.layered_reach()
+	check(LayeredTactics.aerial_progress(c,f,layout,reach,false))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_ai_can_descend_two_terraces_in_one_action() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"upper","rect":[0,0,4,6],"level":2},{"id":"middle","rect":[4,0,2,6],"level":1},{"id":"lower","rect":[6,0,5,6],"level":0}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="upper"
+	f.elevation=2.0
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	var token:=TreasureToken.new(0,Vector2(7,3))
+	token.surface_id="lower"
+	c.state.treasures.append(token)
+	var hp:=f.health
+	check(LayeredTactics.aerial_progress(c,f,b.floor_geometry(),c.layered_reach(),false))
+	check_eq(f.surface_id,"lower")
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+
+
+func test_ai_aerial_damage_counts_each_leg() -> void:
+	var c:=_two_jump_game()
+	var f:=c.state.active()
+	check_eq(LayeredTactics.aerial_damage(c.state,f,{"fall":3.0,"next":{"fall":3.0}}),8)
+	check_eq(LayeredTactics.aerial_damage(c.state,f,{"fall":2.0,"next":{"fall":2.0}}),0)
