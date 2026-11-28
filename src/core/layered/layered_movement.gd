@@ -595,3 +595,19 @@ static func _valid_next_aerial(c: GameController,f: Figure,plan: Dictionary) -> 
 		return false
 	var actual: Dictionary=candidates[n]
 	return actual["grounded"]==plan["grounded"] and actual["path"]==plan["path"]
+
+
+## Internal execution of a freshly computed canonical aerial preview.
+## Callers must query without mutating the battle between query and declaration.
+static func declare_aerial(c: GameController,n: Vector3i,plan: Dictionary) -> bool:
+	if not eligible(c) or plan.is_empty():
+		return false
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var targets:=MovementContact.enemies_at(c.state.figures,f,layout.point(n),layout.height(n),layout.surface_id(n))
+	c._magic.beauty.authorize(f,targets,_declare_aerial_authorized.bind(c,f,plan))
+	return true
+
+static func _declare_aerial_authorized(c: GameController,f: Figure,plan: Dictionary) -> void:
+	if f.in_play() and c.state.active()==f and RedKingHill.before_move(c,f):
+		offer_aerial(c,f,plan)
