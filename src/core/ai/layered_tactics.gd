@@ -122,6 +122,7 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	var best_score:=initial-walking+0.65+0.6*caution
 	var best: Variant=null
 	var mode:=""
+	var chosen_plan: Dictionary={}
 	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,s.figures)
 	grid.memoize_edges=true
 	grid.ai_work=c.ai_work
@@ -159,8 +160,19 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 				best_score=score
 				best=n
 				mode=kind
+				chosen_plan=plan
 	if best==null:
 		return false
+	# Inside a recorded bot_resume the replay reruns this deterministic
+	# shortlist. Its route was produced by the exact jump/drop planners;
+	# only candidate enumeration was reduced. Do not enumerate all player
+	# alternatives again merely to find a possibly different cheaper route.
+	if c.recording_command and not c.ai_work.is_empty():
+		var declaration_start:=c.ai_begin()
+		var accepted:=BattleRecord.run(c,"movement",{"mode":mode,"node":best},func() -> bool:return LayeredMovement.declare_aerial(c,best,chosen_plan))
+		c.ai_end("aerial_declaration",declaration_start)
+		return accepted
+	# Standalone destination-only commands still need the canonical route.
 	# The full validator can find a cheaper route omitted by the shortlist.
 	# Inspect that actual route before committing, particularly for carriers.
 	var started:=c.ai_begin()
