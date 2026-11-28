@@ -165,7 +165,7 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 		c.ai_end("objective_route",started)
 		return moved
 	started=c.ai_begin()
-	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null)
+	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null,BotPreference.route_budget(f))
 	c.ai_end("long_route",started)
 	var goal: Variant = null
 	var best := INF
@@ -233,12 +233,37 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 				break
 			if run.can_reach(route[i]) and c.commit_movement("run_talisman",route[i]):
 				return true
-	if not safe_route:
+	if not safe_route and not long_route.truncated:
 		started=c.ai_begin()
 		var shortcut:=LayeredTactics.shortcut(c,f,layout,reach,long_route,grid,goal)
 		c.ai_end("spell_shortcut",started)
 		if shortcut:
 			return true
+	if (goal==null or goal==reach.start) and long_route.truncated:
+		# Continue toward a distant objective using the valid explored prefix.
+		# A partial field never authorizes a destination outside local reach.
+		var hints: Array[Vector3i]=[]
+		if center_escape:
+			for n in layout.nodes_at(c.state.board.size*0.5):
+				hints.append(n)
+		elif extracting:
+			for segment in MagicBot._leap_exit_segments(c.state,layout,f.side):
+				for endpoint in segment:
+					for n in layout.nodes_at(Vector2(endpoint.x,endpoint.z)):
+						if is_equal_approx(layout.height(n),endpoint.y):
+							hints.append(n)
+		else:
+			for token in tokens:
+				var n:=layout.node(token.surface_id,token.pos)
+				if n.z>=0:
+					hints.append(n)
+			if hints.is_empty():
+				for enemy in c.state.figures:
+					if enemy.in_play() and enemy.side!=f.side and enemy.ring_side==f.ring_side and (quarry==null or quarry==enemy) and IllusionRules.visible_to(c.state.figures,f,enemy):
+						var n:=layout.node(enemy.surface_id,enemy.pos)
+						if n.z>=0:
+							hints.append(n)
+		goal=_partial_goal(layout,long_route,hints)
 	if goal==null or goal==reach.start:
 		return false
 	var path := long_route.path_to(goal)
@@ -408,3 +433,23 @@ static func _safe_path(c: GameController,layout: FloorLayout,path: Array[Vector3
 		if RedKingVeil.lethal(c.state,a,b) or (RedKingHerded.active(c.state) and minf(a.y,b.y)<=float(c.state.scenario_data.get("herd_veil",0.0))+Figure.BASE_RADIUS):
 			return false
 	return true
+
+
+static func _partial_goal(layout: FloorLayout,route: LayeredReach,hints: Array[Vector3i]) -> Variant:
+	if hints.is_empty():
+		return null
+	var best: Variant=null
+	var value:=INF
+	for target in hints:
+		value=minf(value,layout.coarse_distance(route.start,target))
+	for n: Vector3i in route.cost:
+		if n==route.start:
+			continue
+		var score:=INF
+		for target in hints:
+			score=minf(score,layout.coarse_distance(n,target))
+		score+=float(route.cost[n])*0.03
+		if score<value-0.001:
+			best=n
+			value=score
+	return best
