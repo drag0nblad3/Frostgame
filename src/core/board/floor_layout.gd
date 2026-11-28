@@ -141,19 +141,75 @@ func neighbor_clear(a: Vector3i,b: Vector3i) -> bool:
 func clearance(at: Vector3,radius: float,body: float) -> bool:
 	if profiled_ground!=null and at.y<profiled_ground.height_at(Vector2(at.x,at.z))-0.002:
 		return false
+	# During assembly volumes are mutable; use the original full scan.
+	# Large bases also retain the full scan. Normal figures and spell
+	# trajectories query a conservative neighborhood of static geometry.
+	if not _sealed or radius>1.0 or solids.size()+circular_solids.size()+convex_solids.size()<16:
+		return _clearance_volumes(at,radius,body,solids,circular_solids,convex_solids)
+	_prepare_clearance_index()
+	var key:=_clearance_cell(Vector2(at.x,at.z))
+	if not _clearance_cells.has(key):
+		return true
+	var bucket: Array=_clearance_cells[key]
+	return _clearance_volumes(at,radius,body,bucket[0],bucket[1],bucket[2])
+
+
+func _clearance_volumes(at: Vector3,radius: float,body: float,boxes: Array,cylinders: Array,prisms: Array) -> bool:
 	# Ignore a supporting slab that ends exactly at the soles.
 	var box := AABB(at+Vector3(-radius,0.002,-radius),Vector3(radius*2.0,body,radius*2.0))
-	for solid in solids:
+	for solid: AABB in boxes:
 		if solid.intersects(box):
 			return false
-	for cylinder in circular_solids:
+	for cylinder: AABB in cylinders:
 		var center:=Vector2(cylinder.get_center().x,cylinder.get_center().z)
 		if at.y+0.002<cylinder.end.y and at.y+body>cylinder.position.y and Vector2(at.x,at.z).distance_to(center)<cylinder.size.x*0.5+radius-0.001:
 			return false
-	for prism in convex_solids:
+	for prism: ArchitecturePrism in prisms:
 		if prism.overlaps(box):
 			return false
 	return true
+
+
+## Four-inch horizontal broad phase. Expand footprints by the maximum
+## indexed base radius; any volume that might touch a base is in its bin.
+## Actual height, radial and convex overlap tests remain unchanged.
+const CLEARANCE_CELL_SIZE:=4.0
+var _clearance_cells: Dictionary={}
+var _clearance_counts:=Vector3i(-1,-1,-1)
+
+func _clearance_cell(p: Vector2) -> Vector2i:
+	return Vector2i(floori(p.x/CLEARANCE_CELL_SIZE),floori(p.y/CLEARANCE_CELL_SIZE))
+
+
+func _index_clearance_volume(rect: Rect2,kind: int,volume: Variant) -> void:
+	var grown:=rect.grow(1.001)
+	var lo:=_clearance_cell(grown.position)
+	var hi:=_clearance_cell(grown.end)
+	for x in range(lo.x,hi.x+1):
+		for y in range(lo.y,hi.y+1):
+			var key:=Vector2i(x,y)
+			if not _clearance_cells.has(key):
+				_clearance_cells[key]=[[],[],[]]
+			_clearance_cells[key][kind].append(volume)
+
+
+func _prepare_clearance_index() -> void:
+	var counts:=Vector3i(solids.size(),circular_solids.size(),convex_solids.size())
+	if counts==_clearance_counts:
+		return
+	_clearance_cells.clear()
+	for solid in solids:
+		_index_clearance_volume(Rect2(Vector2(solid.position.x,solid.position.z),Vector2(solid.size.x,solid.size.z)),0,solid)
+	for cylinder in circular_solids:
+		# Preserve the exact cylinder test's x-radius even if its stored
+		# z extent differs. The broad phase must never miss such a volume.
+		var center:=cylinder.get_center()
+		var diameter:=cylinder.size.x
+		_index_clearance_volume(Rect2(Vector2(center.x,center.z)-Vector2.ONE*diameter*0.5,Vector2.ONE*diameter),1,cylinder)
+	for prism in convex_solids:
+		var bounds:=prism.bounds
+		_index_clearance_volume(Rect2(Vector2(bounds.position.x,bounds.position.z),Vector2(bounds.size.x,bounds.size.z)),2,prism)
+	_clearance_counts=counts
 
 
 func nodes_at(p: Vector2) -> Array[Vector3i]:
