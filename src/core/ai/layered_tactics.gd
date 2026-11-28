@@ -127,7 +127,8 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	for kind: String in ["jump","drop_down"]:
 		if kind=="drop_down" and flat_street:
 			continue
-		var plans:=LayeredJump.plans(c,true,true,grid) if kind=="jump" else LayeredDrop.plans(c,true,grid,reach)
+		var budget:=BotPreference.aerial_budget(f)
+		var plans:=LayeredJump.plans(c,true,true,grid,false,distance,budget) if kind=="jump" else LayeredDrop.plans(c,true,grid,reach,false,distance,budget)
 		# Rank cheap geometry first, then sample a bounded shortlist; do not
 		# lose every useful landing merely because a floor has many cells.
 		var shortlist: Array[Dictionary]=[]
