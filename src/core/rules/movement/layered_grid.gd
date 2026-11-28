@@ -55,7 +55,7 @@ func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> 
 			for x in range(-radius,radius+1):
 				for y in range(-radius,radius+1):
 					var n:=origin+Vector2i(x,y)
-					if MoveGrid.to_pos(n).distance_to(other.pos)>Contact.CONTACT:
+					if MoveGrid.to_pos(n).distance_to(other.pos)>Contact.CONTACT+0.001:
 						continue
 					if not _nearby.has(n):
 						_nearby[n]=[]
@@ -78,7 +78,7 @@ func _compute_open(n: Vector3i) -> bool:
 		return false
 	if board!=null and board.has_water and Swimming.avoids_deep(board,mover,point,at.y):
 		return false
-	for other: Figure in _nearby.get(Vector2i(n.x,n.y),NO_FIGURES):
+	for other: Figure in (others if board!=null and BoardTopology.linked(board) else _nearby.get(Vector2i(n.x,n.y),NO_FIGURES)):
 		if MovementContact.blocks(mover,other,others,point,at.y,running,layout.surface_id(n)):
 			return false
 	return true
@@ -91,7 +91,7 @@ func stops(n: Vector3i) -> bool:
 		return true
 	if mover.side>=0 and not IllusionRules.phantom(mover) and ScenarioColumns.contact(board,layout.point(n),layout.height(n))!=null:
 		return true
-	for other: Figure in _nearby.get(Vector2i(n.x,n.y),NO_FIGURES):
+	for other: Figure in (others if board!=null and BoardTopology.linked(board) else _nearby.get(Vector2i(n.x,n.y),NO_FIGURES)):
 		if other.side!=mover.side and Contact.touches_position(other,layout.point(n),layout.height(n),layout.surface_id(n)):
 			return true
 	return false

@@ -71,3 +71,24 @@ func test_ground_spawn_cannot_select_roof() -> void:
 		check_eq(b.floor_geometry().surface_id(n),"street")
 	b.floor_layout["spawn_surfaces"]=["missing"]
 	check(BattlePlacement.nearest_ground(c.state,Vector2(8,8),2.0)==null)
+
+
+func test_first_expansion_maps_adopt_shared_floor_graph() -> void:
+	var profile:=ContentProfile.new(["red_king"])
+	var defs:=FigureDb.load_files(FigureDb.FIGURES,FigureDb.WEAPONS,profile)
+	for id: String in ["red_king_investigations","red_king_squatter","red_king_demons_and_mad_man"]:
+		var s:=ScenarioLoader.load_id(id,defs,terrain())
+		check(not s.board.floor_layout.is_empty(),id)
+		var l:=s.board.floor_geometry()
+		check(l.errors.is_empty(),id+":"+str(l.errors))
+		check(not s.scenario_data.has("support_errors"),id+":"+str(s.scenario_data.get("support_errors",[])))
+		for f in s.figures:
+			var n:=l.node(f.surface_id,f.pos)
+			check(l.standable(n),id+" figure "+str(f.id))
+			check_eq(l.point(n),f.pos)
+			check_eq(l.height(n),f.elevation)
+		for t in s.treasures:
+			if t.on_ground():
+				check_eq(t.surface_id,"street")
+				check(not is_nan(TreasureRules.token_height(s,t)))
+		check(l.surfaces.size()>1,id+" climbing geometry")
