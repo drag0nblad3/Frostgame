@@ -19,9 +19,20 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 	var start := layout.node(f.surface_id,f.pos)
 	if not grid.open(start):
 		return out
+	var direct:=from_position(c,layout,grid,start,MoveRules.allowance(f),generate)
+	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct)) if continuation else direct
+
+
+## Query from a hypothetical landing without changing the live figure.
+static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,generate: bool=true) -> Dictionary:
+	var out: Dictionary={}
+	var s:=c.state
+	var f:=s.active()
+	if not grid.open(start) or grid.stops(start):
+		return out
 	var entries: Array=s.board.floor_layout.get("jumps",[]).duplicate()
 	if generate:
-		entries.append_array(_generated(c,layout,grid,start))
+		entries.append_array(_generated(c,layout,grid,start,allowance))
 	for entry: Dictionary in entries:
 		var from: Array = entry.get("from",[])
 		var to: Array = entry.get("to",[])
@@ -35,7 +46,7 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 			continue
 		var delta := layout.point(target)-layout.point(takeoff)
 		var distance := delta.length()
-		if distance<=0.001 or distance>MoveRules.allowance(f)+0.001:
+		if distance<=0.001 or distance>allowance+0.001:
 			continue
 		var run := layout.point(takeoff)-layout.point(start)
 		if (distance>1.001 and run.length()+0.001<distance) or (run.length()>0.001 and run.normalized().dot(delta.normalized())<0.999):
@@ -62,7 +73,7 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 				if f.levitates() or f.def.traits.has("flying") or s.board.low_gravity:
 					multiplier=1.0
 				cost+=previous.distance_to(p)*multiplier
-		if not valid or cost>MoveRules.allowance(f)+0.001:
+		if not valid or cost>allowance+0.001:
 			continue
 		var a := layout.world(takeoff)
 		var b := layout.world(target)
@@ -95,7 +106,7 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 			for i in range(1,arc.size()):
 				preview.append(arc[i])
 			out[target]={"path":path,"arc":arc,"preview":preview,"approach_cost":cost-distance,"cost":cost,"fall":a.y-b.y,"grounded":grounded,"surface":layout.surface_id(target),"jump":true}
-	return LayeredMovement.extend_aerial(c,out) if continuation else out
+	return out
 
 
 static func move(c: GameController,n: Vector3i) -> bool:
@@ -139,7 +150,7 @@ static func _continuous_support(c: GameController,layout: FloorLayout,from: Vect
 
 ## Only interruptions in support generate jump candidates. The ray search
 ## remains bounded by movement allowance and never pairs all map nodes.
-static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i) -> Array[Dictionary]:
+static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float) -> Array[Dictionary]:
 	var out: Array[Dictionary]=[]
 	var f:=c.state.active()
 	var support:=layout.surfaces[start.z]
@@ -147,8 +158,7 @@ static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,s
 		return out
 	if support.id=="street" and support.profiles.is_empty() and c.state.board.void_regions.is_empty():
 		return out
-	var max_jump:=MoveRules.allowance(f)
-	var allowance:=MoveRules.allowance(f)
+	var max_jump:=allowance
 	var height:=layout.height(start)
 	var decks: Array[int]=[]
 	for i in layout.surfaces.size():
