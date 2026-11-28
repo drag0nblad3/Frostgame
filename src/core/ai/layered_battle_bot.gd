@@ -19,6 +19,9 @@ static func perform(c: GameController,f: Figure) -> void:
 	if not c.awaiting_reaction() and _cape(c,f):
 		if c.state.active()!=f or c.awaiting_reaction():
 			return
+	if f.side<0:
+		_perform_creature(c,f)
+		return
 	for i in (3 if RedKingMind.is_wizard(c.state,f) else 2):
 		if c.state.active()!=f or not f.in_play() or f.actions_left<=0 or c.awaiting_reaction():
 			break
@@ -28,6 +31,23 @@ static func perform(c: GameController,f: Figure) -> void:
 			continue
 		if not _move(c,f):
 			break
+
+
+## Core p.70: a fight or shot ends this routine; pursuit permits a second
+## action only when it makes contact. Wandering can reveal a new target.
+static func _perform_creature(c: GameController,f: Figure) -> void:
+	for i in 2:
+		if c.state.active()!=f or not f.in_play() or f.actions_left<=0 or c.awaiting_reaction() or not c.state.pending_cast.is_empty():
+			return
+		if _act(c,f):
+			return
+		var quarry:=PackRules.pursuit(c.state,f)
+		if quarry==null:
+			quarry=CreatureBot.closest(c,f)
+		if not _move(c,f):
+			return
+		if quarry!=null and CreatureBot.weakest(c.state,f)==null:
+			return
 
 
 static func _act(c: GameController,f: Figure) -> bool:

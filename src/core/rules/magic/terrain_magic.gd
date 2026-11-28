@@ -169,10 +169,12 @@ static func effect_height(b: Board,p: TerrainPiece) -> float:
 	return p.base_height if not p.surface_id.is_empty() else b.height_at(p.rect.get_center())
 
 
-static func floor_multiplier(b: Board,at: Vector2,height: float) -> float:
+static func floor_multiplier(b: Board,at: Vector2,height: float,mover: Figure=null) -> float:
 	var mult:=1.0
 	for p in b.pieces:
 		if not p.surface_id.is_empty() and p.contains(at) and absf(height-p.base_height)<0.5:
+			if p.kind.id in ["shallow_water","deep_water"] and Swimming.immune(mover):
+				continue
 			mult=maxf(mult,p.kind.move_mult)
 	return mult
 

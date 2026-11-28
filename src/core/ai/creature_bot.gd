@@ -107,6 +107,10 @@ static func play(c: GameController, f: Figure) -> void:
 		if node == null or MoveGrid.to_pos(node).distance_to(f.pos) < 0.01:
 			return
 		c.move_to(node)
+		# A deliberate pursuit is one move; a second action is a fight only.
+		# A blind wander may instead discover a target and proceed to step 2.
+		if target!=null and weakest(c.state,f)==null:
+			return
 
 
 static func _blast_target(c: GameController,f: Figure) -> Figure:

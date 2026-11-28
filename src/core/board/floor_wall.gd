@@ -73,6 +73,13 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 	var surface:=layout.surfaces[index]
 	var rect:=surface.rect
 	var rotated:=rect.size.y>rect.size.x
+	_add_face_climbs(layout,entry,surface,rotated,"")
+	_add_face_climbs(layout,entry,surface,not rotated,":end")
+
+
+static func _add_face_climbs(layout: FloorLayout,entry: Dictionary,surface: FloorSurface,rotated: bool,suffix: String) -> void:
+	var id:=str(entry["id"])
+	var rect:=surface.rect
 	var along:=Vector2.DOWN if rotated else Vector2.RIGHT
 	var across:=Vector2.RIGHT if rotated else Vector2.DOWN
 	var h:=float(entry["height"])
@@ -105,4 +112,4 @@ static func add_climbs(layout: FloorLayout,entry: Dictionary) -> void:
 					clear=false
 					break
 			if clear:
-				FloorClimb.add(layout,{"id":id+":"+str(i)+":"+str(side),"from":[entry["support"],outside.x,outside.y],"to":[id,layout.point(b).x,layout.point(b).y]})
+				FloorClimb.add(layout,{"id":id+suffix+":"+str(i)+":"+str(side),"from":[entry["support"],outside.x,outside.y],"to":[id,layout.point(b).x,layout.point(b).y]})

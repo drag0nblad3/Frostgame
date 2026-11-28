@@ -98,7 +98,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		var mult := layout.surfaces[n.z].rough
 		if board!=null:
 			var middle:=start.lerp(finish,0.5)
-			mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y))
+			mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y,mover))
 		if board!=null and board.has_water and not Swimming.immune(mover) and Swimming.depth(board,Vector2(middle_point.x,middle_point.z),middle_point.y)>0:
 			mult=maxf(mult,2.0)
 		if running or (mover!=null and mover.levitates()):

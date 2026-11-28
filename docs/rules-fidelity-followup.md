@@ -1,0 +1,13 @@
+# Rules fidelity follow-up (2026-11-28)
+
+This is a continuation of the November 27 audit, not certification of complete rulebook fidelity.
+
+- Core 38–39: shared seeded placement with a legal near-centre anchor and 3D distances; live setup permits alternating human/AI token placement, then rolls for starting edges. Special scenario anchors are retained. Automatic setup remains available. Legal standing alone does not prove global reachability.
+- Core 148–151: player chooses genie/worm spawn and Keep landing; may decline free temple treasure. Shared pending decision state and legal-position selection apply to both geometry systems. Genie delayed emergence when no legal position exists is a digital fallback.
+- Core 51: shallow/deep water terrain, activation swimming roll, basic armour/shield/treasure modifiers, fight penalty, bow restrictions, movement/AI exemptions. Core soldier armour is mapped by figure identity; expansion/custom equipment combinations and all activation exceptions still need testing. No new authored water map in this change.
+- Core 57–58: sample head and torso visibility and physical target contact for terrain cover. This is a geometric proxy, not animated mesh visibility. Special topology and exceptional spells need independent verification.
+- Core 45–50: generated climb links on both long and short faces of layered walkable walls; heightfield arbitrary climbs, hanging combat and continuous movement remain incomplete.
+- Core 70: deliberate creature pursuit no longer repeats a move when it has not reached combat; ordinary layered creature routine ends after attacking. Random movement and special creature traits need further parity tests.
+- Core 85, 106: primary treasure table checked and all twenty rows tested; reserve selection already exists in BaseUpgradePanel and is used in campaign deployment. Individual magic-item subtables, injury tables, spell timings, and Red King conditional rules are not certified by this check.
+
+Remaining: all-edge reachability/concealment across seeds, broader climbing/jump/swim validation, smaller-table/multiplayer deployment, reactive weapon choices, spell-by-spell and item-by-item comparisons, campaign subtables, and Red King scenario/Reality Crack exceptions. Keep pending CI results distinct from completed tests.

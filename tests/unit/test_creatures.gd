@@ -78,3 +78,14 @@ func test_pack_checkpoint_preserves_remaining_members() -> void:
 	check_eq(restored.state.pack_target, 1)
 	var next := restored.activatable()[0]
 	check(next.id in [a.id, b.id, third.id] and next.id != leader.id)
+
+
+func test_pursuit_does_not_take_second_move() -> void:
+	var c:=make_game(make_board(),[fig("thug",0,Vector2(22,10)),fig("ghoul",-1,Vector2(5,10))],Dice.new(3))
+	c.state.phase=Phase.CREATURE
+	check(c.activate(2))
+	var f:=c.state.figure(2)
+	var start:=f.pos
+	CreatureBot.play(c,f)
+	check(f.pos.distance_to(start)>0.0)
+	check_eq(f.actions_left,1)
