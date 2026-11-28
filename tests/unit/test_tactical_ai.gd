@@ -38,3 +38,46 @@ func test_distance_field_does_not_shortcut_a_wall() -> void:
 	var b := make_board([["hut_wall", 10, 3, 0.5, 30]])
 	var field := MovePlanner.distance_field(b, Vector2(9, 18))
 	check(float(field.get(MovePlanner.node_at(Vector2(11, 18)), INF)) > 20.0)
+
+
+func test_leap_ai_repositions_carrier_and_exhausts_it() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(9,10))
+	var t:=fig("thug",0,Vector2(8,10),2)
+	var enemy:=fig("thug",1,Vector2(11,10),3)
+	for figure in [f,t,enemy]:
+		figure.surface_id="street"
+	var c:=make_game(b,[f,t,enemy],LoadedDice.new([20]))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"leap":8}
+	c.state.active_id=f.id
+	f.actions_left=2
+	t.treasure_id=0
+	t.activated=true
+	var before:=TreasureRules.edge_distance(b,t.pos)
+	var choice:=MagicBot.leap_plan(c,f)
+	check_eq(choice.get("spell"),"leap")
+	check_eq(choice.get("target"),t.id)
+	check_eq(choice,MagicBot.leap_plan(c,f))
+	check_eq(t.pos,Vector2(8,10))
+	if choice.is_empty():
+		return
+	check(MagicBot.play(c,f))
+	check(TreasureRules.edge_distance(b,t.pos)<before)
+	check(t.magic_exhausted)
+	check_eq(t.actions_left,0)
+	check_eq(f.actions_left,1)
+
+
+func test_leap_ai_skips_unthreatened_non_carriers() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(10,10))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"leap":8}
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(MagicBot.leap_plan(c,f).is_empty())
