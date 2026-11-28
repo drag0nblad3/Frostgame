@@ -24,6 +24,9 @@ func begin() -> void:
 	if c.state.turn!=0 or DeploymentRules.kind(c.state)=="fixed":
 		done=true
 		return
+	if not StandardTreasurePlacement.prepare(c.state,c.dice):
+		error="Unable to place five legal treasures on this battlefield."
+		return
 	# Real games end by objectives, not the simulation's safety cap (core p.71).
 	c.state.scenario_data["turn_limit"]=0
 	if DeploymentRules.kind(c.state)=="veil":

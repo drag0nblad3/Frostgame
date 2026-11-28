@@ -23,7 +23,7 @@ static func best(s: GameState,f: Figure,points: Array[Dictionary],zone: int,plac
 			target=t.pos
 	var central: TreasureToken=null
 	for t in s.treasures:
-		if t.central and t.on_ground():
+		if (t.central or (t.id==0 and StandardTreasurePlacement.enabled(s))) and t.on_ground():
 			central=t
 			break
 	var caster: Figure=null
@@ -55,8 +55,10 @@ static func best(s: GameState,f: Figure,points: Array[Dictionary],zone: int,plac
 					break
 			if exposed:
 				value+=12.0
-			if central!=null and s.board.floor_layout.is_empty() and LineOfSight.check(s.board,at,central.pos,f).clear:
-				value+=8.0
+			if central!=null:
+				var visible:=LineOfSight.check(s.board,at,central.pos,f).clear if s.board.floor_layout.is_empty() else LineOfSight.floor_ray(s.board,s.board.floor_geometry(),Vector3(at.x,h+1.5,at.y),StandardTreasurePlacement.world(s,central)+Vector3.UP*0.02,f)
+				if visible:
+					value+=16.0
 		for other in s.figures:
 			if not placed.has(other.id) or other.side!=f.side or other==f:
 				continue

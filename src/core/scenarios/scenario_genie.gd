@@ -13,59 +13,57 @@ static func first_pickup(c: GameController, finder: Figure, token: TreasureToken
 			collected += 1
 	if collected < s.treasures.size() and c.dice.d20() < 15:
 		return
+	var origin:=Vector3(finder.pos.x,finder.elevation,finder.pos.y)
 	if not s.board.floor_layout.is_empty():
 		var layout:=s.board.floor_geometry()
-		var nodes:=BattlePlacement.nearby_floor(s,finder.pos,finder.elevation,4.0,finder.surface_id)
 		var best: Variant=null
 		var score:=INF
-		for n in nodes:
-			var at:=layout.point(n)
-			var distance:=at.distance_to(finder.pos)
-			var closer:=true
-			for other in s.figures:
-				if other!=finder and other.in_play() and absf(other.elevation-finder.elevation)<0.5 and other.pos.distance_to(at)<=distance:
-					closer=false
-					break
-			var value:=absf(distance-1.75)+(0.0 if closer else 10.0)
+		for n in BattlePlacement.nodes(s.board,finder.pos,2.0):
+			if not BattlePlacement.floor_open(s,n):
+				continue
+			var at:=layout.world(n)
+			if not legal_spawn(s,finder,at):
+				continue
+			var value:=absf(origin.distance_to(at)-1.75)
 			if value<score:
 				score=value
 				best=n
 		if best!=null:
-			var creature:=c._encounters._spawn_on_floor("genie",best)
-			_released(c,finder,token,creature)
+			_released(c,finder,token,c._encounters._spawn_on_floor("genie",best))
+		else:
+			c.emit("genie_spawn_blocked",{"treasure":token.id,"id":finder.id})
 		return
-	var grid := MoveGrid.new(s.board, null, s.figures)
-	var candidates: Array[Vector2] = []
+	var grid := MoveGrid.new(s.board,null,s.figures)
 	var center := MovePlanner.node_at(finder.pos)
-	for dx in range(-8, 9):
-		for dy in range(-8, 9):
-			var node := center + Vector2i(dx, dy)
-			var at := MoveGrid.to_pos(node)
+	var best_at:=Vector2.INF
+	var score:=INF
+	for dx in range(-4,5):
+		for dy in range(-4,5):
+			var node:=center+Vector2i(dx,dy)
 			if not grid.open(node):
 				continue
-			var dist := at.distance_to(finder.pos)
-			if dist > 4.0 or absf(s.board.height_at(at) - finder.elevation) >= 0.5:
+			var at:=MoveGrid.to_pos(node)
+			var point:=Vector3(at.x,s.board.height_at(at),at.y)
+			if not legal_spawn(s,finder,point):
 				continue
-			var closer := true
-			for other in s.figures:
-				if other != finder and other.in_play() and absf(other.elevation - finder.elevation) < 0.5 and other.pos.distance_to(at) <= dist:
-					closer = false
-					break
-			if closer:
-				candidates.append(at)
-	if candidates.is_empty():
-		# Crowded sites use the nearest unoccupied node, never overlap a base.
-		for dx in range(-8, 9):
-			for dy in range(-8, 9):
-				var node := center + Vector2i(dx, dy)
-				if grid.open(node):
-					candidates.append(MoveGrid.to_pos(node))
-	if candidates.is_empty():
-		return
-	candidates.sort_custom(func(a: Vector2, b: Vector2) -> bool:
-		return absf(a.distance_to(finder.pos) - 1.75) < absf(b.distance_to(finder.pos) - 1.75))
-	var creature := c._encounters._spawn_at("genie", candidates[0])
-	_released(c,finder,token,creature)
+			var value:=absf(origin.distance_to(point)-1.75)
+			if value<score:
+				best_at=at
+				score=value
+	if is_finite(best_at.x):
+		_released(c,finder,token,c._encounters._spawn_at("genie",best_at))
+	else:
+		c.emit("genie_spawn_blocked",{"treasure":token.id,"id":finder.id})
+
+
+static func legal_spawn(s: GameState,finder: Figure,at: Vector3) -> bool:
+	var distance:=at.distance_to(Vector3(finder.pos.x,finder.elevation,finder.pos.y))
+	if distance>2.0 or distance<Contact.OVERLAP:
+		return false
+	for other in s.figures:
+		if other!=finder and other.in_play() and at.distance_to(Vector3(other.pos.x,other.elevation,other.pos.y))<=distance:
+			return false
+	return true
 
 
 static func _released(c: GameController,finder: Figure,token: TreasureToken,creature: Figure) -> void:

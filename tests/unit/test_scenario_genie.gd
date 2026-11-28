@@ -41,3 +41,23 @@ func test_genie_kills_and_escape() -> void:
 	var restored := BattleSnapshot.rebuild(BattleSnapshot.capture(c), db())
 	check_eq(restored.state.genie_kills, 3)
 	check_eq(restored.state.lamp_token, 0)
+
+
+func test_genie_spawn_distance_and_closest() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20]))
+	var finder:=s.figure(1)
+	finder.pos=Vector2(18,18)
+	finder.elevation=s.board.height_at(finder.pos)
+	s.treasure(0).ever_collected=true
+	ScenarioGenie.first_pickup(c,finder,s.treasure(0))
+	var genie:=s.figure(s.genie_id)
+	check(genie!=null)
+	if genie==null:
+		return
+	var at:=Vector3(genie.pos.x,genie.elevation,genie.pos.y)
+	var d:=at.distance_to(Vector3(finder.pos.x,finder.elevation,finder.pos.y))
+	check(d<=2.0)
+	for other in s.figures:
+		if other!=finder and other!=genie and other.in_play():
+			check(at.distance_to(Vector3(other.pos.x,other.elevation,other.pos.y))>d)

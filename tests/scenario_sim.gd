@@ -31,6 +31,10 @@ func _init() -> void:
 		c=LayeredBattle.create(db,terrain,seed_value,id)
 	else:
 		c=GameController.new(ScenarioLoader.load_id(id,db,terrain),Dice.new(seed_value))
+		if not StandardTreasurePlacement.prepare(c.state,c.dice):
+			printerr("FAIL standard treasure placement")
+			quit(1)
+			return
 		c.start_game()
 	var s := c.state
 	_validate(s, "deployment")
