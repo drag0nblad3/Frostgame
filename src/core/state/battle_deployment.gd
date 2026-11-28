@@ -13,6 +13,8 @@ var active:=-1
 var index:=0
 var error:=""
 var done:=false
+var treasure_stage:=0
+var treasure_candidates: Array[Dictionary]=[]
 
 
 func _init(controller: GameController,human_side: int) -> void:
@@ -20,13 +22,21 @@ func _init(controller: GameController,human_side: int) -> void:
 	human=human_side
 
 
-func begin() -> void:
+func begin(manual_treasure: bool=false) -> void:
 	if c.state.turn!=0 or DeploymentRules.kind(c.state)=="fixed":
 		done=true
 		return
 	if not StandardTreasurePlacement.prepare(c.state,c.dice):
 		error="Unable to place five legal treasures on this battlefield."
 		return
+	if manual_treasure and human>=0 and StandardTreasurePlacement.enabled(c.state):
+		treasure_stage=1
+		treasure_candidates=StandardTreasurePlacement._candidates(c.state)
+		return
+	_begin_edges()
+
+
+func _begin_edges() -> void:
 	# Real games end by objectives, not the simulation's safety cap (core p.71).
 	c.state.scenario_data["turn_limit"]=0
 	if DeploymentRules.kind(c.state)=="veil":
@@ -38,7 +48,33 @@ func begin() -> void:
 	advance()
 
 
+func treasure_options() -> Array[Dictionary]:
+	return StandardTreasurePlacement.options(c.state,treasure_candidates,treasure_stage) if treasure_stage>0 else []
+
+
+func place_treasure(p: Dictionary) -> bool:
+	if treasure_stage==0 or not StandardTreasurePlacement.choose(c.state,c.dice,treasure_candidates,treasure_stage,p):
+		error="That placement leaves no legal completion. Choose another point."
+		return false
+	error=""
+	if treasure_stage==1:
+		treasure_stage=3
+	else:
+		finish_treasure_setup()
+	return true
+
+
+func finish_treasure_setup() -> void:
+	if treasure_stage==0:
+		return
+	treasure_stage=0
+	treasure_candidates.clear()
+	_begin_edges()
+
+
 func available() -> Array[int]:
+	if treasure_stage>0 or order.is_empty() or index>=order.size():
+		return []
 	var previous:=int(zones.get(order[index-1],-1)) if index>0 else -1
 	return DeploymentRules.choices(c.state,previous)
 

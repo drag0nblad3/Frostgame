@@ -45,9 +45,9 @@ func emit(type: String, data: Dictionary = {}) -> void:
 		RedKingInvestigations.observe_event(self,type,data)
 
 
-func begin_deployment(human_side: int=-1) -> BattleDeployment:
+func begin_deployment(human_side: int=-1,manual_treasure: bool=false) -> BattleDeployment:
 	deployment=BattleDeployment.new(self,human_side)
-	deployment.begin()
+	deployment.begin(manual_treasure)
 	return deployment
 
 

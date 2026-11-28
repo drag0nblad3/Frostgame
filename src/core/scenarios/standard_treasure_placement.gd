@@ -94,3 +94,49 @@ static func _candidates(s: GameState) -> Array[Dictionary]:
 					continue
 				out.append({"at":at,"surface":surface,"world":layout.world(n)})
 	return out
+
+
+## During the interactive setup, only already placed tokens constrain choices.
+static func options(s: GameState,candidates: Array[Dictionary],index: int) -> Array[Dictionary]:
+	var chosen: Array[Dictionary]=[]
+	for i in index:
+		chosen.append({"at":s.treasures[i].pos,"surface":s.treasures[i].surface_id,"world":world(s,s.treasures[i])})
+	return _legal(s,candidates,index,chosen)
+
+static func _legal(s: GameState,candidates: Array[Dictionary],index: int,chosen: Array[Dictionary]) -> Array[Dictionary]:
+	var result: Array[Dictionary]=[]
+	var anchor: Vector3=chosen[0]["world"]
+	for p in candidates:
+		var at: Vector3=p["world"]
+		var distance:=at.distance_to(anchor)
+		if index<3 and (distance<6.0 or distance>8.0):
+			continue
+		if index>=3 and TreasureRules.edge_distance(s.board,p["at"])<=9.0:
+			continue
+		if _separated(p,chosen,index>=3):
+			result.append(p)
+	return result
+
+## Lock the selected position, then find a valid completion. Never change
+## earlier placements, even if a cramped board forces another selection.
+static func choose(s: GameState,dice: Dice,candidates: Array[Dictionary],index: int,p: Dictionary) -> bool:
+	if index not in [1,3] or not options(s,candidates,index).has(p):
+		return false
+	var fixed: Array[Dictionary]=[]
+	for i in index:
+		fixed.append({"at":s.treasures[i].pos,"surface":s.treasures[i].surface_id,"world":world(s,s.treasures[i])})
+	fixed.append(p)
+	for attempt in 48:
+		var chosen: Array[Dictionary]=fixed.duplicate()
+		for i in range(index+1,5):
+			var legal:=_legal(s,candidates,i,chosen)
+			if legal.is_empty():
+				break
+			chosen.append(legal[dice.pick(legal.size())])
+		if chosen.size()!=5:
+			continue
+		for i in range(index,5):
+			s.treasures[i].pos=chosen[i]["at"]
+			s.treasures[i].surface_id=chosen[i]["surface"]
+		return true
+	return false

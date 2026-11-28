@@ -279,7 +279,7 @@ func new_game(seed_value: int,prepared: GameState=null,deploy: bool=false) -> vo
 	if deploy:
 		# Headless smoke runs use the same automatic placement, never a blocking UI.
 		var interactive:=not watch_mode and DisplayServer.get_name()!="headless"
-		var setup:=game.begin_deployment(player_side if interactive else -1)
+		var setup:=game.begin_deployment(player_side if interactive else -1,interactive)
 		_attach_battle(game,setup.done)
 		if not setup.done:
 			_rig.frame_board(state.board.size)
