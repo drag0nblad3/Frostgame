@@ -294,5 +294,6 @@
         0.8
       ]
     }
-  ]
+  ],
+  "shared_climbing": true
 }

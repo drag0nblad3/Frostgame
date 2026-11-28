@@ -92,8 +92,14 @@ static func _add_face_climbs(layout: FloorLayout,entry: Dictionary,surface: Floo
 			var outside:=at+across*(width*0.5+Figure.BASE_RADIUS)*side
 			# Climb to the nearest legal top edge, not the centre of a broad roof.
 			var edge:=at+across*maxf(0.0,width*0.5-Figure.BASE_RADIUS)*side
+			var normal:=across*side
+			outside=ArchitectureClimbs._snap_outside(at+across*(width*0.5)*side,normal)
 			var a:=layout.node(str(entry["support"]),outside)
 			var b:=layout.node(id,edge)
+			# Snap inward at the lip so a fractional footprint does not
+			# discard an otherwise reachable roof edge.
+			if not layout.contains(b) and width>=Figure.BASE_RADIUS*2+0.001:
+				b=layout.node(id,layout.point(b)-normal*MoveGrid.STEP)
 			outside=layout.point(a)
 			if outside.distance_to(layout.point(b))>1.5:
 				continue

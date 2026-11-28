@@ -17,10 +17,21 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 	var s: Array = d.get("size", [36, 36])
 	b.size = Vector2(s[0], s[1])
 	b.floor_layout = FloorAssembly.expand(d)
+	var expanded:=TerrainAssembly.pieces(d)
+	# Older flat boards can opt into the same physical floor graph without
+	# reauthoring terrain. Uneven heightfields require explicit conversion.
+	if b.floor_layout.is_empty() and bool(d.get("shared_climbing",false)):
+		var compatible:=true
+		for p: Dictionary in expanded:
+			if terrain.get_kind(p["kind"]).ground_surface or p.has("ramp"):
+				compatible=false
+				break
+		if compatible:
+			b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,b.size.x,b.size.y],"level":0}],"exit_surfaces":["street"],"spawn_surfaces":["street"],"auto_architecture_climbs":true}
 	for region: Array in d.get("void_regions",[]):
 		if region.size()==4:
 			b.void_regions.append(Rect2(region[0],region[1],region[2],region[3]))
-	for p: Dictionary in TerrainAssembly.pieces(d):
+	for p: Dictionary in expanded:
 		var r: Array = p["rect"]
 		var piece := TerrainPiece.new(terrain.get_kind(p["kind"]), Rect2(r[0], r[1], r[2], r[3]))
 		piece.circular = piece.kind.id in ["arcane_disc","red_king_portal","red_king_sinkhole_orb"]

@@ -8,6 +8,10 @@ var convex_solids: Array[ArchitecturePrism] = []
 var magic_solids: Array[AABB]=[]
 var links: Dictionary = {}
 var errors: Array[String] = []
+## Derived IDs are queried in large numbers by the movement graph. Cache
+## successful lookups; append-only layout assembly preserves their indices.
+var _surface_indices: Dictionary={}
+var _indexed_count:=0
 
 
 static func from_dict(d: Dictionary) -> FloorLayout:
@@ -60,9 +64,15 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 
 
 func index_of(id: String) -> int:
-	for i in surfaces.size():
-		if surfaces[i].id == id:
-			return i
+	if _indexed_count>surfaces.size():
+		_surface_indices.clear()
+		_indexed_count=0
+	while _indexed_count<surfaces.size():
+		_surface_indices[surfaces[_indexed_count].id]=_indexed_count
+		_indexed_count+=1
+	var index:=int(_surface_indices.get(id,-1))
+	if index>=0 and index<surfaces.size() and surfaces[index].id==id:
+		return index
 	return -1
 
 
@@ -110,8 +120,9 @@ func clearance(at: Vector3,radius: float,body: float) -> bool:
 
 func nodes_at(p: Vector2) -> Array[Vector3i]:
 	var out: Array[Vector3i] = []
-	for s in surfaces:
-		var n := node(s.id,p)
+	var xy:=MovePlanner.node_at(p)
+	for i in surfaces.size():
+		var n:=Vector3i(xy.x,xy.y,i)
 		if standable(n):
 			out.append(n)
 	return out
