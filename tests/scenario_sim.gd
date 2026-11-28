@@ -40,6 +40,8 @@ func _init() -> void:
 	_validate(s, "deployment")
 	var activations := 0
 	var start := Time.get_ticks_msec()
+	c.ai_profile_enabled=true
+	var profile_totals: Dictionary={}
 	var samples: Array[float]=[]
 	var slowest: Dictionary={}
 	var peak:=0.0
@@ -49,17 +51,22 @@ func _init() -> void:
 		var turn_before:=s.turn
 		var phase_before:=str(s.phase)
 		var event_start:=c.history.size()
+		c.ai_profile.clear()
+		var open_before:=MoveGrid.evaluations+LayeredGrid.evaluations
+		var edges_before:=LayeredGrid.edge_evaluations
 		var started:=Time.get_ticks_usec()
 		var ok:=Bot.play_activation(c)
 		var ms:=float(Time.get_ticks_usec()-started)/1000.0
 		samples.append(ms)
+		for stage in c.ai_profile:
+			profile_totals[stage]=int(profile_totals.get(stage,0))+int(c.ai_profile[stage])
 		if ms>peak:
 			peak=ms
 			var types: Dictionary={}
 			for index in range(event_start,c.history.size()):
 				var event:=c.history[index]
 				types[event.type]=int(types.get(event.type,0))+1
-			slowest={"turn":turn_before,"phase":phase_before,"activation":activations+1,"events":types}
+			slowest={"turn":turn_before,"phase":phase_before,"activation":activations+1,"events":types,"stage_usec":c.ai_profile.duplicate(),"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_before,"edge_checks":LayeredGrid.edge_evaluations-edges_before}
 		if not ok:
 			errors.append("No legal bot activation at turn %d phase %s" % [s.turn, str(s.phase)])
 			break
@@ -80,7 +87,7 @@ func _init() -> void:
 	for ms in samples:
 		total+=ms
 	samples.sort()
-	var performance: Dictionary={"mean_ms":total/maxf(1.0,samples.size()),"p95_ms":samples[mini(samples.size()-1,ceili(samples.size()*0.95)-1)] if not samples.is_empty() else 0.0,"max_ms":peak,"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_start,"edge_checks":LayeredGrid.edge_evaluations-edge_start,"slowest":slowest}
+	var performance: Dictionary={"mean_ms":total/maxf(1.0,samples.size()),"p95_ms":samples[mini(samples.size()-1,ceili(samples.size()*0.95)-1)] if not samples.is_empty() else 0.0,"max_ms":peak,"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_start,"edge_checks":LayeredGrid.edge_evaluations-edge_start,"slowest":slowest,"stage_total_usec":profile_totals}
 	print("SCENARIO_PERFORMANCE|",JSON.stringify({"id":id,"seed":seed_value,"activations":activations,"performance":performance}))
 	print("SCENARIO_RESULT|", JSON.stringify({"id": id, "seed": seed_value, "turn": s.turn, "activations": activations, "winner": s.winner, "scores": scores, "events": counts, "elapsed_ms": elapsed, "performance":performance, "errors": errors}))
 	for msg in errors:
