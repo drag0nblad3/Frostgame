@@ -7,22 +7,24 @@
   ],
   "pieces": [
     {
-      "kind": "ruin",
+      "ruin_kit": "corner_tenement",
       "rect": [
         5,
         8,
         3,
         4
-      ]
+      ],
+      "quarter_turns": 1
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "shattered_shop",
       "rect": [
         28,
         24,
         3,
         4
-      ]
+      ],
+      "quarter_turns": 3
     },
     {
       "kind": "wall",
@@ -115,40 +117,44 @@
       ]
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "buttressed_hall",
       "rect": [
         12,
         6,
         4,
         3
-      ]
+      ],
+      "quarter_turns": 0
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "shattered_shop",
       "rect": [
         20,
         7,
         4,
         3
-      ]
+      ],
+      "quarter_turns": 2
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "corner_tenement",
       "rect": [
         12,
         27,
         4,
         3
-      ]
+      ],
+      "quarter_turns": 2
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "buttressed_hall",
       "rect": [
         20,
         26,
         4,
         3
-      ]
+      ],
+      "quarter_turns": 1
     },
     {
       "kind": "ruin",

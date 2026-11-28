@@ -3,7 +3,7 @@ extends RefCounted
 ## Shared world-space materials for terrain; no per-brick draw calls.
 
 const STONE := preload("res://src/view/materials/frozen_stone.gdshader")
-const STONE_KINDS := ["ruin", "wall", "platform", "tower", "hut_wall", "null_annex", "null_walk", "null_lower", "null_middle", "null_upper"]
+const STONE_KINDS := ["ruin", "ruin_broken_wall", "wall", "platform", "tower", "hut_wall", "null_annex", "null_walk", "null_lower", "null_middle", "null_upper"]
 
 
 static func material(color: Color, ground: bool = false, arches: bool = false, origin: Vector2 = Vector2.ZERO) -> ShaderMaterial:
