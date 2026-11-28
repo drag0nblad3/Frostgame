@@ -274,9 +274,7 @@ static func offer_aerial(c: GameController,f: Figure,plan: Dictionary,ignored: A
 		return
 	var grounded: PackedVector3Array=plan["grounded"]
 	var path:=grounded.duplicate()
-	var surfaces: Array[String]=[]
-	for i in path.size():
-		surfaces.append(f.surface_id)
+	var surfaces:=_grounded_surfaces(f,plan,grounded)
 	var target: Vector3=plan["path"][-1]
 	path.append(target)
 	surfaces.append(str(plan["surface"]))
@@ -297,18 +295,17 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 	if not f.in_play() or c.state.active()!=f:
 		return
 	var grounded: PackedVector3Array=plan["grounded"]
-	var surfaces: Array[String]=[]
-	for i in grounded.size():
-		surfaces.append(f.surface_id)
+	var surfaces:=_grounded_surfaces(f,plan,grounded)
 	var cost:=float(plan.get("aerial_cost",plan["cost"]))
+	var approach_cost:=float(plan.get("approach_cost",0.0))
 	var engaged:=Contact.in_combat(c.state.figures,f)
 	var was_wounded:=f.wounded()
 	# An interception during the run-up prevents takeoff and any fall damage.
 	if not choice.is_empty() and int(choice["index"])<grounded.size():
-		_apply(c,f,grounded,surfaces,cost,choice,false,false,false)
+		_apply(c,f,grounded,surfaces,approach_cost if plan.has("approach_cost") else cost,choice,false,false,false)
 		return
 	if grounded.size()>1:
-		if not _apply(c,f,grounded,surfaces,cost,{},false,false,false,PackedVector3Array(),false):
+		if not _apply(c,f,grounded,surfaces,approach_cost if plan.has("approach_cost") else cost,{},false,false,false,PackedVector3Array(),false):
 			return
 	else:
 		c.spend_move(f)
@@ -332,10 +329,10 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 	f.pos=at
 	f.elevation=dest.y
 	f.surface_id=str(plan["surface"])
-	var arc: PackedVector3Array=plan["path"]
-	if grounded.size()>1:
+	var arc: PackedVector3Array=plan.get("arc",plan["path"]).duplicate()
+	if grounded.size()>1 and not plan.has("arc"):
 		arc.remove_at(0)
-	var event: Dictionary={"id":f.id,"path":arc,"surfaces":[old,f.surface_id],"cost":cost}
+	var event: Dictionary={"id":f.id,"path":arc,"surfaces":[old,f.surface_id],"cost":cost-approach_cost}
 	event["jump" if plan.get("jump",false) else "fall"]=true
 	c.emit("layered_move",event)
 	LayeredFall.apply(c,f,float(plan["fall"]),f)
@@ -391,7 +388,7 @@ static func extend_aerial(c: GameController,base: Dictionary) -> Dictionary:
 			extended["remaining"]=remaining
 			extended["tail"]=tail
 			extended["tail_surfaces"]=surfaces
-			var preview: PackedVector3Array=plan["path"].duplicate()
+			var preview: PackedVector3Array=plan.get("preview",plan["path"]).duplicate()
 			for i in range(1,tail.size()):
 				preview.append(tail[i])
 			extended["preview"]=preview
@@ -440,3 +437,15 @@ static func _continue_aerial(c: GameController,f: Figure,plan: Dictionary,choice
 		return false
 	_apply(c,f,path,surfaces,spent,intercept,false,false,false,PackedVector3Array(),true,false)
 	return true
+
+
+## A drop approach may cross stairs and change support before reaching the ledge.
+## Straight jump run-ups retain the original single-support representation.
+static func _grounded_surfaces(f: Figure,plan: Dictionary,grounded: PackedVector3Array) -> Array[String]:
+	var surfaces: Array[String]=[]
+	if plan.has("grounded_surfaces"):
+		surfaces.assign(plan["grounded_surfaces"])
+	else:
+		for i in grounded.size():
+			surfaces.append(f.surface_id)
+	return surfaces
