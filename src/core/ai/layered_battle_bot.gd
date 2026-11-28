@@ -289,20 +289,59 @@ static func _wandering_route_straight(layout: FloorLayout,path: Array[Vector3i],
 static func _cape(c: GameController,f: Figure) -> bool:
 	if not GearActions.cape_ready(c) or (f.treasure_id<0 and f.health>4 and f.def.role not in ["wizard","apprentice"]):
 		return false
-	var layout := c.state.board.floor_geometry()
-	var reach := LayeredMovement.reach(c,true)
-	var best: Variant=null
-	var value := 0.0
-	for node: Vector3i in reach.cost:
-		if node==reach.start:
+	var s:=c.state
+	var options:=c.movement_options("gear_cape_move")
+	var layout:=options.layout
+	var enemies: Array[Figure]=[]
+	var ignored: Array[int]=[]
+	for other in Contact.enemies_of(s.figures,f):
+		ignored.append(other.id)
+	for other in s.figures:
+		if other.in_play() and other.side!=f.side and other.ring_side==f.ring_side and IllusionRules.visible_to(s.figures,f,other):
+			enemies.append(other)
+	var caution:=BotPreference.trait_value(f,"caution")
+	var candidates: Array[Dictionary]=[]
+	for node: Vector3i in options.cost:
+		var damage:=LayeredTactics.aerial_damage(s,f,options.jumps[node]) if options.jumps.has(node) else 0
+		if damage>=f.health or (damage>0 and f.treasure_id>=0):
 			continue
-		var position := layout.world(node)
-		var distance := 6.0
-		for other in c.state.figures:
-			if other.in_play() and other.side!=f.side:
-				distance=minf(distance,position.distance_to(BattleSpace.center(other)))
-		var score := distance-float(reach.cost[node])*0.05
-		if distance>=3.0 and score>value:
+		var position:=layout.world(node)
+		var distance:=6.0
+		for other in enemies:
+			distance=minf(distance,position.distance_to(BattleSpace.center(other)))
+		if distance<3.0:
+			continue
+		var score:=distance*BotPreference.appeal(s,f,hash(node),"cape")-float(options.cost[node])*0.05-float(damage)*(1.5+2.0*caution)
+		if score>0.0:
+			candidates.append({"node":node,"score":score})
+	candidates.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["score"]>b["score"])
+	var best: Variant=null
+	var value:=0.0
+	# Expensive interception checks are limited to the strongest eight
+	# choices. Existing opponents are exempt, not every enemy on the map.
+	for i in mini(candidates.size(),8):
+		var node: Vector3i=candidates[i]["node"]
+		var score:=float(candidates[i]["score"])
+		var path:=PackedVector3Array()
+		var surfaces: Array[String]=[]
+		if options.jumps.has(node):
+			LayeredMovement._append_aerial_contacts(options.jumps[node],f.surface_id,path,surfaces)
+		else:
+			for step in options.floors.path_to(node):
+				path.append(layout.world(step))
+				surfaces.append(layout.surface_id(step))
+		var safe:=true
+		for j in range(1,path.size()):
+			var from:=Vector2(path[j-1].x,path[j-1].z)
+			var to:=Vector2(path[j].x,path[j].z)
+			if RedKingVeil.lethal(s,from,to) or (RedKingHerded.active(s) and minf(from.y,to.y)<=float(s.scenario_data.get("herd_veil",0.0))+Figure.BASE_RADIUS):
+				safe=false
+				break
+		if not safe:
+			continue
+		if s.forced_combat and not c._displacement.intercept_floor(f,path,surfaces,ignored).is_empty():
+			score-=2.0+2.0*caution
+		if score>value:
 			value=score
 			best=node
 	return best!=null and c.commit_movement("gear_cape_move",best)
