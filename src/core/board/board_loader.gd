@@ -20,14 +20,26 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 	var expanded:=TerrainAssembly.pieces(d)
 	# Older flat boards can opt into the same physical floor graph without
 	# reauthoring terrain. Uneven heightfields require explicit conversion.
-	if b.floor_layout.is_empty() and bool(d.get("shared_climbing",false)):
+	if b.floor_layout.is_empty() and (bool(d.get("shared_climbing",false)) or bool(d.get("shared_profiled_climbing",false))):
 		var compatible:=true
+		var profiles: Array=[]
 		for p: Dictionary in expanded:
-			if terrain.get_kind(p["kind"]).ground_surface or p.has("ramp"):
+			var kind:=terrain.get_kind(p["kind"])
+			if kind.ground_surface and bool(d.get("shared_profiled_climbing",false)):
+				var profile: Dictionary=p.duplicate(true)
+				profile["stairs"]=kind.stairs
+				profile["level"]=float(p.get("level",kind.height))
+				profiles.append(profile)
+			elif kind.ground_surface or p.has("ramp"):
 				compatible=false
 				break
 		if compatible:
-			b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,b.size.x,b.size.y],"level":0}],"exit_surfaces":["street"],"spawn_surfaces":["street"],"auto_architecture_climbs":true}
+			b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,b.size.x,b.size.y],"level":0,"ground_profiles":profiles}],"exit_surfaces":["street"],"spawn_surfaces":["street"],"auto_architecture_climbs":true}
+	var ground: FloorSurface=null
+	for entry: Dictionary in b.floor_layout.get("surfaces",[]):
+		if entry.get("id","")=="street" and not entry.get("ground_profiles",[]).is_empty():
+			ground=FloorSurface.from_dict(entry)
+			break
 	for region: Array in d.get("void_regions",[]):
 		if region.size()==4:
 			b.void_regions.append(Rect2(region[0],region[1],region[2],region[3]))
@@ -45,7 +57,7 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 			piece.ramp_end = float(profile.get("end",0.0))
 		if not b.floor_layout.is_empty():
 			piece.surface_id=str(p.get("surface","street"))
-			piece.base_height=float(p.get("base_height",0.0))
+			piece.base_height=float(p.get("base_height",ground.height_at(piece.rect.get_center()) if ground!=null and piece.surface_id=="street" and not piece.kind.ground_surface else 0.0))
 			if piece.kind.blocks_move and not piece.kind.ground_surface:
 				piece.dynamic_surface=str(p.get("id","architecture:"+str(b.pieces.size())))
 				var entries: Array=b.floor_layout.get("walls",[])

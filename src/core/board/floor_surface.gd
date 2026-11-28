@@ -11,6 +11,8 @@ var rough := 1.0
 var polygon:=PackedVector2Array()
 var polygon_valid:=true
 var deck_thickness:=0.0
+## Serialized ground profiles are one continuous support, not stacked decks.
+var profiles: Array[TerrainPiece]=[]
 
 
 static func from_dict(d: Dictionary) -> FloorSurface:
@@ -22,6 +24,20 @@ static func from_dict(d: Dictionary) -> FloorSurface:
 	s.end_level = float(d.get("end_level",s.level))
 	s.axis_y = d.get("axis","x") == "y"
 	s.rough = maxf(1.0,float(d.get("move_mult",1.0)))
+	for entry: Dictionary in d.get("ground_profiles",[]):
+		var r0: Array=entry["rect"]
+		var k:=TerrainKind.new()
+		k.ground_surface=true
+		k.stairs=bool(entry.get("stairs",false))
+		var p:=TerrainPiece.new(k,Rect2(r0[0],r0[1],r0[2],r0[3]))
+		p.level=float(entry.get("level",0.0))
+		var ramp: Dictionary=entry.get("ramp",{})
+		if not ramp.is_empty():
+			p.ramp=true
+			p.ramp_rotated=ramp.get("axis","x")=="y"
+			p.ramp_start=float(ramp.get("start",0.0))
+			p.ramp_end=float(ramp.get("end",0.0))
+		s.profiles.append(p)
 	if d.has("polygon"):
 		for vertex in d["polygon"]:
 			if not vertex is Array or vertex.size()!=2:
@@ -35,7 +51,17 @@ static func from_dict(d: Dictionary) -> FloorSurface:
 	return s
 
 
+func profile_at(p: Vector2) -> TerrainPiece:
+	for i in range(profiles.size()-1,-1,-1):
+		if profiles[i].contains(p):
+			return profiles[i]
+	return null
+
+
 func height_at(p: Vector2) -> float:
+	if not profiles.is_empty():
+		var profile:=profile_at(p)
+		return profile.surface_height(p) if profile!=null else level
 	var run := rect.size.y if axis_y else rect.size.x
 	var offset := p.y-rect.position.y if axis_y else p.x-rect.position.x
 	return lerpf(level,end_level,clampf(offset/maxf(run,0.001),0.0,1.0))

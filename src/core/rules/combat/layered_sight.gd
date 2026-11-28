@@ -5,6 +5,12 @@ extends RefCounted
 
 
 static func clear(layout: FloorLayout,a: Vector3,b: Vector3) -> bool:
+	if layout.profiled_ground!=null:
+		var steps:=maxi(1,ceili(a.distance_to(b)*10.0))
+		for i in range(steps+1):
+			var at:=a.lerp(b,float(i)/steps)
+			if at.y<layout.profiled_ground.height_at(Vector2(at.x,at.z))-0.002:
+				return false
 	for solid in layout.solids:
 		if intersects(a,b,solid):
 			return false

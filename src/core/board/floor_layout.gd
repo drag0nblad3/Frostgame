@@ -12,6 +12,7 @@ var errors: Array[String] = []
 ## successful lookups; append-only layout assembly preserves their indices.
 var _surface_indices: Dictionary={}
 var _indexed_count:=0
+var profiled_ground: FloorSurface
 
 
 static func from_dict(d: Dictionary) -> FloorLayout:
@@ -30,6 +31,8 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 				continue
 			layout.convex_solids.append(slab)
 		layout.surfaces.append(s)
+		if not s.profiles.is_empty():
+			layout.profiled_ground=s
 	for entry: Array in d.get("solids",[]):
 		if entry.size()!=6 or float(entry[3])<=0.0 or float(entry[4])<=0.0 or float(entry[5])<=0.0:
 			layout.errors.append("Invalid solid volume")
@@ -107,6 +110,8 @@ func standable(n: Vector3i,radius: float = Figure.BASE_RADIUS, body: float = 1.6
 
 
 func clearance(at: Vector3,radius: float,body: float) -> bool:
+	if profiled_ground!=null and at.y<profiled_ground.height_at(Vector2(at.x,at.z))-0.002:
+		return false
 	# Ignore a supporting slab that ends exactly at the soles.
 	var box := AABB(at+Vector3(-radius,0.002,-radius),Vector3(radius*2.0,body,radius*2.0))
 	for solid in solids:

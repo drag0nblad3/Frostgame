@@ -93,6 +93,9 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if not segment_allowed(start,finish) or (running and not run_segment_clear(start,finish)):
 			continue
 		var middle_point:=start.lerp(finish,0.5)
+		var support:=layout.surfaces[n.z]
+		if not support.profiles.is_empty():
+			middle_point.y=support.height_at(Vector2(middle_point.x,middle_point.z))
 		if not layout.surfaces[n.z].contains(Vector2(middle_point.x,middle_point.z),Figure.BASE_RADIUS) or not layout.clearance(middle_point,Figure.BASE_RADIUS,1.6):
 			continue
 		var mult := layout.surfaces[n.z].rough
@@ -104,6 +107,8 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if running or (mover!=null and mover.levitates()):
 			mult=1.0
 		var cost:=start.distance_to(finish)*mult
+		if not support.profiles.is_empty():
+			cost=TerrainTravel.cost(board,layout.point(n),layout.point(next),mover,running,support)
 		if board!=null and board.low_gravity:
 			cost=layout.point(n).distance_to(layout.point(next))
 		out.append({"to":next,"cost":cost})

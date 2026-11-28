@@ -209,6 +209,8 @@ static func surface_point(bi: BattleInput,screen: Vector2) -> Variant:
 	if index<0:
 		return null
 	var surface:=bi.floor_layout.surfaces[index]
+	if not surface.profiles.is_empty():
+		return SurfacePicker.pick(bi.c.state.board,bi.camera.project_ray_origin(screen),bi.camera.project_ray_normal(screen),true)
 	var run:=surface.rect.size.y if surface.axis_y else surface.rect.size.x
 	var slope:=(surface.end_level-surface.level)/run
 	var normal:=Vector3(0,1,-slope) if surface.axis_y else Vector3(-slope,1,0)
