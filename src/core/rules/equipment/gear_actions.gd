@@ -222,20 +222,22 @@ static func gutter_skip(c: GameController) -> bool:
 
 
 static func bottle_floor_points(c: GameController) -> Dictionary:
-	var out := {}
+	var out: Dictionary={}
 	if not bottle_ready(c,true):
 		return out
-	var f := c.state.active()
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
-	var grid := LayeredGrid.new(layout,null,c.state.figures)
-	var center := MovePlanner.node_at(f.pos)
-	var origin := Vector3(f.pos.x,f.elevation,f.pos.y)
-	for i in layout.surfaces.size():
-		for dx in range(-2,3):
-			for dy in range(-2,3):
-				var n := Vector3i(center.x+dx,center.y+dy,i)
-				if grid.open(n) and layout.world(n).distance_to(origin)<=1.001 and not ScenarioNull.field_at(c.state.board,layout.point(n)):
-					out[n]=true
+	var s:=c.state
+	var f:=s.active()
+	var layout:=s.board.floor_geometry()
+	var origin:=BattleSpace.center(f)
+	for n in BattlePlacement.nodes(s.board,f.pos,1.0):
+		if not BattlePlacement.floor_open(s,n,null,Figure.BASE_RADIUS,1.6,true,null,f.ring_side):
+			continue
+		var at:=layout.point(n)
+		if layout.world(n).distance_to(origin)>1.001 or ScenarioNull.field_at(s.board,at):
+			continue
+		if BattleBoundary.blocks_segment(s.board.boundaries,f.pos,at,"movement",f):
+			continue
+		out[n]=true
 	return out
 
 
@@ -243,7 +245,7 @@ static func bottle_on_floor(c: GameController,n: Vector3i) -> bool:
 	if not bottle_floor_points(c).has(n):
 		return false
 	var f := c.state.active()
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	for i in f.items.size():
 		if f.items[i].get("gear","")=="gear_rk_bottle_imp":
 			f.items.remove_at(i)
