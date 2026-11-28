@@ -28,10 +28,9 @@ static func probability(c: GameController, f: Figure, id: String) -> float:
 	return clampf((21.0 - tn + mod + mini(2, maxi(0, f.health - 2))) / 20.0, 0.05, 1.0)
 
 
-static func value(c: GameController, f: Figure, t: Figure, id: String) -> float:
+static func value(c: GameController, f: Figure, t: Figure, id: String,known_threat: float=-1.0,known_probability: float=-1.0) -> float:
 	var s := c.state
 	var ally := t.side == f.side
-	var threat := near_enemy(s, t)
 	var priority := importance(t)
 	var score := 0.0
 	if id == "heal":
@@ -71,6 +70,7 @@ static func value(c: GameController, f: Figure, t: Figure, id: String) -> float:
 	elif id in BUFFS:
 		if not ally:
 			return 0.0
+		var threat:=known_threat if known_threat>=0.0 else near_enemy(s,t)
 		if id == "fleet_feet" or id == "invisibility":
 			score = 7.0 if t.treasure_id >= 0 else (3.0 if threat < 8.0 else 1.0)
 		elif id == "elemental_shield" or id == "beauty":
@@ -85,4 +85,4 @@ static func value(c: GameController, f: Figure, t: Figure, id: String) -> float:
 				score += 4.0
 	else:
 		return 0.0
-	return score * probability(c, f, id)
+	return score * (known_probability if known_probability>=0.0 else probability(c, f, id))
