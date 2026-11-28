@@ -32,7 +32,82 @@ static func plan(c: GameController, f: Figure) -> Dictionary:
 			if not points.is_empty():
 				best_value=score
 				best={"spell":id,"node":points[0],"score":score}
+	if not c.state.board.floor_layout.is_empty() and c._magic.available_spell(f,"leap"):
+		var leap:=leap_plan(c,f,best_value)
+		if not leap.is_empty():
+			best=leap
 	return best
+
+
+## Rescue endangered allies and advance treasure carriers. Cheap geometric
+## ranking comes before expensive arc checks; only a few promising figures
+## and destinations are considered, with stable individual preferences.
+static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dictionary:
+	var s:=c.state
+	var layout:=s.board.floor_geometry()
+	var best: Dictionary={}
+	var best_value:=threshold
+	var targets: Array[Dictionary]=[]
+	for t in s.figures:
+		if not t.in_play() or t.side!=f.side or t.ring_side!=f.ring_side:
+			continue
+		var threat:=_leap_threat(s,t,Vector3(t.pos.x,t.elevation,t.pos.y))
+		var carrier:=t.treasure_id>=0 and t.control_spell!="mind_control"
+		if not carrier and threat>5.0:
+			continue
+		var urgency: float=(3.0 if carrier else 0.0)+maxf(0.0,5.0-threat)+(2.0 if t.health<=5 else 0.0)
+		if t!=f and not t.activated:
+			urgency-=1.5
+		targets.append({"figure":t,"urgency":urgency*BotPreference.appeal(s,f,t.id,"leap_target")})
+	targets.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["urgency"]>b["urgency"])
+	var probability:=MagicTactics.probability(c,f,"leap")
+	for i in mini(3,targets.size()):
+		var t: Figure=targets[i]["figure"]
+		if not LayeredLeap.eligible(c,t):
+			continue
+		var origin:=Vector3(t.pos.x,t.elevation,t.pos.y)
+		var limit:=5.0 if t.treasure_id>=0 else 10.0
+		var threat:=_leap_threat(s,t,origin)
+		var edge:=TreasureRules.edge_distance(s.board,t.pos)
+		var candidates: Array[Dictionary]=[]
+		# Sample a coarse one-inch lattice before scoring, rather than
+		# solving every half-inch trajectory.
+		for n in BattlePlacement.nodes(s.board,t.pos,limit):
+			if posmod(n.x,2)!=0 or posmod(n.y,2)!=0 or layout.surface_id(n).begins_with("climb:"):
+				continue
+			var at:=layout.world(n)
+			var distance:=origin.distance_to(at)
+			if distance>limit+0.001 or distance<2.0:
+				continue
+			var score:=maxf(0.0,minf(8.0,_leap_threat(s,t,at))-minf(8.0,threat))*(0.65+0.55*BotPreference.trait_value(f,"caution"))
+			if t.treasure_id>=0 and t.control_spell!="mind_control":
+				score+=maxf(0.0,edge-TreasureRules.edge_distance(s.board,layout.point(n)))*(0.9+0.6*BotPreference.trait_value(f,"greed"))
+			if t!=f and not t.activated:
+				score-=1.5
+			score*=probability*BotPreference.appeal(s,f,hash(n),"leap_landing")
+			if score>best_value:
+				candidates.append({"node":n,"score":score})
+		candidates.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["score"]>b["score"])
+		var grid:=LayeredGrid.new(layout,t,s.figures)
+		for j in mini(12,candidates.size()):
+			var choice:=candidates[j]
+			if float(choice["score"])<=best_value:
+				break
+			var n: Vector3i=choice["node"]
+			if RedKingVeil.lethal(s,t.pos,layout.point(n)) or LayeredLeap.path(c,t,n,layout,grid).is_empty():
+				continue
+			best_value=float(choice["score"])
+			best={"spell":"leap","target":t.id,"node":n,"score":best_value}
+			break
+	return best
+
+
+static func _leap_threat(s: GameState,t: Figure,at: Vector3) -> float:
+	var nearest:=8.0
+	for enemy in s.figures:
+		if enemy.in_play() and enemy.side!=t.side and enemy.ring_side==t.ring_side and IllusionRules.visible_to(s.figures,t,enemy):
+			nearest=minf(nearest,at.distance_to(Vector3(enemy.pos.x,enemy.elevation,enemy.pos.y)))
+	return nearest
 
 
 static func play(c: GameController, f: Figure) -> bool:
@@ -45,7 +120,7 @@ static func play(c: GameController, f: Figure) -> bool:
 	if c.state.spellbooks.get(f.side, {}).has(id) and int(c.state.spellbooks[f.side][id]) >= 10 and f.next_cast_gear == "":
 		if not BattleEquipmentAction.execute(c,"arm",{"id":"gear_gloves_casting"}):
 			BattleEquipmentAction.execute(c,"arm",{"id":"gear_wand_light"})
-	var declared := BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["node"]}) if chosen.has("node") else (BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["at"]}) if chosen.has("at") else BattleAction.execute(c,"cast",chosen["target"],id))
+	var declared := BattleSpellAction.execute(c,"move",{"spell":id,"target":chosen["target"],"at":chosen["node"]}) if id=="leap" else BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["node"]}) if chosen.has("node") else (BattleSpellAction.execute(c,"place",{"spell":id,"at":chosen["at"]}) if chosen.has("at") else BattleAction.execute(c,"cast",chosen["target"],id))
 	if not declared:
 		return false
 	if not c.awaiting_reaction():
