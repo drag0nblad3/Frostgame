@@ -81,3 +81,23 @@ func test_leap_ai_skips_unthreatened_non_carriers() -> void:
 	c.state.active_id=f.id
 	f.actions_left=2
 	check(MagicBot.leap_plan(c,f).is_empty())
+
+
+func test_leap_escape_estimate_respects_library_doors_and_floor() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"roof","rect":[0,0,36,36],"level":4}]}
+	var f:=fig("wizard",0,Vector2(4,8))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.scenario_special="underground_library"
+	var exits:=MagicBot._leap_exit_segments(c.state,b.floor_geometry(),f.side)
+	check(not exits.is_empty())
+	var wall:=MagicBot._leap_exit_distance(exits,Vector3(0.5,0,8))
+	var doorway:=MagicBot._leap_exit_distance(exits,Vector3(0.5,0,18))
+	check(wall>5.0)
+	check(doorway<0.01)
+	check(MagicBot._leap_exit_distance(exits,Vector3(0.5,4,18))>=4.0)
+	for segment in exits:
+		for point in segment:
+			check_eq(point.y,0.0)
+			check(ScenarioObjectives.exit_allowed(c.state,Vector2(point.x,point.z),f.side))
