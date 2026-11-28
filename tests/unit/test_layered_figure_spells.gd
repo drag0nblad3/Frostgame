@@ -25,11 +25,12 @@ func test_solid_floor_blocks_healing_and_bolts() -> void:
 	enemy.elevation=3
 	check(not c.can_cast("heal",ally.id))
 	check(not c.can_cast("elemental_bolt",enemy.id))
+	check(not c.can_cast("leap",ally.id))
 	ally.pos=Vector2(8,9.5)
 	ally.surface_id="street"
 	ally.elevation=0
 	check(c.can_cast("heal",ally.id))
-	check(not c.can_cast("leap",ally.id))
+	check(c.can_cast("leap",ally.id))
 	c.dice=LoadedDice.new([20])
 	check(c.start_cast("heal",ally.id))
 	check(c.finish_cast(0))
