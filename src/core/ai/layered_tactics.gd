@@ -26,20 +26,6 @@ static func shortcut(c: GameController,f: Figure,layout: FloorLayout,reach: Laye
 	var walk_cost: float = long_route.cost.get(goal,INF)
 	if walk_cost<=MoveRules.allowance(f)+0.001:
 		return false
-	# Running jumps are attractive only when they actually reach the
-	# objective floor and improve distance without taking falling damage.
-	var jumps := LayeredJump.plans(c)
-	var best_jump: Variant = null
-	var best_score := INF
-	for n: Vector3i in jumps:
-		if goal==null or n.z!=goal.z or ElevationRules.fall_damage(float(jumps[n]["fall"]))>0:
-			continue
-		var score := layout.world(n).distance_to(layout.world(goal))+float(jumps[n]["cost"])
-		if score<walk_cost-1.0 and score<best_score:
-			best_score=score
-			best_jump=n
-	if best_jump!=null and c.commit_movement("jump",best_jump):
-		return true
 	if not CasterLoadout.is_caster(f.def.role) or not c.can_act() or ScenarioNull.muted(f) or f.health<=3:
 		return false
 	if LayeredBridgeTactics.try_cast(c,f,layout,long_route,grid):
@@ -73,3 +59,86 @@ static func shortcut(c: GameController,f: Figure,layout: FloorLayout,reach: Laye
 
 static func resolve(c: GameController) -> bool:
 	return MagicBot.resolve(c)
+
+
+## Consider the same compound routes offered to the player, but only where
+## an aerial shortcut is plausible. Compare progress with normal walking.
+## This is deliberately a local heuristic, not an optimal multi-turn search.
+static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,extracting: bool) -> bool:
+	var s:=c.state
+	if f.side<0 or reach.start.z<0 or PlaneWalk.uses_direct(f) or FuryRules.target(s,f)!=null:
+		return false
+	var support:=layout.surfaces[reach.start.z]
+	var authored: bool=not s.board.floor_layout.get("jumps",[]).is_empty()
+	var flat_street:=support.id=="street" and support.profiles.is_empty() and is_equal_approx(support.level,support.end_level)
+	if flat_street and not authored and s.board.void_regions.is_empty():
+		return false
+	var origin:=layout.world(reach.start)
+	var exits: Array[PackedVector3Array]=[]
+	var objective: Variant=null
+	if extracting:
+		exits=MagicBot._leap_exit_segments(s,layout,f.side)
+		if exits.is_empty():
+			return false
+	else:
+		var nearest:=INF
+		if not f.def.traits.has("animal") and not RuleHooks.any("cannot_carry_treasure",[s,f]) and not BotPreference.prefers_combat(s,f):
+			for token in s.treasures:
+				if not token.on_ground() or token.ring_side!=f.ring_side:
+					continue
+				var height:=TreasureRules.token_height(s,token)
+				if is_nan(height):
+					continue
+				var at:=Vector3(token.pos.x,height,token.pos.y)
+				var score:=origin.distance_to(at)+BotPreference.variation(s,f,token.id,"aerial_loot")
+				if score<nearest:
+					nearest=score
+					objective=at
+		if objective==null:
+			for enemy in s.figures:
+				if not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side or RingworldBot.protected_key(s,f,enemy) or WormRider.ignored(f,enemy) or (RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(enemy)) or not IllusionRules.visible_to(s.figures,f,enemy) or not BotTargets.can_harm(f,enemy,f.melee):
+					continue
+				var at:=BattleSpace.center(enemy)
+				var score:=origin.distance_to(at)*BotPreference.threat_appeal(f,enemy)
+				if score<nearest:
+					nearest=score
+					objective=at
+	if objective==null and exits.is_empty():
+		return false
+	var distance:=func(at: Vector3) -> float:
+		return MagicBot._leap_exit_distance(exits,at) if extracting else at.distance_to(objective)
+	var initial:=float(distance.call(origin))
+	var walking:=initial
+	for n: Vector3i in reach.cost:
+		walking=minf(walking,float(distance.call(layout.world(n))))
+	# Do not interrupt ordinary movement that already reaches the objective.
+	if walking<=0.8 or initial<=1.5:
+		return false
+	var caution:=BotPreference.trait_value(f,"caution")
+	var best_score:=initial-walking+0.65+0.6*caution
+	var best: Variant=null
+	var mode:=""
+	for kind: String in ["jump","drop_down"]:
+		if kind=="drop_down" and flat_street:
+			continue
+		var options:=c.movement_options(kind)
+		for n: Vector3i in BotPreference.positions(s,f,options.cost.keys()):
+			var plan: Dictionary=options.jumps[n]
+			var damage:=aerial_damage(s,f,plan)
+			if damage>=f.health or (damage>0 and f.treasure_id>=0):
+				continue
+			var at:=layout.world(n)
+			var progress:=initial-float(distance.call(at))
+			var score:=progress*BotPreference.appeal(s,f,hash(n),"aerial")-float(damage)*(1.5+2.0*caution)-0.05*float(plan["cost"])
+			if score>best_score:
+				best_score=score
+				best=n
+				mode=kind
+	return best!=null and c.commit_movement(mode,best)
+
+
+static func aerial_damage(s: GameState,f: Figure,plan: Dictionary) -> int:
+	var damage:=LayeredFall.damage(s,f,float(plan.get("fall",0.0)))
+	if plan.has("next"):
+		damage+=aerial_damage(s,f,plan["next"])
+	return damage
