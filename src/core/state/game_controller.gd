@@ -10,6 +10,18 @@ var dice: Dice
 var history: Array[GameEvent] = []
 var command_history: Array[Dictionary] = []
 var recording_command := false
+## Optional diagnostic timers; never used to choose game actions.
+var ai_profile_enabled:=false
+var ai_profile: Dictionary={}
+
+func ai_begin() -> int:
+	return Time.get_ticks_usec() if ai_profile_enabled else 0
+
+func ai_end(label: String,started: int) -> void:
+	if started==0:
+		return
+	ai_profile[label]=int(ai_profile.get(label,0))+Time.get_ticks_usec()-started
+
 var capture_frames := false
 var replay_frames: Array[Dictionary]=[]
 var _flow: TurnFlow
