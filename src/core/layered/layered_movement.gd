@@ -365,34 +365,49 @@ static func extend_aerial(c: GameController,base: Dictionary) -> Dictionary:
 	var layout:=c.state.board.floor_geometry()
 	var grid:=LayeredGrid.new(layout,f,c.state.figures)
 	var allowance:=MoveRules.allowance(f)
+	var cost: Dictionary={}
+	var prev: Dictionary={}
+	var heap:=MinHeap.new()
+	# All continuable landings seed one weighted flood. Overlapping landing
+	# neighborhoods no longer repeat the same ground-edge searches.
 	for landing: Vector3i in base:
 		var plan: Dictionary=base[landing]
-		var remaining:=allowance-float(plan["cost"])
-		if remaining<MoveGrid.STEP-0.001 or bool(plan.get("end_activation",false)) or grid.stops(landing):
+		var paid:=float(plan["cost"])
+		if allowance-paid<MoveGrid.STEP-0.001 or bool(plan.get("end_activation",false)) or grid.stops(landing):
 			continue
-		var reach:=LayeredReach.search(grid,landing,remaining)
-		for n: Vector3i in reach.cost:
-			if n==landing or n==layout.node(f.surface_id,f.pos):
-				continue
-			var total:=float(plan["cost"])+float(reach.cost[n])
-			if out.has(n) and total>=float(out[n]["cost"])-0.001:
-				continue
-			var tail:=PackedVector3Array()
-			var surfaces: Array[String]=[]
-			for step in reach.path_to(n):
-				tail.append(layout.world(step))
-				surfaces.append(layout.surface_id(step))
-			var extended:=plan.duplicate()
-			extended["cost"]=total
-			extended["aerial_cost"]=plan["cost"]
-			extended["remaining"]=remaining
-			extended["tail"]=tail
-			extended["tail_surfaces"]=surfaces
-			var preview: PackedVector3Array=plan.get("preview",plan["path"]).duplicate()
-			for i in range(1,tail.size()):
-				preview.append(tail[i])
-			extended["preview"]=preview
-			out[n]=extended
+		cost[landing]=paid
+		heap.push(paid,landing)
+	RouteSearch.expand(null,grid,heap,cost,prev,allowance,true,null,true)
+	var origin:=layout.node(f.surface_id,f.pos)
+	for n: Vector3i in cost:
+		var total:=float(cost[n])
+		if n==origin or not prev.has(n) or (out.has(n) and total>=float(out[n]["cost"])-0.001):
+			continue
+		if BattleBoundary.blocks_end(c.state.board.boundaries,layout.point(n)):
+			continue
+		var nodes: Array[Vector3i]=[n]
+		var root:=n
+		while prev.has(root):
+			root=prev[root]
+			nodes.append(root)
+		nodes.reverse()
+		var plan: Dictionary=base[root]
+		var tail:=PackedVector3Array()
+		var surfaces: Array[String]=[]
+		for step in nodes:
+			tail.append(layout.world(step))
+			surfaces.append(layout.surface_id(step))
+		var extended:=plan.duplicate()
+		extended["cost"]=total
+		extended["aerial_cost"]=plan["cost"]
+		extended["remaining"]=allowance-float(plan["cost"])
+		extended["tail"]=tail
+		extended["tail_surfaces"]=surfaces
+		var preview: PackedVector3Array=plan.get("preview",plan["path"]).duplicate()
+		for i in range(1,tail.size()):
+			preview.append(tail[i])
+		extended["preview"]=preview
+		out[n]=extended
 	return out
 
 
