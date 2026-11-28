@@ -119,3 +119,29 @@ func test_bridge_and_ringworld_shared_routes() -> void:
 	s=ScenarioLoader.load_id("red_king_ringworld",defs,terrain())
 	l=s.board.floor_geometry()
 	check(BoardTopology.floor_destinations(s.board,l,l.node("street",Vector2(10,0.5))).has(l.node("street",Vector2(10,35.5))))
+
+
+func test_moving_reality_disc_retains_round_geometry() -> void:
+	var b:=BoardLoader.from_dict({"size":[36,36],"shared_climbing":true,"pieces":[]},terrain())
+	var f:=fig("wizard",0,Vector2(19.5,19.5))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(17))
+	var k:=TerrainKind.new()
+	k.id="reality_hoof"
+	k.height=3.0
+	k.blocks_move=true
+	k.blocks_los=true
+	var p:=TerrainPiece.new(k,Rect2(16.5,16.5,3,3))
+	p.circular=true
+	check(RealityFloorTerrain.place_disc(c,p))
+	b.pieces.append(p)
+	var l:=b.floor_geometry()
+	check_eq(l.circular_solids.size(),1)
+	check(l.standable(l.node("street",f.pos)))
+	RealityFloorTerrain.relocate_touching(c,p)
+	check_eq(f.pos,Vector2(19.5,19.5))
+	check(RealityFloorTerrain.move_disc(c,p,Vector2(24,24)))
+	l=b.floor_geometry()
+	check(l.standable(l.node("street",Vector2(18,18))))
+	check(not l.standable(l.node("street",Vector2(24,24))))
+	check_eq(l.circular_solids.size(),1)

@@ -7,7 +7,7 @@ static func touches_height(p: TerrainPiece,h: float,body: float) -> bool:
 
 
 static func _entry(p: TerrainPiece) -> Dictionary:
-	return {"id":p.dynamic_surface,"support":p.surface_id,"height":p.base_height,"thickness":p.kind.height,"walkable":false,"rect":[p.rect.position.x,p.rect.position.y,p.rect.size.x,p.rect.size.y]}
+	return {"id":p.dynamic_surface,"support":p.surface_id,"height":p.base_height,"thickness":p.kind.height,"walkable":false,"circular":true,"rect":[p.rect.position.x,p.rect.position.y,p.rect.size.x,p.rect.size.y]}
 
 
 static func place_disc(c: GameController,p: TerrainPiece) -> bool:
@@ -25,6 +25,14 @@ static func place_disc(c: GameController,p: TerrainPiece) -> bool:
 		var blocked:=blocks_connection(layout,box,AABB())
 		for solid in layout.solids:
 			if solid.intersects(box):
+				blocked=true
+				break
+		for cylinder in layout.circular_solids:
+			if cylinder.intersects(box):
+				blocked=true
+				break
+		for prism in layout.convex_solids:
+			if prism.overlaps(box):
 				blocked=true
 				break
 		if blocked:
@@ -67,7 +75,7 @@ static func relocate_touching(c: GameController,p: TerrainPiece) -> void:
 	var s:=c.state
 	var center:=p.rect.get_center()
 	for f in s.figures.duplicate():
-		if not f.in_play() or not touches_height(p,f.elevation,1.6) or not p.rect.grow(Figure.BASE_RADIUS).has_point(f.pos):
+		if not f.in_play() or not touches_height(p,f.elevation,1.6) or p.rect.get_center().distance_to(f.pos)>p.rect.size.x*0.5+Figure.BASE_RADIUS:
 			continue
 		var direction: Vector2=f.pos-center
 		if direction.is_zero_approx():
@@ -77,7 +85,7 @@ static func relocate_touching(c: GameController,p: TerrainPiece) -> void:
 		if n!=null:
 			ForcedRelocation.apply_floor(c,f,n)
 	for t in s.treasures:
-		if not t.on_ground() or not touches_height(p,TreasureRules.token_height(s,t),0.5) or not p.rect.grow(TreasureRules.TOKEN_RADIUS).has_point(t.pos):
+		if not t.on_ground() or not touches_height(p,TreasureRules.token_height(s,t),0.5) or p.rect.get_center().distance_to(t.pos)>p.rect.size.x*0.5+TreasureRules.TOKEN_RADIUS:
 			continue
 		var best: Variant=null
 		var distance:=INF

@@ -22,6 +22,9 @@ static func legal(s: GameState,layout: FloorLayout,f: Figure,n: Vector3i,rect: R
 	for solid in layout.solids:
 		if solid.intersects(volume):
 			return false
+	for cylinder in layout.circular_solids:
+		if cylinder.intersects(volume):
+			return false
 	for prism in layout.convex_solids:
 		if prism.overlaps(volume):
 			return false
