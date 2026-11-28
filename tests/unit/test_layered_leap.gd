@@ -86,3 +86,60 @@ func test_leap_cannot_cross_dimensional_void() -> void:
 	var n:=layout.node("street",Vector2(9,5))
 	var grid:=LayeredGrid.new(layout,f,c.state.figures)
 	check(LayeredLeap.path(c,f,n,layout,grid).is_empty())
+
+
+func _air_leap_game() -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"high","rect":[8,8,4,4],"level":8}]}
+	var f:=fig("wizard",0,Vector2(9,10))
+	f.surface_id="high"
+	f.elevation=8.0
+	var c:=make_game(b,[f],LoadedDice.new([20]))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"leap":8}
+	c.state.active_id=f.id
+	f.actions_left=2
+	return c
+
+
+func test_airborne_leap_uses_endpoint_range_then_fall() -> void:
+	var c:=_air_leap_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var endpoint:=Vector3(15,8,10)
+	var node:=layout.node("street",Vector2(15,10))
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var plan:=LayeredLeap.air_plan(c,f,endpoint,layout,grid)
+	check(not plan.is_empty())
+	if plan.is_empty():
+		return
+	check_eq(plan["node"],node)
+	check_eq(plan["fall"],8.0)
+	check_eq(plan["path"][-1],layout.world(node))
+	check(LayeredLeap.air_points(c,f,layout.index_of("street"),8.0).has(node))
+	f.treasure_id=0
+	check(LayeredLeap.air_plan(c,f,endpoint,layout,grid).is_empty())
+	f.treasure_id=-1
+	var hp:=f.health
+	var damage:=LayeredFall.damage(c.state,f,8.0)
+	check(BattleSpellAction.execute(c,"leap_air",{"spell":"leap","target":f.id,"at":endpoint}))
+	check(c.finish_cast(0))
+	check_eq(f.surface_id,"street")
+	check_eq(f.pos,Vector2(15,10))
+	check(f.health<hp)
+	check(damage>0)
+	check(f.magic_exhausted)
+
+
+func test_airborne_leap_cannot_skip_first_support() -> void:
+	var c:=_air_leap_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var endpoint:=Vector3(10,10,10)
+	var plan:=LayeredLeap.air_plan(c,f,endpoint,layout,grid)
+	check(not plan.is_empty())
+	if not plan.is_empty():
+		check_eq(plan["node"],layout.node("high",Vector2(10,10)))
+		check_eq(plan["fall"],2.0)
+	check(not LayeredLeap.air_points(c,f,layout.index_of("street"),10.0).has(layout.node("street",Vector2(10,10))))
