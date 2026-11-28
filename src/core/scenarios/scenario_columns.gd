@@ -57,5 +57,9 @@ static func challenge(c: GameController, f: Figure) -> bool:
 		# Free collection is automatic for eligible winners. A figure already
 		# carrying treasure or threatened by enemies leaves the token on the floor.
 		if f.pos.distance_to(token.pos) <= Figure.BASE_RADIUS + 1.0 and f.in_play():
+			if f.side==s.reaction_side and f.treasure_id<0 and not TreasureRules.enemy_interferes(s,f,token):
+				var options: Array[Dictionary]=[{"collect":true},{"collect":false}]
+				if CoreScenarioChoice.offer(c,"column",f.side,f.id,token.id,0,options):
+					return true
 			c._loot.claim_free(f, token)
 	return true

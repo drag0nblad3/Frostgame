@@ -37,46 +37,31 @@ static func retry_pending(c: GameController) -> void:
 
 static func _try_release(c: GameController,finder: Figure,token: TreasureToken) -> bool:
 	var s:=c.state
-	var origin:=Vector3(finder.pos.x,finder.elevation,finder.pos.y)
+	var options: Array[Dictionary]=[]
 	if not s.board.floor_layout.is_empty():
 		var layout:=s.board.floor_geometry()
-		var best: Variant=null
-		var score:=INF
 		for n in BattlePlacement.nodes(s.board,finder.pos,2.0):
-			if not BattlePlacement.floor_open(s,n):
-				continue
-			var at:=layout.world(n)
-			if not legal_spawn(s,finder,at):
-				continue
-			var value:=absf(origin.distance_to(at)-1.75)
-			if value<score:
-				score=value
-				best=n
-		if best!=null:
-			_released(c,finder,token,c._encounters._spawn_on_floor("genie",best))
-			return true
+			if BattlePlacement.floor_open(s,n) and legal_spawn(s,finder,layout.world(n)):
+				options.append(CoreScenarioChoice.point(s,layout.point(n),layout.surface_id(n)))
+	else:
+		var grid:=MoveGrid.new(s.board,null,s.figures)
+		var center:=MovePlanner.node_at(finder.pos)
+		for dx in range(-4,5):
+			for dy in range(-4,5):
+				var node:=center+Vector2i(dx,dy)
+				if not grid.open(node):
+					continue
+				var at:=MoveGrid.to_pos(node)
+				var point:=CoreScenarioChoice.point(s,at)
+				if legal_spawn(s,finder,point["world"]):
+					options.append(point)
+	if options.is_empty():
 		return false
-	var grid := MoveGrid.new(s.board,null,s.figures)
-	var center := MovePlanner.node_at(finder.pos)
-	var best_at:=Vector2.INF
-	var score:=INF
-	for dx in range(-4,5):
-		for dy in range(-4,5):
-			var node:=center+Vector2i(dx,dy)
-			if not grid.open(node):
-				continue
-			var at:=MoveGrid.to_pos(node)
-			var point:=Vector3(at.x,s.board.height_at(at),at.y)
-			if not legal_spawn(s,finder,point):
-				continue
-			var value:=absf(origin.distance_to(point)-1.75)
-			if value<score:
-				best_at=at
-				score=value
-	if is_finite(best_at.x):
-		_released(c,finder,token,c._encounters._spawn_at("genie",best_at))
+	if CoreScenarioChoice.offer(c,"genie",finder.side,finder.id,token.id,0,options):
 		return true
-	return false
+	var p:=CoreScenarioChoice.tactical(c,finder.side,options)
+	_released(c,finder,token,CoreScenarioChoice._spawn(c,"genie",p))
+	return true
 
 
 static func legal_spawn(s: GameState,finder: Figure,at: Vector3) -> bool:
