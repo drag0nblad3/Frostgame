@@ -77,7 +77,7 @@ func push(own: bool,distance: float=1.0) -> bool:
 		return true
 	c._magic.terrain.trigger_landing(moving)
 	var fall := ElevationRules.fall_damage(old_height - moving.elevation)
-	if fall > 0 and MagicEquipment.bonus(moving, "slow_fall") == 0:
+	if fall > 0 and MagicEquipment.bonus(moving, "slow_fall") == 0 and not moving.def.traits.has("flying"):
 		c._hurt(moving, fall, other, false)
 	ScenarioSites.end_move(c, moving)
 	return true
@@ -101,7 +101,7 @@ func _clear_path(moving: Figure, dest: Vector2,allow_void: bool=false) -> bool:
 
 ## Same guard eligibility, regardless of route geometry.
 func guard_can_intercept(mover: Figure,guard: Figure,ignored: Array[int]) -> bool:
-	return guard.ring_side==mover.ring_side and not ignored.has(guard.id) and not guard.spell_effects.has("plane_walk") and guard.in_play() and guard.side!=mover.side and MoveRules.can_move(guard,c.state.figures) and not guard.petrified_skip and IllusionRules.visible_to(c.state.figures,guard,mover) and not BeautyActions.protected_from(c.state,guard,mover)
+	return guard.ring_side==mover.ring_side and not ignored.has(guard.id) and not guard.spell_effects.has("plane_walk") and guard.in_play() and guard.side!=mover.side and MoveRules.can_move(guard,c.state.figures) and not guard.petrified_skip and not guard.spell_effects.has("petrify") and IllusionRules.visible_to(c.state.figures,guard,mover) and not BeautyActions.protected_from(c.state,guard,mover)
 
 
 func intercept(mover: Figure, path: PackedVector2Array, ignored: Array[int] = []) -> Dictionary:

@@ -57,8 +57,8 @@ static func plans(c: GameController) -> Dictionary:
 				break
 		if not clear:
 			continue
-		var cost:=a.distance_to(edge)+drop
-		var long_fall:=drop>float(f.effective_move())
+		var cost:=a.distance_to(edge)+drop+(3.0 if s.board.low_gravity else 0.0)
+		var long_fall:=drop+(3.0 if s.board.low_gravity else 0.0)>float(f.effective_move())
 		if cost>MoveRules.allowance(f)+0.001 and not (long_fall and f.moves_taken==0):
 			continue
 		out[n]={"path":PackedVector3Array([a,edge,b]),"cost":cost,"fall":drop,"end_activation":long_fall}

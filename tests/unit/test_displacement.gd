@@ -60,3 +60,15 @@ func test_ordinary_bootless_withdrawal_unchanged() -> void:
 	check(c.fight(2))
 	check(c.can_push(true))
 	check(not c.can_push(true,2.0))
+
+
+func test_immobilized_guards_cannot_intercept() -> void:
+	var f:=fig("wizard",0,Vector2(9,12))
+	var g:=fig("thug",1,Vector2(12,12))
+	var c:=make_game(make_board(),[f,g],Dice.new(17))
+	check(c._displacement.guard_can_intercept(f,g,[]))
+	g.spell_effects["bones_of_the_earth"]=true
+	check(not c._displacement.guard_can_intercept(f,g,[]))
+	g.spell_effects.erase("bones_of_the_earth")
+	g.spell_effects["petrify"]=true
+	check(not c._displacement.guard_can_intercept(f,g,[]))

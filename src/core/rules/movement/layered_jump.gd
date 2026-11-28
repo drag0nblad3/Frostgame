@@ -35,19 +35,19 @@ static func plans(c: GameController,generate: bool=false) -> Dictionary:
 			continue
 		var delta := layout.point(target)-layout.point(takeoff)
 		var distance := delta.length()
-		if distance<=0.001 or distance>(7.0 if s.board.low_gravity else 4.0):
+		if distance<=0.001 or distance>MoveRules.allowance(f)+0.001:
 			continue
 		var run := layout.point(takeoff)-layout.point(start)
 		if (distance>1.001 and run.length()+0.001<distance) or (run.length()>0.001 and run.normalized().dot(delta.normalized())<0.999):
 			continue
 		var path := PackedVector3Array()
-		var cost := 0.0
+		var cost := distance
 		var valid := true
 		var steps := maxi(1,ceili(run.length()/0.1))
 		for i in range(steps+1):
 			var p := layout.point(start).lerp(layout.point(takeoff),float(i)/steps)
 			var h := layout.surfaces[start.z].height_at(p)
-			if not layout.surfaces[start.z].contains(p,Figure.BASE_RADIUS) or not layout.clearance(Vector3(p.x,h,p.y),Figure.BASE_RADIUS,1.6) or not is_equal_approx(h,layout.height(start)):
+			if s.board.over_void(p,Figure.BASE_RADIUS) or not grid.segment_allowed(layout.world(start),Vector3(p.x,h,p.y)) or TerrainMagic.ward_blocks(s.board,f,p,h) or not layout.surfaces[start.z].contains(p,Figure.BASE_RADIUS) or not layout.clearance(Vector3(p.x,h,p.y),Figure.BASE_RADIUS,1.6) or not is_equal_approx(h,layout.height(start)):
 				valid=false
 				break
 			for other in grid.others:
@@ -56,7 +56,12 @@ static func plans(c: GameController,generate: bool=false) -> Dictionary:
 					break
 			if not valid:
 				break
-		cost=run.length()*layout.surfaces[start.z].rough+distance
+			if i>0:
+				var previous:=layout.point(start).lerp(layout.point(takeoff),float(i-1)/steps)
+				var multiplier:=maxf(layout.surfaces[start.z].rough,TerrainMagic.floor_multiplier(s.board,(previous+p)*0.5,h,f))
+				if f.levitates() or f.def.traits.has("flying") or s.board.low_gravity:
+					multiplier=1.0
+				cost+=previous.distance_to(p)*multiplier
 		if not valid or cost>MoveRules.allowance(f)+0.001:
 			continue
 		var a := layout.world(takeoff)
@@ -86,9 +91,18 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	if not options.has(n):
 		return false
 	var f := c.state.active()
-	var engaged:=Contact.in_combat(c.state.figures,f)
 	var layout := c.state.board.floor_geometry()
 	var plan: Dictionary = options[n]
+	var targets:=MovementContact.enemies_at(c.state.figures,f,layout.point(n),layout.height(n),layout.surface_id(n))
+	c._magic.beauty.authorize(f,targets,_land.bind(c,f,n,plan))
+	return true
+
+
+static func _land(c: GameController,f: Figure,n: Vector3i,plan: Dictionary) -> void:
+	if not f.in_play() or c.state.active()!=f or not RedKingHill.before_move(c,f):
+		return
+	var engaged:=Contact.in_combat(c.state.figures,f)
+	var layout:=c.state.board.floor_geometry()
 	var old := f.surface_id
 	f.pos=layout.point(n)
 	f.elevation=layout.height(n)
@@ -96,8 +110,9 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	c.spend_move(f)
 	c.emit("layered_move",{"id":f.id,"path":plan["path"],"surfaces":[old,f.surface_id],"cost":plan["cost"],"jump":true})
 	LayeredFall.apply(c,f,float(plan["fall"]),f)
+	if f.in_play():
+		c._magic.terrain.trigger_landing(f)
 	c.finish_movement(f,engaged,f.in_play())
-	return true
 
 
 ## Only real interruptions in support generate jump candidates. Eight lattice
@@ -110,7 +125,7 @@ static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,s
 		return out
 	if support.id=="street" and support.profiles.is_empty() and c.state.board.void_regions.is_empty():
 		return out
-	var max_jump:=7.0 if c.state.board.low_gravity else 4.0
+	var max_jump:=MoveRules.allowance(f)
 	var allowance:=MoveRules.allowance(f)
 	var height:=layout.height(start)
 	var decks: Array[int]=[]
