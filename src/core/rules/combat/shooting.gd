@@ -54,6 +54,8 @@ static func possible_from(board: Board, figures: Array[Figure], shooter: Figure,
 static func possible_from_world(board: Board,figures: Array[Figure],shooter: Figure,at: Vector3,target: Figure) -> bool:
 	if shooter.ring_side!=target.ring_side or shooter.ranged==null or not target.in_play() or not IllusionRules.visible_to(figures,shooter,target) or Contact.in_combat(figures,target):
 		return false
+	if shooter.ranged.id in ["bow","crossbow"] and Swimming.depth(board,Vector2(at.x,at.z),at.y)==2:
+		return false
 	var relation:=RealityCrackGeometry.cross_relation(board,Vector2(at.x,at.z),target.pos)
 	var range_in:=RealityCrackGeometry.world_distance(board,at,Vector3(target.pos.x,target.elevation,target.pos.y))
 	if (range_in if relation!=0 else maxf(range_in-2.0*Figure.BASE_RADIUS,0.0))>shooter.ranged.range_in:

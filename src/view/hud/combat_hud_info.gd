@@ -11,6 +11,11 @@ static func unit(f: Figure) -> String:
 		f.effective_move(),f.effective_fight(),f.effective_shoot(),f.effective_armour(),f.effective_will()]
 	if f.treasure_id>=0:
 		text+=" · Loot %d"%f.carried_treasures().size()
+	var depth:=Swimming.figure_depth(f)
+	if depth==2:
+		text+=" · Deep water"+(" (swim exempt)" if Swimming.immune(f) else " · Swim TN5 · Fight −2")
+	elif depth==1:
+		text+=" · Shallow water"+(" (exempt)" if Swimming.immune(f) else " · Rough")
 	return text
 
 

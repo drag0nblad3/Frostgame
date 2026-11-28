@@ -34,3 +34,13 @@ func test_deep_water_not_on_upper_floor() -> void:
 	Swimming.activate(c,f)
 	check_eq(f.actions_left,2)
 	check_eq(Swimming.figure_depth(f),0)
+
+
+func test_bridge_above_water_is_not_rough() -> void:
+	var b:=make_board([["deep_water",8,8,4,4],["platform",8,8,4,4]])
+	var f:=fig("tracker",0,Vector2(10,10))
+	var c:=make_game(b,[f],Dice.new(3))
+	f.elevation=b.height_at(f.pos)
+	check_eq(f.elevation,2.0)
+	check_eq(Swimming.figure_depth(f),0)
+	check_eq(b.move_mult_at(f.pos,f),1.0)

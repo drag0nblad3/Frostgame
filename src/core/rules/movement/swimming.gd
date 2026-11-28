@@ -35,7 +35,7 @@ static func modifier(f: Figure) -> int:
 	var mod:=-5 if f.def.id in HEAVY else (-2 if f.def.id in LIGHT else 0)
 	if f.def.shield:
 		mod-=1
-	if f.treasure_id>=0:
+	if f.carries_normal_treasure():
 		mod-=2
 	return mod
 

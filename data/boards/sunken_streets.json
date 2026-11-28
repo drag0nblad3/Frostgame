@@ -212,6 +212,42 @@
         4,
         1
       ]
+    },
+    {
+      "kind": "shallow_water",
+      "rect": [
+        12,
+        13,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "deep_water",
+      "rect": [
+        13,
+        14,
+        2,
+        2
+      ]
+    },
+    {
+      "kind": "shallow_water",
+      "rect": [
+        20,
+        19,
+        4,
+        4
+      ]
+    },
+    {
+      "kind": "deep_water",
+      "rect": [
+        21,
+        20,
+        2,
+        2
+      ]
     }
   ]
 }

@@ -13,6 +13,8 @@ static func name_of(s: GameState, id: int) -> String:
 static func text(s: GameState, e: GameEvent) -> String:
 	var d := e.data
 	match e.type:
+		"swimming_roll":
+			return "%s swims: %d %+d vs TN5 — %s."%[name_of(s,d["id"]),d["roll"],d["modifier"],"success" if d["success"] else "failed; loses actions"]
 		"ryce_unconscious":
 			return "Kalamon Ryce is unconscious. Carry him to safety."
 		"ryce_escaped":

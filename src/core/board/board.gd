@@ -57,7 +57,7 @@ func pieces_at(p: Vector2) -> Array[TerrainPiece]:
 
 ## Movement cost multiplier at a point (the worst piece there).
 func move_mult_at(p: Vector2,mover: Figure=null) -> float:
-	if has_water and Swimming.immune(mover):
+	if has_water and (Swimming.immune(mover) or absf(height_at(p)-ground_height_at(p))>=0.5):
 		var result:=1.0
 		for piece in pieces_at(p):
 			if piece.kind.id not in ["deep_water","shallow_water"]:

@@ -250,6 +250,8 @@ static func _piece_key(p: TerrainPiece) -> String:
 
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 	match piece.kind.id:
+		"shallow_water","deep_water":
+			WaterTerrainArt.build(root,board,piece)
 		"architecture_prism_target":
 			return
 		"ruin_timber_wall","ruin_market_counter","ruin_altar","ruin_workbench","ruin_hearth","ruin_archive_shelf","ruin_grave":
