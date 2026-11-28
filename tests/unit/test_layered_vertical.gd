@@ -634,3 +634,22 @@ func test_aerial_ai_shared_preview_matches_independent_options() -> void:
 	print("aerial AI previews: ",separate_edges," -> ",shared_edges," edges; ",separate_us/1000.0," -> ",shared_us/1000.0," ms")
 	check_eq(f.moves_taken,0)
 	check_eq(f.actions_left,2)
+
+
+func test_drop_preview_stops_at_new_wound() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	c.state.wounded_rules=true
+	f.health=7
+	var layout:=c.state.board.floor_geometry()
+	var landing:=layout.node("street",Vector2(13.5,10))
+	var followthrough:=layout.node("street",Vector2(14,10))
+	check(not f.wounded())
+	var options:=c.movement_options("drop_down")
+	check(options.cost.has(landing))
+	check(not options.cost.has(followthrough))
+	check(c.commit_movement("drop_down",landing))
+	check_eq(f.pos,Vector2(13.5,10))
+	check_eq(f.health,3)
+	check(f.wounded())
+	check_eq(f.moves_taken,1)
