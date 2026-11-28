@@ -6,13 +6,13 @@ extends RefCounted
 
 static func plans(c: GameController) -> Dictionary:
 	var out := {}
-	if not LayeredMovement.eligible(c):
+	if not LayeredMovement.eligible(c) or c.state.board.floor_layout.get("jumps",[]).is_empty():
 		return out
 	var s := c.state
 	var f := s.active()
 	if FuryRules.target(s,f)!=null or PlaneWalk.uses_direct(f):
 		return out
-	var layout := FloorLayout.from_dict(s.board.floor_layout)
+	var layout := s.board.floor_geometry()
 	if not layout.errors.is_empty():
 		return out
 	var grid := LayeredGrid.new(layout,f,s.figures)
@@ -83,7 +83,7 @@ static func move(c: GameController,n: Vector3i) -> bool:
 		return false
 	var f := c.state.active()
 	var engaged:=Contact.in_combat(c.state.figures,f)
-	var layout := FloorLayout.from_dict(c.state.board.floor_layout)
+	var layout := c.state.board.floor_geometry()
 	var plan: Dictionary = options[n]
 	var old := f.surface_id
 	f.pos=layout.point(n)

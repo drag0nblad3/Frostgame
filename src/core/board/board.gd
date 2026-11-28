@@ -11,6 +11,8 @@ var pieces: Array[TerrainPiece] = []
 var floor_layout := {}
 var _floor_geometry: FloorLayout
 var _floor_geometry_hash := 0
+## Directional terrain-only edge costs, separated by movement traits.
+var floor_step_costs: Dictionary={}
 ## Serialized rule boundaries; ordinary battlefields have none.
 var boundaries: Array[Dictionary]=[]
 ## Directed links between edge segments and their destination centers.
@@ -30,6 +32,7 @@ var void_regions: Array[Rect2]=[]
 func floor_geometry() -> FloorLayout:
 	var revision:=floor_layout.hash()
 	if _floor_geometry==null or revision!=_floor_geometry_hash:
+		floor_step_costs.clear()
 		_floor_geometry=FloorLayout.from_dict(floor_layout)
 		_floor_geometry_hash=revision
 	return _floor_geometry
@@ -217,6 +220,7 @@ func climb_cost(a: Vector2, b: Vector2, climber: Figure = null) -> float:
 
 
 func invalidate_terrain() -> void:
+	floor_step_costs.clear()
 	has_water=false
 	has_ground_profiles = false
 	has_ramps = false

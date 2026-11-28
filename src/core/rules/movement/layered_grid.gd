@@ -92,25 +92,9 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		var finish := layout.world(next)
 		if not segment_allowed(start,finish) or (running and not run_segment_clear(start,finish)):
 			continue
-		var middle_point:=start.lerp(finish,0.5)
-		var support:=layout.surfaces[n.z]
-		if not support.profiles.is_empty():
-			middle_point.y=support.height_at(Vector2(middle_point.x,middle_point.z))
 		if not layout.neighbor_clear(n,next):
 			continue
-		var mult := layout.surfaces[n.z].rough
-		if board!=null:
-			var middle:=start.lerp(finish,0.5)
-			mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y,mover))
-		if board!=null and board.has_water and not Swimming.immune(mover) and Swimming.depth(board,Vector2(middle_point.x,middle_point.z),middle_point.y)>0:
-			mult=maxf(mult,2.0)
-		if running or (mover!=null and mover.levitates()):
-			mult=1.0
-		var cost:=start.distance_to(finish)*mult
-		if not support.profiles.is_empty():
-			cost=TerrainTravel.cost(board,layout.point(n),layout.point(next),mover,running,support)
-		if board!=null and board.low_gravity:
-			cost=layout.point(n).distance_to(layout.point(next))
+		var cost:=_terrain_cost(n,next,start,finish)
 		out.append({"to":next,"cost":cost})
 	for edge: Dictionary in (reverse_links if reversed else layout.links).get(n,[]):
 		var next: Vector3i = edge["to"]
@@ -132,11 +116,45 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		if board!=null and board.low_gravity:
 			cost=maxf(MoveGrid.STEP,layout.point(n).distance_to(layout.point(next)))
 		out.append({"to":next,"cost":cost})
-	if board!=null:
+	if board!=null and BoardTopology.linked(board):
 		for next in BoardTopology.floor_destinations(board,layout,n,reversed):
 			if open(next):
 				out.append({"to":next,"cost":Figure.BASE_RADIUS})
 	return out
+
+
+## Cache only terrain costs. Dynamic occupation and scenario restrictions
+## remain in open(), stops(), segment_allowed() and run_segment_clear().
+func _terrain_cost(n: Vector3i,next: Vector3i,start: Vector3,finish: Vector3) -> float:
+	var mode:=int(running or (mover!=null and mover.levitates()))+2*int(mover!=null and mover.def.traits.has("expert_climber"))+4*int(Swimming.immune(mover))+8*int(board!=null and board.low_gravity)
+	var key:=Vector4i(n.x,n.y,n.z,MoveGrid.NEIGHBORS.find(Vector2i(next.x-n.x,next.y-n.y)))
+	var cache: Dictionary={}
+	if _shared_costs:
+		if not board.floor_step_costs.has(mode):
+			board.floor_step_costs[mode]={}
+		cache=board.floor_step_costs[mode]
+		if cache.has(key):
+			return float(cache[key])
+	var middle_point:=start.lerp(finish,0.5)
+	var support:=layout.surfaces[n.z]
+	if not support.profiles.is_empty():
+		middle_point.y=support.height_at(Vector2(middle_point.x,middle_point.z))
+	var mult := layout.surfaces[n.z].rough
+	if board!=null:
+		var middle:=start.lerp(finish,0.5)
+		mult=maxf(mult,TerrainMagic.floor_multiplier(board,Vector2(middle.x,middle.z),middle.y,mover))
+	if board!=null and board.has_water and not Swimming.immune(mover) and Swimming.depth(board,Vector2(middle_point.x,middle_point.z),middle_point.y)>0:
+		mult=maxf(mult,2.0)
+	if running or (mover!=null and mover.levitates()):
+		mult=1.0
+	var cost:=start.distance_to(finish)*mult
+	if not support.profiles.is_empty():
+		cost=TerrainTravel.cost(board,layout.point(n),layout.point(next),mover,running,support)
+	if board!=null and board.low_gravity:
+		cost=layout.point(n).distance_to(layout.point(next))
+	if _shared_costs:
+		cache[key]=cost
+	return cost
 
 
 func segment_allowed(a: Vector3,b: Vector3) -> bool:
@@ -148,9 +166,10 @@ func segment_allowed(a: Vector3,b: Vector3) -> bool:
 		var s: GameState=mover.battle_ref.get_ref()
 		if s!=null and (RedKingVeil.lethal(s,from,to) or (RedKingHerded.active(s) and minf(from.y,to.y)<=float(s.scenario_data.get("herd_veil",0.0))+Figure.BASE_RADIUS)):
 			return false
-	var mid:=a.lerp(b,0.5)
-	if board.has_water and Swimming.avoids_deep(board,mover,Vector2(mid.x,mid.z),mid.y):
-		return false
+	if board.has_water:
+		var mid:=a.lerp(b,0.5)
+		if Swimming.avoids_deep(board,mover,Vector2(mid.x,mid.z),mid.y):
+			return false
 	return not BattleBoundary.blocks_segment(board.boundaries,from,to,"movement",mover)
 
 

@@ -122,11 +122,13 @@ func standable(n: Vector3i,radius: float = Figure.BASE_RADIUS, body: float = 1.6
 ## Geometry-only horizontal neighbor check shared by all movers and searches.
 ## Restriction checks (figures, wards, scenario boundaries) remain per mover.
 func neighbor_clear(a: Vector3i,b: Vector3i) -> bool:
+	var key:=Vector3i(a.x+b.x,a.y+b.y,a.z)
+	if _sealed and _midpoints.has(key):
+		return _midpoints[key]
 	var midpoint:=world(a).lerp(world(b),0.5)
 	if not surfaces[a.z].profiles.is_empty():
 		midpoint.y=surfaces[a.z].height_at(Vector2(midpoint.x,midpoint.z))
 	var p:=Vector2(midpoint.x,midpoint.z)
-	var key:=Vector3i(a.x+b.x,a.y+b.y,a.z)
 	if not _sealed:
 		return surfaces[a.z].contains(p,Figure.BASE_RADIUS) and clearance(midpoint,Figure.BASE_RADIUS,1.6)
 	if not _midpoints.has(key):
