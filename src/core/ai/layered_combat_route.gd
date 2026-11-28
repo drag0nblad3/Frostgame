@@ -87,7 +87,7 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 		var estimate_remaining:=float(estimates[n])
 		if priority>distance+estimate_remaining+0.0001:
 			continue
-		if budget>0 and expanded>=budget:
+		if budget>0 and (expanded>=budget or not grid.spend_ai_work()):
 			truncated=true
 			break
 		expanded+=1
