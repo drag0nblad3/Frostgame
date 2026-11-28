@@ -171,9 +171,10 @@ static func _move_inner(c: GameController,f: Figure) -> bool:
 			return false
 	started=c.ai_begin()
 	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null,BotPreference.route_budget(f))
-	if long_route.truncated and long_route.cost.size()<=reach.cost.size() and not safe_route:
-		# Exhausted optional budget: retain the exact already computed local field.
-		long_route=reach
+	if long_route.truncated and long_route.cost.size()<=reach.cost.size():
+		# Exhausted optional budget: retain exact local movement. Hazard-aware
+		# scenarios still use the stricter grid, not ordinary reach.
+		long_route=LayeredReach.search(grid,reach.start,MoveRules.allowance(f),column!=null) if safe_route else reach
 		long_route.truncated=true
 	c.ai_end("long_route",started)
 	var goal: Variant = null
