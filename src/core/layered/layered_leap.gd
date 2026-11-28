@@ -27,7 +27,7 @@ static func eligible(c: GameController,t: Figure) -> bool:
 
 static func path(c: GameController,t: Figure,n: Vector3i,layout: FloorLayout,grid: LayeredGrid) -> PackedVector3Array:
 	var empty := PackedVector3Array()
-	if not grid.open(n) or layout.surface_id(n).begins_with("climb:") or ScenarioNull.field_at(c.state.board,layout.point(n)):
+	if not grid.open(n) or layout.surface_id(n).begins_with("climb:") or ScenarioNull.field_at(c.state.board,layout.point(n)) or BattleBoundary.blocks_end(c.state.board.boundaries,layout.point(n)):
 		return empty
 	var a := Vector3(t.pos.x,t.elevation,t.pos.y)
 	var b := layout.world(n)
