@@ -26,6 +26,11 @@ var _boundary_key := ""
 var _ground_key := ""
 var _decoration_key := ""
 var _camera_at := Vector3(INF,INF,INF)
+var cutaway_enabled:=true
+var _cutaway_focus: Variant=null
+var _cut_floor_height:=INF
+var _cut_floor_id:=""
+var _cutaway_dirty:=true
 var _city_key := ""
 var _city_next := 4
 var _city_board: Board
@@ -49,6 +54,9 @@ func _process(_delta: float) -> void:
 	if camera!=null and camera.global_position!=_camera_at:
 		_camera_at=camera.global_position
 		CityScenery.update_foreground(_scenery,_camera_at,_board_size)
+		_cutaway_dirty=true
+	if camera!=null and _cutaway_dirty:
+		_update_cutaway(camera.global_position)
 
 
 func build(board: Board) -> void:
@@ -69,6 +77,10 @@ func build(board: Board) -> void:
 	_floor=null
 	_floor_art=null
 	_floor_revision=0
+	_cutaway_focus=null
+	_cut_floor_id=""
+	_cut_floor_height=INF
+	_cutaway_dirty=true
 	_decoration=null
 	_ground_key=""
 	_decoration_key=""
@@ -103,15 +115,46 @@ func build(board: Board) -> void:
 
 
 func show_floor(layout: FloorLayout,id: String) -> void:
-	if not is_instance_valid(_floor_art):
-		return
 	var index:=layout.index_of(id)
-	_floor_art.cut_at(INF if index<0 else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level))
+	_cut_floor_id=id if index>=0 else ""
+	_cut_floor_height=INF if index<0 else maxf(layout.surfaces[index].level,layout.surfaces[index].end_level)
+	if is_instance_valid(_floor_art):
+		_floor_art.cut_at(_cut_floor_height)
+	_cutaway_dirty=true
+
+
+func set_cutaway_focus(at: Variant) -> void:
+	if _cutaway_focus!=at:
+		_cutaway_focus=at
+		_cutaway_dirty=true
+
+
+func toggle_cutaway() -> void:
+	cutaway_enabled=not cutaway_enabled
+	_cutaway_dirty=true
+
+
+func _update_cutaway(camera_at: Vector3) -> void:
+	_cutaway_dirty=false
+	var focus: Variant=_cutaway_focus if cutaway_enabled else null
+	if is_instance_valid(_floor_art):
+		_floor_art.apply_camera(camera_at,focus)
 	for p: TerrainPiece in _pieces:
-		if p.kind.id=="spell_wizard_eye" and not p.surface_id.is_empty():
-			_pieces[p]["node"].visible=index<0 or p.base_height<=maxf(layout.surfaces[index].level,layout.surfaces[index].end_level)+1.5
-		elif not p.surface_id.is_empty():
-			_pieces[p]["node"].visible=id.is_empty() or p.surface_id==id or (not p.dynamic_surface.is_empty() and FloorSupportRemoval.removed(id,p.dynamic_surface))
+		var node: Node3D=_pieces[p]["node"]
+		# Retain the ground-level context on upper floors. Effects remain
+		# floor-specific; solid scenery is controlled by elevation and camera.
+		var shown:=true
+		if not _cut_floor_id.is_empty() and not p.surface_id.is_empty():
+			if p.kind.id=="spell_wizard_eye":
+				shown=p.base_height<=_cut_floor_height+1.5
+			elif p.cast_turn>=0:
+				shown=p.surface_id==_cut_floor_id or FloorSupportRemoval.removed(_cut_floor_id,p.dynamic_surface)
+			else:
+				shown=p.base_height<=_cut_floor_height+0.1
+		if shown and focus!=null and p.kind.blocks_los and p.kind.height>=1.7 and p.kind.id in ["ruin","ruin_broken_wall","hut_wall","ruin_timber_wall","ruin_archive_shelf","tower","wall","platform"]:
+			var bounds:=AABB(Vector3(p.rect.position.x,p.base_height,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
+			shown=not ArchitectureCutaway.blocks(camera_at,focus,bounds)
+		node.visible=shown
 
 
 func scenery_ready() -> bool:
@@ -131,6 +174,8 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 			add_child(_floor_art)
 			_floor_art.build(FloorLayout.from_dict(board.floor_layout),false,scenario)
 			_floor_revision=revision
+			_floor_art.cut_at(_cut_floor_height)
+			_cutaway_dirty=true
 	elif is_instance_valid(_floor_art):
 		_remove(_floor_art)
 		_floor_art=null
@@ -190,6 +235,7 @@ func sync_terrain(board: Board,baked: Node3D=null) -> void:
 			_decoration=EnvironmentDressing.build(board,scenario)
 		add_child(_decoration)
 		_decoration_key=deco_key
+	_cutaway_dirty=true
 
 
 func _remove(node: Node) -> void:

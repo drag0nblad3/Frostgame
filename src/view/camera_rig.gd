@@ -62,9 +62,19 @@ func frame_board(size: Vector2, overhead: bool = false) -> void:
 
 func focus_figure(at: Vector3) -> void:
 	manual_camera()
-	distance = 13.0
-	pitch = deg_to_rad(44.0)
-	look_at_table(at)
+	var viewport:=get_viewport().get_visible_rect().size
+	var aspect:=maxf(0.5,viewport.x/maxf(1.0,viewport.y))
+	present_pose({"position":at,"distance":maxf(13.0,9.0/aspect),"pitch":deg_to_rad(52.0)})
+
+
+func frame_surface(surface: FloorSurface) -> void:
+	manual_camera()
+	var center:=surface.rect.get_center()
+	var extent:=maxf(surface.rect.size.x,surface.rect.size.y)
+	var viewport:=get_viewport().get_visible_rect().size
+	var aspect:=maxf(0.5,viewport.x/maxf(1.0,viewport.y))
+	var fit:=extent*0.85/tan(deg_to_rad(camera.fov*0.5))/minf(1.0,aspect)
+	present_pose({"position":TableSpace.to_world(center,surface.height_at(center)+0.5),"distance":clampf(fit+4.0,13.0,max_distance),"pitch":deg_to_rad(60.0)})
 
 
 func _apply() -> void:
