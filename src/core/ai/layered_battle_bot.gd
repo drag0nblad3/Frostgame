@@ -87,7 +87,9 @@ static func _act(c: GameController,f: Figure) -> bool:
 
 static func _move(c: GameController,f: Figure) -> bool:
 	var layout := c.state.board.floor_geometry()
-	var reach := c.layered_reach()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	var reach:=LayeredMovement.reach(c,false,false,false,grid)
 	if reach.cost.is_empty():
 		return false
 	var extracting:=f.treasure_id>=0 or (f.side>=0 and RedKingInvestigations.active(c.state) and not RedKingInvestigations.has_objectives(c.state)) or (f.side==0 and RedKingVeil.active(c.state)) or (f.side>=0 and RedKingHerded.active(c.state) and f.pos.y-float(c.state.scenario_data.get("herd_veil",0.0))<8.0)
@@ -120,14 +122,17 @@ static func _move(c: GameController,f: Figure) -> bool:
 				best_air=n
 		if best_air!=null:
 			return c.move_on_floor(best_air)
-	var grid := LayeredGrid.new(layout,f,c.state.figures)
-	grid.avoid_lethal=safe_route
+	if safe_route:
+		# The ordinary reach did not exclude lethal routes. Do not reuse
+		# cached edges for the stricter search.
+		grid=LayeredGrid.new(layout,f,c.state.figures)
+		grid.avoid_lethal=true
 	var column:=ScenarioColumns.contact(c.state.board,f.pos,f.elevation)
 	if column!=null and f.side>=0 and f.treasure_id<0:
 		for n: Vector3i in reach.cost:
 			if n!=reach.start and ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))==column:
 				return c.move_on_floor(n)
-	if not safe_route and not center_escape and column==null and LayeredTactics.aerial_progress(c,f,layout,reach,extracting,quarry):
+	if not safe_route and not center_escape and column==null and LayeredTactics.aerial_progress(c,f,layout,reach,extracting,quarry,grid):
 		return true
 	# Ordinary combat, treasure and extraction all use bounded, goal-directed
 	# search. Preserve full exploration for special topology and spell tactics.
@@ -136,6 +141,11 @@ static func _move(c: GameController,f: Figure) -> bool:
 	var long_route := LayeredReach.search(grid,reach.start,100.0,column!=null)
 	var goal: Variant = null
 	var best := INF
+	var tokens: Array[TreasureToken]=[]
+	if not extracting and not center_escape and f.side>=0 and not f.def.traits.has("animal") and not RuleHooks.any("cannot_carry_treasure",[c.state,f]):
+		for token in c.state.treasures:
+			if token.on_ground() and token.ring_side==f.ring_side:
+				tokens.append(token)
 	for n: Vector3i in long_route.cost:
 		var distance: float = long_route.cost[n]
 		if distance>=best:
@@ -148,9 +158,9 @@ static func _move(c: GameController,f: Figure) -> bool:
 			if LayeredLoot.is_exit(c.state,layout,n,f.side):
 				goal=n
 				best=distance
-		elif f.side>=0 and not f.def.traits.has("animal") and not RuleHooks.any("cannot_carry_treasure",[c.state,f]):
-			for token in c.state.treasures:
-				if not token.on_ground() or token.ring_side!=f.ring_side or token.surface_id!=layout.surface_id(n):
+		else:
+			for token in tokens:
+				if token.surface_id!=layout.surface_id(n):
 					continue
 				if token.frozen and c.state.scenario_special=="complex_temple":
 					var guardian:=ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))
@@ -168,17 +178,22 @@ static func _move(c: GameController,f: Figure) -> bool:
 			return c.move_on_floor(spot)
 	if goal==null or goal==reach.start:
 		best=INF
+		var enemies: Array[Figure]=[]
+		var weights: Dictionary={}
+		for enemy in c.state.figures:
+			if not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side or WormRider.ignored(f,enemy) or RingworldBot.protected_key(c.state,f,enemy) or (RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(enemy)):
+				continue
+			if (quarry!=null and enemy!=quarry) or (quarry==null and not IllusionRules.visible_to(c.state.figures,f,enemy)):
+				continue
+			enemies.append(enemy)
+			weights[enemy.id]=float(enemy.health)*0.25+(0.0 if BotTargets.can_harm(f,enemy,f.melee) else 20.0)
 		for n: Vector3i in long_route.cost:
 			var distance: float = long_route.cost[n]
 			if distance>=best or n==reach.start:
 				continue
-			for enemy in c.state.figures:
-				if not enemy.in_play() or enemy.side==f.side or enemy.ring_side!=f.ring_side or WormRider.ignored(f,enemy) or RingworldBot.protected_key(c.state,f,enemy) or (RedKingMadMan.hunter(f) and RedKingMadMan.is_ryce(enemy)):
-					continue
-				if (quarry!=null and enemy!=quarry) or (quarry==null and not IllusionRules.visible_to(c.state.figures,f,enemy)):
-					continue
+			for enemy in enemies:
 				if Contact.touches_position(enemy,layout.point(n),layout.height(n),layout.surface_id(n)):
-					var score:=distance+float(enemy.health)*0.25+(0.0 if BotTargets.can_harm(f,enemy,f.melee) else 20.0)
+					var score:=distance+float(weights[enemy.id])
 					if score<best:
 						best=score
 						goal=n
