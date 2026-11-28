@@ -72,3 +72,16 @@ static func route_budget(f: Figure) -> int:
 
 static func aerial_budget(f: Figure) -> int:
 	return roundi(lerpf(5.0,10.0,trait_value(f,"deliberation")))
+
+
+## Cheap ranking before the costly fine-grid search. Restrict deliberation
+## to a handful of plausible objectives rather than optimizing every target.
+static func objective_indices(f: Figure,scores: Array[float]) -> Array[int]:
+	var indices: Array[int]=[]
+	for i in scores.size():
+		indices.append(i)
+	var budget:=roundi(lerpf(3.0,5.0,trait_value(f,"deliberation")))
+	if indices.size()<=budget:
+		return indices
+	indices.sort_custom(func(a: int,b: int) -> bool:return scores[a]<scores[b] or (is_equal_approx(scores[a],scores[b]) and a<b))
+	return indices.slice(0,budget)
