@@ -210,6 +210,10 @@ func _camera_preset(mode: int) -> void:
 	if controller == null:
 		return
 	var s := controller.state
+	if mode==3:
+		_board_view.toggle_cutaway()
+		hud.notify("Interior cutaway: "+("On" if _board_view.cutaway_enabled else "Off"))
+		return
 	if mode == 2:
 		var f := s.active()
 		if f != null:
@@ -542,6 +546,10 @@ func _select_floor(id: String) -> void:
 	if controller==null or _bots.busy() or not player.idle() or controller.state.board.floor_layout.is_empty():
 		return
 	_visible_floor=id
+	var layout:=controller.state.board.floor_geometry()
+	var index:=layout.index_of(id)
+	if index>=0 and id!="street" and not id.begins_with("climb:"):
+		_rig.frame_surface(layout.surfaces[index])
 	if _human_turn() and not _dirty:
 		player_input.select_floor(id)
 	else:
@@ -550,21 +558,31 @@ func _select_floor(id: String) -> void:
 
 
 func _update_floor_view() -> void:
-	if controller.state.board.floor_layout.is_empty() or not player.idle():
+	if not player.idle():
 		return
-	var layout:=FloorLayout.from_dict(controller.state.board.floor_layout)
+	var active:=controller.state.active()
+	var focus: Variant=null
+	if active!=null and active.in_play() and player.views.has(active.id):
+		var v: FigureView=player.views[active.id]
+		if _visible_floor.is_empty() or active.surface_id==_visible_floor:
+			focus=v.global_position+Vector3.UP*0.75
+	_board_view.set_cutaway_focus(focus)
+	if controller.state.board.floor_layout.is_empty():
+		return
+	var layout:=controller.state.board.floor_geometry()
 	var revision:=controller.state.board.floor_layout.hash()
 	if revision!=_floor_revision:
 		_floor_revision=revision
 		if layout.index_of(_visible_floor)<0:
 			_visible_floor=""
+			player_input.floor_id=""
 		hud.set_floors(layout,_visible_floor)
 	_board_view.show_floor(layout,_visible_floor)
 	for f in controller.state.figures:
 		if not player.views.has(f.id):
 			continue
 		var surface:=f.surface_id
-		if player_input.move_plan.actor==f.id and player_input.move_plan.destination is Vector3i:
+		if player_input.move_plan.actor==f.id and player_input.move_plan.destination is Vector3i and layout.contains(player_input.move_plan.destination,0.0):
 			surface=layout.surface_id(player_input.move_plan.destination)
 		player.views[f.id].visible=f.in_play() and (_visible_floor.is_empty() or _visible_floor==surface)
 	for t in controller.state.treasures:

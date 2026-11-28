@@ -1,6 +1,6 @@
 class_name ConvexCrumble
 extends RefCounted
-## Explicitly marked, non-supporting straight wall prisms may be breached.
+## Straight wall prisms may be breached; designated structural piers can collapse their dependent floors.
 ## A lightweight TerrainPiece provides the existing spell target identity.
 const KIND:="architecture_prism_target"
 
@@ -14,7 +14,7 @@ static func target(entry: Dictionary) -> TerrainPiece:
 		return null
 	var k:=TerrainKind.new()
 	k.id=KIND
-	k.name="Angled masonry"
+	k.name="Load-bearing support (collapses floor)" if entry.get("load_bearing",false) else "Angled masonry"
 	k.height=prism.bounds.size.y
 	var p:=TerrainPiece.new(k,Rect2(prism.bounds.position.x,prism.bounds.position.z,prism.bounds.size.x,prism.bounds.size.z))
 	p.surface_id="street"
@@ -98,6 +98,9 @@ static func apply(c: GameController,p: TerrainPiece) -> void:
 	var board:=c.state.board
 	var entry:=entry_for(board,p.dynamic_surface)
 	if entry.is_empty() or not straight_wall(entry):
+		return
+	if bool(entry.get("load_bearing",false)):
+		ArchitectureCollapse.apply(c,p)
 		return
 	var entries: Array=board.floor_layout.get("convex_solids",[])
 	var parts:=breach(entry)

@@ -97,7 +97,7 @@ func _run() -> void:
 		_fail("Back did not dismiss guide safely")
 		return
 	scene.hud._open_commands()
-	if not ModalInput.blocked() or not scene.hud._command_screen.visible or scene.hud._command_screen._buttons.size()!=20:
+	if not ModalInput.blocked() or not scene.hud._command_screen.visible or scene.hud._command_screen._buttons.size()!=21 or not scene.hud._command_screen._buttons.has(20):
 		_fail("Battle command screen unavailable")
 		return
 	ModalInput.close_top(root)
@@ -115,6 +115,12 @@ func _run() -> void:
 	if ModalInput.blocked() or scene.controller!=before_guide:
 		_fail("Closing journal changed battle")
 		return
+	var cutaway_before: bool=scene._board_view.cutaway_enabled
+	scene.hud._menu_action(20)
+	if scene._board_view.cutaway_enabled==cutaway_before:
+		_fail("Interior cutaway toggle unavailable")
+		return
+	scene.hud._menu_action(20)
 	scene.hud._menu_action(17)
 	if not is_equal_approx(scene.player.speed,1.6):
 		_fail("Playback speed did not reach the director")

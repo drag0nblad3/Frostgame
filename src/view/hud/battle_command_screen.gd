@@ -9,7 +9,7 @@ const GROUPS := [
 	["EXPEDITION",[[0,"Campaign headquarters"],[1,"Warband workshop"],[2,"New skirmish"],[14,"Return to home"]]],
 	["BATTLE & SAVES",[[3,"Save battle"],[4,"Resume saved battle"],[5,"Scenario briefing"],[6,"Combat log"],[16,"Battle journal"],[19,"Resume expedition checkpoint"]]],
 	["GUIDANCE",[[7,"Field guide"],[8,"Extra rules tips"],[9,"Training yard"]]],
-	["VIEW & PERFORMANCE",[[11,"Frame battlefield"],[12,"Overhead view"],[13,"Focus active figure"],[10,"Toggle snowfall"],[15,"Graphics quality"],[17,"Playback speed"],[18,"Action camera"]]]
+	["VIEW & PERFORMANCE",[[11,"Frame battlefield"],[12,"Overhead view"],[13,"Focus active figure"],[20,"Toggle interior cutaway"],[10,"Toggle snowfall"],[15,"Graphics quality"],[17,"Playback speed"],[18,"Action camera"]]]
 ]
 
 

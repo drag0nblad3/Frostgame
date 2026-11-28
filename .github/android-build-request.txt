@@ -1,3 +1,1 @@
-Android build requested for merged scenario architecture and deployment updates.
-Source: 6495ea2358046fccb75f7c7ce2d998a1a070189f
-Request: 2026-11-27
+Android build request: structural collapse and interior camera improvements (PR #37), 2026-11-28T01:04Z

@@ -41,6 +41,8 @@ static func expand(source: Dictionary) -> Dictionary:
 				continue
 			var surface := entry.duplicate(true)
 			surface["id"]=ids[str(entry["id"])]
+			if entry.has("requires_support"):
+				surface["requires_support"]=prefix+str(entry["requires_support"])
 			var ramp := {"axis":surface.get("axis","x"),"start":surface.get("level",0.0),"end":surface.get("end_level",surface.get("level",0.0))}
 			var rect_piece := {"rect":surface["rect"],"ramp":ramp}
 			TerrainAssembly.rotate_piece(rect_piece,turns)
@@ -93,6 +95,10 @@ static func expand(source: Dictionary) -> Dictionary:
 			var volume: Dictionary={"profile":transformed,"extrusion":[ex.x,extrusion[1],ex.y]}
 			if entry.has("crumble_id"):
 				volume["crumble_id"]=prefix+str(entry["crumble_id"])
+			if entry.has("requires_support"):
+				volume["requires_support"]=prefix+str(entry["requires_support"])
+			if bool(entry.get("load_bearing",false)):
+				volume["load_bearing"]=true
 			append(result,"convex_solids",volume)
 		for field in ["links","climbs"]:
 			for entry: Dictionary in kit.get(field,[]):

@@ -2,6 +2,7 @@ class_name LayeredGatehouseArt
 extends Node3D
 ## Visualize the authored volumes and floor surfaces without modifying rules.
 var upper_nodes: Array[Node3D] = []
+var _cut_height:=INF
 
 
 func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") -> void:
@@ -26,6 +27,7 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 	for solid in layout.solids:
 		if layout.magic_solids.has(solid):
 			continue
+		var start:=get_child_count()
 		var roof := solid.position.y>=2.5
 		var color := Color(0.43,0.54,0.62) if roof else Color(0.35,0.43,0.49)
 		var slab := _box(solid.get_center(),solid.size,color,roof)
@@ -34,17 +36,18 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 		stone.set_shader_parameter("building_height",solid.end.y)
 		stone.set_shader_parameter("walkable_roof",solid.size.y<=0.5)
 		slab.material_override=stone
-		slab.set_meta("cut_height",solid.end.y if solid.size.y<=0.5 else solid.position.y+0.12)
+		slab.set_meta("cut_height",solid.end.y if _is_deck(layout,solid) else solid.position.y)
 		if _is_deck(layout,solid):
 			_deck_edge(solid)
 		elif solid.size.y>=1.7:
 			var relief:=Node3D.new()
 			add_child(relief)
 			relief.position.y=solid.position.y
-			relief.set_meta("cut_height",solid.position.y+0.12)
+			relief.set_meta("cut_height",solid.position.y)
 			BattlefieldDetail.wall_relief(relief,Rect2(solid.position.x,solid.position.z,solid.size.x,solid.size.z),solid.size.y,scenario)
 			if roof:
 				upper_nodes.append(relief)
+		_mark_group(start,solid,slab.get_meta("cut_height"))
 	for prism in layout.convex_solids:
 		var node:=MeshInstance3D.new()
 		node.mesh=prism.mesh()
@@ -54,13 +57,15 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 		stone.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
 		node.material_override=stone
 		add_child(node)
-		var cut:=prism.bounds.position.y+0.12
+		var cut:=prism.bounds.position.y
 		for s in layout.surfaces:
 			if not s.polygon.is_empty() and is_equal_approx(s.level,prism.bounds.end.y) and s.rect.is_equal_approx(Rect2(prism.bounds.position.x,prism.bounds.position.z,prism.bounds.size.x,prism.bounds.size.z)):
 				cut=s.level
 				stone.set_shader_parameter("walkable_roof",true)
 				break
 		node.set_meta("cut_height",cut)
+		node.set_meta("occlusion_bounds",prism.bounds)
+		node.set_meta("occlusion_prism",prism)
 		if prism.bounds.position.y>=2.5:
 			upper_nodes.append(node)
 	# Wall volumes get narrow masonry courses (visual only).
@@ -73,7 +78,8 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 			var p := solid.get_center()
 			p.y=solid.position.y+solid.size.y*float(i)/5.0
 			var course:=_box(p,Vector3(solid.size.x+0.035,0.035,solid.size.z+0.035),Color(0.23,0.32,0.39),false)
-			course.set_meta("cut_height",solid.position.y+0.12)
+			course.set_meta("cut_height",solid.position.y)
+			course.set_meta("occlusion_bounds",solid)
 
 
 func _bridge(s: FloorSurface) -> void:
@@ -146,10 +152,32 @@ func _box(at: Vector3,size: Vector3,color: Color,upper: bool) -> MeshInstance3D:
 	return node
 
 
+func _mark_group(start: int,bounds: AABB,cut: float) -> void:
+	for i in range(start,get_child_count()):
+		var child:=get_child(i)
+		child.set_meta("cut_height",cut)
+		child.set_meta("occlusion_bounds",bounds)
+
+
 func cut_at(height: float) -> void:
+	_cut_height=height
+	apply_camera(Vector3.ZERO,null)
+
+
+func apply_camera(camera_at: Vector3,focus: Variant) -> void:
+	var hidden: Dictionary={}
 	for child in get_children():
-		if child is Node3D:
-			child.visible=float(child.get_meta("cut_height",child.position.y))<=height+0.1
+		if not child is Node3D:
+			continue
+		var shown:=float(child.get_meta("cut_height",child.position.y))<=_cut_height+0.1
+		if shown and focus!=null and child.has_meta("occlusion_bounds"):
+			var bounds: AABB=child.get_meta("occlusion_bounds")
+			var prism: ArchitecturePrism=child.get_meta("occlusion_prism",null)
+			var key: Variant=prism if prism!=null else bounds
+			if not hidden.has(key):
+				hidden[key]=ArchitectureCutaway.blocks(camera_at,focus,bounds,prism)
+			shown=not hidden[key]
+		child.visible=shown
 
 
 func show_upper(on: bool) -> void:

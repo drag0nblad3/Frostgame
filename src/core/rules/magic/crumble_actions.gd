@@ -14,7 +14,7 @@ func options(f: Figure) -> Array[Dictionary]:
 	for p in board.pieces:
 		if p.kind.id==ConvexCrumble.KIND:
 			if ConvexCrumble.visible(board,f,p):
-				out.append({"kind":"terrain","target":f.id,"piece":p,"label":"Angled masonry at %.1f, %.1f"%[p.rect.get_center().x,p.rect.get_center().y]})
+				out.append({"kind":"terrain","target":f.id,"piece":p,"label":"%s at %.1f, %.1f"%[p.kind.name,p.rect.get_center().x,p.rect.get_center().y]})
 			continue
 		if p.kind.id.begins_with("null_") or p.kind.id == "temple_column":
 			continue

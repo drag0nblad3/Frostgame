@@ -451,6 +451,7 @@ func _menu_action(id: int) -> void:
 		15: graphics_requested.emit()
 		16: journal_requested.emit()
 		19: resume_expedition_pressed.emit()
+		20: camera_requested.emit(3)
 		17:
 			_pace=(_pace+1)%PACE_NAMES.size()
 			presentation_changed.emit(PACE_SPEEDS[_pace],_cinematic)

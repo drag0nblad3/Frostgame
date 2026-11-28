@@ -1,0 +1,3 @@
+# Structural collapse
+
+Mark a convex straight pier `load_bearing: true` with a unique `crumble_id`; dependent polygon decks and convex volumes use `requires_support` with that ID. Assembly prefixes namespace dependencies. Crumble destroys the marked critical pier and its dependent geometry, including associated routes and spell bridges/walls, then invokes the shared support removal pipeline. Both peripheral Silent Tower galleries demonstrate this; the scenario's main tower is protected. This is an explicitly authored dependency graph, not a general stress simulation. The falling structure itself is removed rather than becoming new physical debris; the established fall rules govern affected figures and treasure.
