@@ -372,13 +372,14 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 
 ## Expand only explicit jump/drop choices, never the ordinary move or AI
 ## distance search. Each candidate keeps the full route and one action cost.
-static func extend_aerial(c: GameController,base: Dictionary) -> Dictionary:
+static func extend_aerial(c: GameController,base: Dictionary,shared_grid: LayeredGrid=null) -> Dictionary:
 	var out:=base.duplicate()
 	if base.is_empty():
 		return out
 	var f:=c.state.active()
 	var layout:=c.state.board.floor_geometry()
-	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
 	var allowance:=MoveRules.allowance(f)
 	var cost: Dictionary={}
 	var prev: Dictionary={}
@@ -483,13 +484,14 @@ static func _grounded_surfaces(f: Figure,plan: Dictionary,grounded: PackedVector
 
 ## Bounded second aerial leg. The live figure is not relocated to preview
 ## hypothetical routes. Prefer the direct route on a tie.
-static func chain_aerial(c: GameController,base: Dictionary) -> Dictionary:
+static func chain_aerial(c: GameController,base: Dictionary,shared_grid: LayeredGrid=null) -> Dictionary:
 	var out:=base.duplicate()
 	if base.is_empty():
 		return out
 	var f:=c.state.active()
 	var layout:=c.state.board.floor_geometry()
-	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
 	var origin:=layout.node(f.surface_id,f.pos)
 	var allowance:=MoveRules.allowance(f)
 	for landing: Vector3i in base:
