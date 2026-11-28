@@ -6,13 +6,18 @@ extends RefCounted
 static func plan(c: GameController, f: Figure) -> Dictionary:
 	var best := {}
 	var best_value := 1.5
+	var threats: Dictionary={}
 	for id: String in c._magic.available_spells(f):
 		if id not in MagicTactics.ATTACKS + MagicTactics.HINDERS + MagicTactics.BUFFS + ["heal", "true_sight"] and not SummonActions.CONTROL.has(id):
 			continue
+		var probability:=MagicTactics.probability(c,f,id)
+		var appeal:=BotPreference.spell_appeal(f,id)
 		for t in c.state.figures:
 			if not t.in_play():
 				continue
-			var score := MagicTactics.value(c, f, t, id)*BotPreference.spell_appeal(f,id)
+			if id in MagicTactics.BUFFS and t.side==f.side and not threats.has(t.id):
+				threats[t.id]=MagicTactics.near_enemy(c.state,t)
+			var score := MagicTactics.value(c,f,t,id,float(threats.get(t.id,-1.0)),probability)*appeal
 			if score > best_value and BattleAction.legal(c,"cast",t.id,id):
 				best_value = score
 				best = {"spell": id, "target": t.id, "score": score}
