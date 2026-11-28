@@ -127,6 +127,8 @@ static func _move(c: GameController,f: Figure) -> bool:
 		for n: Vector3i in reach.cost:
 			if n!=reach.start and ScenarioColumns.contact(c.state.board,layout.point(n),layout.height(n))==column:
 				return c.move_on_floor(n)
+	if not safe_route and not center_escape and column==null and LayeredTactics.aerial_progress(c,f,layout,reach,extracting):
+		return true
 	# Ordinary combat, treasure and extraction all use bounded, goal-directed
 	# search. Preserve full exploration for special topology and spell tactics.
 	if not safe_route and not center_escape and column==null and LayeredObjectiveRoute.eligible(c,f,extracting):
