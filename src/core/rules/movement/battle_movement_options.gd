@@ -30,7 +30,7 @@ static func query(c: GameController,mode: String,existing: MoveReach=null) -> Ba
 		o.layout=o.board.floor_geometry()
 		match mode:
 			"jump","drop_down":
-				o.jumps=LayeredDrop.plans(c) if mode=="drop_down" else LayeredJump.plans(c,true)
+				o.jumps=LayeredDrop.plans(c,true) if mode=="drop_down" else LayeredJump.plans(c,true,true)
 				for n: Vector3i in o.jumps:
 					o.cost[n]=o.jumps[n]["cost"]
 				return o
@@ -58,7 +58,7 @@ func path(node: Variant) -> PackedVector3Array:
 	if not cost.has(node):
 		return PackedVector3Array()
 	if jumps.has(node):
-		return jumps[node]["path"]
+		return jumps[node].get("preview",jumps[node]["path"])
 	if routes.has(node):
 		return routes[node]
 	var result:=PackedVector3Array()
