@@ -15,11 +15,50 @@ static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 	var start:=layout.node(f.surface_id,f.pos)
 	if not layout.standable(start):
 		return out
+	var grid:=LayeredGrid.new(layout,f,s.figures)
+	var allowance:=MoveRules.allowance(f)
+	var initial: Array[String]=[f.surface_id]
+	_from_ledge(s,f,layout,grid,start,0.0,allowance,PackedVector3Array([layout.world(start)]),initial,out)
+	if continuation:
+		var reach:=LayeredReach.search(grid,start,allowance)
+		for ledge: Vector3i in reach.cost:
+			var approach_cost:=float(reach.cost[ledge])
+			if ledge==start or allowance-approach_cost<0.501 or grid.stops(ledge):
+				continue
+			var support:=layout.surfaces[ledge.z]
+			if support.id=="street" and support.profiles.is_empty() and is_equal_approx(support.level,support.end_level):
+				continue
+			# Most interior points cannot fall; avoid building paths for them.
+			if not _near_edge(layout,ledge):
+				continue
+			var grounded:=PackedVector3Array()
+			var surfaces: Array[String]=[]
+			for step in reach.path_to(ledge):
+				grounded.append(layout.world(step))
+				surfaces.append(layout.surface_id(step))
+			_from_ledge(s,f,layout,grid,ledge,approach_cost,allowance,grounded,surfaces,out)
+		return LayeredMovement.extend_aerial(c,out)
+	return out
+
+
+static func _near_edge(layout: FloorLayout,n: Vector3i) -> bool:
+	var h:=layout.height(n)
+	for d in MoveGrid.NEIGHBORS:
+		var other:=n+Vector3i(d.x,d.y,0)
+		if not layout.contains(other) or layout.height(other)<h-0.5:
+			return true
+		if d.x==0 or d.y==0:
+			other=n+Vector3i(d.x*2,d.y*2,0)
+			if not layout.contains(other) or layout.height(other)<h-0.5:
+				return true
+	return false
+
+
+static func _from_ledge(s: GameState,f: Figure,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,approach_cost: float,allowance: float,grounded: PackedVector3Array,surfaces: Array[String],out: Dictionary) -> void:
 	var support:=layout.surfaces[start.z]
 	# Ordinary flat ground cannot drop; a profiled street may border a ditch.
 	if support.id=="street" and support.profiles.is_empty() and is_equal_approx(support.level,support.end_level):
-		return out
-	var grid:=LayeredGrid.new(layout,f,s.figures)
+		return
 	var a:=layout.world(start)
 	var offsets: Array[Vector2i]=[Vector2i.ZERO]
 	offsets.append_array(MoveGrid.NEIGHBORS)
@@ -42,7 +81,7 @@ static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 			continue
 		# A continuous ramp is movement, not a voluntary fall.
 		if n.z==start.z:
-			var profile:=support.profile_at(f.pos)
+			var profile:=support.profile_at(layout.point(start))
 			if profile!=null and profile.ramp and profile==support.profile_at(at):
 				continue
 			if support.profiles.is_empty() and not is_equal_approx(support.level,support.end_level):
@@ -57,12 +96,16 @@ static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 				break
 		if not clear:
 			continue
-		var cost:=a.distance_to(edge)+drop+(3.0 if s.board.low_gravity else 0.0)
+		var cost:=approach_cost+a.distance_to(edge)+drop+(3.0 if s.board.low_gravity else 0.0)
 		var long_fall:=drop+(3.0 if s.board.low_gravity else 0.0)>float(f.effective_move())
-		if cost>MoveRules.allowance(f)+0.001 and not (long_fall and f.moves_taken==0):
+		if cost>allowance+0.001 and not (long_fall and f.moves_taken==0 and approach_cost<=0.001):
 			continue
-		out[n]={"path":PackedVector3Array([a,edge,b]),"cost":cost,"fall":drop,"end_activation":long_fall,"grounded":PackedVector3Array([a]),"surface":layout.surface_id(n)}
-	return LayeredMovement.extend_aerial(c,out) if continuation else out
+		if out.has(n) and float(out[n]["cost"])<=cost+0.001:
+			continue
+		var preview:=grounded.duplicate()
+		preview.append(edge)
+		preview.append(b)
+		out[n]={"path":PackedVector3Array([a,edge,b]),"preview":preview,"arc":PackedVector3Array([a,edge,b]),"cost":cost,"approach_cost":approach_cost,"fall":drop,"end_activation":long_fall,"grounded":grounded,"grounded_surfaces":surfaces,"surface":layout.surface_id(n)}
 
 
 static func move(c: GameController,n: Vector3i) -> bool:
