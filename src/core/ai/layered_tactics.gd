@@ -64,9 +64,9 @@ static func resolve(c: GameController) -> bool:
 ## Consider the same compound routes offered to the player, but only where
 ## an aerial shortcut is plausible. Compare progress with normal walking.
 ## This is deliberately a local heuristic, not an optimal multi-turn search.
-static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,extracting: bool) -> bool:
+static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,extracting: bool,quarry: Figure=null) -> bool:
 	var s:=c.state
-	if f.side<0 or reach.start.z<0 or PlaneWalk.uses_direct(f) or FuryRules.target(s,f)!=null:
+	if (f.side<0 and quarry==null) or reach.start.z<0 or PlaneWalk.uses_direct(f) or FuryRules.target(s,f)!=null or not reach.air_paths.is_empty():
 		return false
 	var support:=layout.surfaces[reach.start.z]
 	var authored: bool=not s.board.floor_layout.get("jumps",[]).is_empty()
@@ -76,7 +76,9 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	var origin:=layout.world(reach.start)
 	var exits: Array[PackedVector3Array]=[]
 	var objective: Variant=null
-	if extracting:
+	if quarry!=null:
+		objective=BattleSpace.center(quarry)
+	elif extracting:
 		exits=MagicBot._leap_exit_segments(s,layout,f.side)
 		if exits.is_empty():
 			return false
@@ -106,13 +108,15 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	if objective==null and exits.is_empty():
 		return false
 	var distance:=func(at: Vector3) -> float:
-		return MagicBot._leap_exit_distance(exits,at) if extracting else at.distance_to(objective)
+		return MagicBot._leap_exit_distance(exits,at) if extracting and quarry==null else at.distance_to(objective)
 	var initial:=float(distance.call(origin))
 	var walking:=initial
 	for n: Vector3i in reach.cost:
+		if quarry!=null and Contact.touches_position(quarry,layout.point(n),layout.height(n),layout.surface_id(n)):
+			return false
 		walking=minf(walking,float(distance.call(layout.world(n))))
 	# Do not interrupt ordinary movement that already reaches the objective.
-	if walking<=0.8 or initial<=1.5:
+	if quarry==null and (walking<=0.8 or initial<=1.5):
 		return false
 	var caution:=BotPreference.trait_value(f,"caution")
 	var best_score:=initial-walking+0.65+0.6*caution
@@ -138,11 +142,13 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 		for n: Vector3i in BotPreference.positions(s,f,top):
 			var plan: Dictionary=plans[n]
 			var damage:=aerial_damage(s,f,plan)
-			if damage>=f.health or (damage>0 and f.treasure_id>=0):
+			if damage>=f.health or (damage>0 and (f.treasure_id>=0 or f.side<0)):
 				continue
 			var at:=layout.world(n)
 			var progress:=initial-float(distance.call(at))
 			var score:=progress*BotPreference.appeal(s,f,hash(n),"aerial")-float(damage)*(1.5+2.0*caution)-0.05*float(plan["cost"])
+			if quarry!=null and Contact.touches_position(quarry,layout.point(n),layout.height(n),layout.surface_id(n)):
+				score+=MoveRules.allowance(f)+2.0
 			if score>best_score:
 				best_score=score
 				best=n
