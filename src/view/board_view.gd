@@ -206,6 +206,8 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 	match piece.kind.id:
 		"architecture_prism_target":
 			return
+		"ruin_timber_wall","ruin_market_counter","ruin_altar","ruin_workbench","ruin_hearth","ruin_archive_shelf","ruin_grave":
+			RuinFurnishing.build(root,piece)
 		"rubble":
 			BattlefieldDetail.rubble(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 		"museum_statue":

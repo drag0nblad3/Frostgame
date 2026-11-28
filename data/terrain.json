@@ -252,5 +252,61 @@
     "cover": 0,
     "move_mult": 1,
     "height": 2.75
+  },
+  "ruin_timber_wall": {
+    "name": "Broken timber-framed wall",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "move_mult": 1,
+    "height": 2.75
+  },
+  "ruin_market_counter": {
+    "name": "Abandoned market counter",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 2,
+    "move_mult": 2,
+    "height": 1
+  },
+  "ruin_altar": {
+    "name": "Stone altar",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 2,
+    "move_mult": 2,
+    "height": 1
+  },
+  "ruin_workbench": {
+    "name": "Alchemist's workbench",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 2,
+    "move_mult": 2,
+    "height": 1
+  },
+  "ruin_hearth": {
+    "name": "Collapsed stone hearth",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 2,
+    "move_mult": 2,
+    "height": 1
+  },
+  "ruin_archive_shelf": {
+    "name": "Ruined archive cabinet",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "move_mult": 1,
+    "height": 2.25
+  },
+  "ruin_grave": {
+    "name": "Broken grave slab",
+    "blocks_los": false,
+    "blocks_move": false,
+    "cover": 1,
+    "move_mult": 2,
+    "height": 0.4
   }
 }

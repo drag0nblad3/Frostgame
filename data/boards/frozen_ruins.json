@@ -7,7 +7,7 @@
   ],
   "pieces": [
     {
-      "ruin_kit": "breached_manor",
+      "ruin_kit": "market_arcade",
       "rect": [
         4,
         12,
@@ -17,7 +17,7 @@
       "quarter_turns": 0
     },
     {
-      "ruin_kit": "corner_tenement",
+      "ruin_kit": "alchemist_workshop",
       "rect": [
         26,
         19,

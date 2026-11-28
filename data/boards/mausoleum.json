@@ -7,7 +7,7 @@
   ],
   "pieces": [
     {
-      "ruin_kit": "buttressed_hall",
+      "ruin_kit": "burial_cloister",
       "rect": [
         4,
         12,
@@ -17,7 +17,7 @@
       "quarter_turns": 0
     },
     {
-      "ruin_kit": "breached_manor",
+      "ruin_kit": "abandoned_house",
       "rect": [
         26,
         19,
