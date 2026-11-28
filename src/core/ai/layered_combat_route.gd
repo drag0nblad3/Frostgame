@@ -8,7 +8,7 @@ static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredR
 	if f.ranged!=null and f.actions_left>=2 and c.can_act() and (not f.ranged.needs_reload or f.loaded):
 		var spot: Variant=LayeredBattleBot._shooting_spot(c,f,layout,reach)
 		if spot!=null:
-			return c.move_on_floor(spot)
+			return c.move_from_fresh_reach(spot,reach)
 	var enemies: Array[Figure]=[]
 	var weights: Array[float]=[]
 	for enemy in c.state.figures:
@@ -25,7 +25,7 @@ static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredR
 	var path: Array[Vector3i]=route["path"]
 	for i in range(path.size()-1,0,-1):
 		if reach.can_reach(path[i]):
-			return c.move_on_floor(path[i])
+			return c.move_from_fresh_reach(path[i],reach)
 	return false
 
 
