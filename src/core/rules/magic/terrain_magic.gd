@@ -283,6 +283,7 @@ func remove(p: TerrainPiece) -> void:
 	if not s.board.floor_layout.is_empty():
 		if before!=null:
 			FloorSupportRemoval.resolve(c,before,p.dynamic_surface)
+			FloorSupportRemoval.reconcile(c,before)
 		return
 	for t in s.figures:
 		if not t.in_play():

@@ -55,6 +55,7 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 		FloorWall.add_climbs(layout,wall)
 	if d.get("auto_architecture_climbs",false):
 		ArchitectureClimbs.add(layout)
+		WallTraverse.add(layout,d)
 	return layout
 
 
