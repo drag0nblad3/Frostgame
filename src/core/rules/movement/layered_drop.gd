@@ -61,7 +61,7 @@ static func plans(c: GameController) -> Dictionary:
 		var long_fall:=drop+(3.0 if s.board.low_gravity else 0.0)>float(f.effective_move())
 		if cost>MoveRules.allowance(f)+0.001 and not (long_fall and f.moves_taken==0):
 			continue
-		out[n]={"path":PackedVector3Array([a,edge,b]),"cost":cost,"fall":drop,"end_activation":long_fall}
+		out[n]={"path":PackedVector3Array([a,edge,b]),"cost":cost,"fall":drop,"end_activation":long_fall,"grounded":PackedVector3Array([a]),"surface":layout.surface_id(n)}
 	return out
 
 
@@ -77,21 +77,9 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	return true
 
 
-static func _land(c: GameController,f: Figure,n: Vector3i,plan: Dictionary) -> void:
+static func _land(c: GameController,f: Figure,_n: Vector3i,plan: Dictionary) -> void:
 	if not f.in_play() or c.state.active()!=f or not RedKingHill.before_move(c,f):
 		return
-	var layout:=c.state.board.floor_geometry()
-	var old:=f.surface_id
-	f.pos=layout.point(n)
-	f.elevation=layout.height(n)
-	f.surface_id=layout.surface_id(n)
-	c.spend_move(f)
-	c.emit("layered_move",{"id":f.id,"path":plan["path"],"surfaces":[old,f.surface_id,f.surface_id],"cost":plan["cost"],"fall":true})
-	LayeredFall.apply(c,f,float(plan["fall"]),f)
-	if f.in_play():
-		c._magic.terrain.trigger_landing(f)
-	c.finish_movement(f,false,f.in_play())
-	if bool(plan["end_activation"]) and f.in_play():
-		f.actions_left=0
-		if c.can_end_activation():
-			c.end_activation()
+	LayeredMovement.offer_aerial(c,f,plan)
+
+
