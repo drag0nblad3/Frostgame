@@ -14,7 +14,7 @@ static func eligible(c: GameController,cape: bool=false) -> bool:
 	return true
 
 
-static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool=false) -> LayeredReach:
+static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool=false,shared_grid: LayeredGrid=null) -> LayeredReach:
 	if not eligible(c,cape) or (run and not RunForIt.ready(c,boost)):
 		return LayeredReach.new()
 	var s := c.state
@@ -27,7 +27,7 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 		return LayeredReach.new()
 	if PlaneWalk.uses_direct(f):
 		return LayeredReach.new() if run or cape else FuryRules.restrict_floor(s,f,PlaneWalk.floor_reach(s,f))
-	var grid := LayeredGrid.new(layout,f,s.figures)
+	var grid := shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,s.figures)
 	grid.running=run
 	var leave_site:=ScenarioColumns.contact(s.board,f.pos,f.elevation)!=null
 	var result:=LayeredReach.search(grid,start,(6.0 if boost else 3.0) if run else MoveRules.allowance(f),cape or leave_site)
