@@ -56,7 +56,9 @@ static func try_cast(c: GameController,f: Figure,layout: FloorLayout,long_route:
 		data["bridges"]=bridges
 		var hypothetical := FloorLayout.from_dict(data)
 		route_budget+=1
-		var cost:=objective_cost(LayeredGrid.new(hypothetical,f,c.state.figures),long_route.start,objectives,best_cost,mini(800,BotPreference.route_budget(f)))
+		var hypothetical_grid:=LayeredGrid.new(hypothetical,f,c.state.figures)
+		hypothetical_grid.ai_work=grid.ai_work
+		var cost:=objective_cost(hypothetical_grid,long_route.start,objectives,best_cost,mini(800,BotPreference.route_budget(f)))
 		if cost<best_cost:
 			best_cost=cost
 			best=candidate
