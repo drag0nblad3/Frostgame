@@ -63,3 +63,12 @@ static func positions(s: GameState,f: Figure,nodes: Array) -> Array:
 		var index:=mini(nodes.size()-1,floori((i+phase)*float(nodes.size())/budget))
 		selected.append(nodes[index])
 	return selected
+
+
+## Fixed work limits, never wall-clock cutoffs: replay and slow devices make
+## the same decisions. More deliberate figures may search a little longer.
+static func route_budget(f: Figure) -> int:
+	return roundi(lerpf(900.0,1800.0,trait_value(f,"deliberation")))
+
+static func aerial_budget(f: Figure) -> int:
+	return roundi(lerpf(5.0,10.0,trait_value(f,"deliberation")))
