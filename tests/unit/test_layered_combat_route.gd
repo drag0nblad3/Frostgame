@@ -194,3 +194,34 @@ func test_fresh_reach_declaration_matches_regular_movement() -> void:
 		check_eq(c.command_history[-1]["key"],"move_on_floor")
 		if reuse:
 			check_eq(LayeredGrid.evaluations,before)
+
+
+func test_objective_shortlist_is_bounded_stable_and_retains_nearest() -> void:
+	var f:=fig("knight",0,Vector2(5,5))
+	var scores: Array[float]=[12.0,3.0,8.0,2.0,4.0,10.0,1.0,5.0]
+	var selected:=BotPreference.objective_indices(f,scores)
+	check(selected.size()>=3 and selected.size()<=5)
+	check(selected.has(6))
+	check_eq(selected,BotPreference.objective_indices(f,scores))
+	check_eq(BotPreference.objective_indices(f,[1.0]),[0])
+
+
+func test_reused_exit_reach_matches_standard_exit_and_avoids_repeated_searches() -> void:
+	for reuse in [false,true]:
+		var b:=make_board()
+		b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+		var f:=fig("knight",0,Vector2(2,5))
+		f.surface_id="street"
+		var c:=make_game(b,[f],Dice.new(2))
+		c.state.active_id=f.id
+		f.actions_left=2
+		var reach:=c.layered_reach()
+		var n:=b.floor_geometry().node("street",Vector2(0.5,5))
+		check(LayeredLoot.exit_nodes(c,reach).has(n))
+		check_eq(LayeredLoot.exit_nodes(c,reach),LayeredLoot.exit_nodes(c))
+		var before:=LayeredGrid.evaluations
+		check(LayeredLoot.exit(c,n,reach) if reuse else LayeredLoot.exit(c,n))
+		check(f.exited)
+		check_eq(f.moves_taken,1)
+		if reuse:
+			check_eq(LayeredGrid.evaluations,before)
