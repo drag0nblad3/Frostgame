@@ -68,7 +68,7 @@ static func cover(board: Board,observer: Figure,feet: Vector3,target: Figure,res
 		var volume:=AABB(Vector3(p.rect.position.x,base,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
 		var blocked:=0
 		for aim in aims:
-			if LayeredSight.intersects(origin,aim,volume):
+			if (LayeredSight.intersects_cylinder(origin,aim,volume) if p.circular else LayeredSight.intersects(origin,aim,volume)):
 				blocked+=1
 		# Low terrain counts when the direct table footprint crosses it,
 		# even when the ray passes over it (intervening terrain rule).

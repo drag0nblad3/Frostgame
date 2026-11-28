@@ -4,6 +4,8 @@ extends RefCounted
 var surfaces: Array[FloorSurface] = []
 var solids: Array[AABB] = []
 var convex_solids: Array[ArchitecturePrism] = []
+## Upright circular obstacles use a true radial footprint, not a square proxy.
+var circular_solids: Array[AABB]=[]
 ## These volumes are rendered by their corresponding TerrainPiece.
 var magic_solids: Array[AABB]=[]
 var links: Dictionary = {}
@@ -143,6 +145,10 @@ func clearance(at: Vector3,radius: float,body: float) -> bool:
 	var box := AABB(at+Vector3(-radius,0.002,-radius),Vector3(radius*2.0,body,radius*2.0))
 	for solid in solids:
 		if solid.intersects(box):
+			return false
+	for cylinder in circular_solids:
+		var center:=Vector2(cylinder.get_center().x,cylinder.get_center().z)
+		if at.y+0.002<cylinder.end.y and at.y+body>cylinder.position.y and Vector2(at.x,at.z).distance_to(center)<cylinder.size.x*0.5+radius-0.001:
 			return false
 	for prism in convex_solids:
 		if prism.overlaps(box):

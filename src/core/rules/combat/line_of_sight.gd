@@ -95,7 +95,7 @@ static func physical_floor_ray(board: Board,layout: FloorLayout,a: Vector3,b: Ve
 		if p.surface_id.is_empty() or not p.kind.blocks_los:
 			continue
 		var volume:=AABB(Vector3(p.rect.position.x,p.base_height,p.rect.position.y),Vector3(p.rect.size.x,p.kind.height,p.rect.size.y))
-		if LayeredSight.intersects(a,b,volume):
+		if (LayeredSight.intersects_cylinder(a,b,volume) if p.circular else LayeredSight.intersects(a,b,volume)):
 			return false
 	return true
 

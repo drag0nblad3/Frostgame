@@ -61,7 +61,7 @@ static func from_dict(d: Dictionary, terrain: TerrainDb) -> Board:
 			if piece.kind.blocks_move and not piece.kind.ground_surface:
 				piece.dynamic_surface=str(p.get("id","architecture:"+str(b.pieces.size())))
 				var entries: Array=b.floor_layout.get("walls",[])
-				entries.append({"id":piece.dynamic_surface,"support":piece.surface_id,"height":piece.base_height,"thickness":piece.kind.height,"walkable":piece.kind.walkable_top,"rect":r.duplicate(),"architectural":true,"climb_across":piece.kind.id in ["ruin","hut_wall","ruin_broken_wall","ruin_timber_wall","library_gate","temple_gate","alien_rib","alien_obelisk"]})
+				entries.append({"id":piece.dynamic_surface,"support":piece.surface_id,"height":piece.base_height,"thickness":piece.kind.height,"walkable":piece.kind.walkable_top,"rect":r.duplicate(),"architectural":true,"circular":piece.circular,"climb_across":piece.kind.id in ["ruin","hut_wall","ruin_broken_wall","ruin_timber_wall","library_gate","temple_gate","alien_rib","alien_obelisk"]})
 				b.floor_layout["walls"]=entries
 		b.pieces.append(piece)
 	# Destructible convex wall handles are ordinary serialized TerrainPieces,

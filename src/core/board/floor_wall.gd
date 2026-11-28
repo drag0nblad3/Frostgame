@@ -57,6 +57,9 @@ static func add_volume(layout: FloorLayout,entry: Dictionary) -> void:
 		layout.errors.append("Invalid conjured wall "+id)
 		return
 	var solid:=solid_for(entry)
+	if bool(entry.get("circular",false)):
+		layout.circular_solids.append(solid)
+		return
 	layout.solids.append(solid)
 	layout.magic_solids.append(solid)
 	if not bool(entry.get("walkable",true)):

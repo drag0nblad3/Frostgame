@@ -92,3 +92,15 @@ func test_first_expansion_maps_adopt_shared_floor_graph() -> void:
 				check_eq(t.surface_id,"street")
 				check(not is_nan(TreasureRules.token_height(s,t)))
 		check(l.index_of("street")>=0,id+" ground support")
+
+
+func test_round_obstacle_clearance_and_sight() -> void:
+	var b:=BoardLoader.from_dict({"size":[36,36],"shared_climbing":true,"pieces":[{"kind":"red_king_sinkhole_orb","rect":[16.5,16.5,3,3]}]},terrain())
+	var l:=b.floor_geometry()
+	check_eq(l.circular_solids.size(),1)
+	check(not l.standable(l.node("street",Vector2(18,18))))
+	check(l.standable(l.node("street",Vector2(19.5,19.5))))
+	check(l.standable(l.node("street",Vector2(20,18))))
+	check(not LayeredSight.clear(l,Vector3(15,1,18),Vector3(21,1,18)))
+	check(LayeredSight.clear(l,Vector3(15,4,18),Vector3(21,4,18)))
+	check(LayeredSight.clear(l,Vector3(19.4,1,19.4),Vector3(21,1,21)))

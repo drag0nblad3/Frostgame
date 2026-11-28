@@ -109,6 +109,8 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		var finish := layout.world(next)
 		if not segment_allowed(start,finish) or (running and not run_segment_clear(start,finish)):
 			continue
+		if board!=null and not board.void_regions.is_empty() and RedKingBridge.crosses_void(board,layout.point(n),layout.point(next)):
+			continue
 		if not layout.neighbor_clear(n,next):
 			continue
 		var cost:=_terrain_cost(n,next,start,finish)
