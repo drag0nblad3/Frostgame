@@ -101,3 +101,18 @@ func test_leap_escape_estimate_respects_library_doors_and_floor() -> void:
 		for point in segment:
 			check_eq(point.y,0.0)
 			check(ScenarioObjectives.exit_allowed(c.state,Vector2(point.x,point.z),f.side))
+
+
+func test_leap_escape_estimate_obeys_reality_exit_changes() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+	var f:=fig("wizard",0,Vector2(4,8))
+	f.surface_id="street"
+	var c:=make_game(b,[f],Dice.new(19))
+	c.state.scenario_data["reality_current"]=17
+	check(MagicBot._leap_exit_segments(c.state,b.floor_geometry(),f.side).is_empty())
+	c.state.scenario_data["reality_current"]=12
+	var exits:=MagicBot._leap_exit_segments(c.state,b.floor_geometry(),f.side)
+	check(not exits.is_empty())
+	check(MagicBot._leap_exit_distance(exits,Vector3(18,0,18))<0.01)
+	check(MagicBot._leap_exit_distance(exits,Vector3(0.5,0,18))>17.0)
