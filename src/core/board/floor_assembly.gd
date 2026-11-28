@@ -44,7 +44,10 @@ static func expand(source: Dictionary) -> Dictionary:
 			if entry.has("axis") or entry.has("end_level"):
 				surface["axis"]=ramp["axis"]
 			append(result,"surfaces",surface)
-		for solid: Array in kit.get("solids",[]):
+		var volumes: Array=kit.get("solids",[]).duplicate(true)
+		for wall: Dictionary in kit.get("aperture_walls",[]):
+			volumes.append_array(aperture_volumes(wall,errors))
+		for solid: Array in volumes:
 			if solid.size()!=6:
 				errors.append("Malformed solid in "+key)
 				continue
@@ -93,3 +96,45 @@ static func endpoint(raw: Array,ids: Dictionary,offset: Vector2,turns: int) -> A
 		p=Vector2(-p.y,p.x)
 	p+=offset
 	return [ids.get(str(raw[0]),raw[0]),p.x,p.y]
+
+
+## A wall is partitioned into actual solid volumes, never a painted aperture.
+## Openings are [start, end, sill, head], measured along the local wall axis
+## and above its base. Adjacent opening strips can form a stepped arch.
+static func aperture_volumes(wall: Dictionary,errors: Array) -> Array:
+	var result: Array=[]
+	var r: Array=wall.get("rect",[])
+	var height:=float(wall.get("height",0.0))
+	var base:=float(wall.get("base",0.0))
+	var axis_y:=str(wall.get("axis","x"))=="y"
+	if r.size()!=4 or height<=0.0 or float(r[2])<=0.0 or float(r[3])<=0.0:
+		errors.append("Invalid aperture wall")
+		return result
+	var length:=float(r[3] if axis_y else r[2])
+	var openings: Array=wall.get("openings",[]).duplicate(true)
+	for opening in openings:
+		if not opening is Array or opening.size()!=4:
+			errors.append("Malformed wall aperture")
+			return []
+	openings.sort_custom(func(a: Array,b: Array) -> bool: return float(a[0])<float(b[0]))
+	var cursor:=0.0
+	for opening: Array in openings:
+		var start:=float(opening[0])
+		var end:=float(opening[1])
+		var sill:=float(opening[2])
+		var head:=float(opening[3])
+		if start<cursor-0.0001 or end<=start or end>length+0.0001 or sill<0.0 or head<=sill or head>height+0.0001:
+			errors.append("Invalid or overlapping wall aperture")
+			return []
+		_wall_strip(result,r,axis_y,cursor,start,base,height)
+		_wall_strip(result,r,axis_y,start,end,base,sill)
+		_wall_strip(result,r,axis_y,start,end,base+head,height-head)
+		cursor=end
+	_wall_strip(result,r,axis_y,cursor,length,base,height)
+	return result
+
+
+static func _wall_strip(out: Array,r: Array,axis_y: bool,start: float,end: float,base: float,height: float) -> void:
+	if end-start<=0.0001 or height<=0.0001:
+		return
+	out.append([float(r[0])+(0.0 if axis_y else start),base,float(r[1])+(start if axis_y else 0.0),float(r[2]) if axis_y else end-start,height,end-start if axis_y else float(r[3])])

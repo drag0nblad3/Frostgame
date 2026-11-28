@@ -1,0 +1,7 @@
+# Aperture walls and ruined galleries
+
+Floor kits now accept `aperture_walls` with local `rect`, `base`, `height`, `axis` and `openings`. An opening is [start,end,sill,head] in local inches. The loader divides the wall into solid piers, sills and lintels; its holes are shared by sight rays, figure clearance and rendering. Adjacent strips with different heads create stepped arches. Invalid or overlapping openings produce layout errors. Quarter-turns and elevation offsets apply to the generated solid volumes exactly as to other floor-kit solids.
+
+Silent Tower: three main tower floors and an annex gain true window openings. Two peripheral solid blocks become walkable ruined galleries with incomplete decks, actual door/window apertures, low parapet remnants and exterior climb routes. The original central tower's floors, walkways and objective routes are preserved. This uses the existing floor graph, not an independent movement system.
+
+Current limitations: apertures are rectilinear, arches are stepped, and authored floor surfaces remain rectangular. Static kit masonry is not individually destructible by terrain-targeting spells yet. No arbitrary-angle or curved physical walls in this pass.
