@@ -382,3 +382,60 @@ func test_weighted_landing_search_matches_independent_reach() -> void:
 			check(absf(float(actual[n]["cost"])-float(expected[n]))<0.001)
 			var preview: PackedVector3Array=actual[n].get("preview",actual[n]["path"])
 			check_eq(preview[-1],layout.world(n))
+
+
+func _two_jump_game(with_guard: bool=false) -> GameController:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[0,0,4,6],"level":3},{"id":"middle","rect":[4,0,2,6],"level":3},{"id":"east","rect":[6,0,5,6],"level":3}],"jumps":[{"from":["west",3.5,3],"to":["middle",4.5,3]},{"from":["middle",5.5,3],"to":["east",6.5,3]}]}
+	var f:=fig("thug",0,Vector2(3.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var figures: Array[Figure]=[f]
+	if with_guard:
+		var guard:=fig("thug",1,Vector2(8.5,3),2)
+		guard.surface_id="east"
+		guard.elevation=3.0
+		figures.append(guard)
+	var c:=make_game(b,figures,Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	c.state.forced_combat=with_guard
+	c.state.reaction_side=1
+	return c
+
+
+func test_two_jumps_and_followthrough_spend_once() -> void:
+	var c:=_two_jump_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var dest:=layout.node("east",Vector2(8,3))
+	var options:=c.movement_options("jump")
+	check(options.cost.has(dest))
+	check_eq(f.pos,Vector2(3.5,3))
+	check_eq(f.actions_left,2)
+	if not options.cost.has(dest):
+		return
+	check(absf(float(options.cost[dest])-4.5)<0.001)
+	check_eq(options.path(dest)[-1],layout.world(dest))
+	check(c.commit_movement("jump",dest))
+	check_eq(f.pos,Vector2(8,3))
+	check_eq(f.surface_id,"east")
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+
+
+func test_second_jump_landing_interception() -> void:
+	var c:=_two_jump_game(true)
+	var f:=c.state.active()
+	var dest:=c.state.board.floor_geometry().node("east",Vector2(6.5,3))
+	check(c.commit_movement("jump",dest))
+	check(not c.state.pending_intercept.is_empty())
+	check_eq(f.moves_taken,0)
+	if c.state.pending_intercept.is_empty():
+		return
+	check(c.answer_intercept(true))
+	check_eq(f.surface_id,"east")
+	check_eq(f.pos,Vector2(6.5,3))
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(Contact.in_combat(c.state.figures,f))
