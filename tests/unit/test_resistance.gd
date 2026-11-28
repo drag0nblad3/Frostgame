@@ -35,7 +35,7 @@ func test_natural_one_no_empowerment() -> void:
 
 func test_abandon_pending_resistance_releases_controller() -> void:
 	var c:=_game([18,12])
-	var reference:=weakref(c)
+	var reference: WeakRef=weakref(c)
 	check(c.start_cast("petrify",2))
 	check(c.finish_cast(0))
 	check(not c.state.pending_resistance.is_empty())
