@@ -41,8 +41,16 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 	if enemies.is_empty() or not grid.open(start):
 		return {}
 	var layout:=grid.layout
+	var goals: Array[Vector3i]=[]
+	for enemy in enemies:
+		goals.append(layout.node(enemy.surface_id,enemy.pos))
 	var heuristic:=func(n: Vector3i) -> float:
-		return lower_bound(layout,n,enemies,weights)
+		if budget<=0:
+			return lower_bound(layout,n,enemies,weights)
+		var best:=INF
+		for i in goals.size():
+			best=minf(best,maxf(0.0,layout.coarse_distance(n,goals[i])-Contact.CONTACT)+weights[i])
+		return best
 	var evaluate:=func(n: Vector3i) -> float:
 		var weight:=INF
 		for i in enemies.size():
