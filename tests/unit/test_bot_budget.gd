@@ -28,5 +28,35 @@ func test_bot_game_within_budget() -> void:
 		check(LayeredGrid.evaluations>0,"shared grid evaluations measured")
 	check(s.over, "game finished")
 	var budget:=mini(OPEN_HARD_LIMIT,maxi(OPEN_BUDGET,n*OPEN_PER_ACTIVATION))
-	check(MoveGrid.evaluations <= budget, "open checks %d over budget %d" % [MoveGrid.evaluations,budget])
+	var checks:=MoveGrid.evaluations+LayeredGrid.evaluations
+	check(checks <= budget, "combined open checks %d over budget %d" % [checks,budget])
 	check(avg <= AVG_MS_BUDGET, "average activation %.1f ms over %.0f ms" % [avg, AVG_MS_BUDGET])
+
+
+## Exercise a separate multi-storey battlefield with the full activation
+## lifecycle, including aerial previews, not just a synthetic path query.
+func test_stacked_battle_work_profile() -> void:
+	var c:=LayeredBattle.create(db(),terrain(),17)
+	var s:=c.state
+	MoveGrid.evaluations=0
+	LayeredGrid.evaluations=0
+	var before_edges:=LayeredGrid.edge_evaluations
+	var samples: Array[float]=[]
+	while not s.over and samples.size()<150:
+		var start:=Time.get_ticks_usec()
+		check(Bot.play_activation(c),"bot advances on stacked terrain")
+		samples.append(float(Time.get_ticks_usec()-start)/1000.0)
+	check(s.over,"stacked battle terminates")
+	if samples.is_empty():
+		return
+	samples.sort()
+	var total:=0.0
+	for ms in samples:
+		total+=ms
+	var avg:=total/float(samples.size())
+	var p95:=samples[mini(samples.size()-1,ceili(samples.size()*0.95)-1)]
+	print("stacked bot budget: %d activations, %d layered open checks, %d edge calculations, %.1f ms mean, %.1f ms p95, %.1f ms max" % [samples.size(),LayeredGrid.evaluations,LayeredGrid.edge_evaluations-before_edges,avg,p95,samples[-1]])
+	check(LayeredGrid.evaluations>0)
+	# The stacked fixture has fewer figures and a smaller table but more
+	# explicit floor connections; retain generous headroom for shared CI.
+	check(avg<=AVG_MS_BUDGET,"stacked activation %.1f ms over %.0f ms" % [avg,AVG_MS_BUDGET])
