@@ -8,8 +8,8 @@ const HEAVY := ["knight","marksman","templar"]
 static func immune(f: Figure) -> bool:
 	if f==null:
 		return false
-	for trait in EXEMPT:
-		if f.def.traits.has(trait):
+	for trait_id: String in EXEMPT:
+		if f.def.traits.has(trait_id):
 			return true
 	return false
 

@@ -39,6 +39,9 @@ static func choose(c: GameController,index: int) -> bool:
 	match kind:
 		"genie":
 			ScenarioGenie._released(c,f,token,_spawn(c,"genie",p))
+			if c.state.scenario_data.get("core_pending_pickup_encounter",false):
+				c.state.scenario_data.erase("core_pending_pickup_encounter")
+				c._encounters.on_pickup()
 		"worm":
 			var worm:=_spawn(c,"giant_worm",p)
 			c.state.worm_spawned=true

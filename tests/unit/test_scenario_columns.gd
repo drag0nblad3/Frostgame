@@ -53,3 +53,17 @@ func test_column_contact_is_symmetric() -> void:
 		check(ScenarioColumns.contact(s.board, at) != null, "guardian triggers")
 	check(not s.board.can_stand(Vector2(14, 15.25), Figure.BASE_RADIUS))
 	check(not s.board.can_stand(Vector2(14, 16), Figure.BASE_RADIUS))
+
+
+func test_revealed_treasure_may_be_left() -> void:
+	var s:=ScenarioLoader.load_id("complex_temple",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20,1]))
+	s.reaction_side=0
+	var f:=s.figure(1)
+	f.pos=Vector2(14,15)
+	check(ScenarioColumns.challenge(c,f))
+	check_eq(CoreScenarioChoice.pending(c).get("kind",""),"column")
+	check(BattleScenarioAction.execute(c,"core_choice",{"index":1}))
+	check(s.treasure(0).on_ground())
+	check(not s.treasure(0).frozen)
+	check_eq(f.treasure_id,-1)

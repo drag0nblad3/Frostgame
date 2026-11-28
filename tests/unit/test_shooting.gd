@@ -151,7 +151,7 @@ func test_figures_contribute_intervening_or_contact_cover() -> void:
 
 
 func test_head_or_torso_visible_around_ruin_edge() -> void:
-	var c:=_shot(make_board([["ruin",14,9.8,2,0.4]]),"archer",Vector2(20,10),[])
+	var c:=_shot(make_board([["ruin",14,9.9,2,0.2]]),"archer",Vector2(20,10),[])
 	check(not LineOfSight.check(c.state.board,Vector2(10,10),Vector2(20,10)).clear)
 	check(c.can_shoot(2),"exposed shoulder is legal")
 

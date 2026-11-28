@@ -49,3 +49,21 @@ func test_library_ice_and_doorways() -> void:
 	check(not ScenarioObjectives.exit_allowed(s, Vector2(8, 0.5)))
 	check_eq(ScenarioObjectives.library_roll(1, LoadedDice.new([17])), 17)
 	check_eq(ScenarioObjectives.library_roll(6, LoadedDice.new([17])), 6)
+
+
+func test_primary_player_selects_worm_position() -> void:
+	var s:=ScenarioLoader.load_id("worm_hunts",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20]))
+	s.reaction_side=0
+	s.order.assign([0,1])
+	for t in s.treasures:
+		t.pos=Vector2(18,12)
+	ScenarioObjectives.spawn_worm(c)
+	var d:=CoreScenarioChoice.pending(c)
+	check_eq(d.get("kind",""),"worm")
+	if d.is_empty():
+		return
+	var at: Vector2=d["options"][0]["at"]
+	check(BattleScenarioAction.execute(c,"core_choice",{"index":0}))
+	check(s.worm_spawned)
+	check_eq(s.figures.back().pos,at)

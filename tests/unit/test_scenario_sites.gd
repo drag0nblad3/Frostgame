@@ -121,3 +121,21 @@ func test_haunted_hut_wall_spacing_and_entrances() -> void:
 	var restored:=BattleSnapshot.rebuild(BattleSnapshot.capture(c),db())
 	for i in s.board.pieces.size():
 		check_eq(restored.state.board.pieces[i].entrance,s.board.pieces[i].entrance)
+
+
+func test_disc_destination_is_player_choice() -> void:
+	var s:=ScenarioLoader.load_id("the_keep",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([6]))
+	s.reaction_side=0
+	var f:=s.figure(1)
+	f.pos=Vector2(18,12)
+	ScenarioSites.end_move(c,f)
+	var d:=CoreScenarioChoice.pending(c)
+	check_eq(d.get("kind",""),"disc")
+	if d.is_empty():
+		return
+	check(d["options"].size()>1)
+	var at: Vector2=d["options"][-1]["at"]
+	check(BattleScenarioAction.execute(c,"core_choice",{"index":d["options"].size()-1}))
+	check_eq(f.pos,at)
+	check(not c.awaiting_reaction())

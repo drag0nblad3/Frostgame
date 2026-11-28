@@ -61,7 +61,10 @@ func _claim(f: Figure, token: TreasureToken) -> bool:
 	if not token.ever_collected:
 		token.ever_collected = true
 		ScenarioGenie.first_pickup(_c, f, token)
-		_c._encounters.on_pickup()
+		if CoreScenarioChoice.pending(_c).get("kind","")=="genie":
+			_c.state.scenario_data["core_pending_pickup_encounter"]=true
+		else:
+			_c._encounters.on_pickup()
 	return true
 
 
