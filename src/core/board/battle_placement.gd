@@ -80,6 +80,25 @@ static func support(s: GameState,at: Vector2,id: String="",radius: float=Figure.
 			lowest=h
 	return best
 
+## Authored treasure positions are not movement nodes. Preserve their exact
+## coordinates (including sub-lattice distances from scenery), while still
+## demanding real support and physical clearance. Never infer a climb node.
+static func authored_token_surface(s: GameState,at: Vector2,id: String="") -> String:
+	var layout:=s.board.floor_geometry()
+	var best:=""
+	var lowest:=INF
+	var radius:=TreasureRules.TOKEN_RADIUS
+	if s.board.over_void(at,radius):
+		return ""
+	for surface in layout.surfaces:
+		if (not id.is_empty() and surface.id!=id) or surface.id.begins_with("climb:") or not surface.contains(at,radius):
+			continue
+		var h:=surface.height_at(at)
+		if h<lowest and layout.clearance(Vector3(at.x,h,at.y),radius,0.5):
+			best=surface.id
+			lowest=h
+	return best
+
 
 ## Scenario spawns near a known support never select a deck above or below it.
 static func nearby_floor(s: GameState,center: Vector2,height: float,radius: float,surface: String="",mover: Figure=null) -> Array[Vector3i]:

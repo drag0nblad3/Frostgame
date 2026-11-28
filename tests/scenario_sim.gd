@@ -66,7 +66,7 @@ func _validate(s: GameState, where: String) -> void:
 	var live: Array[Figure] = []
 	var layout: FloorLayout = null
 	if not s.board.floor_layout.is_empty():
-		layout=FloorLayout.from_dict(s.board.floor_layout)
+		layout=s.board.floor_geometry()
 		if not layout.errors.is_empty():
 			errors.append(where+": "+str(layout.errors))
 			return

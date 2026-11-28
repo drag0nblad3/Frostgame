@@ -77,6 +77,11 @@ static func _candidates(s: GameState) -> Array[Dictionary]:
 	var layout: FloorLayout=null
 	if not s.board.floor_layout.is_empty():
 		layout=s.board.floor_geometry()
+	var deck_indices: Array[int]=[]
+	if layout!=null:
+		for i in layout.surfaces.size():
+			if not layout.surfaces[i].id.begins_with("climb:"):
+				deck_indices.append(i)
 	# Sample the canonical half-inch grid; figure-sized clearance is intentionally
 	# conservative so every selected treasure has a usable standing position.
 	for x in range(1,floori(s.board.size.x*2.0)):
@@ -88,11 +93,13 @@ static func _candidates(s: GameState) -> Array[Dictionary]:
 				if s.board.can_stand(at,Figure.BASE_RADIUS):
 					out.append({"at":at,"surface":"","world":Vector3(at.x,s.board.height_at(at),at.y)})
 				continue
-			for n in layout.nodes_at(at):
-				var surface:=layout.surface_id(n)
-				if surface.begins_with("climb:") or not layout.standable(n) or s.board.over_void(at,Figure.BASE_RADIUS):
+			if s.board.over_void(at,Figure.BASE_RADIUS):
+				continue
+			for i in deck_indices:
+				var n:=Vector3i(x,y,i)
+				if not layout.standable(n):
 					continue
-				out.append({"at":at,"surface":surface,"world":layout.world(n)})
+				out.append({"at":at,"surface":layout.surface_id(n),"world":layout.world(n)})
 	return out
 
 

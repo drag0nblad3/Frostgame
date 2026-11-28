@@ -12,7 +12,7 @@ func test_column_won_by_moving_into_contact() -> void:
 	check_eq(s.treasures.size(), 6)
 	check(s.treasure(0).frozen)
 	check(not c.can_pick_up(0))
-	check(c.move_to(MovePlanner.node_at(Vector2(14, 15))))
+	check(c.move_on_floor(s.board.floor_geometry().node("street",Vector2(14,15))))
 	check_eq(f.actions_left, 1)
 	check_eq(f.moves_taken, 1)
 	check_eq(f.treasure_id, 0)
