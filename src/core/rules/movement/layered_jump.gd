@@ -116,18 +116,7 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	var options := plans(c,true,true)
 	if not options.has(n):
 		return false
-	var f := c.state.active()
-	var layout := c.state.board.floor_geometry()
-	var plan: Dictionary = options[n]
-	var targets:=MovementContact.enemies_at(c.state.figures,f,layout.point(n),layout.height(n),layout.surface_id(n))
-	c._magic.beauty.authorize(f,targets,_land.bind(c,f,n,plan))
-	return true
-
-
-static func _land(c: GameController,f: Figure,_n: Vector3i,plan: Dictionary) -> void:
-	if not f.in_play() or c.state.active()!=f or not RedKingHill.before_move(c,f):
-		return
-	LayeredMovement.offer_aerial(c,f,plan)
+	return LayeredMovement.declare_aerial(c,n,options[n])
 
 
 ## Additional primitive lattice vectors give oblique crossings without
