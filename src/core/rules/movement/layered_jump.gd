@@ -4,7 +4,7 @@ extends RefCounted
 ## Run-up and jump are both paid from the same movement action.
 
 
-static func plans(c: GameController,generate: bool=false,continuation: bool=false,shared_grid: LayeredGrid=null,cape: bool=false) -> Dictionary:
+static func plans(c: GameController,generate: bool=false,continuation: bool=false,shared_grid: LayeredGrid=null,cape: bool=false,rank: Callable=Callable(),budget: int=0) -> Dictionary:
 	var out := {}
 	if not LayeredMovement.eligible(c,cape) or (not generate and c.state.board.floor_layout.get("jumps",[]).is_empty()):
 		return out
@@ -21,7 +21,7 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 	if not grid.open(start):
 		return out
 	var direct:=from_position(c,layout,grid,start,MoveRules.allowance(f),generate,cape)
-	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid),grid) if continuation else direct
+	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid,rank,budget),grid) if continuation else direct
 
 
 ## Query from a hypothetical landing without changing the live figure.
