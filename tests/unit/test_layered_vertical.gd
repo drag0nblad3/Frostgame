@@ -734,3 +734,25 @@ func test_ai_aerial_shortlist_does_not_prune_player_previews() -> void:
 	check_eq(f.pos,Vector2(11,10))
 	check_eq(f.moves_taken,0)
 	check_eq(f.actions_left,2)
+
+
+func test_shortlisted_aerial_bot_resume_replays_exact_route() -> void:
+	var c:=_two_jump_game(true)
+	var f:=c.state.active()
+	c.state.creature_db=db()
+	c.state.forced_combat=false
+	c.state.reaction_side=-2
+	var token:=TreasureToken.new(0,Vector2(7,3))
+	token.surface_id="east"
+	c.state.treasures.append(token)
+	var checkpoint:=BattleSnapshot.capture(c)
+	check(not checkpoint.is_empty())
+	check(Bot.resume_activation(c))
+	check_eq(f.surface_id,"east")
+	check(c.history.any(func(e: GameEvent) -> bool:return e.type=="layered_move"))
+	check_eq(c.command_history.size(),1)
+	if c.command_history.size()==1:
+		check_eq(c.command_history[0]["key"],"bot_resume")
+		var result:=BattleReplay.verify(checkpoint,db(),c.command_history,BattleRecord.pack(c.history))
+		check(result.get("ok",false),str(result))
+	check(c.ai_work.is_empty())
