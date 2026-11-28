@@ -25,6 +25,18 @@ static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vect
 			tokens.append(t)
 	if tokens.is_empty():
 		return {}
+	if imperfect:
+		var scores: Array[float]=[]
+		for t in tokens:
+			var n:=layout.node(t.surface_id,t.pos)
+			var distance:=layout.point(start).distance_to(t.pos)
+			if n.z>=0:
+				distance=layout.world(start).distance_to(layout.world(n))
+			scores.append(distance+2.0+2.0*BotPreference.variation(s,f,t.id,"treasure"))
+		var selected: Array[TreasureToken]=[]
+		for i in BotPreference.objective_indices(f,scores):
+			selected.append(tokens[i])
+		tokens=selected
 	var penalties: Dictionary={}
 	var goals: Dictionary={}
 	for t in tokens:
