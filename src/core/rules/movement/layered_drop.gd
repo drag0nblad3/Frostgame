@@ -28,6 +28,17 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 	var f:=s.active()
 	if not grid.open(start) or grid.stops(start):
 		return out
+	var support_at_start:=layout.surfaces[start.z]
+	# A flat street with no outgoing floor connections cannot reach a ledge.
+	# Avoid an entire ground flood for each hypothetical landing there.
+	if support_at_start.id=="street" and support_at_start.profiles.is_empty() and is_equal_approx(support_at_start.level,support_at_start.end_level) and not BoardTopology.linked(s.board):
+		var has_exit:=false
+		for source: Vector3i in layout.links:
+			if source.z==start.z:
+				has_exit=true
+				break
+		if not has_exit:
+			return out
 	var initial: Array[String]=[layout.surface_id(start)]
 	_from_ledge(s,f,layout,grid,start,0.0,allowance,PackedVector3Array([layout.world(start)]),initial,out,allow_long)
 	if approach:
