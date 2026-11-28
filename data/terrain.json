@@ -244,5 +244,13 @@
     "cover": 0,
     "height": 3,
     "walkable_top": false
+  },
+  "ruin_broken_wall": {
+    "name": "Broken masonry wall",
+    "blocks_los": true,
+    "blocks_move": true,
+    "cover": 0,
+    "move_mult": 1,
+    "height": 2.75
   }
 }

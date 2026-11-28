@@ -93,40 +93,44 @@
       }
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "breached_manor",
       "rect": [
         3,
         8,
         5,
         4
-      ]
+      ],
+      "quarter_turns": 1
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "corner_tenement",
       "rect": [
         28,
         25,
         5,
         4
-      ]
+      ],
+      "quarter_turns": 3
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "buttressed_hall",
       "rect": [
         26,
         7,
         5,
         4
-      ]
+      ],
+      "quarter_turns": 2
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "shattered_shop",
       "rect": [
         3,
         27,
         5,
         4
-      ]
+      ],
+      "quarter_turns": 0
     },
     {
       "kind": "wall",

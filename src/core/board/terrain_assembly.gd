@@ -1,6 +1,8 @@
 class_name TerrainAssembly
 extends RefCounted
-## Expand reusable rectangular architecture into the canonical terrain format.
+## Expand reusable wall assemblies into the canonical terrain format.
+## Shared ruin kits occupy normalized footprints; missing walls are real gaps.
+const RUIN_KITS := "res://data/ruin_kits.json"
 ## Instances translate or rotate in exact quarter turns around their local origin.
 
 
@@ -23,7 +25,35 @@ static func pieces(source: Dictionary) -> Array:
 			rect[0]+=origin[0]
 			rect[1]+=origin[1]
 			result.append(piece)
-	result.append_array(source.get("pieces",[]))
+	# Keep ordinary pieces in authored order. A ruin entry expands in place,
+	# so checkpoints still store ordinary terrain kinds and rectangles.
+	var catalog: Dictionary = {}
+	for entry: Dictionary in source.get("pieces",[]):
+		if not entry.has("ruin_kit"):
+			result.append(entry)
+			continue
+		if catalog.is_empty():
+			catalog=JsonFile.read(RUIN_KITS)
+		result.append_array(expand_ruin(entry,catalog))
+	return result
+
+
+static func expand_ruin(entry: Dictionary,catalog: Dictionary) -> Array:
+	var result: Array=[]
+	var key:=str(entry.get("ruin_kit",""))
+	var footprint: Array=entry.get("rect",[])
+	if not catalog.has(key) or footprint.size()!=4 or float(footprint[2])<=0.0 or float(footprint[3])<=0.0:
+		push_error("Invalid ruin footprint or kit: "+key)
+		return result
+	var turns:=posmod(int(entry.get("quarter_turns",0)),4)
+	# Rotate around the unit square centre, then fit to the authored footprint.
+	for local: Dictionary in catalog[key]:
+		var piece:=local.duplicate(true)
+		var r: Array=piece["rect"]
+		for i in turns:
+			r=[1.0-float(r[1])-float(r[3]),r[0],r[3],r[2]]
+		piece["rect"]=[float(footprint[0])+float(r[0])*float(footprint[2]),float(footprint[1])+float(r[1])*float(footprint[3]),float(r[2])*float(footprint[2]),float(r[3])*float(footprint[3])]
+		result.append(piece)
 	return result
 
 
