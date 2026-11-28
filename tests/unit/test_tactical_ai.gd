@@ -116,3 +116,36 @@ func test_leap_escape_estimate_obeys_reality_exit_changes() -> void:
 	check(not exits.is_empty())
 	check(MagicBot._leap_exit_distance(exits,Vector3(18,0,18))<0.01)
 	check(MagicBot._leap_exit_distance(exits,Vector3(0.5,0,18))>17.0)
+
+
+func test_airborne_leap_ai_rescues_slow_fall_carrier_from_high_platform() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"tower","rect":[4,9,2,2],"level":8}]}
+	var f:=fig("wizard",0,Vector2(5,10))
+	f.surface_id="tower"
+	f.elevation=8.0
+	var c:=make_game(b,[f],LoadedDice.new([20]))
+	c.state.spell_catalog=JsonFile.read("res://data/spells.json")
+	c.state.spellbooks[0]={"leap":8}
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.treasure_id=0
+	var hp:=f.health
+	check(MagicBot.leap_plan(c,f).is_empty(),"carrier should avoid a damaging descent")
+	var gear: Dictionary=JsonFile.read("res://data/magic_equipment.json")
+	f.items.append({"gear":"gear_ring_slow_fall","gear_info":gear["gear_ring_slow_fall"]})
+	var choice:=MagicBot.leap_plan(c,f)
+	check(choice.has("air_endpoint"))
+	check_eq(choice,MagicBot.leap_plan(c,f))
+	check_eq(f.pos,Vector2(5,10))
+	if not choice.has("air_endpoint"):
+		return
+	var endpoint: Vector3=choice["air_endpoint"]
+	var node: Vector3i=choice["node"]
+	var layout:=b.floor_geometry()
+	check(BattleSpace.center(f).distance_to(endpoint)<=5.001)
+	check(BattleSpace.center(f).distance_to(layout.world(node))>5.0)
+	check(MagicBot.play(c,f))
+	check_eq(f.surface_id,"street")
+	check_eq(f.health,hp)
+	check(f.magic_exhausted)
