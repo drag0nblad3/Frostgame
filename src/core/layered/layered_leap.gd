@@ -68,9 +68,12 @@ static func trajectory(c: GameController,t: Figure,b: Vector3,layout: FloorLayou
 ## The fall is mandatory and costs no additional Leap distance. A blocked
 ## first supporting floor cannot be skipped to reach a lower one.
 static func air_plan(c: GameController,t: Figure,endpoint: Vector3,layout: FloorLayout,grid: LayeredGrid) -> Dictionary:
-	if not endpoint.is_finite():
+	var limit:=5.0 if t.treasure_id>=0 else 10.0
+	if not endpoint.is_finite() or BattleSpace.center(t).distance_to(endpoint)>limit+0.001:
 		return {}
 	var at:=Vector2(endpoint.x,endpoint.z)
+	if not c.state.board.contains(at,Figure.BASE_RADIUS):
+		return {}
 	if not MoveGrid.to_pos(MovePlanner.node_at(at)).is_equal_approx(at):
 		return {}
 	var landing: Variant=LayeredFall.landing(layout,grid,at,endpoint.y)
