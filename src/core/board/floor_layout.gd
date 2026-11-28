@@ -13,6 +13,11 @@ var errors: Array[String] = []
 var _surface_indices: Dictionary={}
 var _indexed_count:=0
 var profiled_ground: FloorSurface
+## Terrain-only answers survive separate reach searches on the same immutable
+## geometry. Never memoize during assembly, when solids can still be appended.
+var _sealed:=false
+var _standing: Dictionary={}
+var _midpoints: Dictionary={}
 
 
 static func from_dict(d: Dictionary) -> FloorLayout:
@@ -63,6 +68,7 @@ static func from_dict(d: Dictionary) -> FloorLayout:
 	if d.get("auto_architecture_climbs",false):
 		ArchitectureClimbs.add(layout)
 		WallTraverse.add(layout,d)
+	layout._sealed=true
 	return layout
 
 
@@ -106,7 +112,26 @@ func contains(n: Vector3i,radius: float = Figure.BASE_RADIUS) -> bool:
 
 
 func standable(n: Vector3i,radius: float = Figure.BASE_RADIUS, body: float = 1.6) -> bool:
-	return contains(n,radius) and clearance(world(n),radius,body)
+	if not _sealed or not is_equal_approx(radius,Figure.BASE_RADIUS) or not is_equal_approx(body,1.6):
+		return contains(n,radius) and clearance(world(n),radius,body)
+	if not _standing.has(n):
+		_standing[n]=contains(n,radius) and clearance(world(n),radius,body)
+	return _standing[n]
+
+
+## Geometry-only horizontal neighbor check shared by all movers and searches.
+## Restriction checks (figures, wards, scenario boundaries) remain per mover.
+func neighbor_clear(a: Vector3i,b: Vector3i) -> bool:
+	var midpoint:=world(a).lerp(world(b),0.5)
+	if not surfaces[a.z].profiles.is_empty():
+		midpoint.y=surfaces[a.z].height_at(Vector2(midpoint.x,midpoint.z))
+	var p:=Vector2(midpoint.x,midpoint.z)
+	var key:=Vector3i(a.x+b.x,a.y+b.y,a.z)
+	if not _sealed:
+		return surfaces[a.z].contains(p,Figure.BASE_RADIUS) and clearance(midpoint,Figure.BASE_RADIUS,1.6)
+	if not _midpoints.has(key):
+		_midpoints[key]=surfaces[a.z].contains(p,Figure.BASE_RADIUS) and clearance(midpoint,Figure.BASE_RADIUS,1.6)
+	return _midpoints[key]
 
 
 func clearance(at: Vector3,radius: float,body: float) -> bool:

@@ -82,8 +82,7 @@ static func _add_face_climbs(layout: FloorLayout,entry: Dictionary,surface: Floo
 	var rect:=surface.rect
 	var along:=Vector2.DOWN if rotated else Vector2.RIGHT
 	var across:=Vector2.RIGHT if rotated else Vector2.DOWN
-	var h:=float(entry["height"])
-	var rise:=surface.level-h
+	var base:=float(entry["height"])
 	var length:=rect.size.y if rotated else rect.size.x
 	var width:=rect.size.x if rotated else rect.size.y
 	for i in range(1,int(length*2)):
@@ -103,8 +102,14 @@ static func _add_face_climbs(layout: FloorLayout,entry: Dictionary,surface: Floo
 			outside=layout.point(a)
 			if outside.distance_to(layout.point(b))>1.5:
 				continue
-			if not layout.standable(a) or not layout.standable(b) or not is_equal_approx(layout.height(a),h):
+			if not layout.standable(a) or not layout.standable(b):
 				continue
+			var h:=layout.height(a)
+			# A wall bordering a higher bank can be scaled from that bank.
+			# Do not create a floating climb below the actual masonry base.
+			if h<base-0.001 or h>=surface.level-0.001:
+				continue
+			var rise:=surface.level-h
 			var clear:=true
 			var steps:=maxi(1,ceili(rise*10.0))
 			for step in range(steps+1):

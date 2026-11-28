@@ -96,7 +96,7 @@ func neighbors(n: Vector3i) -> Array[Dictionary]:
 		var support:=layout.surfaces[n.z]
 		if not support.profiles.is_empty():
 			middle_point.y=support.height_at(Vector2(middle_point.x,middle_point.z))
-		if not layout.surfaces[n.z].contains(Vector2(middle_point.x,middle_point.z),Figure.BASE_RADIUS) or not layout.clearance(middle_point,Figure.BASE_RADIUS,1.6):
+		if not layout.neighbor_clear(n,next):
 			continue
 		var mult := layout.surfaces[n.z].rough
 		if board!=null:
