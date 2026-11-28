@@ -653,3 +653,34 @@ func test_drop_preview_stops_at_new_wound() -> void:
 	check_eq(f.health,3)
 	check(f.wounded())
 	check_eq(f.moves_taken,1)
+
+
+func test_uncontrolled_creature_jumps_toward_designated_quarry() -> void:
+	var c:=_two_jump_game(true)
+	var f:=c.state.active()
+	var quarry:=c.state.figure(2)
+	f.side=-1
+	c.state.forced_combat=false
+	var layout:=c.state.board.floor_geometry()
+	var hp:=f.health
+	check(LayeredTactics.aerial_progress(c,f,layout,c.layered_reach(),false,quarry))
+	check_eq(f.surface_id,"east")
+	check(Contact.touches_position(quarry,f.pos,f.elevation,f.surface_id))
+	check_eq(f.health,hp)
+	check_eq(f.moves_taken,1)
+
+
+func test_creature_does_not_choose_damaging_drop() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0},{"id":"deck","rect":[8,8,5,5],"level":3}]}
+	var f:=fig("thug",-1,Vector2(12.5,10))
+	f.surface_id="deck"
+	f.elevation=3.0
+	var target:=fig("thug",0,Vector2(15,10),2)
+	target.surface_id="street"
+	var c:=make_game(b,[f,target],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	check(not LayeredTactics.aerial_progress(c,f,b.floor_geometry(),c.layered_reach(),false,target))
+	check_eq(f.surface_id,"deck")
+	check_eq(f.moves_taken,0)
