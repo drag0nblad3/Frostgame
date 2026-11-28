@@ -172,20 +172,40 @@ static func rubble(root: Node3D,p: TerrainPiece,scenario: String) -> void:
 			MiniatureFactory.sphere(root,origin+Vector3(-0.24,0.15,0)*scale,Vector3(0.31,0.30,0.32)*scale,STONE)
 			var plinth:=MiniatureFactory.cylinder(root,origin+Vector3(0.20,0.10,0.16)*scale,0.22*scale,0.26*scale,0.17*scale,STONE.darkened(0.14))
 			plinth.rotation.y=0.7
-	# Low angular debris across each footprint; no decorative object's
-	# center/extent extends outside its original rough-ground patch.
-	var count:=clampi(roundi(r.get_area()*1.6),3,20)
+	# Irregular clustered masonry, tile shards, splintered wood and snow.
+	# Bounding radii are clamped before placement; height remains <= 0.4.
+	var rng := RandomNumberGenerator.new()
+	rng.seed=seed
+	var count:=clampi(roundi(r.get_area()*2.0),4,26)
+	var cluster:=c+Vector2(rng.randf_range(-0.18,0.18),rng.randf_range(-0.18,0.18))*width
 	for i in count:
-		var x:=lerpf(r.position.x+width*0.15,r.end.x-width*0.15,float(posmod(seed+i*37,97))/97.0)
-		var z:=lerpf(r.position.y+width*0.15,r.end.y-width*0.15,float(posmod(seed+i*61,89))/89.0)
-		var s:=minf(0.32,width*0.18)
-		var stone:=MiniatureFactory.sphere(root,Vector3(x,0.075,z),Vector3(s*(1.0+0.2*(i%2)),0.12,s*0.86),STONE.darkened(float(i%5)*0.08))
-		stone.rotation.y=i*0.63
+		var radius:=minf(width*0.16,rng.randf_range(0.07,0.23))
+		var at:=cluster+Vector2(rng.randfn(0,width*0.27),rng.randfn(0,width*0.27))
+		at.x=clampf(at.x,r.position.x+radius,r.end.x-radius)
+		at.y=clampf(at.y,r.position.y+radius,r.end.y-radius)
+		var height:=rng.randf_range(0.035,0.16)
+		var tint:=STONE.lerp(Color("655b50"),rng.randf_range(0.0,0.55)).lightened(rng.randf_range(0.0,0.14))
+		var pos:=TableSpace.to_world(at,height*0.5)
+		var shard: MeshInstance3D
+		match rng.randi_range(0,3):
+			0:
+				var wedge:=PrismMesh.new()
+				wedge.size=Vector3(radius*1.5,height,radius*0.95)
+				shard=MiniatureFactory.mesh(root,wedge,pos,tint)
+			1:
+				shard=MiniatureFactory.box(root,pos,Vector3(radius*1.4,height,radius*0.9),tint)
+			2:
+				shard=MiniatureFactory.sphere(root,pos,Vector3(radius*1.8,height,radius*1.0),tint)
+			_:
+				shard=MiniatureFactory.box(root,pos,Vector3(radius*1.7,height*0.55,radius*0.5),WOOD.darkened(0.18))
+		shard.rotation.y=rng.randf_range(0,TAU)
+		if i%4==0 and not RealmScenery.special(scenario):
+			MiniatureFactory.sphere(root,pos+Vector3.UP*(height*0.5+0.008),Vector3(radius*1.25,0.022,radius*0.85),Color("c9d6d9"))
 
 
 ## Solid, sealed exterior relief: no fake doors or traversable holes.
 static func facade(root: Node3D,p: TerrainPiece,scenario: String) -> void:
-	if p.kind.id!="ruin" or p.ramp or p.circular or p.level!=null:
+	if p.kind.id not in ["ruin","tower","hut_wall","null_annex","null_lower","null_middle","null_upper"] or p.ramp or p.circular or p.level!=null:
 		return
 	wall_relief(root,p.rect,p.kind.height,scenario)
 
@@ -194,46 +214,78 @@ static func facade(root: Node3D,p: TerrainPiece,scenario: String) -> void:
 static func wall_relief(root: Node3D,r: Rect2,h: float,scenario: String) -> void:
 	if h<1.7:
 		return
-	var seed:=absi(hash(str(r.position)+scenario))
-	var style:=seed%4
+	var rng:=RandomNumberGenerator.new()
+	rng.seed=hash(str(r.position)+str(r.size)+scenario)
+	var style:=rng.randi_range(0,3)
 	if scenario in ["mausoleum","complex_temple","living_museum","red_king_back_into_fire"]:
 		style=1
+	elif scenario in ["haunted_houses","red_king_squatter"]:
+		style=2
+	elif scenario=="silent_tower":
+		style=3
 	var color:=Color("a1aaab").lerp(Color("aa9279"),float(style)/4.0)
 	for side in 4:
 		var span:=r.size.x if side%2==0 else r.size.y
-		if span<1.6:
+		if span<1.0:
 			continue
-		var position:=Vector3(r.get_center().x,h*0.56,r.position.y-0.025) if side==0 else (Vector3(r.end.x+0.025,h*0.56,r.get_center().y) if side==1 else (Vector3(r.get_center().x,h*0.56,r.end.y+0.025) if side==2 else Vector3(r.position.x-0.025,h*0.56,r.get_center().y)))
+		var center:=r.get_center()
+		var position:=Vector3(center.x,0,r.position.y) if side==0 else (Vector3(r.end.x,0,center.y) if side==1 else (Vector3(center.x,0,r.end.y) if side==2 else Vector3(r.position.x,0,center.y)))
 		var face:=Node3D.new()
 		root.add_child(face)
 		face.position=position
-		face.rotation.y=PI*0.5*side
-		if style==0:
-			# Sealed rose-window stone tracery.
-			var ring:=TorusMesh.new()
-			ring.inner_radius=0.35
-			ring.outer_radius=0.44
-			var medallion:=MiniatureFactory.mesh(face,ring,Vector3.ZERO,color)
-			medallion.rotation.x=PI*0.5
-			medallion.scale.y=0.13
-			for i in 4:
-				var bar:=MiniatureFactory.box(face,Vector3.ZERO,Vector3(0.65,0.065,0.025),color.darkened(0.1))
-				bar.rotation.z=i*PI/4.0
-		elif style==1:
-			# Circular relief and half columns against the solid facade.
-			for x: float in [-0.52,0.52]:
-				MiniatureFactory.cylinder(face,Vector3(x,0,0),0.10,0.10,1.25,color)
-				MiniatureFactory.box(face,Vector3(x,0.60,0),Vector3(0.24,0.11,0.07),color.lightened(0.12))
-			var crest:=MiniatureFactory.cylinder(face,Vector3.ZERO,0.28,0.28,0.045,color.darkened(0.15))
-			crest.rotation.x=PI*0.5
-		elif style==2:
-			# Remnants of a timber cross-brace.
-			for sign_value: float in [-1.0,1.0]:
-				var brace:=MiniatureFactory.box(face,Vector3.ZERO,Vector3(1.05,0.13,0.035),WOOD)
-				brace.rotation.z=sign_value*0.72
-		else:
-			# Dark carved shield plaques.
-			var shield:=MiniatureFactory.sphere(face,Vector3.ZERO,Vector3(0.58,0.82,0.055),IRON)
-			shield.rotation.z=0.10
-			MiniatureFactory.box(face,Vector3(0,0,0.035),Vector3(0.07,0.66,0.025),color)
+		face.rotation.y=-PI*0.5*side
+		var bays:=clampi(floori(span/1.8),1,4)
+		var bay:=span/float(bays)
+		var floors:=clampi(floori(h/2.1),1,3)
+		# Broken masonry courses and uneven corner quoins.
+		for edge: float in [-1.0,1.0]:
+			for i in range(clampi(floori(h/0.42),2,12)):
+				if rng.randf()<0.18:
+					continue
+				var w:=minf(span*0.18,0.22 if i%2==0 else 0.34)
+				var y:=0.22+i*0.42
+				if y+0.12>h-0.08:
+					continue
+				MiniatureFactory.box(face,Vector3(edge*(span*0.5-w*0.55),y,-0.025),Vector3(w,0.23,0.055),color.darkened(rng.randf_range(0.10,0.32)))
+		for floor_index in floors:
+			var y0:=float(floor_index)*h/floors
+			var fh:=h/floors
+			for i in bays:
+				var x:=(i+0.5)*bay-span*0.5
+				var w:=minf(bay*0.31,0.43)
+				var y:=y0+fh*0.50
+				var rise:=minf(fh*0.28,0.60)
+				if rng.randf()<0.14:
+					continue
+				if style==2:
+					# Timber framing and infill, never a false door.
+					MiniatureFactory.box(face,Vector3(x,y,-0.026),Vector3(0.10,rise*2.0,0.06),WOOD.darkened(0.14))
+					var beam:=MiniatureFactory.box(face,Vector3(x,y,-0.030),Vector3(w*1.55,0.075,0.06),WOOD)
+					beam.rotation.z=0.58 if (i+floor_index)%2==0 else -0.58
+				elif style==3:
+					# Narrow blocked lancet and layered lintel, in dark tower stone.
+					MiniatureFactory.box(face,Vector3(x,y,-0.016),Vector3(w*0.65,rise*1.25,0.036),color.darkened(0.48))
+					for s: float in [-1.0,1.0]:
+						var stone:=MiniatureFactory.box(face,Vector3(x+s*w*0.31,y+rise*0.68,-0.032),Vector3(w*0.76,0.095,0.075),color)
+						stone.rotation.z=-s*0.65
+					MiniatureFactory.box(face,Vector3(x,y-rise*0.72,-0.035),Vector3(w*1.16,0.10,0.08),color)
+				else:
+					# Arched blind relief assembled from individual voussoirs.
+					var radius:=w*0.83
+					var spring:=y+rise*0.10
+					var leg:=rise*0.85
+					for s: float in [-1.0,1.0]:
+						MiniatureFactory.box(face,Vector3(x+s*radius,spring-leg*0.5,-0.028),Vector3(0.13,leg,0.065),color.darkened(0.12))
+						MiniatureFactory.box(face,Vector3(x+s*radius,spring-leg,-0.033),Vector3(0.22,0.095,0.075),color)
+					for segment in 5:
+						if style==0 and rng.randf()<0.12:
+							continue
+						var a:=PI*(segment+0.5)/5.0
+						var block:=MiniatureFactory.box(face,Vector3(x+cos(a)*radius,spring+sin(a)*radius,-0.032),Vector3(radius*0.60,0.13,0.075),color.darkened(rng.randf_range(0.0,0.19)))
+						block.rotation.z=a+PI*0.5
+					if style==1:
+						MiniatureFactory.box(face,Vector3(x,y-rise*0.66,-0.035),Vector3(w*2.1,0.10,0.08),color)
+				# A few damaged sill fragments; asymmetrical, shallow relief.
+				if rng.randf()<0.35:
+					MiniatureFactory.box(face,Vector3(x+w*0.35,y-rise,-0.024),Vector3(w*0.65,0.08,0.06),color.darkened(0.25))
 		MiniatureBatch.bake(face)

@@ -46,12 +46,15 @@ func in_bounds(n: Vector2i) -> bool:
 
 ## A figure could stand here: on the table, off blocking terrain, not on another base.
 func open(n: Vector2i) -> bool:
-	var known: Variant = _open_memo.get(n)
+	# Distance fields ignore figures and use the same terrain/boundaries.
+	# Keep their open checks across searches until the board invalidates terrain.
+	var memo: Dictionary = board.static_open_cache if mover==null and others.is_empty() else _open_memo
+	var known: Variant = memo.get(n)
 	if known != null:
 		return known
 	var ok := _open(n)
 	evaluations += 1
-	_open_memo[n] = ok
+	memo[n] = ok
 	return ok
 
 

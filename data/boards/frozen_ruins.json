@@ -7,49 +7,54 @@
   ],
   "pieces": [
     {
-      "kind": "ruin",
+      "ruin_kit": "market_arcade",
       "rect": [
         4,
         12,
         6,
         5
-      ]
+      ],
+      "quarter_turns": 0
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "alchemist_workshop",
       "rect": [
         26,
         19,
         6,
         5
-      ]
+      ],
+      "quarter_turns": 2
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "courtyard_ruin",
       "rect": [
         15,
         15,
         6,
         6
-      ]
+      ],
+      "quarter_turns": 1
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "shattered_shop",
       "rect": [
         9,
         25,
         4,
         4
-      ]
+      ],
+      "quarter_turns": 3
     },
     {
-      "kind": "ruin",
+      "ruin_kit": "buttressed_hall",
       "rect": [
         23,
         7,
         4,
         4
-      ]
+      ],
+      "quarter_turns": 0
     },
     {
       "kind": "wall",

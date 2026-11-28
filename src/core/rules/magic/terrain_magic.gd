@@ -118,6 +118,9 @@ func can_place_floor(f: Figure,id: String,n: Vector3i,rotated: bool=false) -> bo
 	for solid in layout.solids:
 		if solid.intersects(volume):
 			return false
+	for prism in layout.convex_solids:
+		if prism.overlaps(volume):
+			return false
 	if id=="circle_of_protection":
 		for p in b.pieces:
 			if p.kind.id=="spell_circle_of_protection" and p.caster_id==f.id:

@@ -35,7 +35,7 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 		stone.set_shader_parameter("walkable_roof",solid.size.y<=0.5)
 		slab.material_override=stone
 		slab.set_meta("cut_height",solid.end.y if solid.size.y<=0.5 else solid.position.y+0.12)
-		if solid.size.y<=0.5:
+		if _is_deck(layout,solid):
 			_deck_edge(solid)
 		elif solid.size.y>=1.7:
 			var relief:=Node3D.new()
@@ -45,6 +45,24 @@ func build(layout: FloorLayout,include_ground: bool=true,scenario: String="") ->
 			BattlefieldDetail.wall_relief(relief,Rect2(solid.position.x,solid.position.z,solid.size.x,solid.size.z),solid.size.y,scenario)
 			if roof:
 				upper_nodes.append(relief)
+	for prism in layout.convex_solids:
+		var node:=MeshInstance3D.new()
+		node.mesh=prism.mesh()
+		var stone:=StoneFinish.material(Color("75858d"),false,false,Vector2(prism.bounds.position.x,prism.bounds.position.z))
+		stone.set_shader_parameter("building_height",prism.bounds.end.y)
+		stone.set_shader_parameter("footprint_size",Vector2(prism.bounds.size.x,prism.bounds.size.z))
+		stone.set_shader_parameter("frost_detail",GraphicsQuality.mode()>0)
+		node.material_override=stone
+		add_child(node)
+		var cut:=prism.bounds.position.y+0.12
+		for s in layout.surfaces:
+			if not s.polygon.is_empty() and is_equal_approx(s.level,prism.bounds.end.y) and s.rect.is_equal_approx(Rect2(prism.bounds.position.x,prism.bounds.position.z,prism.bounds.size.x,prism.bounds.size.z)):
+				cut=s.level
+				stone.set_shader_parameter("walkable_roof",true)
+				break
+		node.set_meta("cut_height",cut)
+		if prism.bounds.position.y>=2.5:
+			upper_nodes.append(node)
 	# Wall volumes get narrow masonry courses (visual only).
 	for solid in layout.solids:
 		if layout.magic_solids.has(solid):
@@ -92,6 +110,16 @@ func _stairs(s: FloorSurface) -> void:
 			at.x=s.rect.position.x+w*(i+0.5)
 		var h:=s.height_at(at)
 		_box(Vector3(at.x,h-0.08,at.y),Vector3(s.rect.size.x,0.16,w+0.012) if s.axis_y else Vector3(w+0.012,0.16,s.rect.size.y),Color(0.55,0.65,0.72),h>=2.5 and s.id!="stairs")
+
+
+func _is_deck(layout: FloorLayout,solid: AABB) -> bool:
+	if solid.size.y>0.5 or minf(solid.size.x,solid.size.z)<0.5:
+		return false
+	var r:=Rect2(solid.position.x,solid.position.z,solid.size.x,solid.size.z)
+	for s in layout.surfaces:
+		if is_equal_approx(s.level,s.end_level) and is_equal_approx(s.level,solid.end.y) and s.rect.grow(0.001).encloses(r):
+			return true
+	return false
 
 
 func _deck_edge(solid: AABB) -> void:

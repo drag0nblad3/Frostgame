@@ -12,6 +12,10 @@ func options(f: Figure) -> Array[Dictionary]:
 	var out: Array[Dictionary] = []
 	var board := c.state.board
 	for p in board.pieces:
+		if p.kind.id==ConvexCrumble.KIND:
+			if ConvexCrumble.visible(board,f,p):
+				out.append({"kind":"terrain","target":f.id,"piece":p,"label":"Angled masonry at %.1f, %.1f"%[p.rect.get_center().x,p.rect.get_center().y]})
+			continue
 		if p.kind.id.begins_with("null_") or p.kind.id == "temple_column":
 			continue
 		if p.kind.id != "spell_wall" and (p.cast_turn >= 0 or not p.kind.blocks_move or p.kind.height < 1.0):
@@ -30,6 +34,9 @@ func options(f: Figure) -> Array[Dictionary]:
 func apply(p: TerrainPiece) -> void:
 	var s := c.state
 	if not s.board.pieces.has(p):
+		return
+	if p.kind.id==ConvexCrumble.KIND:
+		ConvexCrumble.apply(c,p)
 		return
 	if p.kind.id == "spell_wall":
 		c._magic.terrain.remove(p)

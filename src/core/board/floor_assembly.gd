@@ -20,6 +20,13 @@ static func expand(source: Dictionary) -> Dictionary:
 		var turns := posmod(int(instance.get("quarter_turns",0)),4)
 		var offset := Vector2(origin[0],origin[1])
 		var lift := float(instance.get("elevation",0.0))
+		var angle:=float(turns)*PI*0.5
+		if instance.has("angle_degrees"):
+			# Free rotations of unlinked convex scenery need no snapped graph edges.
+			if not kit.get("surfaces",[]).is_empty() or not kit.get("solids",[]).is_empty() or not kit.get("aperture_walls",[]).is_empty() or not kit.get("links",[]).is_empty() or not kit.get("climbs",[]).is_empty() or not kit.get("null_regions",[]).is_empty() or kit.has("walls"):
+				errors.append("Free rotation requires a convex-only unlinked kit: "+key)
+				continue
+			angle=deg_to_rad(float(instance["angle_degrees"]))
 		var ids: Dictionary={}
 		for entry: Dictionary in kit.get("surfaces",[]):
 			var id := str(entry.get("id",""))
@@ -43,8 +50,22 @@ static func expand(source: Dictionary) -> Dictionary:
 				surface["end_level"]=float(ramp["end"])+lift
 			if entry.has("axis") or entry.has("end_level"):
 				surface["axis"]=ramp["axis"]
+			if entry.has("polygon"):
+				var polygon: Array=[]
+				for vertex in entry["polygon"]:
+					if not vertex is Array or vertex.size()!=2:
+						break
+					var p:=Vector2(vertex[0],vertex[1]).rotated(float(turns)*PI*0.5)+offset
+					polygon.append([p.x,p.y])
+				if polygon.size()!=entry["polygon"].size():
+					errors.append("Malformed deck outline in "+key)
+					continue
+				surface["polygon"]=polygon
 			append(result,"surfaces",surface)
-		for solid: Array in kit.get("solids",[]):
+		var volumes: Array=kit.get("solids",[]).duplicate(true)
+		for wall: Dictionary in kit.get("aperture_walls",[]):
+			volumes.append_array(aperture_volumes(wall,errors))
+		for solid: Array in volumes:
 			if solid.size()!=6:
 				errors.append("Malformed solid in "+key)
 				continue
@@ -52,6 +73,27 @@ static func expand(source: Dictionary) -> Dictionary:
 			TerrainAssembly.rotate_piece(rect_piece,turns)
 			var rect := translate_rect(rect_piece["rect"],offset)
 			append(result,"solids",[rect[0],float(solid[1])+lift,rect[1],rect[2],solid[4],rect[3]])
+		# Convex profiles are transformed directly, without rectangular approximation.
+		for entry: Dictionary in kit.get("convex_solids",[]):
+			var profile: Array=entry.get("profile",[])
+			var extrusion: Array=entry.get("extrusion",[])
+			if profile.size()<3 or extrusion.size()!=3:
+				errors.append("Malformed convex profile in "+key)
+				continue
+			var transformed: Array=[]
+			for vertex in profile:
+				if not vertex is Array or vertex.size()!=3:
+					break
+				var p:=Vector2(vertex[0],vertex[2]).rotated(angle)
+				transformed.append([p.x+offset.x,float(vertex[1])+lift,p.y+offset.y])
+			if transformed.size()!=profile.size():
+				errors.append("Malformed convex vertex in "+key)
+				continue
+			var ex:=Vector2(extrusion[0],extrusion[2]).rotated(angle)
+			var volume: Dictionary={"profile":transformed,"extrusion":[ex.x,extrusion[1],ex.y]}
+			if entry.has("crumble_id"):
+				volume["crumble_id"]=prefix+str(entry["crumble_id"])
+			append(result,"convex_solids",volume)
 		for field in ["links","climbs"]:
 			for entry: Dictionary in kit.get(field,[]):
 				if entry.get("from",[]).size()!=3 or entry.get("to",[]).size()!=3:
@@ -93,3 +135,45 @@ static func endpoint(raw: Array,ids: Dictionary,offset: Vector2,turns: int) -> A
 		p=Vector2(-p.y,p.x)
 	p+=offset
 	return [ids.get(str(raw[0]),raw[0]),p.x,p.y]
+
+
+## A wall is partitioned into actual solid volumes, never a painted aperture.
+## Openings are [start, end, sill, head], measured along the local wall axis
+## and above its base. Adjacent opening strips can form a stepped arch.
+static func aperture_volumes(wall: Dictionary,errors: Array) -> Array:
+	var result: Array=[]
+	var r: Array=wall.get("rect",[])
+	var height:=float(wall.get("height",0.0))
+	var base:=float(wall.get("base",0.0))
+	var axis_y:=str(wall.get("axis","x"))=="y"
+	if r.size()!=4 or height<=0.0 or float(r[2])<=0.0 or float(r[3])<=0.0:
+		errors.append("Invalid aperture wall")
+		return result
+	var length:=float(r[3] if axis_y else r[2])
+	var openings: Array=wall.get("openings",[]).duplicate(true)
+	for opening in openings:
+		if not opening is Array or opening.size()!=4:
+			errors.append("Malformed wall aperture")
+			return []
+	openings.sort_custom(func(a: Array,b: Array) -> bool: return float(a[0])<float(b[0]))
+	var cursor:=0.0
+	for opening: Array in openings:
+		var start:=float(opening[0])
+		var end:=float(opening[1])
+		var sill:=float(opening[2])
+		var head:=float(opening[3])
+		if start<cursor-0.0001 or end<=start or end>length+0.0001 or sill<0.0 or head<=sill or head>height+0.0001:
+			errors.append("Invalid or overlapping wall aperture")
+			return []
+		_wall_strip(result,r,axis_y,cursor,start,base,height)
+		_wall_strip(result,r,axis_y,start,end,base,sill)
+		_wall_strip(result,r,axis_y,start,end,base+head,height-head)
+		cursor=end
+	_wall_strip(result,r,axis_y,cursor,length,base,height)
+	return result
+
+
+static func _wall_strip(out: Array,r: Array,axis_y: bool,start: float,end: float,base: float,height: float) -> void:
+	if end-start<=0.0001 or height<=0.0001:
+		return
+	out.append([float(r[0])+(0.0 if axis_y else start),base,float(r[1])+(start if axis_y else 0.0),float(r[2]) if axis_y else end-start,height,end-start if axis_y else float(r[3])])

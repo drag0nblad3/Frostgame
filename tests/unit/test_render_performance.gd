@@ -90,3 +90,17 @@ func test_mindscape_stays_terrain_free() -> void:
 	check_eq(board.pieces.size(),0)
 	check_eq(art.get_child_count(),0)
 	art.free()
+
+
+func test_static_open_cache_is_shared_and_invalidated() -> void:
+	var board:=BoardLoader.load_id("frozen_ruins",TerrainDb.load_file())
+	var node:=Vector2i(4,4)
+	var a:=MoveGrid.new(board)
+	var b:=MoveGrid.new(board)
+	var answer:=a.open(node)
+	var before:=MoveGrid.evaluations
+	check_eq(b.open(node),answer)
+	check_eq(MoveGrid.evaluations,before)
+	board.invalidate_terrain()
+	check_eq(b.open(node),answer)
+	check_eq(MoveGrid.evaluations,before+1)

@@ -4,6 +4,7 @@ extends Node3D
 
 const COLORS := {
 	"ruin": Color(0.42, 0.44, 0.5),
+	"ruin_broken_wall": Color(0.43, 0.46, 0.50),
 	"wall": Color(0.34, 0.36, 0.4),
 	"rubble": Color(0.42, 0.39, 0.36),
 }
@@ -203,6 +204,10 @@ static func _piece_key(p: TerrainPiece) -> String:
 
 func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 	match piece.kind.id:
+		"architecture_prism_target":
+			return
+		"ruin_timber_wall","ruin_market_counter","ruin_altar","ruin_workbench","ruin_hearth","ruin_archive_shelf","ruin_grave":
+			RuinFurnishing.build(root,piece)
 		"rubble":
 			BattlefieldDetail.rubble(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 		"museum_statue":
@@ -228,7 +233,7 @@ func _build_piece(root: Node3D,board: Board,piece: TerrainPiece) -> void:
 		_:
 			root.add_child(_piece(piece))
 			TabletopDetails.decorate(root,piece)
-			if piece.kind.id in ["ruin","tower","wall","platform","hut_wall","null_annex","null_walk","null_lower","null_middle","null_upper"]:
+			if piece.kind.id in ["ruin","ruin_broken_wall","tower","wall","platform","hut_wall","null_annex","null_walk","null_lower","null_middle","null_upper"]:
 				RuinSilhouette.decorate(root,piece)
 				RuinedFacade.decorate(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
 				BattlefieldDetail.facade(root,piece,scenario_id if not scenario_id.is_empty() else board.id)
@@ -275,7 +280,7 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 		cylinder.bottom_radius = cylinder.top_radius
 		cylinder.height = h
 		mi.mesh = cylinder
-	elif piece.kind.id in ["ruin","wall"] and not piece.kind.walkable_top:
+	elif piece.kind.id in ["ruin","ruin_broken_wall","hut_wall","wall"] and not piece.kind.walkable_top:
 		mi.mesh = RuinedMesh.build(piece.rect.size,h,roundi(piece.rect.position.x*31.0+piece.rect.position.y*17.0))
 	else:
 		var box := BoxMesh.new()
@@ -300,7 +305,7 @@ func _piece(piece: TerrainPiece) -> MeshInstance3D:
 	if col.a < 1.0:
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	if piece.kind.id in StoneFinish.STONE_KINDS:
-		var stone := StoneFinish.material(col,false,piece.kind.id in ["ruin","tower","hut_wall","null_lower","null_middle","null_upper"],piece.rect.position)
+		var stone := StoneFinish.material(col,false,piece.kind.id in ["ruin","ruin_broken_wall","tower","hut_wall","null_lower","null_middle","null_upper"],piece.rect.position)
 		stone.set_shader_parameter("footprint_size",piece.rect.size)
 		stone.set_shader_parameter("walkable_roof",piece.kind.walkable_top)
 		stone.set_shader_parameter("facade_style",RuinedFacade.style(piece,scenario_id))

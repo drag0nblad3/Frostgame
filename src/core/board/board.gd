@@ -92,6 +92,8 @@ var _lattice_size := Vector2.ZERO
 var static_step_cache := PackedFloat64Array()
 ## Bot distance fields by target node (see MovePlanner.distance_field).
 var field_cache := {}
+## Shared terrain-only open-node answers for repeated AI distance fields.
+var static_open_cache := {}
 var has_ground_profiles := false
 var has_ramps := false
 var _ground_profiles: Array[TerrainPiece]=[]
@@ -112,6 +114,7 @@ func _lattice(p: Vector2) -> int:
 
 
 func _reset_caches() -> void:
+	static_open_cache.clear()
 	_lattice_size = size
 	_lattice_cols = int(size.x * 4.0) + 1
 	var n := _lattice_cols * (int(size.y * 4.0) + 1)
