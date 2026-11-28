@@ -89,7 +89,12 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 				var node:=layout.node(layout.surface_id(start),p)
 				if layout.point(node).is_equal_approx(p):
 					grounded.append(layout.world(node))
-			out[target]={"path":path,"cost":cost,"fall":a.y-b.y,"grounded":grounded,"surface":layout.surface_id(target),"jump":true}
+			var arc:=path.duplicate()
+			arc.remove_at(0)
+			var preview:=grounded.duplicate()
+			for i in range(1,arc.size()):
+				preview.append(arc[i])
+			out[target]={"path":path,"arc":arc,"preview":preview,"approach_cost":cost-distance,"cost":cost,"fall":a.y-b.y,"grounded":grounded,"surface":layout.surface_id(target),"jump":true}
 	return LayeredMovement.extend_aerial(c,out) if continuation else out
 
 
@@ -111,8 +116,29 @@ static func _land(c: GameController,f: Figure,_n: Vector3i,plan: Dictionary) -> 
 	LayeredMovement.offer_aerial(c,f,plan)
 
 
-## Only real interruptions in support generate jump candidates. Eight lattice
-## directions, bounded by the movement allowance; no full-map pair scan.
+## Additional primitive lattice vectors give oblique crossings without
+## scanning every pair of points on the board.
+const OBLIQUE: Array[Vector2i]=[
+	Vector2i(2,1),Vector2i(2,-1),Vector2i(-2,1),Vector2i(-2,-1),
+	Vector2i(1,2),Vector2i(1,-2),Vector2i(-1,2),Vector2i(-1,-2)
+]
+
+
+## Test actual support along the ray, not just its next lattice endpoint.
+static func _continuous_support(c: GameController,layout: FloorLayout,from: Vector3i,to: Vector3i,height: float) -> bool:
+	var support:=layout.surfaces[from.z]
+	var a:=layout.point(from)
+	var b:=layout.point(to)
+	var steps:=maxi(1,ceili(a.distance_to(b)*10.0))
+	for i in range(1,steps+1):
+		var p:=a.lerp(b,float(i)/steps)
+		if not support.contains(p,Figure.BASE_RADIUS) or absf(support.height_at(p)-height)>0.001 or c.state.board.over_void(p,Figure.BASE_RADIUS):
+			return false
+	return true
+
+
+## Only interruptions in support generate jump candidates. The ray search
+## remains bounded by movement allowance and never pairs all map nodes.
 static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i) -> Array[Dictionary]:
 	var out: Array[Dictionary]=[]
 	var f:=c.state.active()
@@ -128,7 +154,10 @@ static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,s
 	for i in layout.surfaces.size():
 		if not layout.surfaces[i].id.begins_with("climb:"):
 			decks.append(i)
-	for direction: Vector2i in MoveGrid.NEIGHBORS:
+	var directions: Array[Vector2i]=[]
+	directions.assign(MoveGrid.NEIGHBORS)
+	directions.append_array(OBLIQUE)
+	for direction: Vector2i in directions:
 		var delta:=Vector3i(direction.x,direction.y,0)
 		var step:=Vector2(direction).length()*MoveGrid.STEP
 		var takeoff:=start
@@ -138,7 +167,7 @@ static func _generated(c: GameController,layout: FloorLayout,grid: LayeredGrid,s
 				break
 			var next:=takeoff+delta
 			var next_at:=layout.point(next)
-			if layout.standable(next) and is_equal_approx(layout.height(next),height) and not c.state.board.over_void(next_at,Figure.BASE_RADIUS):
+			if layout.standable(next) and _continuous_support(c,layout,takeoff,next,height):
 				continue
 			if layout.clearance(Vector3(next_at.x,height,next_at.y),Figure.BASE_RADIUS,1.6)==false:
 				continue
