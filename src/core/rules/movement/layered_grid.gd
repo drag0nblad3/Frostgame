@@ -7,7 +7,12 @@ var others: Array[Figure] = []
 var null_boundary := false
 var null_board: Board
 static var evaluations:=0
+static var edge_evaluations:=0
 var _open_cache := {}
+## Enabled only for compound preview searches over an unchanged battle state.
+var memoize_edges:=false
+var _edge_cache: Dictionary={}
+var _stop_cache: Dictionary={}
 ## Contact neighborhoods are fixed over a single movement query.
 var _nearby: Dictionary={}
 const NO_FIGURES: Array[Figure]=[]
@@ -15,6 +20,8 @@ var running := false:
 	set(value):
 		if running!=value:
 			_open_cache.clear()
+			_edge_cache.clear()
+			_stop_cache.clear()
 		running=value
 var board: Board
 var _shared_costs:=false
@@ -27,6 +34,7 @@ var avoid_lethal:=false
 
 func reverse_connections() -> void:
 	reversed=true
+	_edge_cache.clear()
 	reverse_links.clear()
 	for from: Vector3i in layout.links:
 		for edge: Dictionary in layout.links[from]:
@@ -85,6 +93,14 @@ func _compute_open(n: Vector3i) -> bool:
 
 
 func stops(n: Vector3i) -> bool:
+	if not memoize_edges:
+		return _compute_stops(n)
+	if not _stop_cache.has(n):
+		_stop_cache[n]=_compute_stops(n)
+	return bool(_stop_cache[n])
+
+
+func _compute_stops(n: Vector3i) -> bool:
 	if mover==null:
 		return false
 	if null_boundary and ScenarioNull.field_at(null_board,layout.point(n)):
@@ -98,6 +114,15 @@ func stops(n: Vector3i) -> bool:
 
 
 func neighbors(n: Vector3i) -> Array[Dictionary]:
+	if not memoize_edges:
+		return _compute_neighbors(n)
+	if not _edge_cache.has(n):
+		_edge_cache[n]=_compute_neighbors(n)
+	return _edge_cache[n]
+
+
+func _compute_neighbors(n: Vector3i) -> Array[Dictionary]:
+	edge_evaluations+=1
 	var out: Array[Dictionary] = []
 	if not open(n):
 		return out
