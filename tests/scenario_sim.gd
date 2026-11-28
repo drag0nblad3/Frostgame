@@ -40,8 +40,27 @@ func _init() -> void:
 	_validate(s, "deployment")
 	var activations := 0
 	var start := Time.get_ticks_msec()
+	var samples: Array[float]=[]
+	var slowest: Dictionary={}
+	var peak:=0.0
+	var open_start:=MoveGrid.evaluations+LayeredGrid.evaluations
+	var edge_start:=LayeredGrid.edge_evaluations
 	while not s.over and activations < 2000:
-		if not Bot.play_activation(c):
+		var turn_before:=s.turn
+		var phase_before:=str(s.phase)
+		var event_start:=c.history.size()
+		var started:=Time.get_ticks_usec()
+		var ok:=Bot.play_activation(c)
+		var ms:=float(Time.get_ticks_usec()-started)/1000.0
+		samples.append(ms)
+		if ms>peak:
+			peak=ms
+			var types: Dictionary={}
+			for index in range(event_start,c.history.size()):
+				var event:=c.history[index]
+				types[event.type]=int(types.get(event.type,0))+1
+			slowest={"turn":turn_before,"phase":phase_before,"activation":activations+1,"events":types}
+		if not ok:
 			errors.append("No legal bot activation at turn %d phase %s" % [s.turn, str(s.phase)])
 			break
 		activations += 1
@@ -56,7 +75,14 @@ func _init() -> void:
 	var scores: Array[int] = []
 	for side in s.side_count():
 		scores.append(s.secured_count(side))
-	print("SCENARIO_RESULT|", JSON.stringify({"id": id, "seed": seed_value, "turn": s.turn, "activations": activations, "winner": s.winner, "scores": scores, "events": counts, "elapsed_ms": Time.get_ticks_msec() - start, "errors": errors}))
+	var elapsed:=Time.get_ticks_msec()-start
+	var total:=0.0
+	for ms in samples:
+		total+=ms
+	samples.sort()
+	var performance: Dictionary={"mean_ms":total/maxf(1.0,samples.size()),"p95_ms":samples[mini(samples.size()-1,ceili(samples.size()*0.95)-1)] if not samples.is_empty() else 0.0,"max_ms":peak,"open_checks":MoveGrid.evaluations+LayeredGrid.evaluations-open_start,"edge_checks":LayeredGrid.edge_evaluations-edge_start,"slowest":slowest}
+	print("SCENARIO_PERFORMANCE|",JSON.stringify({"id":id,"seed":seed_value,"activations":activations,"performance":performance}))
+	print("SCENARIO_RESULT|", JSON.stringify({"id": id, "seed": seed_value, "turn": s.turn, "activations": activations, "winner": s.winner, "scores": scores, "events": counts, "elapsed_ms": elapsed, "performance":performance, "errors": errors}))
 	for msg in errors:
 		printerr("FAIL ", msg)
 	quit(0 if errors.is_empty() else 1)
