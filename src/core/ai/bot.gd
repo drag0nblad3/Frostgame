@@ -14,7 +14,19 @@ static func play_activation(c: GameController) -> bool:
 
 
 static func resume_activation(c: GameController) -> bool:
-	return BattleRecord.run(c,"bot_resume",{},func() -> bool: return _resume(c))
+	return BattleRecord.run(c,"bot_resume",{},func() -> bool: return _budgeted_resume(c))
+
+
+static func _budgeted_resume(c: GameController) -> bool:
+	var f:=c.state.active()
+	if f==null:
+		return false
+	# A resumed reaction starts a new deterministic decision session. Do
+	# not persist transient work counters in checkpoints or replay data.
+	c.ai_work={"remaining":roundi(lerpf(1400.0,2600.0,BotPreference.trait_value(f,"deliberation")))}
+	var result:=_resume(c)
+	c.ai_work={}
+	return result
 
 
 static func _resume(c: GameController) -> bool:
