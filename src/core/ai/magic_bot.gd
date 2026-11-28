@@ -51,14 +51,15 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 	for t in s.figures:
 		if not t.in_play() or t.side!=f.side or t.ring_side!=f.ring_side:
 			continue
-		var threat:=_leap_threat(s,t,Vector3(t.pos.x,t.elevation,t.pos.y))
+		var enemies:=_leap_enemies(s,t)
+		var threat:=_leap_threat(enemies,Vector3(t.pos.x,t.elevation,t.pos.y))
 		var carrier:=t.treasure_id>=0 and t.control_spell!="mind_control"
 		if not carrier and threat>5.0:
 			continue
 		var urgency: float=(3.0 if carrier else 0.0)+maxf(0.0,5.0-threat)+(2.0 if t.health<=5 else 0.0)
 		if t!=f and not t.activated:
 			urgency-=1.5
-		targets.append({"figure":t,"urgency":urgency*BotPreference.appeal(s,f,t.id,"leap_target")})
+		targets.append({"figure":t,"enemies":enemies,"urgency":urgency*BotPreference.appeal(s,f,t.id,"leap_target")})
 	targets.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["urgency"]>b["urgency"])
 	var probability:=MagicTactics.probability(c,f,"leap")
 	for i in mini(3,targets.size()):
@@ -67,7 +68,8 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 			continue
 		var origin:=Vector3(t.pos.x,t.elevation,t.pos.y)
 		var limit:=5.0 if t.treasure_id>=0 else 10.0
-		var threat:=_leap_threat(s,t,origin)
+		var enemies: PackedVector3Array=targets[i]["enemies"]
+		var threat:=_leap_threat(enemies,origin)
 		var edge:=TreasureRules.edge_distance(s.board,t.pos)
 		var candidates: Array[Dictionary]=[]
 		# Sample a coarse one-inch lattice before scoring, rather than
@@ -79,7 +81,7 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 			var distance:=origin.distance_to(at)
 			if distance>limit+0.001 or distance<2.0:
 				continue
-			var score:=maxf(0.0,minf(8.0,_leap_threat(s,t,at))-minf(8.0,threat))*(0.65+0.55*BotPreference.trait_value(f,"caution"))
+			var score:=maxf(0.0,minf(8.0,_leap_threat(enemies,at))-minf(8.0,threat))*(0.65+0.55*BotPreference.trait_value(f,"caution"))
 			if t.treasure_id>=0 and t.control_spell!="mind_control":
 				score+=maxf(0.0,edge-TreasureRules.edge_distance(s.board,layout.point(n)))*(0.9+0.6*BotPreference.trait_value(f,"greed"))
 			if t!=f and not t.activated:
@@ -102,11 +104,18 @@ static func leap_plan(c: GameController,f: Figure,threshold: float=1.5) -> Dicti
 	return best
 
 
-static func _leap_threat(s: GameState,t: Figure,at: Vector3) -> float:
-	var nearest:=8.0
+static func _leap_enemies(s: GameState,t: Figure) -> PackedVector3Array:
+	var out:=PackedVector3Array()
 	for enemy in s.figures:
 		if enemy.in_play() and enemy.side!=t.side and enemy.ring_side==t.ring_side and IllusionRules.visible_to(s.figures,t,enemy):
-			nearest=minf(nearest,at.distance_to(Vector3(enemy.pos.x,enemy.elevation,enemy.pos.y)))
+			out.append(Vector3(enemy.pos.x,enemy.elevation,enemy.pos.y))
+	return out
+
+
+static func _leap_threat(enemies: PackedVector3Array,at: Vector3) -> float:
+	var nearest:=8.0
+	for enemy in enemies:
+		nearest=minf(nearest,at.distance_to(enemy))
 	return nearest
 
 
