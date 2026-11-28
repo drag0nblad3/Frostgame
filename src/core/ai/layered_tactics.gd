@@ -164,7 +164,7 @@ static func aerial_progress(c: GameController,f: Figure,layout: FloorLayout,reac
 	var damage:=aerial_damage(s,f,validated.jumps[best])
 	if damage>=f.health or (damage>0 and (f.treasure_id>=0 or f.side<0)):
 		return false
-	return c.commit_movement(mode,best)
+	return BattleRecord.run(c,"movement",{"mode":mode,"node":best},func() -> bool:return LayeredMovement.declare_aerial(c,best,validated.jumps[best]))
 
 
 static func aerial_damage(s: GameState,f: Figure,plan: Dictionary) -> int:
