@@ -54,7 +54,7 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 
 ## Shared A* engine. The heuristic must be a lower bound on the remaining
 ## movement plus goal penalty. Infinite evaluation means not a goal.
-static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,allow_start: bool=false) -> Dictionary:
+static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,allow_start: bool=false,limit: float=100.0) -> Dictionary:
 	if not grid.open(start):
 		return {}
 	var heap:=MinHeap.new()
@@ -81,7 +81,7 @@ static func search_goal(grid: LayeredGrid,start: Vector3i,heuristic: Callable,ev
 		for edge in grid.neighbors(n):
 			var next: Vector3i=edge["to"]
 			var total:=distance+float(edge["cost"])
-			if total>100.001 or total>=float(distances.get(next,INF)):
+			if total>limit+0.001 or total>=float(distances.get(next,INF)):
 				continue
 			var estimate:=total+float(heuristic.call(next))
 			if estimate>=best:
