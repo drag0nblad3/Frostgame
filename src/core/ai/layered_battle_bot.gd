@@ -226,15 +226,64 @@ static func _shooting_spot(c: GameController,f: Figure,layout: FloorLayout,reach
 static func _wander(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach) -> bool:
 	if f.moves_taken>0:
 		return false
-	var heading:=PackRules.heading(c,f)
-	var best: Variant=null
-	var value:=0.0
-	for node: Vector3i in reach.cost:
-		var progress:=heading.dot(layout.point(node)-f.pos)
-		if progress>value:
-			best=node
-			value=progress
+	var best: Variant=wander_destination(c,f,layout,reach,PackRules.heading(c,f))
 	return best!=null and c.move_on_floor(best)
+
+
+## A blind creature follows its rolled heading until the first obstacle.
+## Do not select a reachable point on the far side of a wall by walking
+## around it. Flying creatures retain legal air paths on their own floor.
+static func wander_destination(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,heading: Vector2) -> Variant:
+	if reach.cost.is_empty() or heading.is_zero_approx():
+		return null
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var previous:=reach.start
+	var best: Variant=null
+	var direction:=heading.normalized()
+	var allowance:=MoveRules.allowance(f)
+	var spent:=0.0
+	for i in range(1,ceili(allowance/0.25)+1):
+		var point:=f.pos+direction*minf(allowance,i*0.25)
+		var xy:=MovePlanner.node_at(point)
+		var n:=Vector3i(xy.x,xy.y,reach.start.z)
+		if n==previous:
+			continue
+		if not reach.can_reach(n) or not grid.open(n):
+			break
+		if layout.point(n).distance_to(f.pos)>allowance+0.001:
+			break
+		if reach.air_paths.has(n):
+			# Actual flight is permitted, not a walking detour. Flight paths
+			# have a vertical rise/descent and straight horizontal heading.
+			if not f.def.traits.has("flying"):
+				break
+			spent=float(reach.cost[n])
+		else:
+			var step_cost:=INF
+			for edge in grid.neighbors(previous):
+				if edge["to"]==n:
+					step_cost=minf(step_cost,float(edge["cost"]))
+			if spent+step_cost>allowance+0.001:
+				break
+			spent+=step_cost
+			if not _wandering_route_straight(layout,reach.path_to(n),f.pos,direction,reach.start.z):
+				break
+		best=n
+		previous=n
+		if grid.stops(n):
+			break
+	return best
+
+
+static func _wandering_route_straight(layout: FloorLayout,path: Array[Vector3i],origin: Vector2,heading: Vector2,index: int) -> bool:
+	var progress:=0.0
+	for n in path:
+		var offset:=layout.point(n)-origin
+		var next:=offset.dot(heading)
+		if n.z!=index or next<progress-0.001 or absf(offset.cross(heading))>MoveGrid.STEP*0.708+0.001:
+			return false
+		progress=next
+	return true
 
 
 static func _cape(c: GameController,f: Figure) -> bool:
