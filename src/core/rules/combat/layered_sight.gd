@@ -11,13 +11,14 @@ static func clear(layout: FloorLayout,a: Vector3,b: Vector3) -> bool:
 			var at:=a.lerp(b,float(i)/steps)
 			if at.y<layout.profiled_ground.height_at(Vector2(at.x,at.z))-0.002:
 				return false
-	for solid in layout.solids:
+	var volumes:=layout.ray_volumes(a,b)
+	for solid: AABB in volumes[0]:
 		if intersects(a,b,solid):
 			return false
-	for cylinder in layout.circular_solids:
+	for cylinder: AABB in volumes[1]:
 		if intersects_cylinder(a,b,cylinder):
 			return false
-	for prism in layout.convex_solids:
+	for prism: ArchitecturePrism in volumes[2]:
 		if prism.intersects_ray(a,b):
 			return false
 	return true

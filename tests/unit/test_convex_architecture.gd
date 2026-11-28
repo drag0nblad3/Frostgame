@@ -89,3 +89,36 @@ func test_clearance_index_is_rebuilt_with_changed_geometry() -> void:
 	check(revised!=l)
 	check(revised.clearance(at,0.5,1.6))
 	check(not l.clearance(at,0.5,1.6))
+
+
+func test_indexed_sight_matches_exhaustive_slab_and_prism_tests() -> void:
+	var b:=BoardLoader.load_id("silent_tower",terrain())
+	var l:=b.floor_geometry()
+	var rays:=0
+	for x in range(0,36,2):
+		for z in range(0,36,2):
+			var a:=Vector3(float(x),1.5,float(z))
+			for offset: Vector3 in [Vector3(3,-1,0),Vector3(-5,3,4),Vector3(12,0,9),Vector3(0,5,0),Vector3(32,0,32)]:
+				var end:=a+offset
+				var expected:=true
+				if l.profiled_ground!=null:
+					var steps:=maxi(1,ceili(a.distance_to(end)*10.0))
+					for i in range(steps+1):
+						var at:=a.lerp(end,float(i)/steps)
+						if at.y<l.profiled_ground.height_at(Vector2(at.x,at.z))-0.002:
+							expected=false
+							break
+				for solid in l.solids:
+					if LayeredSight.intersects(a,end,solid):
+						expected=false
+				for cylinder in l.circular_solids:
+					if LayeredSight.intersects_cylinder(a,end,cylinder):
+						expected=false
+				for prism in l.convex_solids:
+					if prism.intersects_ray(a,end):
+						expected=false
+				check_eq(LayeredSight.clear(l,a,end),expected)
+				rays+=1
+	check(rays>1500)
+	var local:=l.ray_volumes(Vector3(1,1,1),Vector3(2,1,2))
+	check(local[0].size()+local[1].size()+local[2].size()<l.solids.size()+l.circular_solids.size()+l.convex_solids.size())

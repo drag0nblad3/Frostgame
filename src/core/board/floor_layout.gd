@@ -415,3 +415,33 @@ func coarse_horizontal_distance(from: Vector3i,to: Vector3i) -> float:
 	# distance as the fallback. This estimate is for imperfect AI only.
 	var offset:=point(from).distance_to(point(a))+point(to).distance_to(point(b))
 	return maxf(direct,float(distances[a])-offset)
+
+
+## Ray broad phase shares the same conservative bins as figure clearance.
+## Short/medium rays are common in combat and contact tests. For a very
+## wide bounding rectangle, scanning the original arrays is cheaper.
+func ray_volumes(a: Vector3,b: Vector3) -> Array:
+	var all: Array=[solids,circular_solids,convex_solids]
+	if not _sealed or solids.size()+circular_solids.size()+convex_solids.size()<16:
+		return all
+	var lo:=_clearance_cell(Vector2(minf(a.x,b.x),minf(a.z,b.z)))
+	var hi:=_clearance_cell(Vector2(maxf(a.x,b.x),maxf(a.z,b.z)))
+	if (hi.x-lo.x+1)*(hi.y-lo.y+1)>24:
+		return all
+	_prepare_clearance_index()
+	if lo==hi:
+		return _clearance_cells.get(lo,[[],[],[]])
+	var out: Array=[[],[],[]]
+	var seen: Array=[{},{},{}]
+	for x in range(lo.x,hi.x+1):
+		for y in range(lo.y,hi.y+1):
+			var key:=Vector2i(x,y)
+			if not _clearance_cells.has(key):
+				continue
+			var bucket: Array=_clearance_cells[key]
+			for kind in 3:
+				for volume in bucket[kind]:
+					if not seen[kind].has(volume):
+						seen[kind][volume]=true
+						out[kind].append(volume)
+	return out
