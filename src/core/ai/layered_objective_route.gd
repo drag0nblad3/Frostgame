@@ -15,7 +15,7 @@ static func eligible(c: GameController,f: Figure,extracting: bool) -> bool:
 	return true
 
 
-static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i,imperfect: bool=false) -> Dictionary:
+static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i,imperfect: bool=false,local: LayeredReach=null) -> Dictionary:
 	if f.side<0 or f.def.traits.has("animal") or RuleHooks.any("cannot_carry_treasure",[s,f]):
 		return {}
 	var layout:=grid.layout
@@ -65,6 +65,10 @@ static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vect
 			elif t.pos.distance_to(layout.point(n))<=0.8:
 				return float(penalties[t.id])
 		return INF
+	if local!=null:
+		var nearby:=LayeredCombatRoute.local_goal(local,evaluate,true)
+		if not nearby.is_empty():
+			return nearby
 	return LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,true,100.0,BotPreference.route_budget(f) if imperfect else 0)
 
 
@@ -80,7 +84,7 @@ static func exit_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i
 static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,grid: LayeredGrid,quarry: Figure,extracting: bool) -> bool:
 	if not extracting and BotPreference.prefers_combat(c.state,f) and LayeredCombatRoute.move(c,f,layout,reach,grid,quarry):
 		return true
-	var route:=exit_search(c.state,f,grid,reach.start,true) if extracting else treasure_search(c.state,f,grid,reach.start,true)
+	var route:=exit_search(c.state,f,grid,reach.start,true) if extracting else treasure_search(c.state,f,grid,reach.start,true,reach)
 	if route.is_empty() or route["goal"]==reach.start:
 		return LayeredCombatRoute.move(c,f,layout,reach,grid,quarry)
 	var path: Array[Vector3i]=route["path"]
