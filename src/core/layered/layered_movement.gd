@@ -37,7 +37,18 @@ static func reach(c: GameController,cape: bool=false,run: bool=false,boost: bool
 
 
 static func move(c: GameController,node: Vector3i,cape: bool=false,run: bool=false,boost: bool=false,exiting: bool=false) -> bool:
-	var reachable := reach(c,cape,run,boost)
+	return declare_walk(c,node,reach(c,cape,run,boost),cape,run,boost,exiting)
+
+
+## Internal immediate declaration from the exact reach just calculated by
+## the bot. Never retain the reach across a state-changing action.
+static func declare_walk(c: GameController,node: Vector3i,reachable: LayeredReach,cape: bool=false,run: bool=false,boost: bool=false,exiting: bool=false) -> bool:
+	if not eligible(c,cape) or (run and not RunForIt.ready(c,boost)):
+		return false
+	var active:=c.state.active()
+	var layout_now:=c.state.board.floor_geometry()
+	if reachable.start!=layout_now.node(active.surface_id,active.pos):
+		return false
 	if node==reachable.start or not reachable.can_reach(node):
 		return false
 	var f := c.state.active()
