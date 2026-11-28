@@ -272,17 +272,9 @@ static func _apply_flight(c: GameController,f: Figure,path: PackedVector3Array,s
 static func offer_aerial(c: GameController,f: Figure,plan: Dictionary,ignored: Array[int]=[]) -> void:
 	if not f.in_play() or c.state.active()!=f:
 		return
-	var grounded: PackedVector3Array=plan["grounded"]
-	var path:=grounded.duplicate()
-	var surfaces:=_grounded_surfaces(f,plan,grounded)
-	var target: Vector3=plan["path"][-1]
-	path.append(target)
-	surfaces.append(str(plan["surface"]))
-	var tail: PackedVector3Array=plan.get("tail",PackedVector3Array())
-	var tail_surfaces: Array=plan.get("tail_surfaces",[])
-	for i in range(1,tail.size()):
-		path.append(tail[i])
-		surfaces.append(str(tail_surfaces[i]))
+	var path:=PackedVector3Array()
+	var surfaces: Array[String]=[]
+	_append_aerial_contacts(plan,f.surface_id,path,surfaces)
 	var choice:=c._displacement.intercept_floor(f,path,surfaces,ignored) if c.state.forced_combat else {}
 	if not choice.is_empty() and choice["guard"].side==c.state.reaction_side:
 		c.state.pending_intercept={"floor_route":true,"mover":f.id,"path":path,"surfaces":surfaces,"cost":plan["cost"],"ignored":ignored,"choice":choice,"exiting":false,"aerial_plan":plan}
@@ -291,23 +283,23 @@ static func offer_aerial(c: GameController,f: Figure,plan: Dictionary,ignored: A
 	_apply_aerial(c,f,plan,choice)
 
 
-static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: Dictionary) -> void:
+static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: Dictionary,spend: bool=true) -> void:
 	if not f.in_play() or c.state.active()!=f:
 		return
 	var grounded: PackedVector3Array=plan["grounded"]
 	var surfaces:=_grounded_surfaces(f,plan,grounded)
-	var cost:=float(plan.get("aerial_cost",plan["cost"]))
+	var cost:=float(plan.get("segment_cost",plan.get("aerial_cost",plan["cost"])))
 	var approach_cost:=float(plan.get("approach_cost",0.0))
 	var engaged:=Contact.in_combat(c.state.figures,f)
 	var was_wounded:=f.wounded()
 	# An interception during the run-up prevents takeoff and any fall damage.
 	if not choice.is_empty() and int(choice["index"])<grounded.size():
-		_apply(c,f,grounded,surfaces,approach_cost if plan.has("approach_cost") else cost,choice,false,false,false)
+		_apply(c,f,grounded,surfaces,approach_cost if plan.has("approach_cost") else cost,choice,false,false,false,PackedVector3Array(),true,spend)
 		return
 	if grounded.size()>1:
-		if not _apply(c,f,grounded,surfaces,approach_cost if plan.has("approach_cost") else cost,{},false,false,false,PackedVector3Array(),false):
+		if not _apply(c,f,grounded,surfaces,approach_cost if plan.has("approach_cost") else cost,{},false,false,false,PackedVector3Array(),false,spend):
 			return
-	else:
+	elif spend:
 		c.spend_move(f)
 	var dest: Vector3=plan["path"][-1]
 	var at:=Vector2(dest.x,dest.z)
@@ -345,7 +337,21 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 	var landing_intercept:=not choice.is_empty() and int(choice["index"])==grounded.size()
 	if f.in_play() and landing_intercept:
 		c._displacement.force_contact(choice)
-	if f.in_play() and not c.awaiting_reaction() and not landing_intercept and not Contact.in_combat(c.state.figures,f) and not (not was_wounded and f.wounded()) and not bool(plan.get("end_activation",false)) and plan.has("tail"):
+	var can_continue:=f.in_play() and not c.awaiting_reaction() and not landing_intercept and not Contact.in_combat(c.state.figures,f) and not (not was_wounded and f.wounded()) and not bool(plan.get("end_activation",false))
+	if can_continue and plan.has("next"):
+		var next: Dictionary=plan["next"].duplicate()
+		if plan.has("tail"):
+			for key in ["tail","tail_surfaces","remaining"]:
+				next[key]=plan[key]
+		var later:=choice.duplicate()
+		if not later.is_empty():
+			later["index"]=int(later["index"])-grounded.size()
+		# A landing can reveal new occupants or change the route. Recompute the
+		# second leg before committing it, without modifying the live figure.
+		if _valid_next_aerial(c,f,next):
+			_apply_aerial(c,f,next,later,false)
+			return
+	elif can_continue and plan.has("tail"):
 		if _continue_aerial(c,f,plan,choice,grounded.size()):
 			return
 	c.finish_movement(f,engaged,f.in_play())
@@ -464,3 +470,78 @@ static func _grounded_surfaces(f: Figure,plan: Dictionary,grounded: PackedVector
 		for i in grounded.size():
 			surfaces.append(f.surface_id)
 	return surfaces
+
+
+## Bounded second aerial leg. The live figure is not relocated to preview
+## hypothetical routes. Prefer the direct route on a tie.
+static func chain_aerial(c: GameController,base: Dictionary) -> Dictionary:
+	var out:=base.duplicate()
+	if base.is_empty():
+		return out
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var origin:=layout.node(f.surface_id,f.pos)
+	var allowance:=MoveRules.allowance(f)
+	for landing: Vector3i in base:
+		var first: Dictionary=base[landing]
+		var paid:=float(first["cost"])
+		var remaining:=allowance-paid
+		if remaining<0.501 or bool(first.get("end_activation",false)) or grid.stops(landing):
+			continue
+		var second:=LayeredJump.from_position(c,layout,grid,landing,remaining)
+		var drops:=LayeredDrop.from_position(c,layout,grid,landing,remaining,true)
+		for target: Vector3i in drops:
+			if not second.has(target) or float(drops[target]["cost"])<float(second[target]["cost"]):
+				second[target]=drops[target]
+		for target: Vector3i in second:
+			if target==origin or target==landing:
+				continue
+			var leg: Dictionary=second[target]
+			var total:=paid+float(leg["cost"])
+			if total>allowance+0.001 or (out.has(target) and total>=float(out[target]["cost"])-0.001):
+				continue
+			var combined:=first.duplicate()
+			combined["segment_cost"]=paid
+			combined["cost"]=total
+			combined["next"]=leg
+			var preview: PackedVector3Array=first.get("preview",first["path"]).duplicate()
+			var suffix: PackedVector3Array=leg.get("preview",leg["path"])
+			for i in range(1,suffix.size()):
+				preview.append(suffix[i])
+			combined["preview"]=preview
+			out[target]=combined
+	return out
+
+
+## Flatten only grounded contact points, preserving the landing index used
+## to split an accepted reaction between the two aerial legs.
+static func _append_aerial_contacts(plan: Dictionary,support: String,path: PackedVector3Array,surfaces: Array[String]) -> void:
+	var grounded: PackedVector3Array=plan["grounded"]
+	var explicit: Array=plan.get("grounded_surfaces",[])
+	for i in range(0 if path.is_empty() else 1,grounded.size()):
+		path.append(grounded[i])
+		surfaces.append(str(explicit[i]) if not explicit.is_empty() else support)
+	path.append(plan["path"][-1])
+	surfaces.append(str(plan["surface"]))
+	if plan.has("next"):
+		_append_aerial_contacts(plan["next"],str(plan["surface"]),path,surfaces)
+	var tail: PackedVector3Array=plan.get("tail",PackedVector3Array())
+	var tail_surfaces: Array=plan.get("tail_surfaces",[])
+	for i in range(1,tail.size()):
+		path.append(tail[i])
+		surfaces.append(str(tail_surfaces[i]))
+
+
+static func _valid_next_aerial(c: GameController,f: Figure,plan: Dictionary) -> bool:
+	var layout:=c.state.board.floor_geometry()
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var start:=layout.node(f.surface_id,f.pos)
+	var target: Vector3=plan["path"][-1]
+	var n:=layout.node(str(plan["surface"]),Vector2(target.x,target.z))
+	var budget:=float(plan["cost"])
+	var candidates:=LayeredJump.from_position(c,layout,grid,start,budget) if plan.get("jump",false) else LayeredDrop.from_position(c,layout,grid,start,budget,true)
+	if not candidates.has(n):
+		return false
+	var actual: Dictionary=candidates[n]
+	return actual["grounded"]==plan["grounded"] and actual["path"]==plan["path"]
