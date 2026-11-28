@@ -66,11 +66,7 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 			if Contact.touches_position(enemies[i],layout.point(n),layout.height(n),layout.surface_id(n)):
 				weight=minf(weight,weights[i])
 		return weight
-	if local!=null:
-		var nearby:=local_goal(local,evaluate,false)
-		if not nearby.is_empty():
-			return nearby
-	return search_goal(grid,start,heuristic,evaluate,false,100.0,budget)
+	return search_or_reuse(grid,start,heuristic,evaluate,local,"combat",false,budget)
 
 
 ## Shared A* engine. The heuristic must be a lower bound on the remaining
@@ -160,3 +156,36 @@ static func local_goal(reach: LayeredReach,evaluate: Callable,allow_start: bool=
 	if goal==null:
 		return {}
 	return {"goal":goal,"path":reach.path_to(goal),"cost":reach.cost[goal],"score":best,"visited":reach.cost.size(),"expanded":0,"partial":false,"local":true}
+
+
+## Reuse only a previous complete objective route in the same decision
+## session. Recheck target eligibility, current geometry and the new exact
+## local reach; the old path is guidance, never permission to move.
+static func search_or_reuse(grid: LayeredGrid,start: Vector3i,heuristic: Callable,evaluate: Callable,local: LayeredReach,kind: String,allow_start: bool,budget: int) -> Dictionary:
+	if local!=null:
+		var nearby:=local_goal(local,evaluate,allow_start)
+		if not nearby.is_empty():
+			return nearby
+		var prior:=reuse_route(grid,local,evaluate,kind)
+		if not prior.is_empty():
+			return prior
+	var route:=search_goal(grid,start,heuristic,evaluate,allow_start,100.0,budget)
+	if local!=null and not grid.ai_work.is_empty() and not route.is_empty() and not bool(route.get("partial",false)):
+		grid.ai_work["route_"+kind]={"layout":grid.layout,"path":route["path"]}
+	return route
+
+
+static func reuse_route(grid: LayeredGrid,local: LayeredReach,evaluate: Callable,kind: String) -> Dictionary:
+	var cached: Dictionary=grid.ai_work.get("route_"+kind,{})
+	if cached.is_empty() or cached.get("layout")!=grid.layout:
+		return {}
+	var path: Array[Vector3i]=cached["path"]
+	var index:=path.find(local.start)
+	if index<=0 or index>=path.size()-1 or not is_finite(float(evaluate.call(path[-1]))):
+		return {}
+	# A changed blocker can invalidate the intended step. Never route
+	# through it on the strength of an old plan; use fresh reach instead.
+	for i in range(path.size()-1,index,-1):
+		if local.can_reach(path[i]):
+			return {"goal":path[-1],"path":path.slice(index),"expanded":0,"partial":false,"reused":true}
+	return {}
