@@ -465,3 +465,45 @@ func test_two_short_descents_share_allowance() -> void:
 	check_eq(f.health,hp)
 	check_eq(f.moves_taken,1)
 	check_eq(f.actions_left,1)
+
+
+func test_preview_edge_cache_reduces_repeated_search_work() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var seeds: Array[Vector3i]=[
+		layout.node("deck",Vector2(11,10)),
+		layout.node("deck",Vector2(11.5,10)),
+		layout.node("deck",Vector2(12,10))
+	]
+	var expected: Array[Dictionary]=[]
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	var before:=LayeredGrid.edge_evaluations
+	var clock:=Time.get_ticks_usec()
+	for seed in seeds:
+		expected.append(LayeredDrop.from_position(c,layout,grid,seed,4.5,true))
+	var uncached_us:=Time.get_ticks_usec()-clock
+	var uncached:=LayeredGrid.edge_evaluations-before
+	grid=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	before=LayeredGrid.edge_evaluations
+	clock=Time.get_ticks_usec()
+	for i in seeds.size():
+		var actual:=LayeredDrop.from_position(c,layout,grid,seeds[i],4.5,true)
+		check_eq(actual.size(),expected[i].size())
+		for n: Vector3i in expected[i]:
+			check(actual.has(n))
+			if actual.has(n):
+				check_eq(actual[n]["cost"],expected[i][n]["cost"])
+				check_eq(actual[n]["preview"],expected[i][n]["preview"])
+	var cached_us:=Time.get_ticks_usec()-clock
+	var cached:=LayeredGrid.edge_evaluations-before
+	check(uncached>0)
+	check(cached<uncached,"cached overlapping searches should compute fewer edges")
+	print("aerial preview edge cache: ",uncached," -> ",cached," evaluations; ",uncached_us/1000.0," -> ",cached_us/1000.0," ms")
+	clock=Time.get_ticks_usec()
+	var options:=c.movement_options("drop_down")
+	print("compound drop preview: ",options.cost.size()," destinations in ",(Time.get_ticks_usec()-clock)/1000.0," ms")
+	check(not options.cost.is_empty())
+	check_eq(f.pos,Vector2(11,10))
+	check_eq(f.actions_left,2)
