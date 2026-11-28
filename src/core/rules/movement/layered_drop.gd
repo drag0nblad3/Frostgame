@@ -16,9 +16,10 @@ static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 	if not layout.standable(start):
 		return out
 	var grid:=LayeredGrid.new(layout,f,s.figures)
+	grid.memoize_edges=continuation
 	var allowance:=MoveRules.allowance(f)
 	var direct:=from_position(c,layout,grid,start,allowance,continuation,true)
-	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct)) if continuation else direct
+	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid),grid) if continuation else direct
 
 
 static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,approach: bool,allow_long: bool=false) -> Dictionary:
