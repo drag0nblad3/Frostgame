@@ -82,7 +82,14 @@ static func plans(c: GameController,generate: bool=false) -> Dictionary:
 		path.append(Vector3(b.x,a.y,b.z))
 		path.append(b)
 		if not out.has(target) or cost<float(out[target]["cost"]):
-			out[target]={"path":path,"cost":cost,"fall":a.y-b.y}
+			var grounded:=PackedVector3Array([layout.world(start)])
+			var stride:=maxi(absi(takeoff.x-start.x),absi(takeoff.y-start.y))
+			for step in range(1,stride+1):
+				var p:=layout.point(start).lerp(layout.point(takeoff),float(step)/stride)
+				var node:=layout.node(layout.surface_id(start),p)
+				if layout.point(node).is_equal_approx(p):
+					grounded.append(layout.world(node))
+			out[target]={"path":path,"cost":cost,"fall":a.y-b.y,"grounded":grounded,"surface":layout.surface_id(target),"jump":true}
 	return out
 
 
@@ -98,21 +105,10 @@ static func move(c: GameController,n: Vector3i) -> bool:
 	return true
 
 
-static func _land(c: GameController,f: Figure,n: Vector3i,plan: Dictionary) -> void:
+static func _land(c: GameController,f: Figure,_n: Vector3i,plan: Dictionary) -> void:
 	if not f.in_play() or c.state.active()!=f or not RedKingHill.before_move(c,f):
 		return
-	var engaged:=Contact.in_combat(c.state.figures,f)
-	var layout:=c.state.board.floor_geometry()
-	var old := f.surface_id
-	f.pos=layout.point(n)
-	f.elevation=layout.height(n)
-	f.surface_id=layout.surface_id(n)
-	c.spend_move(f)
-	c.emit("layered_move",{"id":f.id,"path":plan["path"],"surfaces":[old,f.surface_id],"cost":plan["cost"],"jump":true})
-	LayeredFall.apply(c,f,float(plan["fall"]),f)
-	if f.in_play():
-		c._magic.terrain.trigger_landing(f)
-	c.finish_movement(f,engaged,f.in_play())
+	LayeredMovement.offer_aerial(c,f,plan)
 
 
 ## Only real interruptions in support generate jump candidates. Eight lattice
