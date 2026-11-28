@@ -127,3 +127,24 @@ func test_dazzling_cape_can_escape_by_dropping_from_ledge() -> void:
 	check_eq(f.moves_taken,1)
 	check_eq(f.actions_left,1)
 	check(not ActiveGear.ready(f,GearActions.CAPE))
+
+
+func test_cape_ai_considers_aerial_escape_when_grounded_routes_are_trapped() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"west","rect":[2,2,2,2],"level":3},{"id":"east","rect":[4,0,8,6],"level":3}],"jumps":[{"from":["west",3.5,3],"to":["east",4.5,3]}]}
+	var f:=fig("wizard",0,Vector2(3.5,3))
+	f.surface_id="west"
+	f.elevation=3.0
+	var enemy:=fig("thug",1,Vector2(2.5,3))
+	enemy.surface_id="west"
+	enemy.elevation=3.0
+	var c:=make_game(b,[f,enemy],Dice.new(19))
+	c.state.active_id=f.id
+	f.actions_left=2
+	f.items.append({"gear":GearActions.CAPE,"gear_info":RedKingRewards.catalog()[GearActions.CAPE]})
+	check(LayeredBattleBot._cape(c,f))
+	check_eq(f.surface_id,"east")
+	check(not Contact.in_combat(c.state.figures,f))
+	check_eq(f.moves_taken,1)
+	check_eq(f.actions_left,1)
+	check(not ActiveGear.ready(f,GearActions.CAPE))
