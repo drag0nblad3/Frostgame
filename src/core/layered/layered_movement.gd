@@ -209,7 +209,7 @@ static func _apply(c: GameController,f: Figure,path: PackedVector3Array,surfaces
 			if not f.in_play():
 				_stop(c,f,engaged,run,boost)
 				return false
-			if column and i<path.size()-1 and ScenarioColumns.challenge(c,f):
+			if column and (not finalize or i<path.size()-1) and ScenarioColumns.challenge(c,f):
 				_stop(c,f,engaged,run,boost)
 				return false
 			if undiscovered and ScenarioSites.enter(c,f) and Contact.in_combat(c.state.figures,f):
@@ -307,6 +307,14 @@ static func _apply_aerial(c: GameController,f: Figure,plan: Dictionary,choice: D
 		c.spend_move(f)
 	var dest: Vector3=plan["path"][-1]
 	var at:=Vector2(dest.x,dest.z)
+	# A run-up can reveal a creature or alter terrain. Recheck the landing
+	# before committing the airborne part of this already-spent move.
+	var layout:=c.state.board.floor_geometry()
+	var landing:=layout.node(str(plan["surface"]),at)
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	if not grid.open(landing) or not is_equal_approx(layout.height(landing),dest.y):
+		c.finish_movement(f,engaged,f.in_play())
+		return
 	if RedKingHerded.contact(c,f,at) or RedKingVeil.touch(c,f,at):
 		f.actions_left=0
 		return
