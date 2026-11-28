@@ -63,6 +63,29 @@ jobs:
           timeout 600s godot --headless -s tests/scenario_sim.gd -- ${{ matrix.scenario }} ${{ matrix.seed }} 2>&1 | tee simulation.log
           ! grep -E "SCRIPT ERROR|Parse Error|Failed to load script" simulation.log
           grep -q '^SCENARIO_RESULT|' simulation.log
+          grep -q '^SCENARIO_PERFORMANCE|' simulation.log
+      - name: Record scenario performance summary
+        if: always()
+        run: |
+          if [ -f simulation.log ]; then
+            python3 - <<'PY' >> "$GITHUB_STEP_SUMMARY"
+          import json
+          from pathlib import Path
+          for line in Path("simulation.log").read_text(errors="replace").splitlines():
+              if not line.startswith("SCENARIO_PERFORMANCE|"):
+                  continue
+              row = json.loads(line.split("|", 1)[1])
+              p = row["performance"]
+              print("### Scenario activation performance")
+              print(f'{row["id"]} · seed {row["seed"]} · {row["activations"]} activations')
+              print("| Mean | P95 | Maximum | Open checks | Edge checks |")
+              print("|---:|---:|---:|---:|---:|")
+              print(f'| {p["mean_ms"]:.1f} ms | {p["p95_ms"]:.1f} ms | {p["max_ms"]:.1f} ms | {p["open_checks"]} | {p["edge_checks"]} |')
+              print(f'Slowest activation: {p["slowest"]}')
+              if p["mean_ms"] > 250 or p["p95_ms"] > 500:
+                  print("**Performance review recommended** (diagnostic threshold, not a rules failure).")
+          PY
+          fi
       - name: Upload simulation log
         if: always()
         uses: actions/upload-artifact@v4
