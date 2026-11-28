@@ -3,7 +3,7 @@ extends RefCounted
 ## Explicit voluntary fall (core p.50), from a current ledge or hanging
 ## position. Never add damaging descents to normal safe movement previews.
 
-static func plans(c: GameController,continuation: bool=false,shared_grid: LayeredGrid=null,walking: LayeredReach=null,cape: bool=false) -> Dictionary:
+static func plans(c: GameController,continuation: bool=false,shared_grid: LayeredGrid=null,walking: LayeredReach=null,cape: bool=false,rank: Callable=Callable(),budget: int=0) -> Dictionary:
 	var out: Dictionary={}
 	if not LayeredMovement.eligible(c,cape):
 		return out
@@ -18,11 +18,11 @@ static func plans(c: GameController,continuation: bool=false,shared_grid: Layere
 	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,s.figures)
 	grid.memoize_edges=continuation
 	var allowance:=MoveRules.allowance(f)
-	var direct:=from_position(c,layout,grid,start,allowance,continuation,true,walking,cape)
-	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid),grid) if continuation else direct
+	var direct:=from_position(c,layout,grid,start,allowance,continuation,true,walking,cape,rank,budget)
+	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid,rank,budget),grid) if continuation else direct
 
 
-static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,approach: bool,allow_long: bool=false,walking: LayeredReach=null,leave_contact: bool=false) -> Dictionary:
+static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,approach: bool,allow_long: bool=false,walking: LayeredReach=null,leave_contact: bool=false,rank: Callable=Callable(),budget: int=0) -> Dictionary:
 	var out: Dictionary={}
 	var s:=c.state
 	var f:=s.active()
@@ -43,6 +43,7 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 	_from_ledge(s,f,layout,grid,start,0.0,allowance,PackedVector3Array([layout.world(start)]),initial,out,allow_long)
 	if approach:
 		var reach:=walking if walking!=null and walking.start==start and walking.air_paths.is_empty() else LayeredReach.search(grid,start,allowance,leave_contact)
+		var ledges: Array[Vector3i]=[]
 		for ledge: Vector3i in reach.cost:
 			var approach_cost:=float(reach.cost[ledge])
 			if ledge==start or allowance-approach_cost<0.501 or grid.stops(ledge):
@@ -53,6 +54,12 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 			# Most interior points cannot fall; avoid building paths for them.
 			if not _near_edge(layout,ledge):
 				continue
+			ledges.append(ledge)
+		if rank.is_valid() and budget>0 and ledges.size()>budget:
+			ledges.sort_custom(func(a: Vector3i,b: Vector3i) -> bool:return float(rank.call(layout.world(a)))+float(reach.cost[a])*0.2<float(rank.call(layout.world(b)))+float(reach.cost[b])*0.2)
+			ledges=ledges.slice(0,budget)
+		for ledge in ledges:
+			var approach_cost:=float(reach.cost[ledge])
 			var grounded:=PackedVector3Array()
 			var surfaces: Array[String]=[]
 			for step in reach.path_to(ledge):
