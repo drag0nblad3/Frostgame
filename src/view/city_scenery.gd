@@ -5,7 +5,7 @@ extends RefCounted
 
 
 static func baked_path(board: Board,scenario: String,cinematic: bool=false) -> String:
-	return BakedVisuals.DIR+"city/v3_%s_%s_%d_%s.scn"%[scenario,str(board.size).sha256_text().substr(0,12),GraphicsQuality.mode(),"title" if cinematic else "battle"]
+	return BakedVisuals.DIR+"city/v4_%s_%s_%d_%s.scn"%[scenario,str(board.size).sha256_text().substr(0,12),GraphicsQuality.mode(),"title" if cinematic else "battle"]
 
 
 static func load_baked(board: Board,scenario: String,cinematic: bool=false) -> Node3D:
@@ -66,7 +66,7 @@ static func _building(root: Node3D, at: Vector2, ground: float, h: float, w: flo
 	var snow := tint.lightened(0.27)
 	MiniatureFactory.box(root,c,Vector3(w,h,d),stone)
 	# Distinct gables, stepped roofs and ruined turrets, in silhouette.
-	match posmod(seed,3):
+	match posmod(seed,5):
 		0:
 			var roof := PrismMesh.new()
 			roof.size = Vector3(w+0.20,0.85,d+0.15)
@@ -79,6 +79,25 @@ static func _building(root: Node3D, at: Vector2, ground: float, h: float, w: flo
 					if posmod(seed+i,4)==0:
 						continue
 					MiniatureFactory.box(root,c+Vector3((i-1)*w*0.35,h*0.5+0.28,side*d*0.45),Vector3(w*0.18,0.52,0.35),stone.lightened(0.12))
+		2:
+			# Crooked stepped gables over a narrow guild house.
+			for i in 4:
+				var step_width:=w*(1.0-float(i)*0.20)
+				MiniatureFactory.box(root,c+Vector3(0,h*0.5+0.13+i*0.19,0),Vector3(step_width,0.24,d*0.82),snow.darkened(i*0.04))
+		3:
+			# An octagonal stair turret and collapsed side roof.
+			var turret:=CylinderMesh.new()
+			turret.top_radius=w*0.24
+			turret.bottom_radius=w*0.29
+			turret.height=h*0.85
+			turret.radial_segments=8
+			MiniatureFactory.mesh(root,turret,c+Vector3(w*0.39,h*0.16,d*0.25),stone.lightened(0.09))
+			var cap:=CylinderMesh.new()
+			cap.top_radius=0.025
+			cap.bottom_radius=w*0.31
+			cap.height=0.80
+			cap.radial_segments=8
+			MiniatureFactory.mesh(root,cap,c+Vector3(w*0.39,h*0.585+0.39,d*0.25),snow)
 		_:
 			MiniatureFactory.box(root,c+Vector3(0,h*0.5+0.08,0),Vector3(w,0.18,d),snow)
 			MiniatureFactory.box(root,c+Vector3(w*0.25,h*0.5+0.38,d*0.20),Vector3(w*0.38,0.75,d*0.36),stone.darkened(0.12))

@@ -22,6 +22,18 @@ static func finish(root: Node3D,at: Vector2,ground: float,h: float,w: float,d: f
 			for x: float in [-1.0,1.0]:
 				var brace := MiniatureFactory.box(root,Vector3(at.x+x*w*0.27,ground+h*0.78,z),Vector3(w*0.40,0.14,0.09),TIMBER.lerp(stone,0.4))
 				brace.rotation.z=x*0.66
+	# Offset projecting bays, carved masonry belts and irregular roof damage.
+	if posmod(seed,4)==0:
+		var side: float = -1.0 if posmod(seed,2)==0 else 1.0
+		var bay_x:=at.x+w*0.22
+		MiniatureFactory.box(root,Vector3(bay_x,ground+h*0.68,at.y+side*d*0.52),Vector3(w*0.36,h*0.43,d*0.22),stone.lightened(0.12))
+		var hood:=PrismMesh.new()
+		hood.size=Vector3(w*0.42,0.44,d*0.28)
+		MiniatureFactory.mesh(root,hood,Vector3(bay_x,ground+h*0.91,at.y+side*d*0.52),pale)
+	elif posmod(seed,4)==1:
+		for i in 3:
+			var x:=at.x+(i-1)*w*0.26
+			MiniatureFactory.box(root,Vector3(x,ground+h*0.88,at.y-d*0.51),Vector3(w*0.13,0.20,0.11),pale)
 	# Chimneys or bell-caps vary the roofs; no taller than the distant skyline.
 	if seed%3==0:
 		var y := ground+h+0.56

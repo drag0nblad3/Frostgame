@@ -18,7 +18,8 @@ static func build(size: Vector2, height: float, seed: int) -> ArrayMesh:
 	var bottom: Array[Vector3] = []
 	for i in outline.size():
 		var p := outline[i]
-		var chip := 0.0 if i%5==0 else float(posmod(i*31+seed*7,11))/10.0*minf(height*0.12,0.24)
+		var wave := 0.5+0.5*sin(float(i)*0.91+float(seed)*0.13)
+		var chip := 0.0 if i%7==0 else (0.25+0.75*wave)*float(posmod(i*31+seed*7,11))/10.0*minf(height*0.18,0.38)
 		top.append(Vector3(p.x,height*0.5-chip,p.y))
 		bottom.append(Vector3(p.x,-height*0.5,p.y))
 	var surf := SurfaceTool.new()
