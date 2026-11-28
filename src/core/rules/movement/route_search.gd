@@ -6,13 +6,17 @@ extends RefCounted
 const NO_LINKS: Array[Vector2i]=[]
 
 
-static func expand(flat: MoveGrid,floors: LayeredGrid,heap: MinHeap,cost: Dictionary,prev: Dictionary,allowance: float,stop_on_contact: bool,leave_start: Variant,record_path: bool,topology: int=0,reverse_cost: bool=false) -> void:
+static func expand(flat: MoveGrid,floors: LayeredGrid,heap: MinHeap,cost: Dictionary,prev: Dictionary,allowance: float,stop_on_contact: bool,leave_start: Variant,record_path: bool,topology: int=0,reverse_cost: bool=false,max_expansions: int=0) -> bool:
+	var expanded:=0
 	while not heap.is_empty():
 		var item:=heap.pop()
 		var distance: float=item[0]
 		var node: Variant=item[1]
 		if distance>cost.get(node,INF):
 			continue
+		if max_expansions>0 and expanded>=max_expansions:
+			return true
+		expanded+=1
 		if floors!=null:
 			var n: Vector3i=node
 			if stop_on_contact and n!=leave_start and floors.stops(n):
@@ -51,3 +55,4 @@ static func expand(flat: MoveGrid,floors: LayeredGrid,heap: MinHeap,cost: Dictio
 				if record_path:
 					prev[next]=n
 				heap.push(total,next)
+	return false
