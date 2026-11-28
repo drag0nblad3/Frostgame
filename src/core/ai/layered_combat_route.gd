@@ -60,10 +60,30 @@ static func search(grid: LayeredGrid,start: Vector3i,enemies: Array[Figure],weig
 		for i in goals.size():
 			best=minf(best,maxf(0.0,layout.coarse_distance(n,goals[i])-Contact.CONTACT)+weights[i])
 		return best
+	# Contact is possible only in the small horizontal neighborhood of
+	# a target. Index those neighborhoods once per unchanged decision.
+	var nearby: Dictionary={}
+	for i in enemies.size():
+		var center:=MovePlanner.node_at(enemies[i].pos)
+		var radius:=ceili(Contact.CONTACT/MoveGrid.STEP)+1
+		for dx in range(-radius,radius+1):
+			for dy in range(-radius,radius+1):
+				var p:=center+Vector2i(dx,dy)
+				if not Contact.touching(enemies[i].pos,MoveGrid.to_pos(p)):
+					continue
+				if not nearby.has(p):
+					nearby[p]=[]
+				nearby[p].append(i)
 	var evaluate:=func(n: Vector3i) -> float:
 		var weight:=INF
-		for i in enemies.size():
-			if Contact.touches_position(enemies[i],layout.point(n),layout.height(n),layout.surface_id(n)):
+		var indices: Array=nearby.get(Vector2i(n.x,n.y),[])
+		if indices.is_empty():
+			return weight
+		var at:=layout.point(n)
+		var height:=layout.height(n)
+		var support:=layout.surface_id(n)
+		for i: int in indices:
+			if Contact.touches_position(enemies[i],at,height,support):
 				weight=minf(weight,weights[i])
 		return weight
 	return search_or_reuse(grid,start,heuristic,evaluate,local,"combat",false,budget)
@@ -165,9 +185,13 @@ static func search_or_reuse(grid: LayeredGrid,start: Vector3i,heuristic: Callabl
 	if local!=null:
 		var nearby:=local_goal(local,evaluate,allow_start)
 		if not nearby.is_empty():
+			if not grid.ai_work.is_empty():
+				grid.ai_work["local_goals"]=int(grid.ai_work.get("local_goals",0))+1
 			return nearby
 		var prior:=reuse_route(grid,local,evaluate,kind)
 		if not prior.is_empty():
+			if not grid.ai_work.is_empty():
+				grid.ai_work["route_reuses"]=int(grid.ai_work.get("route_reuses",0))+1
 			return prior
 	var route:=search_goal(grid,start,heuristic,evaluate,allow_start,100.0,budget)
 	if local!=null and not grid.ai_work.is_empty() and not route.is_empty() and not bool(route.get("partial",false)):
