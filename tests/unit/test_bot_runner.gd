@@ -44,3 +44,19 @@ func test_finish_drops_pending_events() -> void:
 	runner.finish()
 	check(not runner.busy())
 	check(runner.take_events().is_empty())
+
+
+func test_finished_runner_releases_battle() -> void:
+	for threaded in [false,true]:
+		var c:=_controller(9)
+		var runner:=BotRunner.new()
+		runner.threaded=threaded
+		var reference:=weakref(c)
+		c.event_emitted.connect(func(e: GameEvent) -> void: runner.capture(e))
+		runner.start(c)
+		while runner.busy() and not runner.done():
+			OS.delay_usec(200)
+		check(runner._controller==null)
+		c=null
+		check(reference.get_ref()==null,"finished runner must not retain its battle")
+		runner.finish()
