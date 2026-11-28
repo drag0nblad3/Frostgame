@@ -12,6 +12,17 @@ func _init(controller: GameController) -> void:
 
 
 func start(a: Figure, b: Figure, kind: String, declared: int = -1,wraith: bool=false,ammo: bool=false) -> void:
+	if kind=="fight":
+		if MeleeWeaponChoice.offer(c,a,b):
+			return
+		if a.side!=c.state.reaction_side:
+			MeleeWeaponChoice.auto_select(c,a,b)
+		if b.side!=c.state.reaction_side:
+			MeleeWeaponChoice.auto_select(c,b,a)
+	roll(a,b,kind,declared,wraith,ammo)
+
+
+func roll(a: Figure,b: Figure,kind: String,declared: int=-1,wraith: bool=false,ammo: bool=false) -> void:
 	c.state.pending_combat = {"a": a.id, "b": b.id, "kind": kind, "declared": declared,"wraith":wraith,"ammo":ammo, "rolls": [c.dice.d20(), c.dice.d20()], "stage": 0}
 	advance()
 

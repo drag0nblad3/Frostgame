@@ -18,3 +18,5 @@ Remaining: all-edge reachability/concealment across seeds, broader climbing/jump
 - Core scenario choice records can be saved and restored when no suspended combat/cast/interception callback is pending; free collection eligibility shared by offer and execution. Floor-filtered markers prevent selecting a hidden floor.
 - Partial sight fallback respects solid special portal/orb obstruction. Further expansion geometry and body cover cases remain open.
 - Test runner logs individual test starts/failures to identify slow or hanging tests. Full suite not yet verified.
+
+- Core pp.33,68,97,121: ordinary opposed melee offers a human combatant a weapon choice before dice, including defenders; AI compares eligible weapon effects. Encumbrance checks all surviving carried weapons. Enchanted bows/crossbows retain accuracy bonuses but ordinary ammunition is not a magical attack; enchanted ammunition is a separate option. Full weapon-specific Enchant Weapon targeting and magic-item exceptions remain to audit.

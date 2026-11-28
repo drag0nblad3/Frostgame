@@ -337,7 +337,7 @@ func answer_elemental_combat(use: bool) -> bool:
 
 
 func awaiting_reaction() -> bool:
-	if not CoreScenarioChoice.pending(self).is_empty():
+	if not CoreScenarioChoice.pending(self).is_empty() or not MeleeWeaponChoice.pending(self).is_empty():
 		return true
 	if state.scenario_data.has("rk_end_choice") or state.scenario_data.has("rk_priority_choice") or state.scenario_data.has("rk_spell_absorption") or state.scenario_data.has("rk_direction_choice") or state.scenario_data.has("rk_lightning_absorb") or state.scenario_data.has("rk_worm_relocation"):
 		return true

@@ -28,6 +28,8 @@ static func _apply(c: GameController,key: String,args: Dictionary) -> bool:
 	var at: Variant=args.get("at")
 	var layered := not c.state.board.floor_layout.is_empty()
 	match key:
+		"melee_choice":
+			return MeleeWeaponChoice.choose(c,str(args.get("weapon","")))
 		"ring_teleport","bottle_imp","potion_teleportation","potion_explosive_cocktail":
 			if (layered and not at is Vector3i) or (not layered and not at is Vector2):
 				return false

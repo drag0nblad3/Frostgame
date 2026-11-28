@@ -152,7 +152,12 @@ func immune_to_poison() -> bool:
 
 
 func treasure_encumbered() -> bool:
-	return def.shield or ranged != null or melee.id in ["staff", "two_handed"]
+	if def.shield:
+		return true
+	for w in def.weapons:
+		if not destroyed_weapons.has(w.id) and w.id in ["staff","two_handed","bow","crossbow"]:
+			return true
+	return false
 
 
 func early_limit() -> int:

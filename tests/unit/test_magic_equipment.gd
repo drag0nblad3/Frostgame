@@ -25,3 +25,17 @@ func test_gear_roll_and_loss() -> void:
 	d["loot"][0]["owner"] = 2
 	CampaignInventory.lose_owned(d, 2)
 	check(d["loot"].is_empty())
+
+
+func test_magic_bow_bonus_is_not_magic_attack() -> void:
+	var a:=fig("archer",0,Vector2(10,10))
+	var b:=fig("genie",1,Vector2(20,10))
+	var c:=make_game(make_board(),[a,b],Dice.new(4))
+	a.spell_effects["enchant_weapon"]=true
+	check(not WeaponActions.magic_attack(a,a.ranged))
+	var normal:=Shooting.resolve_rolls(c.state.board,a,b,19,1)
+	check_eq(normal["s_total"],22)
+	check_eq(normal["dmg"],0)
+	var magic:=Shooting.resolve_rolls(c.state.board,a,b,19,1,false,0,false,true)
+	check_eq(magic["s_total"],22,"magic ammo and enchanted bow do not stack")
+	check(magic["dmg"]>0)

@@ -56,4 +56,8 @@ func destroy(t: Figure, id: String) -> void:
 static func magic_attack(f: Figure, w: WeaponDef) -> bool:
 	if ScenarioNull.muted(f):
 		return false
+	# Core pp.97,121: a magical bow does not make ordinary ammunition magical.
+	# Innate creature attacks and explicit magic-ammunition resolution are separate.
+	if w.id in ["bow","crossbow"]:
+		return f.is_demon() or f.def.traits.has("magic_attack")
 	return (w == f.melee and ActiveGear.has(f, "gear_construct_hammer")) or f.is_demon() or f.def.traits.has("magic_attack") or magical(f, w) or f.spell_effects.get("potion_fairy_dust", "") == w.id or (f.spell_effects.has("elemental_hammer") and (w == f.ranged or f.ranged == null))

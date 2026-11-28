@@ -208,5 +208,11 @@
   "potion_ethereal_vacuum": "Ethereal Vacuum",
   "jump": "Jump",
   "core_collect": "Collect for free",
-  "core_leave": "Leave treasure"
+  "core_leave": "Leave treasure",
+  "combat_weapon_dagger": "Use dagger",
+  "combat_weapon_staff": "Use staff",
+  "combat_weapon_hand_weapon": "Use hand weapon",
+  "combat_weapon_two_handed": "Use two-handed weapon",
+  "combat_weapon_natural": "Use natural weapon",
+  "combat_weapon_unarmed": "Fight unarmed"
 }

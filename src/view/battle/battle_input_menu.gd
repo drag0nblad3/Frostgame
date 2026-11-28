@@ -14,6 +14,14 @@ static func refresh(bi: BattleInput) -> void:
 			bi.available.assign(["core_collect","core_leave"])
 		bi.preview()
 		return
+	var weapon_choice:=MeleeWeaponChoice.pending(bi.c)
+	if not weapon_choice.is_empty():
+		bi.mode="melee_weapon_choice"
+		var owner:=bi.c.state.figure(int(weapon_choice["owner"]))
+		for w in MeleeWeaponChoice.options(owner):
+			bi.available.append("combat_weapon_"+w.id)
+		bi.preview()
+		return
 	var f := bi.c.state.active()
 	if bi.c.state.scenario_data.has("rk_priority_choice"):
 		var kind := str(bi.c.state.scenario_data["rk_priority_choice"].get("kind",""))

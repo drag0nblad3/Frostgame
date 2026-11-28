@@ -96,6 +96,8 @@ func preview() -> void:
 
 
 func action(key: String) -> bool:
+	if key.begins_with("combat_weapon_"):
+		return available.has(key) and BattleEquipmentAction.execute(c,"melee_choice",{"weapon":key.trim_prefix("combat_weapon_")})
 	if key in ["core_collect","core_leave"]:
 		return available.has(key) and BattleScenarioAction.execute(c,"core_choice",{"index":0 if key=="core_collect" else 1})
 	if key=="move_confirm":
