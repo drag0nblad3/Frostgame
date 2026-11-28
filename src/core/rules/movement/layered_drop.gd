@@ -17,9 +17,19 @@ static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 		return out
 	var grid:=LayeredGrid.new(layout,f,s.figures)
 	var allowance:=MoveRules.allowance(f)
-	var initial: Array[String]=[f.surface_id]
-	_from_ledge(s,f,layout,grid,start,0.0,allowance,PackedVector3Array([layout.world(start)]),initial,out)
-	if continuation:
+	var direct:=from_position(c,layout,grid,start,allowance,continuation,true)
+	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct)) if continuation else direct
+
+
+static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,approach: bool,allow_long: bool=false) -> Dictionary:
+	var out: Dictionary={}
+	var s:=c.state
+	var f:=s.active()
+	if not grid.open(start) or grid.stops(start):
+		return out
+	var initial: Array[String]=[layout.surface_id(start)]
+	_from_ledge(s,f,layout,grid,start,0.0,allowance,PackedVector3Array([layout.world(start)]),initial,out,allow_long)
+	if approach:
 		var reach:=LayeredReach.search(grid,start,allowance)
 		for ledge: Vector3i in reach.cost:
 			var approach_cost:=float(reach.cost[ledge])
@@ -36,8 +46,8 @@ static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 			for step in reach.path_to(ledge):
 				grounded.append(layout.world(step))
 				surfaces.append(layout.surface_id(step))
-			_from_ledge(s,f,layout,grid,ledge,approach_cost,allowance,grounded,surfaces,out)
-		return LayeredMovement.extend_aerial(c,out)
+			_from_ledge(s,f,layout,grid,ledge,approach_cost,allowance,grounded,surfaces,out,false)
+		return out
 	return out
 
 
@@ -54,7 +64,7 @@ static func _near_edge(layout: FloorLayout,n: Vector3i) -> bool:
 	return false
 
 
-static func _from_ledge(s: GameState,f: Figure,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,approach_cost: float,allowance: float,grounded: PackedVector3Array,surfaces: Array[String],out: Dictionary) -> void:
+static func _from_ledge(s: GameState,f: Figure,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,approach_cost: float,allowance: float,grounded: PackedVector3Array,surfaces: Array[String],out: Dictionary,allow_long: bool=false) -> void:
 	var support:=layout.surfaces[start.z]
 	# Ordinary flat ground cannot drop; a profiled street may border a ditch.
 	if support.id=="street" and support.profiles.is_empty() and is_equal_approx(support.level,support.end_level):
@@ -98,7 +108,7 @@ static func _from_ledge(s: GameState,f: Figure,layout: FloorLayout,grid: Layered
 			continue
 		var cost:=approach_cost+a.distance_to(edge)+drop+(3.0 if s.board.low_gravity else 0.0)
 		var long_fall:=drop+(3.0 if s.board.low_gravity else 0.0)>float(f.effective_move())
-		if cost>allowance+0.001 and not (long_fall and f.moves_taken==0 and approach_cost<=0.001):
+		if cost>allowance+0.001 and not (allow_long and long_fall and f.moves_taken==0 and approach_cost<=0.001):
 			continue
 		if out.has(n) and float(out[n]["cost"])<=cost+0.001:
 			continue
