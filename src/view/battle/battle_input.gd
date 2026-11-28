@@ -96,6 +96,8 @@ func preview() -> void:
 
 
 func action(key: String) -> bool:
+	if key in ["core_collect","core_leave"]:
+		return available.has(key) and BattleScenarioAction.execute(c,"core_choice",{"index":0 if key=="core_collect" else 1})
 	if key=="move_confirm":
 		return available.has(key) and move_plan.confirm(self)
 	if key=="move_undo" and available.has(key):

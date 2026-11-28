@@ -206,5 +206,7 @@
   "potion_fury": "Philtre of Fury",
   "potion_burrowing": "Bottle of Burrowing",
   "potion_ethereal_vacuum": "Ethereal Vacuum",
-  "jump": "Jump"
+  "jump": "Jump",
+  "core_collect": "Collect for free",
+  "core_leave": "Leave treasure"
 }

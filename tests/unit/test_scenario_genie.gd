@@ -61,3 +61,26 @@ func test_genie_spawn_distance_and_closest() -> void:
 	for other in s.figures:
 		if other!=finder and other!=genie and other.in_play():
 			check(at.distance_to(Vector3(other.pos.x,other.elevation,other.pos.y))>d)
+
+
+func test_player_selects_genie_spawn() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var c:=GameController.new(s,LoadedDice.new([20]))
+	s.reaction_side=0
+	var f:=s.figure(1)
+	f.pos=Vector2(18,18)
+	f.elevation=s.board.height_at(f.pos)
+	s.treasure(0).ever_collected=true
+	ScenarioGenie.first_pickup(c,f,s.treasure(0))
+	check(c.awaiting_reaction())
+	var d:=CoreScenarioChoice.pending(c)
+	check_eq(d.get("kind",""),"genie")
+	check(not BattleScenarioAction.execute(c,"core_choice",{"index":-1}))
+	if not d.is_empty():
+		var chosen: Vector3=d["options"][0]["world"]
+		check(BattleScenarioAction.execute(c,"core_choice",{"index":0}))
+		var genie:=s.figure(s.genie_id)
+		check(genie!=null)
+		if genie!=null:
+			check_eq(Vector3(genie.pos.x,genie.elevation,genie.pos.y),chosen)
+		check(not c.awaiting_reaction())

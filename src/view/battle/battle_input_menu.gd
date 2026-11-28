@@ -7,6 +7,13 @@ static func refresh(bi: BattleInput) -> void:
 	bi.available.clear()
 	bi.item_options.clear()
 	bi.reach = null
+	var core:=CoreScenarioChoice.pending(bi.c)
+	if not core.is_empty():
+		bi.mode="core_choice"
+		if core["kind"]=="column":
+			bi.available.assign(["core_collect","core_leave"])
+		bi.preview()
+		return
 	var f := bi.c.state.active()
 	if bi.c.state.scenario_data.has("rk_priority_choice"):
 		var kind := str(bi.c.state.scenario_data["rk_priority_choice"].get("kind",""))
