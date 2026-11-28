@@ -94,3 +94,29 @@ func test_mausoleum_player_treasure_and_guard_setup() -> void:
 		check(Geom.point_rect_distance(t.pos,MausoleumSetup.building(s))<=9.0)
 		check(guard.pos.distance_to(t.pos)<=1.0)
 		check(s.board.floor_geometry().standable(s.board.floor_geometry().node(guard.surface_id,guard.pos)))
+
+
+func test_mausoleum_elevated_treasure_and_guard_share_support() -> void:
+	var s:=ScenarioLoader.load_id("mausoleum",db(),terrain())
+	var layout:=s.board.floor_geometry()
+	var choices:=MausoleumSetup.options(s,4)
+	var upper: Dictionary={}
+	for p in choices:
+		if float(p["height"])>0.5 and str(p["surface"])!="street":
+			upper=p
+			break
+	check(not upper.is_empty())
+	if upper.is_empty():
+		return
+	check(MausoleumSetup.choose(s,Dice.new(41),upper))
+	var token:=s.treasures[4]
+	var guard:=s.side_figures(-1)[4]
+	check_eq(token.surface_id,upper["surface"])
+	check_eq(guard.surface_id,token.surface_id)
+	check_eq(guard.pos,upper["guard"])
+	check_eq(guard.elevation,upper["guard_height"])
+	check(layout.standable(layout.node(token.surface_id,token.pos)))
+	check(layout.standable(layout.node(guard.surface_id,guard.pos)))
+	check(guard.pos.distance_to(token.pos)<=1.0)
+	check(absf(guard.elevation-TreasureRules.token_height(s,token))<0.5)
+	check(not token.surface_id.begins_with("climb:"))
