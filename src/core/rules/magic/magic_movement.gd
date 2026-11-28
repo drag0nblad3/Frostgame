@@ -93,7 +93,7 @@ func move(t: Figure,at: Vector2,exhaust: bool=false,falling: bool=false,sites: b
 
 ## Explicit floor arrival. Same exhaustion, status removal, illusion and
 ## scenario consequences as exposed-surface magic movement.
-func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,visual_spell: String="",path: PackedVector3Array=PackedVector3Array(),sites: bool=true) -> void:
+func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,visual_spell: String="",path: PackedVector3Array=PackedVector3Array(),sites: bool=true,fall_distance: float=NAN) -> void:
 	var layout:=c.state.board.floor_geometry()
 	if not layout.standable(n):
 		return
@@ -119,7 +119,7 @@ func move_floor(t: Figure,n: Vector3i,exhaust: bool=false,falling: bool=false,vi
 	c._magic.terrain.trigger_landing(t)
 	c._magic.illusions.after_move(t)
 	if falling:
-		LayeredFall.apply(c,t,start.y-t.elevation,t)
+		LayeredFall.apply(c,t,start.y-t.elevation if is_nan(fall_distance) else fall_distance,t)
 	if sites:
 		ScenarioSites.end_move(c,t)
 
@@ -167,7 +167,10 @@ func force(t: Figure, direction: Vector2, distance: float,ivory_caster: Figure=n
 
 
 func force_floor(t: Figure,direction: Vector2,distance: float,ivory_caster: Figure=null) -> void:
-	var route:=FloorDisplacement.trace(c,t,direction,distance)
+	_apply_force_route(t,FloorDisplacement.trace(c,t,direction,distance),ivory_caster)
+
+
+func _apply_force_route(t: Figure,route: Dictionary,ivory_caster: Figure=null) -> void:
 	if route.is_empty():
 		return
 	var path: PackedVector3Array=route["path"]
@@ -183,7 +186,7 @@ func force_floor(t: Figure,direction: Vector2,distance: float,ivory_caster: Figu
 		if not t.in_play():
 			return
 	if path.size()>1:
-		move_floor(t,route["node"],false,true,"",path)
+		move_floor(t,route["node"],false,true,"",path,true,float(route.get("fall_distance",NAN)))
 	if t.in_play() and route.get("blocked_at")!=null:
 		var blocked: Vector3=route["blocked_at"]
 		var last: Vector3=path[-1]
@@ -249,7 +252,12 @@ func push(f: Figure, t: Figure) -> void:
 	var a := c.dice.d20() + (11 if ivory else 10)
 	var d := c.dice.d20() + t.effective_fight() + t.roll_penalty()
 	if a > d:
-		force(t,(t.pos-f.pos).normalized(),float(maxi(0,a-t.effective_armour())),f if ivory else null)
+		var distance:=float(maxi(0,a-t.effective_armour()))
+		var direction:=BattleSpace.center(t)-BattleSpace.center(f)
+		if not c.state.board.floor_layout.is_empty() and absf(direction.y)>0.5:
+			_apply_force_route(t,FloorDisplacement.trace_vertical(c,t,direction,distance),f if ivory else null)
+		else:
+			force(t,(t.pos-f.pos).normalized(),distance,f if ivory else null)
 
 
 func blink(f: Figure,t: Figure,roll: int,extend: bool=false,reroll: bool=false) -> void:
