@@ -200,3 +200,70 @@ func _add_link(d: Dictionary) -> void:
 		if not links.has(b):
 			links[b]=[]
 		links[b].append({"to":a,"cost":distance,"kind":kind})
+
+
+## Coarse static portal graph for AI guidance. Group nearby links between
+## the same supports; exact half-inch movement still validates every edge.
+## The owning Board replaces this layout when geometry changes.
+var _coarse_ready:=false
+var _coarse_out: Dictionary={}
+var _coarse_in: Dictionary={}
+var _coarse_hops: Dictionary={}
+
+func prepare_coarse_navigation() -> void:
+	if _coarse_ready:
+		return
+	_coarse_ready=true
+	var sectors: Dictionary={}
+	for from: Vector3i in links:
+		for edge: Dictionary in links[from]:
+			var to: Vector3i=edge["to"]
+			if from.z==to.z:
+				continue
+			var key:=Vector4i(floori(float(from.x)/8.0),floori(float(from.y)/8.0),from.z,to.z)
+			if sectors.has(key):
+				continue
+			sectors[key]=true
+			if not _coarse_out.has(from.z):
+				_coarse_out[from.z]=[]
+			_coarse_out[from.z].append({"from":from,"to":to})
+			if not _coarse_in.has(to.z):
+				_coarse_in[to.z]=[]
+			if not _coarse_in[to.z].has(from.z):
+				_coarse_in[to.z].append(from.z)
+
+func coarse_hops(goal_floor: int) -> Dictionary:
+	prepare_coarse_navigation()
+	if _coarse_hops.has(goal_floor):
+		return _coarse_hops[goal_floor]
+	var distances: Dictionary={goal_floor:0}
+	var queue: Array[int]=[goal_floor]
+	var cursor:=0
+	while cursor<queue.size():
+		var current:=queue[cursor]
+		cursor+=1
+		for previous: int in _coarse_in.get(current,[]):
+			if not distances.has(previous):
+				distances[previous]=int(distances[current])+1
+				queue.append(previous)
+	_coarse_hops[goal_floor]=distances
+	return distances
+
+## Approximate remaining distance via a coarse portal. It is intentionally
+## not a rules validator or an admissible exact-search heuristic.
+func coarse_distance(from: Vector3i,to: Vector3i) -> float:
+	var direct:=point(from).distance_to(point(to))
+	if from.z==to.z or from.z<0 or to.z<0:
+		return direct
+	var hops:=coarse_hops(to.z)
+	if not hops.has(from.z):
+		return direct+8.0
+	var best:=INF
+	for portal: Dictionary in _coarse_out.get(from.z,[]):
+		var a: Vector3i=portal["from"]
+		var b: Vector3i=portal["to"]
+		if not hops.has(b.z) or int(hops[b.z])>=int(hops[from.z]):
+			continue
+		var after:=point(b).distance_to(point(to)) if b.z==to.z else float(hops[b.z])*4.0
+		best=minf(best,point(from).distance_to(point(a))+1.0+after)
+	return best if is_finite(best) else direct+8.0
