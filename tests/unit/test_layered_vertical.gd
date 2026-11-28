@@ -601,3 +601,36 @@ func test_ai_aerial_damage_counts_each_leg() -> void:
 	var f:=c.state.active()
 	check_eq(LayeredTactics.aerial_damage(c.state,f,{"fall":3.0,"next":{"fall":3.0}}),8)
 	check_eq(LayeredTactics.aerial_damage(c.state,f,{"fall":2.0,"next":{"fall":2.0}}),0)
+
+
+func test_aerial_ai_shared_preview_matches_independent_options() -> void:
+	var c:=_approach_drop_game()
+	var f:=c.state.active()
+	var layout:=c.state.board.floor_geometry()
+	var reach:=c.layered_reach()
+	var before:=LayeredGrid.edge_evaluations
+	var start:=Time.get_ticks_usec()
+	var separate_jump:=LayeredJump.plans(c,true,true)
+	var separate_drop:=LayeredDrop.plans(c,true)
+	var separate_us:=Time.get_ticks_usec()-start
+	var separate_edges:=LayeredGrid.edge_evaluations-before
+	var grid:=LayeredGrid.new(layout,f,c.state.figures)
+	grid.memoize_edges=true
+	before=LayeredGrid.edge_evaluations
+	start=Time.get_ticks_usec()
+	var shared_jump:=LayeredJump.plans(c,true,true,grid)
+	var shared_drop:=LayeredDrop.plans(c,true,grid,reach)
+	var shared_us:=Time.get_ticks_usec()-start
+	var shared_edges:=LayeredGrid.edge_evaluations-before
+	for pair: Array in [[separate_jump,shared_jump],[separate_drop,shared_drop]]:
+		check_eq(pair[0].size(),pair[1].size())
+		for n: Vector3i in pair[0]:
+			check(pair[1].has(n))
+			if pair[1].has(n):
+				check_eq(pair[0][n]["cost"],pair[1][n]["cost"])
+				check_eq(pair[0][n]["preview"],pair[1][n]["preview"])
+	check(not shared_drop.is_empty())
+	check(shared_edges<separate_edges,"reusing the existing walking reach must reduce edge evaluations")
+	print("aerial AI previews: ",separate_edges," -> ",shared_edges," edges; ",separate_us/1000.0," -> ",shared_us/1000.0," ms")
+	check_eq(f.moves_taken,0)
+	check_eq(f.actions_left,2)
