@@ -65,26 +65,22 @@ static func treasure_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vect
 			elif t.pos.distance_to(layout.point(n))<=0.8:
 				return float(penalties[t.id])
 		return INF
-	if local!=null:
-		var nearby:=LayeredCombatRoute.local_goal(local,evaluate,true)
-		if not nearby.is_empty():
-			return nearby
-	return LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,true,100.0,BotPreference.route_budget(f) if imperfect else 0)
+	return LayeredCombatRoute.search_or_reuse(grid,start,heuristic,evaluate,local,"treasure",true,BotPreference.route_budget(f) if imperfect else 0)
 
 
-static func exit_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i,imperfect: bool=false) -> Dictionary:
+static func exit_search(s: GameState,f: Figure,grid: LayeredGrid,start: Vector3i,imperfect: bool=false,local: LayeredReach=null) -> Dictionary:
 	var layout:=grid.layout
 	var heuristic:=func(n: Vector3i) -> float:
 		return maxf(0.0,TreasureRules.edge_distance(s.board,layout.point(n))-Figure.BASE_RADIUS-0.01)
 	var evaluate:=func(n: Vector3i) -> float:
 		return 0.0 if LayeredLoot.is_exit(s,layout,n,f.side) else INF
-	return LayeredCombatRoute.search_goal(grid,start,heuristic,evaluate,true,100.0,BotPreference.route_budget(f) if imperfect else 0)
+	return LayeredCombatRoute.search_or_reuse(grid,start,heuristic,evaluate,local,"exit",true,BotPreference.route_budget(f) if imperfect else 0)
 
 
 static func move(c: GameController,f: Figure,layout: FloorLayout,reach: LayeredReach,grid: LayeredGrid,quarry: Figure,extracting: bool) -> bool:
 	if not extracting and BotPreference.prefers_combat(c.state,f) and LayeredCombatRoute.move(c,f,layout,reach,grid,quarry):
 		return true
-	var route:=exit_search(c.state,f,grid,reach.start,true) if extracting else treasure_search(c.state,f,grid,reach.start,true,reach)
+	var route:=exit_search(c.state,f,grid,reach.start,true,reach) if extracting else treasure_search(c.state,f,grid,reach.start,true,reach)
 	if route.is_empty() or route["goal"]==reach.start:
 		return LayeredCombatRoute.move(c,f,layout,reach,grid,quarry)
 	var path: Array[Vector3i]=route["path"]
