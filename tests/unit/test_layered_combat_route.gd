@@ -153,3 +153,44 @@ func test_shared_planning_budget_is_not_player_movement_limit() -> void:
 	check(not local.truncated)
 	check_eq(budget["remaining"],0)
 	check_eq(f.pos,Vector2(5,5))
+
+
+func test_coarse_same_floor_distance_guides_around_solid_wall() -> void:
+	var b:=make_board()
+	b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}],"solids":[[9,0,4,2,4,14]]}
+	var l:=b.floor_geometry()
+	var a:=l.node("street",Vector2(6,10))
+	var target:=l.node("street",Vector2(14,10))
+	var direct:=l.point(a).distance_to(l.point(target))
+	var detour:=l.coarse_distance(a,target)
+	check(detour>direct+4.0)
+	var count:=l._horizontal_fields.size()
+	check_eq(l.coarse_distance(a,target),detour)
+	check_eq(l._horizontal_fields.size(),count)
+	b.floor_layout["solids"]=[]
+	var revised:=b.floor_geometry()
+	check(revised!=l)
+	check_eq(revised.coarse_distance(a,target),direct)
+
+
+func test_fresh_reach_declaration_matches_regular_movement() -> void:
+	for reuse in [false,true]:
+		var b:=make_board()
+		b.floor_layout={"surfaces":[{"id":"street","rect":[0,0,36,36],"level":0}]}
+		var f:=fig("knight",0,Vector2(5,5))
+		f.surface_id="street"
+		var c:=make_game(b,[f],Dice.new(2))
+		c.state.active_id=f.id
+		f.actions_left=2
+		var reach:=c.layered_reach()
+		var node:=b.floor_geometry().node("street",Vector2(7,5))
+		check(reach.can_reach(node))
+		var before:=LayeredGrid.evaluations
+		var moved:=c.move_from_fresh_reach(node,reach) if reuse else c.move_on_floor(node)
+		check(moved)
+		check_eq(f.pos,Vector2(7,5))
+		check_eq(f.moves_taken,1)
+		check_eq(f.actions_left,1)
+		check_eq(c.command_history[-1]["key"],"move_on_floor")
+		if reuse:
+			check_eq(LayeredGrid.evaluations,before)
