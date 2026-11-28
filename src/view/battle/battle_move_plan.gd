@@ -23,14 +23,14 @@ func choose_node(bi: BattleInput,n: Variant) -> bool:
 	destination=n
 	actor=f.id
 	var point:=bi.movement.world(n)
-	bi.markers.show_world_plan(bi.movement.path(n))
+	draw(bi)
 	bi.move_preview_changed.emit(actor,point,true)
 	var cost:=float(bi.movement.cost[n])
 	var budget:=3.0 if bi.mode=="run_for_it" else (6.0 if bi.mode=="run_talisman" else MoveRules.allowance(f))
-	var hint:="PREVIEW · %.1f″ of %.1f″ movement · %.1f″ remaining"%[cost,budget,maxf(0.0,budget-cost)]
+	var hint:="PREVIEW · %.1f″ / %.1f″ movement · %.1f″ remaining"%[cost,budget,maxf(0.0,budget-cost)]
 	if n is Vector3i:
 		var support:=bi.movement.layout.surface_id(n)
-		hint+=" · %s · %.1f″ elevation"%["Hanging on wall" if support.begins_with("climb:") else support.replace("_"," ").capitalize(),point.y]
+		hint+="\n%s · %.1f″ elevation (%+.1f″)"%["Hanging on wall" if support.begins_with("climb:") else support.replace("_"," ").capitalize(),point.y,point.y-f.elevation]
 		if support.begins_with("climb:"):
 			hint+="\nFinish the climb on a later movement action."
 	hint+="\nDrag or tap another marked position. Confirm to resolve movement and any reactions; Undo returns to your starting position."
@@ -40,16 +40,18 @@ func choose_node(bi: BattleInput,n: Variant) -> bool:
 		hint+="\nThe cape is spent on commitment."
 	elif bi.mode=="exit":
 		hint+="\nConfirm to extract this figure."
-	elif bi.mode=="jump":
-		hint+="\nLanding may cause falling damage."
-	elif bi.mode=="drop_down":
-		var plan: Dictionary=bi.movement.jumps[n]
-		var damage:=ElevationRules.fall_damage(float(plan["fall"])-(3.0 if bi.c.state.board.low_gravity else 0.0))
-		if MagicEquipment.bonus(f,"slow_fall")>0 or f.def.traits.has("levitate"):
-			damage=0
-		hint+="\nFall %.1f inches · %d damage"%[plan["fall"],damage]
-		if plan["end_activation"]:
+	if bi.movement.jumps.has(n):
+		var risk:=aerial_risk(bi.c.state,f,bi.movement.jumps[n])
+		if float(risk["descent"])>0.0:
+			hint+="\nDescent %.1f″ · up to %d fall damage"%[risk["descent"],risk["damage"]]
+		if int(risk["legs"])>1:
+			hint+=" · %d aerial legs"%risk["legs"]
+		if risk["end"]:
 			hint+=" · Ends activation"
+		if int(risk["damage"])>=f.health:
+			hint+="\nWARNING: potentially fatal fall."
+		elif int(risk["damage"])>0:
+			hint+="\nDamage or reactions may interrupt the remaining route."
 	if first:
 		bi.available.assign(["move_confirm","move_undo"])
 		bi.hud.set_actions(bi.available,bi.mode,hint)
@@ -95,3 +97,27 @@ func can_begin_drag(bi: BattleInput,screen: Vector2) -> bool:
 		return bi.floor_target_at(screen)!=null
 	var hit: Variant=bi._surface_at(screen)
 	return hit!=null and bi.movement.cost.has(MovePlanner.node_at(hit))
+
+
+## Presentation reads the same fall rule as actual resolution; chained legs
+## are conditional, so display the sum as a possible maximum, not a promise.
+static func aerial_risk(s: GameState,f: Figure,plan: Dictionary) -> Dictionary:
+	var descent:=float(plan.get("fall",0.0))
+	var risk: Dictionary={"descent":descent,"damage":LayeredFall.damage(s,f,descent),"legs":1,"end":bool(plan.get("end_activation",false))}
+	if plan.has("next"):
+		var following:=aerial_risk(s,f,plan["next"])
+		risk["descent"]+=following["descent"]
+		risk["damage"]+=following["damage"]
+		risk["legs"]+=following["legs"]
+		risk["end"]=risk["end"] or following["end"]
+	return risk
+
+
+func draw(bi: BattleInput) -> void:
+	if destination==null or bi.movement==null:
+		return
+	var f:=bi.c.state.active()
+	var danger:=0
+	if f!=null and bi.movement.jumps.has(destination):
+		danger=int(aerial_risk(bi.c.state,f,bi.movement.jumps[destination])["damage"])
+	bi.markers.show_world_plan(bi.movement.path(destination),danger>0)

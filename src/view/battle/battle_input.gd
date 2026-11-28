@@ -59,7 +59,7 @@ func select_floor(id: String) -> void:
 		# Floor selection is a view change only; preserve the draft.
 		BattleFloorInput.draw_points(self)
 		move_plan.choose_node(self,move_plan.destination)
-		markers.show_world_plan(movement.path(move_plan.destination))
+		move_plan.draw(self)
 	elif attack_target>=0:
 		preview()
 		plan_attack(attack_target)
