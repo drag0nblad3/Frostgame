@@ -291,7 +291,21 @@ func new_game(seed_value: int,prepared: GameState=null,deploy: bool=false) -> vo
 	_attach_battle(game,true)
 
 
+## Join the worker before removing the old player or replacing its controller.
+func _detach_controller() -> void:
+	_bots.finish()
+	if controller!=null:
+		if controller.event_emitted.is_connected(_relay):
+			controller.event_emitted.disconnect(_relay)
+		controller.abandon_pending_callbacks()
+
+
+func _exit_tree() -> void:
+	_detach_controller()
+
+
 func _attach_battle(c: GameController, start: bool) -> void:
+	_detach_controller()
 	if is_instance_valid(_deployment_panel):
 		_deployment_panel.queue_free()
 		_deployment_panel=null
@@ -305,7 +319,6 @@ func _attach_battle(c: GameController, start: bool) -> void:
 	auto_play = false
 	hud.set_auto(false)
 	_wait = 0.0
-	_bots.finish()
 	controller = c
 	controller.capture_frames=true
 	if controller.deployment==null or controller.deployment.done:
