@@ -13,6 +13,7 @@ var running := false:
 			_open_cache.clear()
 		running=value
 var board: Board
+var _shared_costs:=false
 ## A reverse distance field must follow incoming one-way connections.
 var reverse_links: Dictionary={}
 var reversed:=false
@@ -38,6 +39,7 @@ func _init(floors: FloorLayout,f: Figure = null,figures: Array[Figure] = []) -> 
 		var s: GameState = f.battle_ref.get_ref()
 		if s!=null:
 			board=s.board
+			_shared_costs=layout==board.floor_geometry()
 		if s!=null and s.board.floor_layout.has("null_regions"):
 			null_board=s.board
 			null_boundary=not ScenarioNull.field_at(null_board,f.pos) and (not f.spell_effects.is_empty() or f.elemental_shield>0 or f.controller_id>=0 or f.familiar)
