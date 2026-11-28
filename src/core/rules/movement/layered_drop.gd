@@ -3,7 +3,7 @@ extends RefCounted
 ## Explicit voluntary fall (core p.50), from a current ledge or hanging
 ## position. Never add damaging descents to normal safe movement previews.
 
-static func plans(c: GameController,continuation: bool=false) -> Dictionary:
+static func plans(c: GameController,continuation: bool=false,shared_grid: LayeredGrid=null,walking: LayeredReach=null) -> Dictionary:
 	var out: Dictionary={}
 	if not LayeredMovement.eligible(c):
 		return out
@@ -15,14 +15,14 @@ static func plans(c: GameController,continuation: bool=false) -> Dictionary:
 	var start:=layout.node(f.surface_id,f.pos)
 	if not layout.standable(start):
 		return out
-	var grid:=LayeredGrid.new(layout,f,s.figures)
+	var grid:=shared_grid if shared_grid!=null else LayeredGrid.new(layout,f,s.figures)
 	grid.memoize_edges=continuation
 	var allowance:=MoveRules.allowance(f)
-	var direct:=from_position(c,layout,grid,start,allowance,continuation,true)
+	var direct:=from_position(c,layout,grid,start,allowance,continuation,true,walking)
 	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid),grid) if continuation else direct
 
 
-static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,approach: bool,allow_long: bool=false) -> Dictionary:
+static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,approach: bool,allow_long: bool=false,walking: LayeredReach=null) -> Dictionary:
 	var out: Dictionary={}
 	var s:=c.state
 	var f:=s.active()
@@ -42,7 +42,7 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 	var initial: Array[String]=[layout.surface_id(start)]
 	_from_ledge(s,f,layout,grid,start,0.0,allowance,PackedVector3Array([layout.world(start)]),initial,out,allow_long)
 	if approach:
-		var reach:=LayeredReach.search(grid,start,allowance)
+		var reach:=walking if walking!=null and walking.start==start and walking.air_paths.is_empty() else LayeredReach.search(grid,start,allowance)
 		for ledge: Vector3i in reach.cost:
 			var approach_cost:=float(reach.cost[ledge])
 			if ledge==start or allowance-approach_cost<0.501 or grid.stops(ledge):
