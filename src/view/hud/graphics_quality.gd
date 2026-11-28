@@ -4,6 +4,7 @@ extends RefCounted
 const PATH := "user://frostgame_graphics.cfg"
 const NAMES := ["Performance","Balanced","High"]
 static var _mode := -1
+static var _diagnostics:=-1
 
 
 static func mode() -> int:
@@ -17,6 +18,7 @@ static func mode() -> int:
 
 static func select_mode(value: int) -> bool:
 	var config := ConfigFile.new()
+	config.load(PATH)
 	_mode=clampi(value,0,2)
 	config.set_value("graphics","quality",_mode)
 	return config.save(PATH)==OK
@@ -37,3 +39,19 @@ static func snow_count(count: int) -> int:
 
 static func city_rings() -> int:
 	return 2 if mode()==2 else 1
+
+
+static func diagnostics() -> bool:
+	if _diagnostics<0:
+		var config:=ConfigFile.new()
+		config.load(PATH)
+		_diagnostics=int(bool(config.get_value("graphics","diagnostics",false)))
+	return _diagnostics>0
+
+
+static func set_diagnostics(on: bool) -> void:
+	_diagnostics=int(on)
+	var config:=ConfigFile.new()
+	config.load(PATH)
+	config.set_value("graphics","diagnostics",on)
+	config.save(PATH)

@@ -4,6 +4,7 @@ extends ExpeditionScreen
 signal quality_changed
 var _choices: Array[Button]=[]
 var _description: Label
+var _diagnostics: CheckButton
 const DETAILS := [
 	"Lower 3D resolution and original low-poly figures. No dynamic shadows or snow; fewer distant buildings. Recommended if your phone stutters.",
 	"Reduced 3D resolution with lighter shadows and snow. Enhanced miniature meshes and full-detail dossiers. Default on phones.",
@@ -21,9 +22,17 @@ func _ready() -> void:
 		_choices.append(b)
 		WorkshopUI.label(row,DETAILS[i],24)
 	_description=WorkshopUI.label(col,"",22,WorkshopUI.MUTED)
+	var debug:=WorkshopUI.section_card(col)
+	_diagnostics=CheckButton.new()
+	_diagnostics.text="Battle performance display"
+	_diagnostics.custom_minimum_size.y=64
+	debug.add_child(_diagnostics)
+	_diagnostics.toggled.connect(GraphicsQuality.set_diagnostics)
+	WorkshopUI.label(debug,"Show FPS, frame spikes, draw calls, memory, map load and last AI processing time. No gameplay changes.",22,WorkshopUI.MUTED)
 
 
 func open() -> void:
+	_diagnostics.set_pressed_no_signal(GraphicsQuality.diagnostics())
 	_describe(GraphicsQuality.mode())
 	show_screen()
 

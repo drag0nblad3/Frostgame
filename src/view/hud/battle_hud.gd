@@ -33,6 +33,7 @@ const LOG_LINES := 4
 static var action_labels: Dictionary = JsonFile.read("res://data/action_labels.json")
 
 var _status: Label
+var _performance: Label
 var _hint: Label
 var _log: Label
 var _lines: Array[String] = []
@@ -96,6 +97,11 @@ func _ready() -> void:
 	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	col.move_child(top,0)
 	col.add_child(_status)
+	_performance=_label(16)
+	_performance.modulate=Color("9ed6dd")
+	_performance.autowrap_mode=TextServer.AUTOWRAP_WORD_SMART
+	_performance.hide()
+	col.add_child(_performance)
 	_watch = _button("Watch", func() -> void: watch_toggled.emit(_watch.button_pressed))
 	_watch.toggle_mode = true
 	top.add_child(_watch)
@@ -515,3 +521,9 @@ func _fit_actions() -> void:
 
 static func action_columns(usable: float,minimum: float,wide: bool) -> int:
 	return clampi(floori((usable+10.0)/(maxf(1.0,minimum)+10.0)),1,2 if wide else 4)
+
+
+func set_performance(text: String) -> void:
+	_performance.visible=not text.is_empty()
+	if _performance.visible:
+		_performance.text=text

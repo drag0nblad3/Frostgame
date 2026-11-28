@@ -49,6 +49,12 @@ var _move_preview_tween: Tween
 var _visible_floor := ""
 var _floor_revision := 0
 var _deployment_panel: BattleDeploymentPanel
+var _frame_sample_time:=0.0
+var _frame_peak:=0.0
+var _frame_count:=0
+var _map_ms:=0.0
+var _terrain_ms:=0.0
+var _last_bot_ms:=0.0
 
 
 func _ready() -> void:
@@ -378,7 +384,9 @@ func _attach_battle(c: GameController, start: bool) -> void:
 			BattleJournal.record(hud._history,roll)
 	_update_status()
 	_dirty = true
-	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,float(Time.get_ticks_usec()-began)/1000.0])
+	_map_ms=float(Time.get_ticks_usec()-began)/1000.0
+	_last_bot_ms=0.0
+	print("Map load: %s playable scene attached %.1f ms"%[_active_scenario_id,_map_ms])
 
 
 func _deployment_complete() -> void:
@@ -411,6 +419,7 @@ func step() -> void:
 		player.thinking = true
 		player_input.lock("Rival warband is thinking…")
 	else:
+		_last_bot_ms=_bots.last_ms
 		_update_status()
 
 
@@ -423,6 +432,7 @@ func _relay(event: GameEvent) -> void:
 
 
 func _collect_bot_turn() -> void:
+	_last_bot_ms=_bots.last_ms
 	player.thinking = false
 	for event in _bots.take_events():
 		player.push(event)
@@ -431,6 +441,7 @@ func _collect_bot_turn() -> void:
 
 
 func _process(delta: float) -> void:
+	_sample_performance(delta)
 	if _bots.busy():
 		if not _bots.done():
 			return
@@ -723,7 +734,9 @@ func _notification(what: int) -> void:
 func _sync_terrain() -> void:
 	_terrain_pending=false
 	if is_inside_tree() and controller!=null:
+		var started:=Time.get_ticks_usec()
 		_board_view.sync_terrain(controller.state.board)
+		_terrain_ms=float(Time.get_ticks_usec()-started)/1000.0
 
 
 func _open_graphics() -> void:
@@ -750,3 +763,28 @@ func _choose_survival(plant_target: int,offer: Dictionary,rolled: bool) -> void:
 
 func _commit_survival(plant_target: int,choice: int) -> void:
 	BattleCampaignFlow._commit_survival(self, plant_target, choice)
+
+
+## Main-thread monitors only. Never inspect the controller or worker-owned
+## objects while a bot activation is running.
+func _sample_performance(delta: float) -> void:
+	if not GraphicsQuality.diagnostics():
+		if hud._performance.visible:
+			hud.set_performance("")
+		_frame_sample_time=0.0
+		_frame_peak=0.0
+		_frame_count=0
+		return
+	_frame_sample_time+=delta
+	_frame_peak=maxf(_frame_peak,delta*1000.0)
+	_frame_count+=1
+	if _frame_sample_time<0.5:
+		return
+	var mean:=_frame_sample_time*1000.0/maxi(1,_frame_count)
+	var draw_calls:=int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var triangles:=int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var memory:=Performance.get_monitor(Performance.MEMORY_STATIC)/1048576.0
+	hud.set_performance("%d FPS · frame %.1f / peak %.1f ms · %d draws · %dk primitives · %.0f MB\nScene %.0f ms · terrain refresh %.0f ms · %s"%[Engine.get_frames_per_second(),mean,_frame_peak,draw_calls,roundi(triangles/1000.0),memory,_map_ms,_terrain_ms,"AI thinking" if _bots.busy() else "AI %.0f ms"%_last_bot_ms])
+	_frame_sample_time=0.0
+	_frame_peak=0.0
+	_frame_count=0
