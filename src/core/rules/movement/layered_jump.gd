@@ -20,12 +20,12 @@ static func plans(c: GameController,generate: bool=false,continuation: bool=fals
 	var start := layout.node(f.surface_id,f.pos)
 	if not grid.open(start):
 		return out
-	var direct:=from_position(c,layout,grid,start,MoveRules.allowance(f),generate,cape)
+	var direct:=from_position(c,layout,grid,start,MoveRules.allowance(f),generate,cape,rank,budget)
 	return LayeredMovement.extend_aerial(c,LayeredMovement.chain_aerial(c,direct,grid,rank,budget),grid) if continuation else direct
 
 
 ## Query from a hypothetical landing without changing the live figure.
-static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,generate: bool=true,leave_contact: bool=false) -> Dictionary:
+static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGrid,start: Vector3i,allowance: float,generate: bool=true,leave_contact: bool=false,rank: Callable=Callable(),budget: int=0) -> Dictionary:
 	var out: Dictionary={}
 	var s:=c.state
 	var f:=s.active()
@@ -33,7 +33,23 @@ static func from_position(c: GameController,layout: FloorLayout,grid: LayeredGri
 		return out
 	var entries: Array=s.board.floor_layout.get("jumps",[]).duplicate()
 	if generate:
-		entries.append_array(_generated(c,layout,grid,start,allowance))
+		var generated:=_generated(c,layout,grid,start,allowance)
+		if rank.is_valid() and budget>0 and generated.size()>budget*2:
+			# Authored crossings always remain candidates. Generated ones are
+			# ranked before their expensive continuous run-up and arc checks.
+			var ranked: Array[Dictionary]=[]
+			for entry: Dictionary in generated:
+				var to: Array=entry["to"]
+				var from: Array=entry["from"]
+				var target:=layout.node(str(to[0]),Vector2(to[1],to[2]))
+				var takeoff:=layout.node(str(from[0]),Vector2(from[1],from[2]))
+				var estimate:=float(rank.call(layout.world(target)))+0.2*(layout.point(start).distance_to(layout.point(takeoff))+layout.point(takeoff).distance_to(layout.point(target)))
+				ranked.append({"entry":entry,"estimate":estimate})
+			ranked.sort_custom(func(a: Dictionary,b: Dictionary) -> bool:return a["estimate"]<b["estimate"])
+			generated.clear()
+			for i in mini(ranked.size(),budget*2):
+				generated.append(ranked[i]["entry"])
+		entries.append_array(generated)
 	for entry: Dictionary in entries:
 		var from: Array = entry.get("from",[])
 		var to: Array = entry.get("to",[])
