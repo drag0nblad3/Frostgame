@@ -51,7 +51,7 @@ func test_finished_runner_releases_battle() -> void:
 		var c:=_controller(9)
 		var runner:=BotRunner.new()
 		runner.threaded=threaded
-		var reference:=weakref(c)
+		var reference: WeakRef=weakref(c)
 		c.event_emitted.connect(func(e: GameEvent) -> void: runner.capture(e))
 		runner.start(c)
 		while runner.busy() and not runner.done():
