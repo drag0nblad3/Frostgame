@@ -124,3 +124,28 @@ func test_seeded_standard_treasure_placement() -> void:
 				check_eq(_world(s,s.treasures[i]),positions[i],id+" unchanged")
 			layouts.append(positions)
 		check(layouts[0]!=layouts[1] or layouts[1]!=layouts[2],id+" variation")
+
+
+func test_genie_central_ruin_access_and_screening() -> void:
+	var s:=ScenarioLoader.load_id("genie_in_the_bottle",db(),terrain())
+	var center:=s.board.size*0.5
+	var grid:=MoveGrid.new(s.board)
+	var goal:=MovePlanner.node_at(center)
+	var start:=MovePlanner.node_at(Vector2(14,19.5))
+	var queue: Array[Vector2i]=[start]
+	var visited: Dictionary={start:true}
+	while not queue.is_empty() and not visited.has(goal):
+		var node: Vector2i=queue.pop_front()
+		for delta: Vector2i in MoveGrid.NEIGHBORS:
+			var next:=node+delta
+			if visited.has(next) or MoveGrid.to_pos(next).distance_to(center)>8.0 or not grid.open(next) or not is_finite(grid.step_cost(node,next)):
+				continue
+			visited[next]=true
+			queue.append(next)
+	check(visited.has(goal),"Walkable entrance to central treasure")
+	for edge in 4:
+		for x in range(1,72):
+			for y in range(1,72):
+				var at:=Vector2(x,y)*0.5
+				if DeploymentRules.zone(s,edge,at) and s.board.can_stand(at,Figure.BASE_RADIUS):
+					check(not LineOfSight.check(s.board,at,center).clear,"Screened centre from "+str(at))

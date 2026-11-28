@@ -13,6 +13,30 @@ static func first_pickup(c: GameController, finder: Figure, token: TreasureToken
 			collected += 1
 	if collected < s.treasures.size() and c.dice.d20() < 15:
 		return
+	s.lamp_token=token.id
+	s.scenario_data["genie_pending_finder"]=finder.id
+	if not _try_release(c,finder,token):
+		c.emit("genie_spawn_blocked",{"treasure":token.id,"id":finder.id})
+
+
+## Preserve the discovered lamp if crowded terrain temporarily prevents a legal
+## release. Retry at the Creature phase, without rerolling or changing the lamp.
+static func retry_pending(c: GameController) -> void:
+	var s:=c.state
+	if not s.scenario_data.has("genie_pending_finder") or s.genie_id>=0:
+		return
+	var token:=s.treasure(s.lamp_token)
+	if token==null:
+		return
+	var finder:=s.figure(int(s.scenario_data["genie_pending_finder"]))
+	if finder==null or not finder.in_play():
+		finder=s.figure(token.carrier_id)
+	if finder!=null and finder.in_play():
+		_try_release(c,finder,token)
+
+
+static func _try_release(c: GameController,finder: Figure,token: TreasureToken) -> bool:
+	var s:=c.state
 	var origin:=Vector3(finder.pos.x,finder.elevation,finder.pos.y)
 	if not s.board.floor_layout.is_empty():
 		var layout:=s.board.floor_geometry()
@@ -30,9 +54,8 @@ static func first_pickup(c: GameController, finder: Figure, token: TreasureToken
 				best=n
 		if best!=null:
 			_released(c,finder,token,c._encounters._spawn_on_floor("genie",best))
-		else:
-			c.emit("genie_spawn_blocked",{"treasure":token.id,"id":finder.id})
-		return
+			return true
+		return false
 	var grid := MoveGrid.new(s.board,null,s.figures)
 	var center := MovePlanner.node_at(finder.pos)
 	var best_at:=Vector2.INF
@@ -52,8 +75,8 @@ static func first_pickup(c: GameController, finder: Figure, token: TreasureToken
 				score=value
 	if is_finite(best_at.x):
 		_released(c,finder,token,c._encounters._spawn_at("genie",best_at))
-	else:
-		c.emit("genie_spawn_blocked",{"treasure":token.id,"id":finder.id})
+		return true
+	return false
 
 
 static func legal_spawn(s: GameState,finder: Figure,at: Vector3) -> bool:
@@ -67,6 +90,7 @@ static func legal_spawn(s: GameState,finder: Figure,at: Vector3) -> bool:
 
 
 static func _released(c: GameController,finder: Figure,token: TreasureToken,creature: Figure) -> void:
+	c.state.scenario_data.erase("genie_pending_finder")
 	c.state.lamp_token=token.id
 	c.state.genie_id=creature.id
 	c.emit("genie_released",{"id":creature.id,"side":finder.side,"treasure":token.id,"xp":30})

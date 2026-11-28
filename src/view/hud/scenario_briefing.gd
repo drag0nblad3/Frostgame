@@ -24,7 +24,10 @@ static func title(id: String) -> String:
 
 static func description(id: String) -> String:
 	var entry: Array = all_entries().get(id, ["Skirmish", "Recover treasure or defeat the opposing warband.", ""])
-	return "%s\n\n%s" % [entry[1], entry[2]]
+	var description_text: String="%s\n\n%s" % [entry[1], entry[2]]
+	if id in ["treasure_skirmish","sunken_streets","worm_hunts","genie_in_the_bottle","dreams_well","underground_library","silent_tower"]:
+		description_text+="\n\nTreasure positions vary each battle; the map preview shows an example."
+	return description_text
 
 
 static func progress(s: GameState) -> String:
@@ -111,6 +114,8 @@ static func progress(s: GameState) -> String:
 		"genie_in_the_bottle":
 			if s.lamp_token < 0:
 				text += " | Lamp hidden"
+			elif s.scenario_data.has("genie_pending_finder"):
+				text += " | Lamp found · release blocked"
 			else:
 				var genie := s.figure(s.genie_id)
 				text += " | Genie %s" % ("escaping" if genie != null and genie.in_play() and s.genie_kills >= 3 else ("active" if genie != null and genie.in_play() else "gone"))
